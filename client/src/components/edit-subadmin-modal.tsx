@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -55,6 +55,18 @@ export function EditSubAdminModal({
       phone: subAdmin?.phone || "",
     },
   });
+
+  // Reset form when subAdmin changes
+  useEffect(() => {
+    if (subAdmin) {
+      form.reset({
+        firstName: subAdmin.firstName || "",
+        lastName: subAdmin.lastName || "",
+        email: subAdmin.email || "",
+        phone: subAdmin.phone || "",
+      });
+    }
+  }, [subAdmin, form]);
 
   const handleSubmit = (data: EditSubAdminFormData) => {
     if (subAdmin) {

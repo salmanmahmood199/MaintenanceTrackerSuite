@@ -386,7 +386,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const imageUrls = files ? files.map(file => `/uploads/${file.filename}`) : [];
       
       const ticketData = {
-        ...req.body,
+        title: req.body.title,
+        description: req.body.description,
+        priority: req.body.priority,
+        status: req.body.status || "open",
+        organizationId: parseInt(req.body.organizationId) || 1,
+        reporterId: parseInt(req.body.reporterId) || 1,
         images: imageUrls,
       };
 
