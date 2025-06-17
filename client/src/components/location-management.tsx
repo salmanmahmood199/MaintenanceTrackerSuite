@@ -324,10 +324,13 @@ export function LocationManagement({ organizationId, canManage }: LocationManage
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => deleteLocationMutation.mutate(location.id)}
-                          disabled={deleteLocationMutation.isPending}
+                          onClick={() => updateLocationMutation.mutate({ 
+                            id: location.id, 
+                            data: { isActive: !location.isActive } 
+                          })}
+                          disabled={updateLocationMutation.isPending}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          {location.isActive ? "Deactivate" : "Activate"}
                         </Button>
                       </div>
                     )}

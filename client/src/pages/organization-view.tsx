@@ -645,7 +645,52 @@ export default function OrganizationView() {
             </TabsContent>
 
             <TabsContent value="vendors" className="space-y-6">
-              {/* Vendor management content */}
+              <div className="bg-white rounded-lg shadow">
+                <div className="px-6 py-4 border-b border-slate-200">
+                  <h2 className="text-lg font-semibold text-slate-900 flex items-center">
+                    <Wrench className="h-5 w-5 mr-2" />
+                    Vendor Management
+                  </h2>
+                </div>
+                <div className="p-6">
+                  {canManageVendors ? (
+                    <div className="space-y-4">
+                      {vendorTiers && vendorTiers.length > 0 ? (
+                        vendorTiers.map((vendorTier) => (
+                          <div key={vendorTier.vendor.id} className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
+                            <div className="flex items-center space-x-4">
+                              <div>
+                                <p className="font-medium text-slate-900">{vendorTier.vendor.name}</p>
+                                <p className="text-sm text-slate-500">{vendorTier.vendor.description}</p>
+                              </div>
+                              <Badge variant={vendorTier.isActive ? "default" : "secondary"}>
+                                Tier {vendorTier.tier}
+                              </Badge>
+                              <Badge variant={vendorTier.isActive ? "default" : "secondary"}>
+                                {vendorTier.isActive ? "Active" : "Inactive"}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setIsVendorManagementOpen(true)}
+                              >
+                                <Settings className="h-4 w-4 mr-1" />
+                                Manage
+                              </Button>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-slate-500 text-center py-4">No vendors assigned to this organization</p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-slate-500 text-center py-4">You don't have permission to manage vendors</p>
+                  )}
+                </div>
+              </div>
             </TabsContent>
 
           </Tabs>

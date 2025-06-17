@@ -214,6 +214,7 @@ Changelog:
 - June 17, 2025. Fixed location creation issue and completed backend storage functions for location management
 - June 17, 2025. Restructured organization dashboard with tabbed interface for Overview, Sub-Admins, Locations, and Vendors
 - June 17, 2025. Added comprehensive location management UI with create, edit, delete, and assignment functionality
+- June 17, 2025. Fixed vendor tab to show assigned vendors and replaced location delete button with activate/deactivate toggle for safety
 ```
 
 ## User Preferences
