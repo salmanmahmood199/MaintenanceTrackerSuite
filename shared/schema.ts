@@ -43,10 +43,18 @@ export const maintenanceVendors = pgTable("maintenance_vendors", {
   phone: varchar("phone", { length: 20 }),
   email: varchar("email", { length: 255 }),
   specialties: text("specialties").array(), // e.g., ["plumbing", "electrical", "hvac"]
-  tier: text("tier").notNull().default("tier_1"), // "tier_1", "tier_2", "tier_3"
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// New table for vendor-organization tier relationships
+export const vendorOrganizationTiers = pgTable("vendor_organization_tiers", {
+  id: serial("id").primaryKey(),
+  vendorId: integer("vendor_id").references(() => maintenanceVendors.id).notNull(),
+  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
+  tier: text("tier").notNull().default("tier_1"), // "tier_1", "tier_2", "tier_3"
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // Updated tickets table with organization and vendor references
@@ -94,6 +102,18 @@ export const organizationsRelations = relations(organizations, ({ many }) => ({
 export const maintenanceVendorsRelations = relations(maintenanceVendors, ({ many }) => ({
   technicians: many(users),
   tickets: many(tickets),
+  vendorOrganizationTiers: many(vendorOrganizationTiers),
+}));
+
+export const vendorOrganizationTiersRelations = relations(vendorOrganizationTiers, ({ one }) => ({
+  vendor: one(maintenanceVendors, {
+    fields: [vendorOrganizationTiers.vendorId],
+    references: [maintenanceVendors.id],
+  }),
+  organization: one(organizations, {
+    fields: [vendorOrganizationTiers.organizationId],
+    references: [organizations.id],
+  }),
 }));
 
 export const ticketsRelations = relations(tickets, ({ one }) => ({

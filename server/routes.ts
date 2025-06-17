@@ -8,7 +8,8 @@ import {
   loginSchema,
   insertOrganizationSchema,
   insertMaintenanceVendorSchema,
-  insertUserSchema
+  insertUserSchema,
+  insertSubAdminSchema
 } from "@shared/schema";
 import { getSessionConfig, authenticateUser, requireRole, requireOrganization } from "./auth";
 import multer from "multer";

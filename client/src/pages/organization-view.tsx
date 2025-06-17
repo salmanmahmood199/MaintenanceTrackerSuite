@@ -333,6 +333,73 @@ export default function OrganizationView() {
           </Card>
         </div>
 
+        {/* Sub-Admins Section */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Sub-Administrators ({subAdmins.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {subAdmins.length === 0 ? (
+              <div className="text-center py-8 text-slate-500">
+                <Users className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+                <p className="text-lg font-medium mb-2">No sub-administrators yet</p>
+                <p className="text-sm mb-4">Add sub-admins to help manage tickets and operations</p>
+                <Button onClick={() => setIsCreateSubAdminOpen(true)}>
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Add First Sub-Admin
+                </Button>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {subAdmins.map((subAdmin) => (
+                  <div key={subAdmin.id} className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <span className="text-blue-700 font-medium text-sm">
+                          {subAdmin.firstName?.[0]}{subAdmin.lastName?.[0]}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-slate-900">
+                          {subAdmin.firstName} {subAdmin.lastName}
+                        </p>
+                        <p className="text-sm text-slate-500">{subAdmin.email}</p>
+                        {subAdmin.phone && (
+                          <p className="text-sm text-slate-500">{subAdmin.phone}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      <div className="text-right">
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {subAdmin.permissions?.includes("place_ticket") && (
+                            <Badge variant="secondary" className="text-xs">Place Ticket</Badge>
+                          )}
+                          {subAdmin.permissions?.includes("accept_ticket") && (
+                            <Badge variant="secondary" className="text-xs">Accept Ticket</Badge>
+                          )}
+                        </div>
+                        {subAdmin.vendorTiers && subAdmin.vendorTiers.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {subAdmin.vendorTiers.map((tier) => (
+                              <Badge key={tier} variant="outline" className="text-xs">
+                                {tier.replace('_', ' ').toUpperCase()}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Filters */}
         <Card className="p-6 mb-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
