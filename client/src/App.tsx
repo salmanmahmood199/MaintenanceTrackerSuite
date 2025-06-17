@@ -9,6 +9,7 @@ import Login from "@/pages/login";
 import RootDashboard from "@/pages/root-dashboard";
 import OrganizationView from "@/pages/organization-view";
 import VendorView from "@/pages/vendor-view";
+import TicketDetail from "@/pages/ticket-detail";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -38,6 +39,7 @@ function Router() {
         <Route path="/" component={RootDashboard} />
         <Route path="/organizations/:id" component={OrganizationView} />
         <Route path="/vendors/:id" component={VendorView} />
+        <Route path="/tickets/:ticketId" component={TicketDetail} />
         <Route component={NotFound} />
       </Switch>
     );
@@ -49,6 +51,7 @@ function Router() {
       <Switch>
         <Route path="/" component={() => <OrganizationView />} />
         <Route path="/organization/:id" component={OrganizationView} />
+        <Route path="/tickets/:ticketId" component={TicketDetail} />
         <Route component={NotFound} />
       </Switch>
     );
@@ -59,6 +62,7 @@ function Router() {
       <Switch>
         <Route path="/" component={() => <VendorView />} />
         <Route path="/vendor/:id" component={VendorView} />
+        <Route path="/tickets/:ticketId" component={TicketDetail} />
         <Route component={NotFound} />
       </Switch>
     );
@@ -67,6 +71,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
+      <Route path="/tickets/:ticketId" component={TicketDetail} />
       <Route component={NotFound} />
     </Switch>
   );
