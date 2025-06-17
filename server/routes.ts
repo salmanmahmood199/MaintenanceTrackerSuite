@@ -154,10 +154,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/maintenance-vendors', authenticateUser, requireRole(['root']), async (req, res) => {
+  app.get('/api/maintenance-vendors', authenticateUser, requireRole(['root', 'maintenance_admin']), async (req, res) => {
     try {
-      const vendors = await storage.getMaintenanceVendors();
-      res.json(vendors);
+      // If user is maintenance_admin, only return their vendor
+      if (req.user!.role === 'maintenance_admin') {
+        const vendor = await storage.getMaintenanceVendor(req.user!.maintenanceVendorId!);
+        res.json(vendor ? [vendor] : []);
+      } else {
+        // Root user gets all vendors
+        const vendors = await storage.getMaintenanceVendors();
+        res.json(vendors);
+      }
     } catch (error) {
       res.status(500).json({ message: 'Failed to fetch maintenance vendors' });
     }
