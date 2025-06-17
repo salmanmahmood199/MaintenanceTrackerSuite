@@ -44,7 +44,7 @@ export default function Dashboard() {
       formData.append("description", data.description);
       formData.append("priority", data.priority);
       formData.append("status", data.status);
-      formData.append("reporter", data.reporter);
+      formData.append("reporterId", user?.id.toString() || "1");
       
       images.forEach((image) => {
         formData.append("images", image);

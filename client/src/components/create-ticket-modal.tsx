@@ -28,7 +28,6 @@ export function CreateTicketModal({ open, onOpenChange, onSubmit, isLoading }: C
       description: "",
       priority: "medium",
       status: "open",
-      reporter: "Current User",
     },
   });
 
