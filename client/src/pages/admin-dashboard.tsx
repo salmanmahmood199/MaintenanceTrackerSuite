@@ -261,18 +261,23 @@ export default function AdminDashboard() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {organizations.map((org) => (
-                  <Card key={org.id} className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-slate-900">{org.name}</h3>
-                      <Badge variant="secondary">Active</Badge>
-                    </div>
-                    {org.description && (
-                      <p className="text-sm text-slate-600 mb-2">{org.description}</p>
-                    )}
-                    <div className="text-xs text-slate-500 space-y-1">
-                      {org.email && <p>Email: {org.email}</p>}
-                      {org.phone && <p>Phone: {org.phone}</p>}
-                    </div>
+                  <Card key={org.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer">
+                    <Link href={`/admin/organizations/${org.id}`}>
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="font-semibold text-slate-900">{org.name}</h3>
+                        <Badge variant="secondary">Active</Badge>
+                      </div>
+                      {org.description && (
+                        <p className="text-sm text-slate-600 mb-2">{org.description}</p>
+                      )}
+                      <div className="text-xs text-slate-500 space-y-1">
+                        {org.email && <p>Email: {org.email}</p>}
+                        {org.phone && <p>Phone: {org.phone}</p>}
+                      </div>
+                      <div className="mt-3 pt-2 border-t border-slate-100">
+                        <p className="text-xs text-primary font-medium">Click to view dashboard →</p>
+                      </div>
+                    </Link>
                   </Card>
                 ))}
               </div>
@@ -337,27 +342,32 @@ export default function AdminDashboard() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {vendors.map((vendor) => (
-                  <Card key={vendor.id} className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-slate-900">{vendor.name}</h3>
-                      <Badge variant="secondary">Active</Badge>
-                    </div>
-                    {vendor.description && (
-                      <p className="text-sm text-slate-600 mb-2">{vendor.description}</p>
-                    )}
-                    {vendor.specialties && vendor.specialties.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mb-2">
-                        {vendor.specialties.map((specialty, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs">
-                            {specialty}
-                          </Badge>
-                        ))}
+                  <Card key={vendor.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer">
+                    <Link href={`/admin/vendors/${vendor.id}`}>
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="font-semibold text-slate-900">{vendor.name}</h3>
+                        <Badge variant="secondary">Active</Badge>
                       </div>
-                    )}
-                    <div className="text-xs text-slate-500 space-y-1">
-                      {vendor.email && <p>Email: {vendor.email}</p>}
-                      {vendor.phone && <p>Phone: {vendor.phone}</p>}
-                    </div>
+                      {vendor.description && (
+                        <p className="text-sm text-slate-600 mb-2">{vendor.description}</p>
+                      )}
+                      {vendor.specialties && vendor.specialties.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {vendor.specialties.map((specialty, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs">
+                              {specialty}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      <div className="text-xs text-slate-500 space-y-1">
+                        {vendor.email && <p>Email: {vendor.email}</p>}
+                        {vendor.phone && <p>Phone: {vendor.phone}</p>}
+                      </div>
+                      <div className="mt-3 pt-2 border-t border-slate-100">
+                        <p className="text-xs text-primary font-medium">Click to view dashboard →</p>
+                      </div>
+                    </Link>
                   </Card>
                 ))}
               </div>

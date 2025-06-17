@@ -7,6 +7,8 @@ import { useAuth } from "@/hooks/useAuth";
 import Dashboard from "@/pages/dashboard";
 import Login from "@/pages/login";
 import AdminDashboard from "@/pages/admin-dashboard";
+import OrganizationView from "@/pages/organization-view";
+import VendorView from "@/pages/vendor-view";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -33,6 +35,8 @@ function Router() {
     <Switch>
       <Route path="/" component={Dashboard} />
       {isRoot && <Route path="/admin" component={AdminDashboard} />}
+      {isRoot && <Route path="/admin/organizations/:id" component={OrganizationView} />}
+      {isRoot && <Route path="/admin/vendors/:id" component={VendorView} />}
       <Route component={NotFound} />
     </Switch>
   );
