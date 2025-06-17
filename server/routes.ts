@@ -106,10 +106,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Root admin routes for managing organizations and vendors
-  app.get('/api/organizations', authenticateUser, requireRole(['root']), async (req, res) => {
+  app.get('/api/organizations', authenticateUser, requireRole(['root', 'org_admin']), async (req, res) => {
     try {
-      const organizations = await storage.getOrganizations();
-      res.json(organizations);
+      // If user is org_admin, only return their organization
+      if (req.user!.role === 'org_admin') {
+        const organization = await storage.getOrganization(req.user!.organizationId!);
+        res.json(organization ? [organization] : []);
+      } else {
+        // Root user gets all organizations
+        const organizations = await storage.getOrganizations();
+        res.json(organizations);
+      }
     } catch (error) {
       res.status(500).json({ message: 'Failed to fetch organizations' });
     }
@@ -156,6 +163,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/organizations/:organizationId/sub-admins', authenticateUser, requireRole(['root', 'org_admin']), async (req, res) => {
     try {
       const organizationId = parseInt(req.params.organizationId);
+      
+      // If user is org_admin, ensure they can only access their own organization
+      if (req.user!.role === 'org_admin' && req.user!.organizationId !== organizationId) {
+        return res.status(403).json({ message: 'Access denied to this organization' });
+      }
+      
       const subAdmins = await storage.getSubAdmins(organizationId);
       res.json(subAdmins);
     } catch (error) {
@@ -166,6 +179,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/organizations/:organizationId/sub-admins', authenticateUser, requireRole(['root', 'org_admin']), async (req, res) => {
     try {
       const organizationId = parseInt(req.params.organizationId);
+      
+      // If user is org_admin, ensure they can only create sub-admins for their own organization
+      if (req.user!.role === 'org_admin' && req.user!.organizationId !== organizationId) {
+        return res.status(403).json({ message: 'Access denied to this organization' });
+      }
+      
       const subAdmin = await storage.createSubAdmin(req.body, organizationId);
       res.status(201).json(subAdmin);
     } catch (error) {

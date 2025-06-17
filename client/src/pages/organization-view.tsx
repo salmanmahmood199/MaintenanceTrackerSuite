@@ -89,7 +89,7 @@ export default function OrganizationView() {
       formData.append("description", data.description);
       formData.append("priority", data.priority);
       formData.append("status", data.status);
-      formData.append("organizationId", organizationId.toString());
+      formData.append("organizationId", organizationId?.toString() || "0");
       formData.append("reporterId", user?.id.toString() || "1");
       
       images.forEach((image) => {
