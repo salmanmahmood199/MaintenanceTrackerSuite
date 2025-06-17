@@ -9,6 +9,7 @@ interface User {
   role: string;
   organizationId: number | null;
   maintenanceVendorId: number | null;
+  permissions?: string[] | null;
 }
 
 export function useAuth() {

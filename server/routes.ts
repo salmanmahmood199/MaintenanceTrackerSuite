@@ -119,7 +119,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       lastName: req.user!.lastName,
       role: req.user!.role,
       organizationId: req.user!.organizationId,
-      maintenanceVendorId: req.user!.maintenanceVendorId
+      maintenanceVendorId: req.user!.maintenanceVendorId,
+      permissions: req.user!.permissions
     });
   });
 

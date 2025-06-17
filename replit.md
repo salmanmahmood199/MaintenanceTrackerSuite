@@ -191,6 +191,10 @@ Changelog:
 - June 17, 2025. Added role-based routing (org_admin → organization dashboard, maintenance_admin → vendor dashboard)
 - June 17, 2025. Fixed vendor ticket filtering to show only assigned tickets
 - June 17, 2025. Created independent admin management for organizations and vendors
+- June 17, 2025. Fixed sub-admin authentication routing to show organization dashboard
+- June 17, 2025. Implemented permission-based UI filtering for sub-admin users
+- June 17, 2025. Added role-based access control (accept_ticket vs place_ticket permissions)
+- June 17, 2025. Fixed modal scrolling issue with large image uploads
 ```
 
 ## User Preferences

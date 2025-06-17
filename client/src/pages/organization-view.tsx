@@ -44,6 +44,17 @@ export default function OrganizationView() {
   // Use organization ID from user (for org_admin/org_subadmin) or route (for root accessing org)
   const organizationId = (user?.role === "org_admin" || user?.role === "org_subadmin") ? user.organizationId : routeOrgId;
 
+  // Permission helpers
+  const canPlaceTickets = user?.role === "root" || user?.role === "org_admin" || 
+    (user?.role === "org_subadmin" && user?.permissions?.includes("place_ticket"));
+  
+  const canAcceptTickets = user?.role === "root" || user?.role === "org_admin" || 
+    (user?.role === "org_subadmin" && user?.permissions?.includes("accept_ticket"));
+  
+  const canManageSubAdmins = user?.role === "root" || user?.role === "org_admin";
+  
+  const canManageVendors = user?.role === "root" || user?.role === "org_admin";
+
   // Fetch organization details
   const { data: organization } = useQuery<Organization | undefined>({
     queryKey: ["/api/organizations", organizationId],
@@ -378,29 +389,35 @@ export default function OrganizationView() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center space-x-4">
-            <Button
-              variant="outline"
-              onClick={() => setIsCreateSubAdminOpen(true)}
-              className="border-blue-200 text-blue-700 hover:bg-blue-50"
-            >
-              <UserPlus className="h-4 w-4 mr-2" />
-              Add Sub-Admin
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setIsVendorManagementOpen(true)}
-              className="border-green-200 text-green-700 hover:bg-green-50"
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Manage Vendors
-            </Button>
-            <Button
-              onClick={() => setIsCreateModalOpen(true)}
-              className="bg-primary text-white hover:bg-blue-700"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              New Ticket
-            </Button>
+            {canManageSubAdmins && (
+              <Button
+                variant="outline"
+                onClick={() => setIsCreateSubAdminOpen(true)}
+                className="border-blue-200 text-blue-700 hover:bg-blue-50"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Add Sub-Admin
+              </Button>
+            )}
+            {canManageVendors && (
+              <Button
+                variant="outline"
+                onClick={() => setIsVendorManagementOpen(true)}
+                className="border-green-200 text-green-700 hover:bg-green-50"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Manage Vendors
+              </Button>
+            )}
+            {canPlaceTickets && (
+              <Button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="bg-primary text-white hover:bg-blue-700"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                New Ticket
+              </Button>
+            )}
           </div>
         </div>
 
@@ -513,62 +530,64 @@ export default function OrganizationView() {
               <TicketCard
                 key={ticket.id}
                 ticket={ticket}
-                onAccept={handleAcceptTicket}
-                onReject={handleRejectTicket}
-                onComplete={handleCompleteTicket}
-                showActions={true}
+                onAccept={canAcceptTickets ? handleAcceptTicket : undefined}
+                onReject={canAcceptTickets ? handleRejectTicket : undefined}
+                onComplete={canAcceptTickets ? handleCompleteTicket : undefined}
+                showActions={canAcceptTickets}
                 userRole={user?.role}
               />
             ))
           )}
         </div>
 
-        {/* Sub-Admins Section */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-slate-200">
-            <h2 className="text-lg font-semibold text-slate-900 flex items-center">
-              <Users className="h-5 w-5 mr-2" />
-              Sub-Administrators
-            </h2>
-          </div>
-          <div className="p-6">
-            {subAdmins.length === 0 ? (
-              <p className="text-slate-500 text-center py-4">No sub-administrators yet</p>
-            ) : (
-              <div className="space-y-4">
-                {subAdmins.map((subAdmin) => (
-                  <div key={subAdmin.id} className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <div>
-                        <p className="font-medium text-slate-900">
-                          {subAdmin.firstName} {subAdmin.lastName}
-                        </p>
-                        <p className="text-sm text-slate-500">{subAdmin.email}</p>
+        {/* Sub-Admins Section - Only show for users who can manage sub-admins */}
+        {canManageSubAdmins && (
+          <div className="bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-slate-200">
+              <h2 className="text-lg font-semibold text-slate-900 flex items-center">
+                <Users className="h-5 w-5 mr-2" />
+                Sub-Administrators
+              </h2>
+            </div>
+            <div className="p-6">
+              {subAdmins.length === 0 ? (
+                <p className="text-slate-500 text-center py-4">No sub-administrators yet</p>
+              ) : (
+                <div className="space-y-4">
+                  {subAdmins.map((subAdmin) => (
+                    <div key={subAdmin.id} className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        <div>
+                          <p className="font-medium text-slate-900">
+                            {subAdmin.firstName} {subAdmin.lastName}
+                          </p>
+                          <p className="text-sm text-slate-500">{subAdmin.email}</p>
+                        </div>
+                        <div className="flex space-x-2">
+                          {subAdmin.permissions?.map((permission) => (
+                            <Badge key={permission} variant="secondary">
+                              {permission.replace('_', ' ')}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
-                      <div className="flex space-x-2">
-                        {subAdmin.permissions?.map((permission) => (
-                          <Badge key={permission} variant="secondary">
-                            {permission.replace('_', ' ')}
-                          </Badge>
-                        ))}
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openEditModal(subAdmin)}
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          Edit
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openEditModal(subAdmin)}
-                      >
-                        <Edit className="h-4 w-4 mr-1" />
-                        Edit
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </main>
 
       {/* Modals */}
