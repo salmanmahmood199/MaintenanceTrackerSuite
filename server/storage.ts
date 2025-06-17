@@ -1,12 +1,9 @@
 import { 
   users, 
   tickets, 
-  ticketMilestones,
   organizations,
   maintenanceVendors,
   vendorOrganizationTiers,
-  locations,
-  userLocationAssignments,
   type User, 
   type InsertUser, 
   type InsertSubAdmin,
@@ -16,11 +13,7 @@ import {
   type Organization,
   type InsertOrganization,
   type MaintenanceVendor,
-  type InsertMaintenanceVendor,
-  type Location,
-  type InsertLocation,
-  type UpdateLocation,
-  type InsertUserLocationAssignment,
+  type InsertMaintenanceVendor
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, inArray } from "drizzle-orm";
@@ -82,20 +75,6 @@ export interface IStorage {
   // Milestone operations
   getTicketMilestones(ticketId: number): Promise<any[]>;
   createTicketMilestone(milestone: { ticketId: number; milestoneType: string; milestoneTitle: string; milestoneDescription?: string; achievedById?: number; achievedByName?: string }): Promise<any>;
-  
-  // Location operations
-  getLocations(organizationId: number): Promise<Location[]>;
-  getLocation(id: number): Promise<Location | undefined>;
-  createLocation(location: InsertLocation): Promise<Location>;
-  updateLocation(id: number, updates: Partial<InsertLocation>): Promise<Location | undefined>;
-  deleteLocation(id: number): Promise<boolean>;
-  
-  // User-Location assignment operations
-  assignUserToLocation(userId: number, locationId: number): Promise<void>;
-  removeUserFromLocation(userId: number, locationId: number): Promise<boolean>;
-  getUserLocations(userId: number): Promise<Location[]>;
-  getLocationUsers(locationId: number): Promise<User[]>;
-  updateUserLocationAssignments(userId: number, locationIds: number[]): Promise<void>;
   
   // Initialize root user
   initializeRootUser(): Promise<void>;
@@ -538,134 +517,6 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return newMilestone;
-  }
-
-  async getLocations(organizationId: number): Promise<Location[]> {
-    return await db
-      .select()
-      .from(locations)
-      .where(eq(locations.organizationId, organizationId))
-      .orderBy(locations.name);
-  }
-
-  async getLocation(id: number): Promise<Location | undefined> {
-    const [location] = await db.select().from(locations).where(eq(locations.id, id));
-    return location;
-  }
-
-  async createLocation(insertLocation: InsertLocation): Promise<Location> {
-    const [location] = await db
-      .insert(locations)
-      .values(insertLocation)
-      .returning();
-    return location;
-  }
-
-  async updateLocation(id: number, updates: Partial<InsertLocation>): Promise<Location | undefined> {
-    const [location] = await db
-      .update(locations)
-      .set(updates)
-      .where(eq(locations.id, id))
-      .returning();
-    return location;
-  }
-
-  async deleteLocation(id: number): Promise<boolean> {
-    // First remove all user assignments for this location
-    await db.delete(userLocationAssignments).where(eq(userLocationAssignments.locationId, id));
-    
-    // Then delete the location
-    const result = await db.delete(locations).where(eq(locations.id, id));
-    return result.rowCount !== null && result.rowCount > 0;
-  }
-
-  async assignUserToLocation(userId: number, locationId: number): Promise<void> {
-    // Check if assignment already exists
-    const existing = await db
-      .select()
-      .from(userLocationAssignments)
-      .where(
-        and(
-          eq(userLocationAssignments.userId, userId),
-          eq(userLocationAssignments.locationId, locationId)
-        )
-      );
-
-    if (existing.length === 0) {
-      await db.insert(userLocationAssignments).values({
-        userId,
-        locationId,
-      });
-    }
-  }
-
-  async removeUserFromLocation(userId: number, locationId: number): Promise<boolean> {
-    const result = await db
-      .delete(userLocationAssignments)
-      .where(
-        and(
-          eq(userLocationAssignments.userId, userId),
-          eq(userLocationAssignments.locationId, locationId)
-        )
-      );
-    return result.rowCount !== null && result.rowCount > 0;
-  }
-
-  async getUserLocations(userId: number): Promise<Location[]> {
-    const result = await db
-      .select({
-        id: locations.id,
-        organizationId: locations.organizationId,
-        name: locations.name,
-        address: locations.address,
-        description: locations.description,
-        isActive: locations.isActive,
-        createdAt: locations.createdAt,
-      })
-      .from(userLocationAssignments)
-      .innerJoin(locations, eq(userLocationAssignments.locationId, locations.id))
-      .where(eq(userLocationAssignments.userId, userId));
-    
-    return result;
-  }
-
-  async getLocationUsers(locationId: number): Promise<User[]> {
-    const result = await db
-      .select({
-        id: users.id,
-        email: users.email,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        phone: users.phone,
-        role: users.role,
-        permissions: users.permissions,
-        vendorTiers: users.vendorTiers,
-        organizationId: users.organizationId,
-        maintenanceVendorId: users.maintenanceVendorId,
-        isActive: users.isActive,
-        createdAt: users.createdAt,
-        updatedAt: users.updatedAt,
-        password: users.password,
-      })
-      .from(userLocationAssignments)
-      .innerJoin(users, eq(userLocationAssignments.userId, users.id))
-      .where(eq(userLocationAssignments.locationId, locationId));
-    
-    return result;
-  }
-
-  async updateUserLocationAssignments(userId: number, locationIds: number[]): Promise<void> {
-    // Remove all existing assignments for this user
-    await db.delete(userLocationAssignments).where(eq(userLocationAssignments.userId, userId));
-    
-    // Add new assignments
-    if (locationIds.length > 0) {
-      const assignments = locationIds.map(locationId => ({
-        userId,
-        locationId,
-      }));
-      await db.insert(userLocationAssignments).values(assignments);
-    }
   }
 
   async createMissingAdminAccounts(): Promise<void> {

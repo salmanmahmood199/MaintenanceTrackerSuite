@@ -4,7 +4,6 @@ import { useRoute } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Plus, Users, Clock, Wrench, Check, AlertTriangle, UserPlus, Key, Edit, LogOut, Settings } from "lucide-react";
 import { CreateTicketModal } from "@/components/create-ticket-modal";
 import { CreateSubAdminModal } from "@/components/create-subadmin-modal";
@@ -12,8 +11,6 @@ import { EditSubAdminModal } from "@/components/edit-subadmin-modal";
 import { VendorManagementModal } from "@/components/vendor-management-modal";
 import { TicketTable } from "@/components/ticket-table";
 import { TicketActionModal } from "@/components/ticket-action-modal";
-import { LocationManagement } from "@/components/location-management";
-import { UserLocationAssignment } from "@/components/user-location-assignment";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -40,9 +37,6 @@ export default function OrganizationView() {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
-  const [selectedUserName, setSelectedUserName] = useState<string>("");
-  const [isLocationAssignmentOpen, setIsLocationAssignmentOpen] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -105,8 +99,8 @@ export default function OrganizationView() {
     enabled: !!organizationId,
   });
 
-  // Fetch organization vendor tiers
-  const { data: vendorTiers = [] } = useQuery<Array<{vendor: any, tier: string, isActive: boolean}>>({
+  // Fetch organization vendors
+  const { data: organizationVendors = [] } = useQuery<Array<{vendor: any, tier: string, isActive: boolean}>>({
     queryKey: ["/api/organizations", organizationId, "vendor-tiers"],
     queryFn: async () => {
       const response = await apiRequest("GET", `/api/organizations/${organizationId}/vendor-tiers`);
@@ -336,18 +330,6 @@ export default function OrganizationView() {
     completeTicketMutation.mutate(id);
   };
 
-  const openLocationAssignment = (userId: number, userName: string) => {
-    setSelectedUserId(userId);
-    setSelectedUserName(userName);
-    setIsLocationAssignmentOpen(true);
-  };
-
-  const closeLocationAssignment = () => {
-    setSelectedUserId(null);
-    setSelectedUserName("");
-    setIsLocationAssignmentOpen(false);
-  };
-
 
 
   if (organizationLoading) {
@@ -416,17 +398,7 @@ export default function OrganizationView() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="w-full grid grid-cols-4">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="subadmins">Sub-Admins</TabsTrigger>
-              <TabsTrigger value="locations">Locations</TabsTrigger>
-              <TabsTrigger value="vendors">Vendors</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="overview" className="space-y-6">
-              <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-8">
           <div className="flex items-center space-x-4">
             {canManageSubAdmins && (
               <Button
@@ -570,131 +542,57 @@ export default function OrganizationView() {
               userRole={user?.role}
               userPermissions={user?.permissions || undefined}
             />
-              )}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="subadmins" className="space-y-6">
-              {/* Sub-Admins Section - Only show for users who can manage sub-admins */}
-              {canManageSubAdmins && (
-                <div className="bg-white rounded-lg shadow">
-                  <div className="px-6 py-4 border-b border-slate-200">
-                    <h2 className="text-lg font-semibold text-slate-900 flex items-center">
-                      <Users className="h-5 w-5 mr-2" />
-                      Sub-Administrators
-                    </h2>
-                  </div>
-                  <div className="p-6">
-                    {subAdmins.length === 0 ? (
-                      <p className="text-slate-500 text-center py-4">No sub-administrators yet</p>
-                    ) : (
-                      <div className="space-y-4">
-                        {subAdmins.map((subAdmin) => (
-                          <div key={subAdmin.id} className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
-                            <div className="flex items-center space-x-4">
-                              <div>
-                                <p className="font-medium text-slate-900">
-                                  {subAdmin.firstName} {subAdmin.lastName}
-                                </p>
-                                <p className="text-sm text-slate-500">{subAdmin.email}</p>
-                              </div>
-                              <div className="flex space-x-2">
-                                {subAdmin.permissions?.map((permission) => (
-                                  <Badge key={permission} variant="secondary">
-                                    {permission.replace('_', ' ')}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openLocationAssignment(
-                                  subAdmin.id,
-                                  `${subAdmin.firstName} ${subAdmin.lastName}`
-                                )}
-                              >
-                                Locations
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openEditModal(subAdmin)}
-                              >
-                                <Edit className="h-4 w-4 mr-1" />
-                                Edit
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="locations" className="space-y-6">
-              {organizationId && (
-                <LocationManagement
-                  organizationId={organizationId}
-                  canManage={canManageSubAdmins}
-                />
-              )}
-            </TabsContent>
-
-            <TabsContent value="vendors" className="space-y-6">
-              <div className="bg-white rounded-lg shadow">
-                <div className="px-6 py-4 border-b border-slate-200">
-                  <h2 className="text-lg font-semibold text-slate-900 flex items-center">
-                    <Wrench className="h-5 w-5 mr-2" />
-                    Vendor Management
-                  </h2>
-                </div>
-                <div className="p-6">
-                  {canManageVendors ? (
-                    <div className="space-y-4">
-                      {vendorTiers && Array.isArray(vendorTiers) && vendorTiers.length > 0 ? (
-                        vendorTiers.map((vendorTier: any) => (
-                          <div key={vendorTier.vendor.id} className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
-                            <div className="flex items-center space-x-4">
-                              <div>
-                                <p className="font-medium text-slate-900">{vendorTier.vendor.name}</p>
-                                <p className="text-sm text-slate-500">{vendorTier.vendor.description}</p>
-                              </div>
-                              <Badge variant={vendorTier.isActive ? "default" : "secondary"}>
-                                Tier {vendorTier.tier}
-                              </Badge>
-                              <Badge variant={vendorTier.isActive ? "default" : "secondary"}>
-                                {vendorTier.isActive ? "Active" : "Inactive"}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setIsVendorManagementOpen(true)}
-                              >
-                                <Settings className="h-4 w-4 mr-1" />
-                                Manage
-                              </Button>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-slate-500 text-center py-4">No vendors assigned to this organization</p>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-slate-500 text-center py-4">You don't have permission to manage vendors</p>
-                  )}
-                </div>
-              </div>
-            </TabsContent>
-
-          </Tabs>
+          )}
         </div>
+
+        {/* Sub-Admins Section - Only show for users who can manage sub-admins */}
+        {canManageSubAdmins && (
+          <div className="bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-slate-200">
+              <h2 className="text-lg font-semibold text-slate-900 flex items-center">
+                <Users className="h-5 w-5 mr-2" />
+                Sub-Administrators
+              </h2>
+            </div>
+            <div className="p-6">
+              {subAdmins.length === 0 ? (
+                <p className="text-slate-500 text-center py-4">No sub-administrators yet</p>
+              ) : (
+                <div className="space-y-4">
+                  {subAdmins.map((subAdmin) => (
+                    <div key={subAdmin.id} className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        <div>
+                          <p className="font-medium text-slate-900">
+                            {subAdmin.firstName} {subAdmin.lastName}
+                          </p>
+                          <p className="text-sm text-slate-500">{subAdmin.email}</p>
+                        </div>
+                        <div className="flex space-x-2">
+                          {subAdmin.permissions?.map((permission) => (
+                            <Badge key={permission} variant="secondary">
+                              {permission.replace('_', ' ')}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openEditModal(subAdmin)}
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          Edit
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Modals */}
@@ -724,7 +622,7 @@ export default function OrganizationView() {
         open={isVendorManagementOpen}
         onOpenChange={setIsVendorManagementOpen}
         organizationId={organizationId!}
-        vendors={vendorTiers}
+        vendors={organizationVendors}
         onUpdateVendor={handleUpdateVendor}
         isLoading={updateVendorMutation.isPending}
       />
@@ -734,24 +632,13 @@ export default function OrganizationView() {
         onOpenChange={setIsTicketActionOpen}
         ticket={selectedTicket}
         action={ticketAction}
-        vendors={vendorTiers}
+        vendors={organizationVendors}
         onAccept={handleTicketAccept}
         onReject={handleTicketReject}
         isLoading={acceptTicketMutation.isPending || rejectTicketMutation.isPending}
         userRole={user?.role}
         userPermissions={user?.permissions || undefined}
       />
-
-      {/* User Location Assignment Modal */}
-      {selectedUserId && selectedUserId > 0 && organizationId && (
-        <UserLocationAssignment
-          userId={selectedUserId}
-          userName={selectedUserName}
-          organizationId={organizationId}
-          open={isLocationAssignmentOpen}
-          onOpenChange={closeLocationAssignment}
-        />
-      )}
     </div>
   );
 }

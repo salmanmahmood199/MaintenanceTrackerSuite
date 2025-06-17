@@ -9,9 +9,7 @@ import {
   insertOrganizationSchema,
   insertMaintenanceVendorSchema,
   insertUserSchema,
-  insertSubAdminSchema,
-  insertLocationSchema,
-  updateLocationSchema
+  insertSubAdminSchema
 } from "@shared/schema";
 import { getSessionConfig, authenticateUser, requireRole, requireOrganization } from "./auth";
 import multer from "multer";
@@ -579,40 +577,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get single ticket
-  app.get("/api/tickets/:id", authenticateUser, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      
-      if (isNaN(id) || id <= 0) {
-        return res.status(400).json({ message: "Invalid ticket ID" });
-      }
-      
-      const ticket = await storage.getTicket(id);
-      
-      if (!ticket) {
-        return res.status(404).json({ message: "Ticket not found" });
-      }
-      
-      res.json(ticket);
-    } catch (error) {
-      console.error("Error fetching ticket:", error);
-      res.status(500).json({ message: "Failed to fetch ticket" });
-    }
-  });
-
   // Get ticket stats
-  app.get("/api/tickets/stats", authenticateUser, async (req, res) => {
+  app.get("/api/tickets/stats", async (req, res) => {
     try {
       const { organizationId, maintenanceVendorId } = req.query;
-      
-      // Parse query parameters safely
-      const orgId = organizationId && !isNaN(parseInt(organizationId as string)) 
-        ? parseInt(organizationId as string) 
-        : undefined;
-      const vendorId = maintenanceVendorId && !isNaN(parseInt(maintenanceVendorId as string))
-        ? parseInt(maintenanceVendorId as string) 
-        : undefined;
+      const orgId = organizationId ? parseInt(organizationId as string) : undefined;
+      const vendorId = maintenanceVendorId ? parseInt(maintenanceVendorId as string) : undefined;
       
       let stats = await storage.getTicketStats(orgId);
       
@@ -632,7 +602,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(stats);
     } catch (error) {
-      console.error("Error fetching ticket stats:", error);
       res.status(500).json({ message: "Failed to fetch ticket stats" });
     }
   });
@@ -811,107 +780,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(ticket);
     } catch (error) {
       res.status(500).json({ message: "Failed to complete ticket" });
-    }
-  });
-
-  // Location routes
-  app.get('/api/organizations/:orgId/locations', authenticateUser, async (req: Request, res: Response) => {
-    try {
-      const orgId = parseInt(req.params.orgId);
-      const locations = await storage.getLocations(orgId);
-      res.json(locations);
-    } catch (error) {
-      console.error("Error fetching locations:", error);
-      res.status(500).json({ message: "Failed to fetch locations" });
-    }
-  });
-
-  app.post('/api/organizations/:orgId/locations', authenticateUser, requireRole(["root", "org_admin"]), async (req: Request, res: Response) => {
-    try {
-      const orgId = parseInt(req.params.orgId);
-      const locationData = insertLocationSchema.parse({
-        ...req.body,
-        organizationId: orgId,
-      });
-      
-      const location = await storage.createLocation(locationData);
-      res.status(201).json(location);
-    } catch (error) {
-      console.error("Error creating location:", error);
-      res.status(500).json({ message: "Failed to create location" });
-    }
-  });
-
-  app.patch('/api/locations/:id', authenticateUser, requireRole(["root", "org_admin"]), async (req: Request, res: Response) => {
-    try {
-      const id = parseInt(req.params.id);
-      const updates = updateLocationSchema.parse(req.body);
-      
-      const location = await storage.updateLocation(id, updates);
-      if (!location) {
-        return res.status(404).json({ message: "Location not found" });
-      }
-      
-      res.json(location);
-    } catch (error) {
-      console.error("Error updating location:", error);
-      res.status(500).json({ message: "Failed to update location" });
-    }
-  });
-
-  app.delete('/api/locations/:id', authenticateUser, requireRole(["root", "org_admin"]), async (req: Request, res: Response) => {
-    try {
-      const id = parseInt(req.params.id);
-      const success = await storage.deleteLocation(id);
-      
-      if (!success) {
-        return res.status(404).json({ message: "Location not found" });
-      }
-      
-      res.json({ message: "Location deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting location:", error);
-      res.status(500).json({ message: "Failed to delete location" });
-    }
-  });
-
-  // User-Location assignment routes
-  app.get('/api/users/:userId/locations', authenticateUser, async (req: Request, res: Response) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const locations = await storage.getUserLocations(userId);
-      res.json(locations);
-    } catch (error) {
-      console.error("Error fetching user locations:", error);
-      res.status(500).json({ message: "Failed to fetch user locations" });
-    }
-  });
-
-  app.get('/api/locations/:locationId/users', authenticateUser, async (req: Request, res: Response) => {
-    try {
-      const locationId = parseInt(req.params.locationId);
-      const users = await storage.getLocationUsers(locationId);
-      res.json(users);
-    } catch (error) {
-      console.error("Error fetching location users:", error);
-      res.status(500).json({ message: "Failed to fetch location users" });
-    }
-  });
-
-  app.post('/api/users/:userId/locations', authenticateUser, requireRole(["root", "org_admin"]), async (req: Request, res: Response) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const { locationIds } = req.body;
-      
-      if (!Array.isArray(locationIds)) {
-        return res.status(400).json({ message: "locationIds must be an array" });
-      }
-      
-      await storage.updateUserLocationAssignments(userId, locationIds);
-      res.json({ message: "User location assignments updated successfully" });
-    } catch (error) {
-      console.error("Error updating user location assignments:", error);
-      res.status(500).json({ message: "Failed to update user location assignments" });
     }
   });
 

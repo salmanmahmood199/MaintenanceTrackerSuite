@@ -90,24 +90,6 @@ export const ticketMilestones = pgTable("ticket_milestones", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Location tables for organization management
-export const locations = pgTable("locations", {
-  id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
-  name: varchar("name", { length: 200 }).notNull(),
-  address: text("address"),
-  description: text("description"),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-export const userLocationAssignments = pgTable("user_location_assignments", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
-  locationId: integer("location_id").references(() => locations.id).notNull(),
-  assignedAt: timestamp("assigned_at").defaultNow(),
-});
-
 // Session storage table for authentication
 export const sessions = pgTable("sessions", {
   sid: varchar("sid").primaryKey(),
@@ -127,14 +109,11 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   }),
   reportedTickets: many(tickets, { relationName: "reporter" }),
   assignedTickets: many(tickets, { relationName: "assignee" }),
-  locationAssignments: many(userLocationAssignments),
 }));
 
 export const organizationsRelations = relations(organizations, ({ many }) => ({
   users: many(users),
   tickets: many(tickets),
-  vendorTiers: many(vendorOrganizationTiers),
-  locations: many(locations),
 }));
 
 export const maintenanceVendorsRelations = relations(maintenanceVendors, ({ many }) => ({
@@ -151,25 +130,6 @@ export const vendorOrganizationTiersRelations = relations(vendorOrganizationTier
   organization: one(organizations, {
     fields: [vendorOrganizationTiers.organizationId],
     references: [organizations.id],
-  }),
-}));
-
-export const locationsRelations = relations(locations, ({ one, many }) => ({
-  organization: one(organizations, {
-    fields: [locations.organizationId],
-    references: [organizations.id],
-  }),
-  userAssignments: many(userLocationAssignments),
-}));
-
-export const userLocationAssignmentsRelations = relations(userLocationAssignments, ({ one }) => ({
-  user: one(users, {
-    fields: [userLocationAssignments.userId],
-    references: [users.id],
-  }),
-  location: one(locations, {
-    fields: [userLocationAssignments.locationId],
-    references: [locations.id],
   }),
 }));
 
@@ -275,18 +235,6 @@ export const rejectTicketSchema = z.object({
   rejectionReason: z.string().min(1, "Rejection reason is required"),
 });
 
-export const insertLocationSchema = createInsertSchema(locations).omit({
-  id: true,
-  createdAt: true,
-});
-
-export const updateLocationSchema = insertLocationSchema.partial();
-
-export const insertUserLocationAssignmentSchema = createInsertSchema(userLocationAssignments).omit({
-  id: true,
-  assignedAt: true,
-});
-
 export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
@@ -313,9 +261,4 @@ export type RejectTicket = z.infer<typeof rejectTicketSchema>;
 export type Ticket = typeof tickets.$inferSelect;
 export type InsertTicketMilestone = z.infer<typeof insertTicketMilestoneSchema>;
 export type TicketMilestone = typeof ticketMilestones.$inferSelect;
-export type InsertLocation = z.infer<typeof insertLocationSchema>;
-export type UpdateLocation = z.infer<typeof updateLocationSchema>;
-export type Location = typeof locations.$inferSelect;
-export type InsertUserLocationAssignment = z.infer<typeof insertUserLocationAssignmentSchema>;
-export type UserLocationAssignment = typeof userLocationAssignments.$inferSelect;
 export type LoginData = z.infer<typeof loginSchema>;

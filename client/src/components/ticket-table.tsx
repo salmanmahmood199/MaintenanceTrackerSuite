@@ -5,7 +5,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 import { Calendar, User, Hash, Wrench, CheckCircle, XCircle, Eye, ImageIcon, Clock } from "lucide-react";
-import { Link } from "wouter";
 import { formatDate, getPriorityColor, getStatusColor } from "@/lib/utils";
 import { ProgressTracker } from "@/components/progress-tracker";
 import type { Ticket } from "@shared/schema";
@@ -161,12 +160,14 @@ export function TicketTable({
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
-                        <Link to={`/tickets/${ticket.id}`}>
-                          <Button variant="outline" size="sm">
-                            <Eye className="h-4 w-4 mr-1" />
-                            View Details
-                          </Button>
-                        </Link>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openTicketDetails(ticket)}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
+                        </Button>
                         {showActions && canAcceptTickets && ticket.status === "pending" && (
                           <>
                             <Button
