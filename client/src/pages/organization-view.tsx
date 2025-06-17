@@ -42,7 +42,7 @@ export default function OrganizationView() {
   const { user } = useAuth();
 
   // Use organization ID from user (for org_admin/org_subadmin) or route (for root accessing org)
-  const organizationId = (user?.role === "org_admin" || user?.role === "org_subadmin") ? user.organizationId : routeOrgId;
+  const organizationId = (user?.role === "org_admin" || user?.role === "org_subadmin") ? user.organizationId : routeOrgId || 1;
 
   // Permission helpers
   const canPlaceTickets = user?.role === "root" || user?.role === "org_admin" || 
