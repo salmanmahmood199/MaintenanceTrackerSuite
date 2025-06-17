@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -47,10 +47,14 @@ export function UserLocationAssignment({
       return await response.json();
     },
     enabled: open && !!userId,
-    onSuccess: (data) => {
-      setSelectedLocationIds(data.map(loc => loc.id));
-    },
   });
+
+  // Update selected locations when userLocations data changes
+  useEffect(() => {
+    if (userLocations.length > 0) {
+      setSelectedLocationIds(userLocations.map(loc => loc.id));
+    }
+  }, [userLocations]);
 
   // Update user location assignments
   const updateAssignmentsMutation = useMutation({
@@ -90,7 +94,9 @@ export function UserLocationAssignment({
   };
 
   const handleCancel = () => {
-    setSelectedLocationIds(userLocations.map(loc => loc.id));
+    if (userLocations && userLocations.length > 0) {
+      setSelectedLocationIds(userLocations.map(loc => loc.id));
+    }
     onOpenChange(false);
   };
 

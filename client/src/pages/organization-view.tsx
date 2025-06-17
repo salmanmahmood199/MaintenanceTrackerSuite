@@ -651,6 +651,17 @@ export default function OrganizationView() {
         userRole={user?.role}
         userPermissions={user?.permissions || undefined}
       />
+
+      {/* User Location Assignment Modal */}
+      {selectedUserId && (
+        <UserLocationAssignment
+          userId={selectedUserId}
+          userName={selectedUserName}
+          organizationId={organizationId}
+          open={isLocationAssignmentOpen}
+          onOpenChange={closeLocationAssignment}
+        />
+      )}
     </div>
   );
 }
