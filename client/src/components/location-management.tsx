@@ -39,7 +39,7 @@ export function LocationManagement({ organizationId, canManage }: LocationManage
   // Create location mutation
   const createLocationMutation = useMutation({
     mutationFn: async (data: InsertLocation) => {
-      return await apiRequest(`/api/organizations/${organizationId}/locations`, "POST", data);
+      return await apiRequest("POST", `/api/organizations/${organizationId}/locations`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/organizations/${organizationId}/locations`] });
@@ -62,7 +62,7 @@ export function LocationManagement({ organizationId, canManage }: LocationManage
   // Update location mutation
   const updateLocationMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<InsertLocation> }) => {
-      return await apiRequest(`/api/locations/${id}`, "PATCH", data);
+      return await apiRequest("PATCH", `/api/locations/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/organizations/${organizationId}/locations`] });
@@ -85,7 +85,7 @@ export function LocationManagement({ organizationId, canManage }: LocationManage
   // Delete location mutation
   const deleteLocationMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest(`/api/locations/${id}`, "DELETE");
+      return await apiRequest("DELETE", `/api/locations/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/organizations/${organizationId}/locations`] });
@@ -217,7 +217,7 @@ export function LocationManagement({ organizationId, canManage }: LocationManage
                   <Switch
                     id="isActive"
                     checked={formData.isActive}
-                    onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked || false })}
+                    onCheckedChange={(checked) => setFormData({ ...formData, isActive: !!checked })}
                   />
                   <Label htmlFor="isActive">Active</Label>
                 </div>
@@ -276,7 +276,7 @@ export function LocationManagement({ organizationId, canManage }: LocationManage
               <Switch
                 id="edit-isActive"
                 checked={formData.isActive}
-                onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked || false })}
+                onCheckedChange={(checked) => setFormData({ ...formData, isActive: !!checked })}
               />
               <Label htmlFor="edit-isActive">Active</Label>
             </div>

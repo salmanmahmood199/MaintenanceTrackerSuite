@@ -43,7 +43,7 @@ export function UserLocationAssignment({
   // Update user location assignments
   const updateAssignmentsMutation = useMutation({
     mutationFn: async (locationIds: number[]) => {
-      return await apiRequest(`/api/users/${userId}/locations`, "POST", { locationIds });
+      return await apiRequest("POST", `/api/users/${userId}/locations`, { locationIds });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/users/${userId}/locations`] });
