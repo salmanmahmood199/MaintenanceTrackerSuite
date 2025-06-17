@@ -326,11 +326,11 @@ export function LocationManagement({ organizationId, canManage }: LocationManage
                           size="sm"
                           onClick={() => updateLocationMutation.mutate({ 
                             id: location.id, 
-                            data: { isActive: !location.isActive } 
+                            data: { isActive: !(location.isActive ?? true) } 
                           })}
                           disabled={updateLocationMutation.isPending}
                         >
-                          {location.isActive ? "Deactivate" : "Activate"}
+                          {(location.isActive ?? true) ? "Deactivate" : "Activate"}
                         </Button>
                       </div>
                     )}
