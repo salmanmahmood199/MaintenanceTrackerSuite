@@ -4,6 +4,7 @@ import { useRoute } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Plus, Users, Clock, Wrench, Check, AlertTriangle, UserPlus, Key, Edit, LogOut, Settings } from "lucide-react";
 import { CreateTicketModal } from "@/components/create-ticket-modal";
 import { CreateSubAdminModal } from "@/components/create-subadmin-modal";
@@ -415,7 +416,17 @@ export default function OrganizationView() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-center mb-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList className="w-full grid grid-cols-4">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="subadmins">Sub-Admins</TabsTrigger>
+              <TabsTrigger value="locations">Locations</TabsTrigger>
+              <TabsTrigger value="vendors">Vendors</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="overview" className="space-y-6">
+              <div className="flex justify-between items-center mb-8">
           <div className="flex items-center space-x-4">
             {canManageSubAdmins && (
               <Button
@@ -559,81 +570,83 @@ export default function OrganizationView() {
               userRole={user?.role}
               userPermissions={user?.permissions || undefined}
             />
-          )}
-        </div>
+              )}
+              </div>
+            </TabsContent>
 
-        {/* Sub-Admins Section - Only show for users who can manage sub-admins */}
-        {canManageSubAdmins && (
-          <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-4 border-b border-slate-200">
-              <h2 className="text-lg font-semibold text-slate-900 flex items-center">
-                <Users className="h-5 w-5 mr-2" />
-                Sub-Administrators
-              </h2>
-            </div>
-            <div className="p-6">
-              {subAdmins.length === 0 ? (
-                <p className="text-slate-500 text-center py-4">No sub-administrators yet</p>
-              ) : (
-                <div className="space-y-4">
-                  {subAdmins.map((subAdmin) => (
-                    <div key={subAdmin.id} className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <div>
-                          <p className="font-medium text-slate-900">
-                            {subAdmin.firstName} {subAdmin.lastName}
-                          </p>
-                          <p className="text-sm text-slate-500">{subAdmin.email}</p>
-                        </div>
-                        <div className="flex space-x-2">
-                          {subAdmin.permissions?.map((permission) => (
-                            <Badge key={permission} variant="secondary">
-                              {permission.replace('_', ' ')}
-                            </Badge>
-                          ))}
-                        </div>
+            <TabsContent value="subadmins" className="space-y-6">
+              {/* Sub-Admins Section - Only show for users who can manage sub-admins */}
+              {canManageSubAdmins && (
+                <div className="bg-white rounded-lg shadow">
+                  <div className="px-6 py-4 border-b border-slate-200">
+                    <h2 className="text-lg font-semibold text-slate-900 flex items-center">
+                      <Users className="h-5 w-5 mr-2" />
+                      Sub-Administrators
+                    </h2>
+                  </div>
+                  <div className="p-6">
+                    {subAdmins.length === 0 ? (
+                      <p className="text-slate-500 text-center py-4">No sub-administrators yet</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {subAdmins.map((subAdmin) => (
+                          <div key={subAdmin.id} className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
+                            <div className="flex items-center space-x-4">
+                              <div>
+                                <p className="font-medium text-slate-900">
+                                  {subAdmin.firstName} {subAdmin.lastName}
+                                </p>
+                                <p className="text-sm text-slate-500">{subAdmin.email}</p>
+                              </div>
+                              <div className="flex space-x-2">
+                                {subAdmin.permissions?.map((permission) => (
+                                  <Badge key={permission} variant="secondary">
+                                    {permission.replace('_', ' ')}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openLocationAssignment(
+                                  subAdmin.id,
+                                  `${subAdmin.firstName} ${subAdmin.lastName}`
+                                )}
+                              >
+                                Locations
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openEditModal(subAdmin)}
+                              >
+                                <Edit className="h-4 w-4 mr-1" />
+                                Edit
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openLocationAssignment(
-                            subAdmin.id,
-                            `${subAdmin.firstName} ${subAdmin.lastName}`
-                          )}
-                        >
-                          Locations
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openEditModal(subAdmin)}
-                        >
-                          <Edit className="h-4 w-4 mr-1" />
-                          Edit
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                    )}
+                  </div>
                 </div>
               )}
-            </div>
-          </div>
-        )}
+            </TabsContent>
 
-        {/* Locations Tab Content */}
-        <div className={`space-y-6 ${organizationId ? '' : 'hidden'}`}>
-          <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-4 border-b border-slate-200">
-              <h2 className="text-lg font-semibold text-slate-900">Locations</h2>
-            </div>
-            <div className="p-6">
+            <TabsContent value="locations" className="space-y-6">
               <LocationManagement
                 organizationId={organizationId}
                 canManage={canManageSubAdmins}
               />
-            </div>
-          </div>
+            </TabsContent>
+
+            <TabsContent value="vendors" className="space-y-6">
+              {/* Vendor management content */}
+            </TabsContent>
+
+          </Tabs>
         </div>
       </main>
 
