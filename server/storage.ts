@@ -61,9 +61,12 @@ export interface IStorage {
   createTicket(ticket: InsertTicket): Promise<Ticket>;
   updateTicket(id: number, updates: Partial<UpdateTicket>): Promise<Ticket | undefined>;
   deleteTicket(id: number): Promise<boolean>;
+  acceptTicket(id: number, acceptData: { maintenanceVendorId?: number; assigneeId?: number }): Promise<Ticket | undefined>;
+  rejectTicket(id: number, rejectionReason: string): Promise<Ticket | undefined>;
   getTicketsByStatus(status: string, organizationId?: number): Promise<Ticket[]>;
   getTicketStats(organizationId?: number): Promise<{
-    open: number;
+    pending: number;
+    accepted: number;
     inProgress: number;
     completed: number;
     highPriority: number;
@@ -379,7 +382,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTicket(insertTicket: InsertTicket): Promise<Ticket> {
-    const [ticket] = await db.insert(tickets).values(insertTicket).returning();
+    // Generate organization-specific ticket number
+    const organization = await this.getOrganization(insertTicket.organizationId);
+    const orgHash = organization?.name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 4) || 'org';
+    const timestamp = Date.now().toString().slice(-6);
+    const random = Math.random().toString(36).slice(2, 5).toUpperCase();
+    const ticketNumber = `${orgHash.toUpperCase()}-${timestamp}-${random}`;
+
+    const ticketData = {
+      ...insertTicket,
+      ticketNumber,
+      status: insertTicket.status || "pending",
+    };
+
+    const [ticket] = await db.insert(tickets).values(ticketData).returning();
     return ticket;
   }
 
@@ -405,8 +421,38 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(tickets).where(eq(tickets.status, status));
   }
 
+  async acceptTicket(id: number, acceptData: { maintenanceVendorId?: number; assigneeId?: number }): Promise<Ticket | undefined> {
+    const [ticket] = await db
+      .update(tickets)
+      .set({
+        status: "accepted",
+        maintenanceVendorId: acceptData.maintenanceVendorId,
+        assigneeId: acceptData.assigneeId,
+        updatedAt: new Date(),
+      })
+      .where(eq(tickets.id, id))
+      .returning();
+    
+    return ticket || undefined;
+  }
+
+  async rejectTicket(id: number, rejectionReason: string): Promise<Ticket | undefined> {
+    const [ticket] = await db
+      .update(tickets)
+      .set({
+        status: "rejected",
+        rejectionReason,
+        updatedAt: new Date(),
+      })
+      .where(eq(tickets.id, id))
+      .returning();
+    
+    return ticket || undefined;
+  }
+
   async getTicketStats(organizationId?: number): Promise<{
-    open: number;
+    pending: number;
+    accepted: number;
     inProgress: number;
     completed: number;
     highPriority: number;
@@ -414,7 +460,8 @@ export class DatabaseStorage implements IStorage {
     const allTickets = await this.getTickets(organizationId);
     
     return {
-      open: allTickets.filter(t => t.status === "open").length,
+      pending: allTickets.filter(t => t.status === "pending").length,
+      accepted: allTickets.filter(t => t.status === "accepted").length,
       inProgress: allTickets.filter(t => t.status === "in-progress").length,
       completed: allTickets.filter(t => t.status === "completed").length,
       highPriority: allTickets.filter(t => t.priority === "high").length,

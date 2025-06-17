@@ -61,14 +61,16 @@ export const vendorOrganizationTiers = pgTable("vendor_organization_tiers", {
 // Updated tickets table with organization and vendor references
 export const tickets = pgTable("tickets", {
   id: serial("id").primaryKey(),
+  ticketNumber: varchar("ticket_number", { length: 50 }).notNull().unique(),
   title: text("title").notNull(),
   description: text("description").notNull(),
   priority: text("priority").notNull(),
-  status: text("status").notNull().default("open"),
+  status: text("status").notNull().default("pending"), // pending, accepted, rejected, in-progress, completed
   organizationId: integer("organization_id").notNull(),
   reporterId: integer("reporter_id").notNull(),
   assigneeId: integer("assignee_id"),
   maintenanceVendorId: integer("maintenance_vendor_id"),
+  rejectionReason: text("rejection_reason"),
   images: text("images").array(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -193,15 +195,25 @@ export const updateVendorOrganizationTierSchema = z.object({
 
 export const insertTicketSchema = createInsertSchema(tickets).omit({
   id: true,
+  ticketNumber: true,
   createdAt: true,
   updatedAt: true,
 }).extend({
   priority: z.enum(["low", "medium", "high"]),
-  status: z.enum(["open", "in-progress", "completed"]).default("open"),
+  status: z.enum(["pending", "accepted", "rejected", "in-progress", "completed"]).default("pending"),
 });
 
 export const updateTicketSchema = insertTicketSchema.partial().extend({
   id: z.number(),
+});
+
+export const acceptTicketSchema = z.object({
+  maintenanceVendorId: z.number().optional(),
+  assigneeId: z.number().optional(),
+});
+
+export const rejectTicketSchema = z.object({
+  rejectionReason: z.string().min(1, "Rejection reason is required"),
 });
 
 export const loginSchema = z.object({
@@ -225,5 +237,7 @@ export type UpdateVendorOrganizationTier = z.infer<typeof updateVendorOrganizati
 export type VendorOrganizationTier = typeof vendorOrganizationTiers.$inferSelect;
 export type InsertTicket = z.infer<typeof insertTicketSchema>;
 export type UpdateTicket = z.infer<typeof updateTicketSchema>;
+export type AcceptTicket = z.infer<typeof acceptTicketSchema>;
+export type RejectTicket = z.infer<typeof rejectTicketSchema>;
 export type Ticket = typeof tickets.$inferSelect;
 export type LoginData = z.infer<typeof loginSchema>;
