@@ -19,8 +19,13 @@ export async function apiRequest(
 
   // Only add body and content-type for non-GET/HEAD requests
   if (method !== "GET" && method !== "HEAD" && data) {
-    options.headers = { "Content-Type": "application/json" };
-    options.body = JSON.stringify(data);
+    if (data instanceof FormData) {
+      // For FormData, let browser set Content-Type with boundary
+      options.body = data;
+    } else {
+      options.headers = { "Content-Type": "application/json" };
+      options.body = JSON.stringify(data);
+    }
   }
 
   const res = await fetch(url, options);

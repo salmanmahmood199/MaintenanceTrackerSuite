@@ -382,6 +382,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create new ticket with image upload
   app.post("/api/tickets", upload.array('images', 5), async (req, res) => {
     try {
+      console.log("Backend received req.body:", req.body);
       const files = req.files as Express.Multer.File[];
       const imageUrls = files ? files.map(file => `/uploads/${file.filename}`) : [];
       
@@ -395,6 +396,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         images: imageUrls,
       };
 
+      console.log("Processed ticketData:", ticketData);
       const validatedData = insertTicketSchema.parse(ticketData);
       const ticket = await storage.createTicket(validatedData);
       
