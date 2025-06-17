@@ -4,7 +4,7 @@ import { useRoute } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Wrench, Clock, Check, AlertTriangle, Users } from "lucide-react";
+import { ArrowLeft, Plus, Wrench, Clock, Check, AlertTriangle, Users, LogOut } from "lucide-react";
 import { TicketCard } from "@/components/ticket-card";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -121,12 +121,14 @@ export default function VendorView() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <Link href="/admin">
-                <Button variant="ghost" size="sm">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Admin
-                </Button>
-              </Link>
+              {user?.role === "root" && (
+                <Link href="/admin">
+                  <Button variant="ghost" size="sm">
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Back to Admin
+                  </Button>
+                </Link>
+              )}
               <div>
                 <h1 className="text-xl font-bold text-slate-900">{vendor.name}</h1>
                 <p className="text-sm text-slate-500">Maintenance Vendor Dashboard</p>
@@ -134,17 +136,17 @@ export default function VendorView() {
             </div>
             
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3 pl-4 border-l border-slate-200">
-                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">
-                    {vendor.name[0]}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">{vendor.name}</p>
-                  <p className="text-xs text-slate-500">Vendor View</p>
-                </div>
-              </div>
+              <span className="text-sm text-slate-600">
+                {user?.firstName} {user?.lastName} ({user?.email})
+              </span>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => window.location.href = '/api/auth/logout'}
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
             </div>
           </div>
         </div>
