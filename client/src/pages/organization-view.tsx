@@ -724,7 +724,7 @@ export default function OrganizationView() {
         open={isVendorManagementOpen}
         onOpenChange={setIsVendorManagementOpen}
         organizationId={organizationId!}
-        vendors={organizationVendors}
+        vendors={vendorTiers}
         onUpdateVendor={handleUpdateVendor}
         isLoading={updateVendorMutation.isPending}
       />
@@ -734,7 +734,7 @@ export default function OrganizationView() {
         onOpenChange={setIsTicketActionOpen}
         ticket={selectedTicket}
         action={ticketAction}
-        vendors={organizationVendors}
+        vendors={vendorTiers}
         onAccept={handleTicketAccept}
         onReject={handleTicketReject}
         isLoading={acceptTicketMutation.isPending || rejectTicketMutation.isPending}

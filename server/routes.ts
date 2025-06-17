@@ -579,6 +579,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get single ticket
+  app.get("/api/tickets/:id", authenticateUser, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const ticket = await storage.getTicket(id);
+      
+      if (!ticket) {
+        return res.status(404).json({ message: "Ticket not found" });
+      }
+      
+      res.json(ticket);
+    } catch (error) {
+      console.error("Error fetching ticket:", error);
+      res.status(500).json({ message: "Failed to fetch ticket" });
+    }
+  });
+
   // Get ticket stats
   app.get("/api/tickets/stats", async (req, res) => {
     try {

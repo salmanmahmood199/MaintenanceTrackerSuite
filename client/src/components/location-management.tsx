@@ -142,7 +142,7 @@ export function LocationManagement({ organizationId, canManage }: LocationManage
       name: location.name,
       address: location.address || "",
       description: location.description || "",
-      isActive: location.isActive,
+      isActive: location.isActive ?? true,
     });
   };
 
