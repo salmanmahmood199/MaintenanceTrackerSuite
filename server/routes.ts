@@ -583,6 +583,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/tickets/:id", authenticateUser, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ticket ID" });
+      }
+      
       const ticket = await storage.getTicket(id);
       
       if (!ticket) {
