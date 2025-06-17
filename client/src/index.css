@@ -11,11 +11,6 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
   
-  /* Force dark theme */
-  html {
-    @apply dark;
-  }
-  
   /* Custom scrollbar */
   ::-webkit-scrollbar {
     @apply w-2;
@@ -36,7 +31,7 @@
 
 @layer components {
   .gradient-bg {
-    @apply bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900;
+    @apply bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50;
   }
   
   .card-hover {
@@ -44,70 +39,54 @@
   }
   
   .taskscout-gradient {
-    background: linear-gradient(135deg, hsl(174, 76%, 48%), hsl(174, 76%, 35%));
-  }
-  
-  .taskscout-bg {
-    background: hsl(210, 15%, 7%);
-  }
-  
-  .taskscout-card {
-    background: hsl(210, 20%, 10%);
-    border: 1px solid hsl(210, 25%, 20%);
+    @apply bg-gradient-to-r from-blue-600 to-purple-600;
   }
 }
 
 :root {
-  /* TaskScout dark theme inspired by logo */
-  --background: hsl(210, 15%, 7%);
-  --foreground: hsl(0, 0%, 95%);
-  --card: hsl(210, 20%, 10%);
-  --card-foreground: hsl(0, 0%, 95%);
-  --popover: hsl(210, 20%, 10%);
-  --popover-foreground: hsl(0, 0%, 95%);
-  --primary: hsl(174, 76%, 48%); /* TaskScout teal */
-  --primary-foreground: hsl(210, 15%, 7%);
-  --secondary: hsl(210, 25%, 15%);
-  --secondary-foreground: hsl(0, 0%, 95%);
-  --muted: hsl(210, 25%, 15%);
-  --muted-foreground: hsl(210, 15%, 65%);
-  --accent: hsl(174, 76%, 48%); /* TaskScout teal accent */
-  --accent-foreground: hsl(210, 15%, 7%);
+  /* TaskScout.ai inspired color scheme */
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(215, 20%, 15%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(215, 20%, 15%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(215, 20%, 15%);
+  --primary: hsl(217, 78%, 51%); /* Blue primary */
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(215, 15%, 97%);
+  --secondary-foreground: hsl(215, 20%, 15%);
+  --muted: hsl(215, 15%, 97%);
+  --muted-foreground: hsl(215, 10%, 40%);
+  --accent: hsl(262, 52%, 47%); /* Purple accent */
+  --accent-foreground: hsl(0, 0%, 100%);
   --destructive: hsl(0, 84%, 60%);
   --destructive-foreground: hsl(0, 0%, 100%);
-  --border: hsl(210, 25%, 20%);
-  --input: hsl(210, 25%, 15%);
-  --ring: hsl(174, 76%, 48%);
+  --border: hsl(215, 15%, 90%);
+  --input: hsl(215, 15%, 94%);
+  --ring: hsl(217, 78%, 51%);
   --radius: 0.75rem;
-  
-  /* TaskScout specific colors */
-  --taskscout-teal: hsl(174, 76%, 48%);
-  --taskscout-dark-teal: hsl(174, 76%, 35%);
-  --taskscout-bg: hsl(210, 15%, 7%);
-  --taskscout-card: hsl(210, 20%, 10%);
-  --taskscout-border: hsl(210, 25%, 20%);
 }
 
 .dark {
-  --background: hsl(210, 15%, 7%);
+  --background: hsl(215, 25%, 8%);
   --foreground: hsl(0, 0%, 95%);
-  --card: hsl(210, 20%, 10%);
+  --card: hsl(215, 25%, 10%);
   --card-foreground: hsl(0, 0%, 95%);
-  --popover: hsl(210, 20%, 10%);
+  --popover: hsl(215, 25%, 10%);
   --popover-foreground: hsl(0, 0%, 95%);
-  --primary: hsl(174, 76%, 48%);
-  --primary-foreground: hsl(210, 15%, 7%);
-  --secondary: hsl(210, 25%, 15%);
+  --primary: hsl(217, 78%, 55%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(215, 20%, 15%);
   --secondary-foreground: hsl(0, 0%, 95%);
-  --muted: hsl(210, 25%, 15%);
-  --muted-foreground: hsl(210, 15%, 65%);
-  --accent: hsl(174, 76%, 48%);
-  --accent-foreground: hsl(210, 15%, 7%);
+  --muted: hsl(215, 20%, 15%);
+  --muted-foreground: hsl(215, 15%, 70%);
+  --accent: hsl(262, 52%, 55%);
+  --accent-foreground: hsl(0, 0%, 100%);
   --destructive: hsl(0, 84%, 60%);
   --destructive-foreground: hsl(0, 0%, 100%);
-  --border: hsl(210, 25%, 20%);
-  --input: hsl(210, 25%, 15%);
-  --ring: hsl(174, 76%, 48%);
+  --border: hsl(215, 20%, 20%);
+  --input: hsl(215, 20%, 15%);
+  --ring: hsl(217, 78%, 55%);
 }
 
 @layer base {

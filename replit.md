@@ -201,15 +201,12 @@ Changelog:
 - June 17, 2025. Redesigned progress tracking from percentages to meaningful milestones
 - June 17, 2025. Created new root dashboard with TaskScout.ai color theme and tabbed interface
 - June 17, 2025. Added dedicated tabs for organizations, vendors, tickets overview with clean management interface
-- June 17, 2025. Updated to dark theme with TaskScout teal/turquoise color scheme matching logo
-- June 17, 2025. Fixed organization routing issue for proper navigation
 ```
 
 ## User Preferences
 
 ```
 Preferred communication style: Simple, everyday language.
-UI Design: TaskScout dark theme with teal/turquoise primary color (#4DD0E1) matching logo
+UI Design: TaskScout.ai inspired color scheme with blue (#3B82F6) and purple (#7C3AED) gradients
 Root Admin UI: Tabbed interface with sidebar navigation for organizations, vendors, tickets, and sub-admins
-Dark Theme: Enabled by default with TaskScout logo inspired colors
 ```

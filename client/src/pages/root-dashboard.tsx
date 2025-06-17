@@ -17,7 +17,7 @@ import {
   Settings,
   LogOut
 } from "lucide-react";
-
+// Modal imports will be added when needed
 import { TicketTable } from "@/components/ticket-table";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -29,7 +29,10 @@ export default function RootDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
   const [selectedVendor, setSelectedVendor] = useState<MaintenanceVendor | null>(null);
-  // Modal states for future implementation
+  const [isCreateOrgModalOpen, setIsCreateOrgModalOpen] = useState(false);
+  const [isEditOrgModalOpen, setIsEditOrgModalOpen] = useState(false);
+  const [isCreateVendorModalOpen, setIsCreateVendorModalOpen] = useState(false);
+  const [isEditVendorModalOpen, setIsEditVendorModalOpen] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -58,26 +61,134 @@ export default function RootDashboard() {
     queryKey: ["/api/tickets/stats"],
   });
 
-  // Future implementation for CRUD operations
+  // Organization mutations
+  const createOrgMutation = useMutation({
+    mutationFn: async (data: Partial<Organization>) => apiRequest("POST", "/api/organizations", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/organizations"] });
+      setIsCreateOrgModalOpen(false);
+      toast({ title: "Success", description: "Organization created successfully" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to create organization", variant: "destructive" });
+    },
+  });
+
+  const updateOrgMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<Organization> }) => 
+      apiRequest("PUT", `/api/organizations/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/organizations"] });
+      setIsEditOrgModalOpen(false);
+      toast({ title: "Success", description: "Organization updated successfully" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update organization", variant: "destructive" });
+    },
+  });
+
+  const deleteOrgMutation = useMutation({
+    mutationFn: async (id: number) => apiRequest("DELETE", `/api/organizations/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/organizations"] });
+      toast({ title: "Success", description: "Organization deleted successfully" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to delete organization", variant: "destructive" });
+    },
+  });
+
+  // Vendor mutations
+  const createVendorMutation = useMutation({
+    mutationFn: async (data: Partial<MaintenanceVendor>) => apiRequest("POST", "/api/maintenance-vendors", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/maintenance-vendors"] });
+      setIsCreateVendorModalOpen(false);
+      toast({ title: "Success", description: "Vendor created successfully" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to create vendor", variant: "destructive" });
+    },
+  });
+
+  const updateVendorMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<MaintenanceVendor> }) => 
+      apiRequest("PUT", `/api/maintenance-vendors/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/maintenance-vendors"] });
+      setIsEditVendorModalOpen(false);
+      toast({ title: "Success", description: "Vendor updated successfully" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update vendor", variant: "destructive" });
+    },
+  });
+
+  const deleteVendorMutation = useMutation({
+    mutationFn: async (id: number) => apiRequest("DELETE", `/api/maintenance-vendors/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/maintenance-vendors"] });
+      toast({ title: "Success", description: "Vendor deleted successfully" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to delete vendor", variant: "destructive" });
+    },
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({ type, id, newPassword }: { type: 'org' | 'vendor'; id: number; newPassword: string }) => {
+      const endpoint = type === 'org' 
+        ? `/api/organizations/${id}/reset-admin-password`
+        : `/api/maintenance-vendors/${id}/reset-admin-password`;
+      return apiRequest("POST", endpoint, { newPassword });
+    },
+    onSuccess: (data: any) => {
+      toast({ 
+        title: "Success", 
+        description: `Password reset. New password: ${data.newPassword}` 
+      });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to reset password", variant: "destructive" });
+    },
+  });
+
+  const handleEditOrganization = (org: Organization) => {
+    setSelectedOrganization(org);
+    setIsEditOrgModalOpen(true);
+  };
+
+  const handleEditVendor = (vendor: MaintenanceVendor) => {
+    setSelectedVendor(vendor);
+    setIsEditVendorModalOpen(true);
+  };
+
+  const handleResetOrgPassword = (id: number, newPassword: string) => {
+    resetPasswordMutation.mutate({ type: 'org', id, newPassword });
+  };
+
+  const handleResetVendorPassword = (id: number, newPassword: string) => {
+    resetPasswordMutation.mutate({ type: 'vendor', id, newPassword });
+  };
 
   return (
-    <div className="min-h-screen taskscout-bg">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
-      <header className="taskscout-card border-b border-border shadow-sm">
+      <header className="bg-white border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="w-8 h-8 taskscout-gradient rounded-lg flex items-center justify-center">
-                <Settings className="h-5 w-5 text-background" />
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                <Settings className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-foreground">TaskScout Admin</h1>
-                <p className="text-sm text-muted-foreground">System Management Dashboard</p>
+                <h1 className="text-2xl font-bold text-slate-900">TaskScout Admin</h1>
+                <p className="text-sm text-slate-600">System Management Dashboard</p>
               </div>
             </div>
             
             <div className="flex items-center space-x-4">
-              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                 Root Admin
               </Badge>
               <Button variant="ghost" size="sm" asChild>
@@ -93,7 +204,7 @@ export default function RootDashboard() {
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 taskscout-card shadow-sm border border-border p-1">
+          <TabsList className="grid w-full grid-cols-4 bg-white p-1 shadow-sm">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Overview
@@ -115,27 +226,27 @@ export default function RootDashboard() {
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="taskscout-gradient text-background border-0">
+              <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-background/80">Total Organizations</CardTitle>
+                  <CardTitle className="text-sm font-medium text-blue-100">Total Organizations</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{organizations.length}</div>
                 </CardContent>
               </Card>
               
-              <Card className="bg-gradient-to-r from-teal-600 to-teal-700 text-white border-0">
+              <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-teal-100">Total Vendors</CardTitle>
+                  <CardTitle className="text-sm font-medium text-purple-100">Total Vendors</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{vendors.length}</div>
                 </CardContent>
               </Card>
               
-              <Card className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border-0">
+              <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-emerald-100">Active Tickets</CardTitle>
+                  <CardTitle className="text-sm font-medium text-green-100">Active Tickets</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
@@ -144,9 +255,9 @@ export default function RootDashboard() {
                 </CardContent>
               </Card>
               
-              <Card className="bg-gradient-to-r from-amber-600 to-amber-700 text-white border-0">
+              <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-amber-100">High Priority</CardTitle>
+                  <CardTitle className="text-sm font-medium text-orange-100">High Priority</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{ticketStats?.highPriority || 0}</div>
@@ -161,11 +272,17 @@ export default function RootDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Button className="taskscout-gradient text-background hover:opacity-90">
+                  <Button 
+                    onClick={() => setIsCreateOrgModalOpen(true)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
                     <Plus className="h-4 w-4 mr-2" />
                     Add Organization
                   </Button>
-                  <Button className="bg-teal-600 hover:bg-teal-700 text-white">
+                  <Button 
+                    onClick={() => setIsCreateVendorModalOpen(true)}
+                    className="bg-purple-600 hover:bg-purple-700 text-white"
+                  >
                     <Plus className="h-4 w-4 mr-2" />
                     Add Vendor
                   </Button>
@@ -177,8 +294,11 @@ export default function RootDashboard() {
           {/* Organizations Tab */}
           <TabsContent value="organizations" className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-foreground">Organizations</h2>
-              <Button className="taskscout-gradient text-background hover:opacity-90">
+              <h2 className="text-xl font-semibold text-slate-900">Organizations</h2>
+              <Button 
+                onClick={() => setIsCreateOrgModalOpen(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Organization
               </Button>
@@ -191,10 +311,18 @@ export default function RootDashboard() {
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg">{org.name}</CardTitle>
                       <div className="flex space-x-2">
-                        <Button variant="ghost" size="sm">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditOrganization(org)}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteOrgMutation.mutate(org.id)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -229,8 +357,11 @@ export default function RootDashboard() {
           {/* Vendors Tab */}
           <TabsContent value="vendors" className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-foreground">Maintenance Vendors</h2>
-              <Button className="bg-teal-600 hover:bg-teal-700 text-white">
+              <h2 className="text-xl font-semibold text-slate-900">Maintenance Vendors</h2>
+              <Button 
+                onClick={() => setIsCreateVendorModalOpen(true)}
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Vendor
               </Button>
@@ -243,10 +374,18 @@ export default function RootDashboard() {
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg">{vendor.name}</CardTitle>
                       <div className="flex space-x-2">
-                        <Button variant="ghost" size="sm">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditVendor(vendor)}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteVendorMutation.mutate(vendor.id)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -282,8 +421,8 @@ export default function RootDashboard() {
           {/* All Tickets Tab */}
           <TabsContent value="tickets" className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-foreground">All System Tickets</h2>
-              <Badge variant="outline" className="border-primary text-primary">{tickets.length} Total</Badge>
+              <h2 className="text-xl font-semibold text-slate-900">All System Tickets</h2>
+              <Badge variant="outline">{tickets.length} Total</Badge>
             </div>
 
             <TicketTable
