@@ -61,23 +61,23 @@ export default function RootDashboard() {
   // Future implementation for CRUD operations
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen taskscout-bg">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 shadow-sm">
+      <header className="taskscout-card border-b border-border shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <Settings className="h-5 w-5 text-white" />
+              <div className="w-8 h-8 taskscout-gradient rounded-lg flex items-center justify-center">
+                <Settings className="h-5 w-5 text-background" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-slate-900">TaskScout Admin</h1>
-                <p className="text-sm text-slate-600">System Management Dashboard</p>
+                <h1 className="text-2xl font-bold text-foreground">TaskScout Admin</h1>
+                <p className="text-sm text-muted-foreground">System Management Dashboard</p>
               </div>
             </div>
             
             <div className="flex items-center space-x-4">
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                 Root Admin
               </Badge>
               <Button variant="ghost" size="sm" asChild>
@@ -93,7 +93,7 @@ export default function RootDashboard() {
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-white p-1 shadow-sm">
+          <TabsList className="grid w-full grid-cols-4 taskscout-card shadow-sm border border-border p-1">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Overview
@@ -115,27 +115,27 @@ export default function RootDashboard() {
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+              <Card className="taskscout-gradient text-background border-0">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-blue-100">Total Organizations</CardTitle>
+                  <CardTitle className="text-sm font-medium text-background/80">Total Organizations</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{organizations.length}</div>
                 </CardContent>
               </Card>
               
-              <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+              <Card className="bg-gradient-to-r from-teal-600 to-teal-700 text-white border-0">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-purple-100">Total Vendors</CardTitle>
+                  <CardTitle className="text-sm font-medium text-teal-100">Total Vendors</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{vendors.length}</div>
                 </CardContent>
               </Card>
               
-              <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
+              <Card className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border-0">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-green-100">Active Tickets</CardTitle>
+                  <CardTitle className="text-sm font-medium text-emerald-100">Active Tickets</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
@@ -144,9 +144,9 @@ export default function RootDashboard() {
                 </CardContent>
               </Card>
               
-              <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+              <Card className="bg-gradient-to-r from-amber-600 to-amber-700 text-white border-0">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-orange-100">High Priority</CardTitle>
+                  <CardTitle className="text-sm font-medium text-amber-100">High Priority</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{ticketStats?.highPriority || 0}</div>
@@ -161,11 +161,11 @@ export default function RootDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <Button className="taskscout-gradient text-background hover:opacity-90">
                     <Plus className="h-4 w-4 mr-2" />
                     Add Organization
                   </Button>
-                  <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+                  <Button className="bg-teal-600 hover:bg-teal-700 text-white">
                     <Plus className="h-4 w-4 mr-2" />
                     Add Vendor
                   </Button>
@@ -177,8 +177,8 @@ export default function RootDashboard() {
           {/* Organizations Tab */}
           <TabsContent value="organizations" className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-slate-900">Organizations</h2>
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+              <h2 className="text-xl font-semibold text-foreground">Organizations</h2>
+              <Button className="taskscout-gradient text-background hover:opacity-90">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Organization
               </Button>
@@ -229,8 +229,8 @@ export default function RootDashboard() {
           {/* Vendors Tab */}
           <TabsContent value="vendors" className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-slate-900">Maintenance Vendors</h2>
-              <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+              <h2 className="text-xl font-semibold text-foreground">Maintenance Vendors</h2>
+              <Button className="bg-teal-600 hover:bg-teal-700 text-white">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Vendor
               </Button>
@@ -282,8 +282,8 @@ export default function RootDashboard() {
           {/* All Tickets Tab */}
           <TabsContent value="tickets" className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-slate-900">All System Tickets</h2>
-              <Badge variant="outline">{tickets.length} Total</Badge>
+              <h2 className="text-xl font-semibold text-foreground">All System Tickets</h2>
+              <Badge variant="outline" className="border-primary text-primary">{tickets.length} Total</Badge>
             </div>
 
             <TicketTable
