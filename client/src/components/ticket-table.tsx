@@ -356,8 +356,8 @@ export function TicketTable({
           ticket={selectedTicket}
           open={isProgressTrackerOpen}
           onOpenChange={setIsProgressTrackerOpen}
-          onUpdateProgress={onUpdateProgress || undefined}
-          canUpdate={canAcceptTickets}
+          onUpdateProgress={onUpdateProgress}
+          canUpdate={!!canAcceptTickets}
         />
       )}
     </>
