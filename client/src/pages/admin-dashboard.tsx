@@ -19,32 +19,13 @@ import { useAuth } from "@/hooks/useAuth";
 import type { Organization, MaintenanceVendor, InsertOrganization, InsertMaintenanceVendor, UpdateOrganization, UpdateMaintenanceVendor } from "@shared/schema";
 import { insertOrganizationSchema, insertMaintenanceVendorSchema } from "@shared/schema";
 
-interface Organization {
-  id: number;
-  name: string;
-  description: string | null;
-  address: string | null;
-  phone: string | null;
-  email: string | null;
-  isActive: boolean;
-  createdAt: Date;
-}
-
-interface MaintenanceVendor {
-  id: number;
-  name: string;
-  description: string | null;
-  address: string | null;
-  phone: string | null;
-  email: string | null;
-  specialties: string[] | null;
-  isActive: boolean;
-  createdAt: Date;
-}
-
 export default function AdminDashboard() {
   const [isOrgModalOpen, setIsOrgModalOpen] = useState(false);
   const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
+  const [isEditOrgModalOpen, setIsEditOrgModalOpen] = useState(false);
+  const [isEditVendorModalOpen, setIsEditVendorModalOpen] = useState(false);
+  const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
+  const [selectedVendor, setSelectedVendor] = useState<MaintenanceVendor | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -130,6 +111,88 @@ export default function AdminDashboard() {
     createOrgMutation.mutate(data);
   };
 
+  // Edit organization mutation
+  const editOrgMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdateOrganization }) => 
+      apiRequest("PATCH", `/api/organizations/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/organizations"] });
+      setIsEditOrgModalOpen(false);
+      setSelectedOrganization(null);
+      toast({
+        title: "Success",
+        description: "Organization updated successfully!",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update organization.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Edit vendor mutation
+  const editVendorMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdateMaintenanceVendor }) => 
+      apiRequest("PATCH", `/api/maintenance-vendors/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/maintenance-vendors"] });
+      setIsEditVendorModalOpen(false);
+      setSelectedVendor(null);
+      toast({
+        title: "Success",
+        description: "Vendor updated successfully!",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update vendor.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Reset organization admin password mutation
+  const resetOrgPasswordMutation = useMutation({
+    mutationFn: ({ id, newPassword }: { id: number; newPassword: string }) => 
+      apiRequest("POST", `/api/organizations/${id}/reset-admin-password`, { newPassword }),
+    onSuccess: (response) => {
+      toast({
+        title: "Password Reset",
+        description: `New admin password set successfully`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to reset admin password.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Reset vendor admin password mutation
+  const resetVendorPasswordMutation = useMutation({
+    mutationFn: ({ id, newPassword }: { id: number; newPassword: string }) => 
+      apiRequest("POST", `/api/maintenance-vendors/${id}/reset-admin-password`, { newPassword }),
+    onSuccess: (response) => {
+      toast({
+        title: "Password Reset",
+        description: `New admin password set successfully`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to reset admin password.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleCreateVendor = (data: InsertMaintenanceVendor) => {
     // Parse specialties from comma-separated string
     const formData = vendorForm.getValues();
@@ -142,6 +205,32 @@ export default function AdminDashboard() {
       ...data,
       specialties: specialtiesArray,
     });
+  };
+
+  const handleEditOrganization = (id: number, data: UpdateOrganization) => {
+    editOrgMutation.mutate({ id, data });
+  };
+
+  const handleEditVendor = (id: number, data: UpdateMaintenanceVendor) => {
+    editVendorMutation.mutate({ id, data });
+  };
+
+  const handleResetOrgPassword = (id: number, newPassword: string) => {
+    resetOrgPasswordMutation.mutate({ id, newPassword });
+  };
+
+  const handleResetVendorPassword = (id: number, newPassword: string) => {
+    resetVendorPasswordMutation.mutate({ id, newPassword });
+  };
+
+  const openEditOrgModal = (organization: Organization) => {
+    setSelectedOrganization(organization);
+    setIsEditOrgModalOpen(true);
+  };
+
+  const openEditVendorModal = (vendor: MaintenanceVendor) => {
+    setSelectedVendor(vendor);
+    setIsEditVendorModalOpen(true);
   };
 
   if (!user || user.role !== "root") {
@@ -353,23 +442,35 @@ export default function AdminDashboard() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {organizations.map((org) => (
-                  <Card key={org.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer">
-                    <Link href={`/admin/organizations/${org.id}`}>
-                      <div className="flex items-start justify-between mb-2">
-                        <h3 className="font-semibold text-slate-900">{org.name}</h3>
+                  <Card key={org.id} className="p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="font-semibold text-slate-900">{org.name}</h3>
+                      <div className="flex items-center gap-2">
                         <Badge variant="secondary">Active</Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditOrgModal(org);
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
                       </div>
-                      {org.description && (
-                        <p className="text-sm text-slate-600 mb-2">{org.description}</p>
-                      )}
-                      <div className="text-xs text-slate-500 space-y-1">
-                        {org.email && <p>Email: {org.email}</p>}
-                        {org.phone && <p>Phone: {org.phone}</p>}
-                      </div>
-                      <div className="mt-3 pt-2 border-t border-slate-100">
-                        <p className="text-xs text-primary font-medium">Click to view dashboard →</p>
-                      </div>
-                    </Link>
+                    </div>
+                    {org.description && (
+                      <p className="text-sm text-slate-600 mb-2">{org.description}</p>
+                    )}
+                    <div className="text-xs text-slate-500 space-y-1">
+                      {org.email && <p>Email: {org.email}</p>}
+                      {org.phone && <p>Phone: {org.phone}</p>}
+                    </div>
+                    <div className="mt-3 pt-2 border-t border-slate-100 flex justify-between items-center">
+                      <Link href={`/admin/organizations/${org.id}`}>
+                        <p className="text-xs text-primary font-medium hover:underline cursor-pointer">View dashboard →</p>
+                      </Link>
+                    </div>
                   </Card>
                 ))}
               </div>
@@ -501,32 +602,44 @@ export default function AdminDashboard() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {vendors.map((vendor) => (
-                  <Card key={vendor.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer">
-                    <Link href={`/admin/vendors/${vendor.id}`}>
-                      <div className="flex items-start justify-between mb-2">
-                        <h3 className="font-semibold text-slate-900">{vendor.name}</h3>
+                  <Card key={vendor.id} className="p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="font-semibold text-slate-900">{vendor.name}</h3>
+                      <div className="flex items-center gap-2">
                         <Badge variant="secondary">Active</Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditVendorModal(vendor);
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
                       </div>
-                      {vendor.description && (
-                        <p className="text-sm text-slate-600 mb-2">{vendor.description}</p>
-                      )}
-                      {vendor.specialties && vendor.specialties.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mb-2">
-                          {vendor.specialties.map((specialty, idx) => (
-                            <Badge key={idx} variant="outline" className="text-xs">
-                              {specialty}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                      <div className="text-xs text-slate-500 space-y-1">
-                        {vendor.email && <p>Email: {vendor.email}</p>}
-                        {vendor.phone && <p>Phone: {vendor.phone}</p>}
+                    </div>
+                    {vendor.description && (
+                      <p className="text-sm text-slate-600 mb-2">{vendor.description}</p>
+                    )}
+                    {vendor.specialties && vendor.specialties.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {vendor.specialties.map((specialty, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            {specialty}
+                          </Badge>
+                        ))}
                       </div>
-                      <div className="mt-3 pt-2 border-t border-slate-100">
-                        <p className="text-xs text-primary font-medium">Click to view dashboard →</p>
-                      </div>
-                    </Link>
+                    )}
+                    <div className="text-xs text-slate-500 space-y-1">
+                      {vendor.email && <p>Email: {vendor.email}</p>}
+                      {vendor.phone && <p>Phone: {vendor.phone}</p>}
+                    </div>
+                    <div className="mt-3 pt-2 border-t border-slate-100 flex justify-between items-center">
+                      <Link href={`/admin/vendors/${vendor.id}`}>
+                        <p className="text-xs text-primary font-medium hover:underline cursor-pointer">View dashboard →</p>
+                      </Link>
+                    </div>
                   </Card>
                 ))}
               </div>
