@@ -632,6 +632,8 @@ export default function OrganizationView() {
         onAccept={handleTicketAccept}
         onReject={handleTicketReject}
         isLoading={acceptTicketMutation.isPending || rejectTicketMutation.isPending}
+        userRole={user?.role}
+        userPermissions={user?.permissions || undefined}
       />
     </div>
   );
