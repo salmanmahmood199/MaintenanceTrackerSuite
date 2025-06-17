@@ -51,7 +51,9 @@ export interface IStorage {
   
   // Vendor-Organization tier operations
   assignVendorToOrganization(vendorId: number, organizationId: number, tier: string): Promise<void>;
-  getVendorOrganizationTiers(organizationId: number): Promise<Array<{vendor: MaintenanceVendor, tier: string}>>;
+  getVendorOrganizationTiers(organizationId: number): Promise<Array<{vendor: MaintenanceVendor, tier: string, isActive: boolean}>>;
+  updateVendorOrganizationTier(vendorId: number, organizationId: number, updates: { tier?: string; isActive?: boolean }): Promise<void>;
+  getOrganizationVendors(organizationId: number): Promise<Array<{vendor: MaintenanceVendor, tier: string, isActive: boolean}>>;
   
   // Ticket operations
   getTickets(organizationId?: number): Promise<Ticket[]>;
@@ -320,17 +322,44 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  async getVendorOrganizationTiers(organizationId: number): Promise<Array<{vendor: MaintenanceVendor, tier: string}>> {
+  async getVendorOrganizationTiers(organizationId: number): Promise<Array<{vendor: MaintenanceVendor, tier: string, isActive: boolean}>> {
     const results = await db
       .select({
         vendor: maintenanceVendors,
         tier: vendorOrganizationTiers.tier,
+        isActive: vendorOrganizationTiers.isActive,
       })
       .from(vendorOrganizationTiers)
       .innerJoin(maintenanceVendors, eq(vendorOrganizationTiers.vendorId, maintenanceVendors.id))
       .where(eq(vendorOrganizationTiers.organizationId, organizationId));
     
-    return results.map(result => ({ vendor: result.vendor, tier: result.tier }));
+    return results.map(result => ({ vendor: result.vendor, tier: result.tier, isActive: result.isActive }));
+  }
+
+  async updateVendorOrganizationTier(vendorId: number, organizationId: number, updates: { tier?: string; isActive?: boolean }): Promise<void> {
+    await db
+      .update(vendorOrganizationTiers)
+      .set(updates)
+      .where(
+        and(
+          eq(vendorOrganizationTiers.vendorId, vendorId),
+          eq(vendorOrganizationTiers.organizationId, organizationId)
+        )
+      );
+  }
+
+  async getOrganizationVendors(organizationId: number): Promise<Array<{vendor: MaintenanceVendor, tier: string, isActive: boolean}>> {
+    const vendors = await db
+      .select({
+        vendor: maintenanceVendors,
+        tier: vendorOrganizationTiers.tier,
+        isActive: vendorOrganizationTiers.isActive,
+      })
+      .from(vendorOrganizationTiers)
+      .innerJoin(maintenanceVendors, eq(vendorOrganizationTiers.vendorId, maintenanceVendors.id))
+      .where(eq(vendorOrganizationTiers.organizationId, organizationId));
+    
+    return vendors;
   }
 
   // Ticket operations

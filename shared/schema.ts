@@ -54,6 +54,7 @@ export const vendorOrganizationTiers = pgTable("vendor_organization_tiers", {
   vendorId: integer("vendor_id").references(() => maintenanceVendors.id).notNull(),
   organizationId: integer("organization_id").references(() => organizations.id).notNull(),
   tier: text("tier").notNull().default("tier_1"), // "tier_1", "tier_2", "tier_3"
+  isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -185,6 +186,11 @@ export const insertVendorOrganizationTierSchema = createInsertSchema(vendorOrgan
   tier: z.enum(["tier_1", "tier_2", "tier_3"]),
 });
 
+export const updateVendorOrganizationTierSchema = z.object({
+  tier: z.enum(["tier_1", "tier_2", "tier_3"]).optional(),
+  isActive: z.boolean().optional(),
+});
+
 export const insertTicketSchema = createInsertSchema(tickets).omit({
   id: true,
   createdAt: true,
@@ -214,6 +220,9 @@ export type InsertMaintenanceVendor = z.infer<typeof insertMaintenanceVendorSche
 export type UpdateMaintenanceVendor = z.infer<typeof updateMaintenanceVendorSchema>;
 export type MaintenanceVendor = typeof maintenanceVendors.$inferSelect;
 export type ResetAdminPassword = z.infer<typeof resetAdminPasswordSchema>;
+export type InsertVendorOrganizationTier = z.infer<typeof insertVendorOrganizationTierSchema>;
+export type UpdateVendorOrganizationTier = z.infer<typeof updateVendorOrganizationTierSchema>;
+export type VendorOrganizationTier = typeof vendorOrganizationTiers.$inferSelect;
 export type InsertTicket = z.infer<typeof insertTicketSchema>;
 export type UpdateTicket = z.infer<typeof updateTicketSchema>;
 export type Ticket = typeof tickets.$inferSelect;
