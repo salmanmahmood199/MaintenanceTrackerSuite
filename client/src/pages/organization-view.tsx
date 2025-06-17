@@ -338,12 +338,12 @@ export default function OrganizationView() {
         <div className="text-center">
           <h2 className="text-xl font-semibold text-slate-900 mb-2">Organization Not Found</h2>
           {user?.role === "root" && (
-            <Link href="/admin">
-              <Button variant="outline">
+            <Button variant="outline" asChild>
+              <Link href="/">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Admin
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           )}
         </div>
       </div>
@@ -358,12 +358,12 @@ export default function OrganizationView() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               {user?.role === "root" && (
-                <Link href="/admin">
-                  <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/">
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Back to Admin
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               )}
               <div>
                 <h1 className="text-xl font-bold text-slate-900">{organization.name}</h1>
