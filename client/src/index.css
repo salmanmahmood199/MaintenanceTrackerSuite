@@ -44,70 +44,78 @@
   }
   
   .taskscout-gradient {
-    background: linear-gradient(135deg, hsl(174, 76%, 48%), hsl(174, 76%, 35%));
+    background: linear-gradient(135deg, hsl(238, 49%, 47%), hsl(329, 90%, 63%));
+  }
+  
+  .taskscout-primary-gradient {
+    background: linear-gradient(135deg, hsl(238, 49%, 47%), hsl(238, 49%, 35%));
+  }
+  
+  .taskscout-secondary-gradient {
+    background: linear-gradient(135deg, hsl(329, 90%, 63%), hsl(329, 90%, 50%));
   }
   
   .taskscout-bg {
-    background: hsl(210, 15%, 7%);
+    background: hsl(0, 0%, 7.1%); /* #121212 */
   }
   
   .taskscout-card {
-    background: hsl(210, 20%, 10%);
-    border: 1px solid hsl(210, 25%, 20%);
+    background: hsl(0, 0%, 11.8%); /* #1e1e1e */
+    border: 1px solid hsl(0, 0%, 20%);
   }
 }
 
 :root {
-  /* TaskScout dark theme inspired by logo */
-  --background: hsl(210, 15%, 7%);
+  /* TaskScout Material-UI inspired dark theme */
+  --background: hsl(0, 0%, 7.1%); /* #121212 */
   --foreground: hsl(0, 0%, 95%);
-  --card: hsl(210, 20%, 10%);
+  --card: hsl(0, 0%, 11.8%); /* #1e1e1e */
   --card-foreground: hsl(0, 0%, 95%);
-  --popover: hsl(210, 20%, 10%);
+  --popover: hsl(0, 0%, 11.8%);
   --popover-foreground: hsl(0, 0%, 95%);
-  --primary: hsl(174, 76%, 48%); /* TaskScout teal */
-  --primary-foreground: hsl(210, 15%, 7%);
-  --secondary: hsl(210, 25%, 15%);
-  --secondary-foreground: hsl(0, 0%, 95%);
-  --muted: hsl(210, 25%, 15%);
-  --muted-foreground: hsl(210, 15%, 65%);
-  --accent: hsl(174, 76%, 48%); /* TaskScout teal accent */
-  --accent-foreground: hsl(210, 15%, 7%);
+  --primary: hsl(238, 49%, 47%); /* #3f51b5 - Material-UI purple */
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(329, 90%, 63%); /* #f50057 - Material-UI pink */
+  --secondary-foreground: hsl(0, 0%, 100%);
+  --muted: hsl(0, 0%, 15%);
+  --muted-foreground: hsl(0, 0%, 65%);
+  --accent: hsl(329, 90%, 63%); /* Pink accent */
+  --accent-foreground: hsl(0, 0%, 100%);
   --destructive: hsl(0, 84%, 60%);
   --destructive-foreground: hsl(0, 0%, 100%);
-  --border: hsl(210, 25%, 20%);
-  --input: hsl(210, 25%, 15%);
-  --ring: hsl(174, 76%, 48%);
+  --border: hsl(0, 0%, 20%);
+  --input: hsl(0, 0%, 15%);
+  --ring: hsl(238, 49%, 47%);
   --radius: 0.75rem;
   
   /* TaskScout specific colors */
-  --taskscout-teal: hsl(174, 76%, 48%);
-  --taskscout-dark-teal: hsl(174, 76%, 35%);
-  --taskscout-bg: hsl(210, 15%, 7%);
-  --taskscout-card: hsl(210, 20%, 10%);
-  --taskscout-border: hsl(210, 25%, 20%);
+  --taskscout-primary: hsl(238, 49%, 47%); /* #3f51b5 */
+  --taskscout-secondary: hsl(329, 90%, 63%); /* #f50057 */
+  --taskscout-bg: hsl(0, 0%, 7.1%); /* #121212 */
+  --taskscout-card: hsl(0, 0%, 11.8%); /* #1e1e1e */
+  --taskscout-border: hsl(0, 0%, 20%);
 }
 
 .dark {
-  --background: hsl(210, 15%, 7%);
+  --background: hsl(0, 0%, 7.1%);
   --foreground: hsl(0, 0%, 95%);
-  --card: hsl(210, 20%, 10%);
+  --card: hsl(0, 0%, 11.8%);
   --card-foreground: hsl(0, 0%, 95%);
-  --popover: hsl(210, 20%, 10%);
+  --popover: hsl(0, 0%, 11.8%);
   --popover-foreground: hsl(0, 0%, 95%);
-  --primary: hsl(174, 76%, 48%);
-  --primary-foreground: hsl(210, 15%, 7%);
-  --secondary: hsl(210, 25%, 15%);
-  --secondary-foreground: hsl(0, 0%, 95%);
-  --muted: hsl(210, 25%, 15%);
-  --muted-foreground: hsl(210, 15%, 65%);
-  --accent: hsl(174, 76%, 48%);
-  --accent-foreground: hsl(210, 15%, 7%);
+  --primary: hsl(238, 49%, 47%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(329, 90%, 63%);
+  --secondary-foreground: hsl(0, 0%, 100%);
+  --muted: hsl(0, 0%, 15%);
+  --muted-foreground: hsl(0, 0%, 65%);
+  --accent: hsl(329, 90%, 63%);
+  --accent-foreground: hsl(0, 0%, 100%);
   --destructive: hsl(0, 84%, 60%);
   --destructive-foreground: hsl(0, 0%, 100%);
-  --border: hsl(210, 25%, 20%);
-  --input: hsl(210, 25%, 15%);
-  --ring: hsl(174, 76%, 48%);
+  --border: hsl(0, 0%, 20%);
+  --input: hsl(0, 0%, 15%);
+  --ring: hsl(238, 49%, 47%);
 }
 
 @layer base {

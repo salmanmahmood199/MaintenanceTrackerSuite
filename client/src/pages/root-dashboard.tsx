@@ -67,12 +67,16 @@ export default function RootDashboard() {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="w-8 h-8 taskscout-gradient rounded-lg flex items-center justify-center">
-                <Settings className="h-5 w-5 text-background" />
+              <div className="w-10 h-10 taskscout-gradient rounded-lg flex items-center justify-center">
+                <img 
+                  src="/image_1750180999832.png" 
+                  alt="TaskScout Logo" 
+                  className="w-8 h-8 object-contain"
+                />
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-foreground">TaskScout Admin</h1>
-                <p className="text-sm text-muted-foreground">System Management Dashboard</p>
+                <p className="text-sm text-muted-foreground">Maintenance Management System</p>
               </div>
             </div>
             
@@ -115,18 +119,18 @@ export default function RootDashboard() {
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="taskscout-gradient text-background border-0">
+              <Card className="taskscout-primary-gradient text-white border-0">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-background/80">Total Organizations</CardTitle>
+                  <CardTitle className="text-sm font-medium text-white/80">Total Organizations</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{organizations.length}</div>
                 </CardContent>
               </Card>
               
-              <Card className="bg-gradient-to-r from-teal-600 to-teal-700 text-white border-0">
+              <Card className="taskscout-secondary-gradient text-white border-0">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-teal-100">Total Vendors</CardTitle>
+                  <CardTitle className="text-sm font-medium text-white/80">Total Vendors</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{vendors.length}</div>
@@ -161,11 +165,11 @@ export default function RootDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Button className="taskscout-gradient text-background hover:opacity-90">
+                  <Button className="taskscout-primary-gradient text-white hover:opacity-90">
                     <Plus className="h-4 w-4 mr-2" />
                     Add Organization
                   </Button>
-                  <Button className="bg-teal-600 hover:bg-teal-700 text-white">
+                  <Button className="taskscout-secondary-gradient text-white hover:opacity-90">
                     <Plus className="h-4 w-4 mr-2" />
                     Add Vendor
                   </Button>
@@ -178,7 +182,7 @@ export default function RootDashboard() {
           <TabsContent value="organizations" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold text-foreground">Organizations</h2>
-              <Button className="taskscout-gradient text-background hover:opacity-90">
+              <Button className="taskscout-primary-gradient text-white hover:opacity-90">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Organization
               </Button>
@@ -230,7 +234,7 @@ export default function RootDashboard() {
           <TabsContent value="vendors" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold text-foreground">Maintenance Vendors</h2>
-              <Button className="bg-teal-600 hover:bg-teal-700 text-white">
+              <Button className="taskscout-secondary-gradient text-white hover:opacity-90">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Vendor
               </Button>

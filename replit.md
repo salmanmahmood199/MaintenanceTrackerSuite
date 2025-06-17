@@ -203,13 +203,18 @@ Changelog:
 - June 17, 2025. Added dedicated tabs for organizations, vendors, tickets overview with clean management interface
 - June 17, 2025. Updated to dark theme with TaskScout teal/turquoise color scheme matching logo
 - June 17, 2025. Fixed organization routing issue for proper navigation
+- June 17, 2025. Applied Material-UI inspired color scheme with purple primary (#3f51b5) and pink secondary (#f50057)
+- June 17, 2025. Integrated TaskScout logo throughout application and updated branding to "TaskScout"
+- June 17, 2025. Updated all gradients and buttons to use purple/pink Material-UI color palette
+- June 17, 2025. Set dark backgrounds to Material-UI standards (#121212, #1e1e1e)
 ```
 
 ## User Preferences
 
 ```
 Preferred communication style: Simple, everyday language.
-UI Design: TaskScout dark theme with teal/turquoise primary color (#4DD0E1) matching logo
+UI Design: TaskScout Material-UI inspired dark theme with purple primary (#3f51b5), pink secondary (#f50057), dark backgrounds (#121212, #1e1e1e)
 Root Admin UI: Tabbed interface with sidebar navigation for organizations, vendors, tickets, and sub-admins
-Dark Theme: Enabled by default with TaskScout logo inspired colors
+Dark Theme: Enabled by default with TaskScout logo and Material-UI color scheme
+Branding: TaskScout logo displayed throughout application with consistent purple/pink color scheme
 ```
