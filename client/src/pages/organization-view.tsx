@@ -4,7 +4,7 @@ import { useRoute } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Users, Clock, Wrench, Check, AlertTriangle, UserPlus } from "lucide-react";
+import { ArrowLeft, Plus, Users, Clock, Wrench, Check, AlertTriangle, UserPlus, Key, Edit } from "lucide-react";
 import { CreateTicketModal } from "@/components/create-ticket-modal";
 import { CreateSubAdminModal } from "@/components/create-subadmin-modal";
 import { TicketCard } from "@/components/ticket-card";
@@ -166,6 +166,48 @@ export default function OrganizationView() {
   const handleCreateSubAdmin = (data: InsertSubAdmin) => {
     createSubAdminMutation.mutate(data);
   };
+
+  // Sub-admin management mutations
+  const resetPasswordMutation = useMutation({
+    mutationFn: async (subAdminId: number) => {
+      const response = await apiRequest("POST", `/api/sub-admins/${subAdminId}/reset-password`, {});
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Password Reset",
+        description: `New password: ${data.newPassword}`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to reset password",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateSubAdminMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<InsertSubAdmin> }) => {
+      const response = await apiRequest("PUT", `/api/sub-admins/${id}`, data);
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/organizations", organizationId, "sub-admins"] });
+      toast({
+        title: "Success",
+        description: "Sub-admin updated successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update sub-admin",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleAcceptTicket = (id: number) => {
     acceptTicketMutation.mutate(id);
@@ -391,6 +433,33 @@ export default function OrganizationView() {
                             ))}
                           </div>
                         )}
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => resetPasswordMutation.mutate(subAdmin.id)}
+                          disabled={resetPasswordMutation.isPending}
+                          className="h-8 w-8 p-0"
+                          title="Reset Password"
+                        >
+                          <Key className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            // TODO: Open edit modal
+                            toast({
+                              title: "Edit Sub-Admin",
+                              description: "Edit functionality coming soon",
+                            });
+                          }}
+                          className="h-8 w-8 p-0"
+                          title="Edit Sub-Admin"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   </div>

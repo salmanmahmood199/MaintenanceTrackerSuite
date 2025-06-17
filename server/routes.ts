@@ -13,6 +13,7 @@ import {
 } from "@shared/schema";
 import { getSessionConfig, authenticateUser, requireRole, requireOrganization } from "./auth";
 import multer from "multer";
+import bcrypt from "bcrypt";
 import path from "path";
 import fs from "fs";
 
@@ -195,6 +196,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: 'Sub-admin deleted successfully' });
     } catch (error) {
       res.status(500).json({ message: 'Failed to delete sub-admin' });
+    }
+  });
+
+  app.post('/api/sub-admins/:id/reset-password', authenticateUser, requireRole(['root', 'org_admin']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const newPassword = Math.random().toString(36).slice(-8);
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      
+      const user = await storage.updateSubAdmin(id, { password: hashedPassword });
+      if (!user) {
+        return res.status(404).json({ message: 'Sub-admin not found' });
+      }
+      
+      res.json({ newPassword });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to reset password' });
     }
   });
 
