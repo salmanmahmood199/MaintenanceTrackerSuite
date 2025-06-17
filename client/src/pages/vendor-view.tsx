@@ -21,11 +21,14 @@ interface TicketStats {
 
 export default function VendorView() {
   const [, params] = useRoute("/admin/vendors/:id");
-  const vendorId = parseInt(params?.id || "0");
+  const routeVendorId = parseInt(params?.id || "0");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
+
+  // Use vendor ID from user (for maintenance_admin) or route (for root accessing vendor)
+  const vendorId = user?.role === "maintenance_admin" ? user.maintenanceVendorId : routeVendorId;
 
   // Fetch vendor details
   const { data: vendor } = useQuery<MaintenanceVendor | undefined>({

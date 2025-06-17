@@ -45,17 +45,25 @@ This is a full-stack maintenance ticketing application built with React (fronten
 Root Admin (root@mail.com / admin)
 ├── Organizations Branch
 │   ├── Organization 1
-│   │   └── Organization Admins
+│   │   ├── Organization Admin (auto-created: admin@orgname.org)
+│   │   └── Sub-Admins (managed by org admin)
 │   └── Organization 2
-│       └── Organization Admins
+│       ├── Organization Admin (auto-created: admin@orgname.org)
+│       └── Sub-Admins (managed by org admin)
 └── Maintenance Vendors Branch
     ├── Vendor 1
-    │   ├── Maintenance Admin
-    │   └── Technicians
+    │   ├── Maintenance Admin (auto-created: admin@vendorname.vendor)
+    │   └── Technicians (managed by vendor admin)
     └── Vendor 2
-        ├── Maintenance Admin
-        └── Technicians
+        ├── Maintenance Admin (auto-created: admin@vendorname.vendor)
+        └── Technicians (managed by vendor admin)
 ```
+
+### Auto-Generated Admin Accounts
+- **Organization Admins**: When a new organization is created, an admin account is automatically generated with email format `admin@{organizationname}.org`
+- **Vendor Admins**: When a new vendor is created, an admin account is automatically generated with email format `admin@{vendorname}.vendor`
+- **Credentials**: Random passwords are generated and logged to console during creation
+- **Permissions**: Organization admins can place and accept tickets, manage sub-admins; Vendor admins can accept tickets and manage technicians
 
 ## Key Components
 
@@ -179,6 +187,10 @@ Changelog:
 - June 17, 2025. Completed hierarchical dashboard visibility system
 - June 17, 2025. Root admin can click into organization and vendor dashboards
 - June 17, 2025. Fixed API request handling for GET requests with proper response parsing
+- June 17, 2025. Implemented auto-generated admin accounts for organizations and vendors
+- June 17, 2025. Added role-based routing (org_admin → organization dashboard, maintenance_admin → vendor dashboard)
+- June 17, 2025. Fixed vendor ticket filtering to show only assigned tickets
+- June 17, 2025. Created independent admin management for organizations and vendors
 ```
 
 ## User Preferences
