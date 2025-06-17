@@ -63,8 +63,14 @@ export class MemStorage implements IStorage {
     const id = this.currentTicketId++;
     const now = new Date();
     const ticket: Ticket = {
-      ...insertTicket,
       id,
+      title: insertTicket.title,
+      description: insertTicket.description,
+      priority: insertTicket.priority,
+      status: insertTicket.status,
+      reporter: insertTicket.reporter,
+      assignee: insertTicket.assignee || null,
+      images: insertTicket.images || null,
       createdAt: now,
       updatedAt: now,
     };

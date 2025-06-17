@@ -1,4 +1,5 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
+import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertTicketSchema, updateTicketSchema } from "@shared/schema";
@@ -13,10 +14,10 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 const storage_multer = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: (req: Request, file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) => {
     cb(null, uploadDir);
   },
-  filename: (req, file, cb) => {
+  filename: (req: Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
   }
@@ -27,7 +28,7 @@ const upload = multer({
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB limit
   },
-  fileFilter: (req, file, cb) => {
+  fileFilter: (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
@@ -83,7 +84,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const ticket = await storage.createTicket(validatedData);
       
       res.status(201).json(ticket);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Create ticket error:", error);
       if (error.name === 'ZodError') {
         res.status(400).json({ message: "Invalid ticket data", errors: error.errors });
@@ -106,7 +107,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.json(ticket);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Update ticket error:", error);
       if (error.name === 'ZodError') {
         res.status(400).json({ message: "Invalid update data", errors: error.errors });
