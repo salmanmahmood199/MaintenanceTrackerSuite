@@ -10,14 +10,16 @@ import { CreateSubAdminModal } from "@/components/create-subadmin-modal";
 import { EditSubAdminModal } from "@/components/edit-subadmin-modal";
 import { VendorManagementModal } from "@/components/vendor-management-modal";
 import { TicketCard } from "@/components/ticket-card";
+import { TicketActionModal } from "@/components/ticket-action-modal";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
-import type { Ticket, InsertTicket, InsertSubAdmin, Organization, User } from "@shared/schema";
+import type { Ticket, InsertTicket, InsertSubAdmin, Organization, User, MaintenanceVendor } from "@shared/schema";
 
 interface TicketStats {
-  open: number;
+  pending: number;
+  accepted: number;
   inProgress: number;
   completed: number;
   highPriority: number;
@@ -30,7 +32,10 @@ export default function OrganizationView() {
   const [isCreateSubAdminOpen, setIsCreateSubAdminOpen] = useState(false);
   const [isEditSubAdminOpen, setIsEditSubAdminOpen] = useState(false);
   const [isVendorManagementOpen, setIsVendorManagementOpen] = useState(false);
+  const [isTicketActionOpen, setIsTicketActionOpen] = useState(false);
   const [selectedSubAdmin, setSelectedSubAdmin] = useState<User | null>(null);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -134,21 +139,45 @@ export default function OrganizationView() {
 
   // Accept ticket mutation
   const acceptTicketMutation = useMutation({
-    mutationFn: async (id: number) => {
-      return apiRequest("POST", `/api/tickets/${id}/accept`, {});
+    mutationFn: async ({ ticketId, data }: { ticketId: number; data: { maintenanceVendorId?: number; assigneeId?: number } }) => {
+      return apiRequest("POST", `/api/tickets/${ticketId}/accept`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tickets/stats"] });
+      setIsTicketActionOpen(false);
       toast({
         title: "Success",
-        description: "Ticket accepted",
+        description: "Ticket accepted successfully",
       });
     },
     onError: () => {
       toast({
         title: "Error",
         description: "Failed to accept ticket",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Reject ticket mutation
+  const rejectTicketMutation = useMutation({
+    mutationFn: async ({ ticketId, rejectionReason }: { ticketId: number; rejectionReason: string }) => {
+      return apiRequest("POST", `/api/tickets/${ticketId}/reject`, { rejectionReason });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets/stats"] });
+      setIsTicketActionOpen(false);
+      toast({
+        title: "Success",
+        description: "Ticket rejected successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to reject ticket",
         variant: "destructive",
       });
     },

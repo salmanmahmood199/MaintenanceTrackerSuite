@@ -42,25 +42,33 @@ export function TicketCard({ ticket, onAccept, onReject, onComplete, showActions
             </div>
             <div className="flex items-center space-x-1">
               <User className="h-4 w-4" />
-              <span>{ticket.reporter}</span>
+              <span>Reporter ID: {ticket.reporterId}</span>
             </div>
             <div className="flex items-center space-x-1">
               <Hash className="h-4 w-4" />
-              <span>TKT-{ticket.id.toString().padStart(3, '0')}</span>
+              <span>{ticket.ticketNumber || `TKT-${ticket.id.toString().padStart(3, '0')}`}</span>
             </div>
-            {ticket.assignee && (
+            {ticket.maintenanceVendorId && (
               <div className="flex items-center space-x-1">
                 <Wrench className="h-4 w-4" />
-                <span>Assigned to {ticket.assignee}</span>
+                <span>Vendor ID: {ticket.maintenanceVendorId}</span>
               </div>
             )}
-            {ticket.status === "completed" && (
+            {ticket.assigneeId && (
               <div className="flex items-center space-x-1">
-                <CheckCircle className="h-4 w-4" />
-                <span>Completed by {ticket.assignee}</span>
+                <User className="h-4 w-4" />
+                <span>Assigned to: {ticket.assigneeId}</span>
               </div>
             )}
           </div>
+
+          {ticket.rejectionReason && (
+            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-800">
+                <strong>Rejection Reason:</strong> {ticket.rejectionReason}
+              </p>
+            </div>
+          )}
         </div>
         
         <div className="flex items-center space-x-3 ml-6">
@@ -72,27 +80,52 @@ export function TicketCard({ ticket, onAccept, onReject, onComplete, showActions
             />
           )}
           
-          {ticket.status === "open" && (
-            <Button
-              onClick={() => onAccept(ticket.id)}
-              className="bg-primary text-white hover:bg-blue-700"
-            >
-              Accept
-            </Button>
-          )}
-          
-          {ticket.status === "in-progress" && (
-            <Button
-              onClick={() => onComplete(ticket.id)}
-              className="bg-emerald-600 text-white hover:bg-emerald-700"
-            >
-              Complete
-            </Button>
+          {showActions && userRole && ["org_admin", "maintenance_admin"].includes(userRole) && (
+            <>
+              {ticket.status === "pending" && (
+                <div className="flex space-x-2">
+                  <Button
+                    onClick={() => onAccept?.(ticket.id)}
+                    className="bg-green-600 text-white hover:bg-green-700"
+                    size="sm"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    Accept
+                  </Button>
+                  <Button
+                    onClick={() => onReject?.(ticket.id)}
+                    variant="outline"
+                    className="border-red-300 text-red-600 hover:bg-red-50"
+                    size="sm"
+                  >
+                    <XCircle className="h-4 w-4 mr-1" />
+                    Reject
+                  </Button>
+                </div>
+              )}
+              
+              {(ticket.status === "accepted" || ticket.status === "in-progress") && (
+                <Button
+                  onClick={() => onComplete?.(ticket.id)}
+                  className="bg-blue-600 text-white hover:bg-blue-700"
+                  size="sm"
+                >
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                  Complete
+                </Button>
+              )}
+            </>
           )}
           
           {ticket.status === "completed" && (
             <div className="flex items-center text-emerald-600">
               <CheckCircle className="h-6 w-6" />
+            </div>
+          )}
+          
+          {ticket.status === "rejected" && (
+            <div className="flex items-center text-red-600">
+              <XCircle className="h-6 w-6" />
             </div>
           )}
         </div>
