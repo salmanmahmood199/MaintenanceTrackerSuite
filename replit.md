@@ -123,11 +123,59 @@ Root Admin (root@mail.com / admin)
 - **Migration Files**: Generated to ./migrations directory
 - **Connection**: Environment variable DATABASE_URL required
 
+## Authentication Credentials
+
+### Root Administrator Access
+- **Email**: root@mail.com
+- **Password**: admin
+- **Permissions**: Full system access, manage organizations and vendors
+
+### User Role Hierarchy
+1. **Root Admin**: Complete system administration
+2. **Organization Admin**: Manage organization users and tickets
+3. **Maintenance Admin**: Manage technicians and vendor operations
+4. **Technician**: Handle assigned maintenance tickets
+
+## API Endpoints
+
+### Authentication
+- POST `/api/auth/login` - User authentication
+- POST `/api/auth/logout` - Session termination
+- GET `/api/auth/user` - Current user information
+
+### Admin Management (Root Only)
+- GET/POST `/api/organizations` - Organization management
+- GET/POST `/api/maintenance-vendors` - Vendor management
+- POST `/api/users` - User creation with role validation
+
+### Ticket Operations
+- GET/POST `/api/tickets` - Ticket management with organizational context
+- POST `/api/tickets/:id/accept` - Assign ticket to technician
+- POST `/api/tickets/:id/complete` - Mark ticket as completed
+
+## Deployment Strategy
+
+### Development Environment
+- **Platform**: Replit with Node.js 20 runtime
+- **Database**: PostgreSQL with Neon Database serverless connection
+- **File Storage**: Local uploads directory
+- **Authentication**: Session-based with PostgreSQL session store
+- **Hot Reload**: Vite dev server with HMR
+
+### Database Connection
+- **Schema Management**: Drizzle Kit for schema changes
+- **Migration**: `npm run db:push` for schema synchronization
+- **Connection**: Environment variable DATABASE_URL (Neon serverless)
+
 ## Changelog
 
 ```
 Changelog:
-- June 17, 2025. Initial setup
+- June 17, 2025. Initial maintenance ticketing system setup
+- June 17, 2025. Implemented hierarchical authentication system with PostgreSQL
+- June 17, 2025. Added root admin account (root@mail.com / admin)
+- June 17, 2025. Created organizational and maintenance vendor management
+- June 17, 2025. Integrated session-based authentication with role permissions
 ```
 
 ## User Preferences
