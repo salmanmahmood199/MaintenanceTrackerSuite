@@ -602,7 +602,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get ticket stats
-  app.get("/api/tickets/stats", async (req, res) => {
+  app.get("/api/tickets/stats", authenticateUser, async (req, res) => {
     try {
       const { organizationId, maintenanceVendorId } = req.query;
       const orgId = organizationId ? parseInt(organizationId as string) : undefined;
