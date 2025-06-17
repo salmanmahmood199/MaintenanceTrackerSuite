@@ -46,7 +46,7 @@ export function ProgressTracker({
   const queryClient = useQueryClient();
 
   // Fetch milestones for this ticket
-  const { data: milestones = [], isLoading } = useQuery({
+  const { data: milestones = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/tickets", ticket.id, "milestones"],
     enabled: open,
   });
@@ -115,11 +115,11 @@ export function ProgressTracker({
             
             {isLoading ? (
               <div className="text-center py-4 text-slate-500">Loading milestones...</div>
-            ) : !Array.isArray(milestones) || milestones.length === 0 ? (
+            ) : !milestones || milestones.length === 0 ? (
               <div className="text-center py-4 text-slate-500">No milestones yet</div>
             ) : (
               <div className="space-y-4">
-                {(milestones as any[]).map((milestone: any, index: number) => {
+                {milestones.map((milestone: any, index: number) => {
                   const milestoneType = milestoneTypes.find(m => m.value === milestone.milestoneType);
                   const Icon = milestoneType?.icon || FileText;
 

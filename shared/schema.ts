@@ -221,6 +221,11 @@ export const updateTicketSchema = insertTicketSchema.partial().extend({
   id: z.number(),
 });
 
+export const insertTicketMilestoneSchema = createInsertSchema(ticketMilestones).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const acceptTicketSchema = z.object({
   maintenanceVendorId: z.number().optional(),
   assigneeId: z.number().optional(),
