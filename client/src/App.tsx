@@ -6,13 +6,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import Dashboard from "@/pages/dashboard";
 import Login from "@/pages/login";
-import RootDashboard from "@/pages/root-dashboard";
+import AdminDashboard from "@/pages/admin-dashboard";
 import OrganizationView from "@/pages/organization-view";
 import VendorView from "@/pages/vendor-view";
 import NotFound from "@/pages/not-found";
 
 function Router() {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, isRoot } = useAuth();
 
   if (isLoading) {
     return (
@@ -27,18 +27,6 @@ function Router() {
       <Switch>
         <Route path="/login" component={Login} />
         <Route component={() => <Login />} />
-      </Switch>
-    );
-  }
-
-  // Route based on user role
-  if (user?.role === "root") {
-    return (
-      <Switch>
-        <Route path="/" component={RootDashboard} />
-        <Route path="/organizations/:id" component={OrganizationView} />
-        <Route path="/vendors/:id" component={VendorView} />
-        <Route component={NotFound} />
       </Switch>
     );
   }
@@ -67,6 +55,9 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
+      {isRoot && <Route path="/admin" component={AdminDashboard} />}
+      {isRoot && <Route path="/admin/organizations/:id" component={OrganizationView} />}
+      {isRoot && <Route path="/admin/vendors/:id" component={VendorView} />}
       <Route component={NotFound} />
     </Switch>
   );
