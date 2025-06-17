@@ -76,6 +76,20 @@ export interface IStorage {
   getTicketMilestones(ticketId: number): Promise<any[]>;
   createTicketMilestone(milestone: { ticketId: number; milestoneType: string; milestoneTitle: string; milestoneDescription?: string; achievedById?: number; achievedByName?: string }): Promise<any>;
   
+  // Location operations
+  getLocations(organizationId: number): Promise<Location[]>;
+  getLocation(id: number): Promise<Location | undefined>;
+  createLocation(location: InsertLocation): Promise<Location>;
+  updateLocation(id: number, updates: Partial<InsertLocation>): Promise<Location | undefined>;
+  deleteLocation(id: number): Promise<boolean>;
+  
+  // User-Location assignment operations
+  assignUserToLocation(userId: number, locationId: number): Promise<void>;
+  removeUserFromLocation(userId: number, locationId: number): Promise<boolean>;
+  getUserLocations(userId: number): Promise<Location[]>;
+  getLocationUsers(locationId: number): Promise<User[]>;
+  updateUserLocationAssignments(userId: number, locationIds: number[]): Promise<void>;
+  
   // Initialize root user
   initializeRootUser(): Promise<void>;
 }
