@@ -288,8 +288,31 @@ export default function OrganizationView() {
     setIsEditSubAdminOpen(true);
   };
 
-  const handleAcceptTicket = (id: number) => {
-    acceptTicketMutation.mutate(id);
+  // Ticket action handlers
+  const handleAcceptTicket = (ticketId: number) => {
+    const ticket = tickets?.find(t => t.id === ticketId);
+    if (ticket) {
+      setSelectedTicket(ticket);
+      setTicketAction("accept");
+      setIsTicketActionOpen(true);
+    }
+  };
+
+  const handleRejectTicket = (ticketId: number) => {
+    const ticket = tickets?.find(t => t.id === ticketId);
+    if (ticket) {
+      setSelectedTicket(ticket);
+      setTicketAction("reject");
+      setIsTicketActionOpen(true);
+    }
+  };
+
+  const handleTicketAccept = (ticketId: number, data: { maintenanceVendorId?: number; assigneeId?: number }) => {
+    acceptTicketMutation.mutate({ ticketId, data });
+  };
+
+  const handleTicketReject = (ticketId: number, rejectionReason: string) => {
+    rejectTicketMutation.mutate({ ticketId, rejectionReason });
   };
 
   const handleCompleteTicket = (id: number) => {
@@ -411,7 +434,7 @@ export default function OrganizationView() {
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats?.open || 0}</div>
+              <div className="text-2xl font-bold">{stats?.pending || 0}</div>
             </CardContent>
           </Card>
           <Card>
@@ -491,7 +514,10 @@ export default function OrganizationView() {
                 key={ticket.id}
                 ticket={ticket}
                 onAccept={handleAcceptTicket}
+                onReject={handleRejectTicket}
                 onComplete={handleCompleteTicket}
+                showActions={true}
+                userRole={user?.role}
               />
             ))
           )}
@@ -575,6 +601,17 @@ export default function OrganizationView() {
         vendors={organizationVendors}
         onUpdateVendor={handleUpdateVendor}
         isLoading={updateVendorMutation.isPending}
+      />
+
+      <TicketActionModal
+        open={isTicketActionOpen}
+        onOpenChange={setIsTicketActionOpen}
+        ticket={selectedTicket}
+        action={ticketAction}
+        vendors={organizationVendors}
+        onAccept={handleTicketAccept}
+        onReject={handleTicketReject}
+        isLoading={acceptTicketMutation.isPending || rejectTicketMutation.isPending}
       />
     </div>
   );
