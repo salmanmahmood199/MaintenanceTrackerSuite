@@ -407,10 +407,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/organizations/:organizationId/vendor-tiers', authenticateUser, requireRole(['root', 'org_admin']), async (req, res) => {
     try {
       const organizationId = parseInt(req.params.organizationId);
+      
+      // Only allow org admins to see their own organization's vendor tiers
+      if (req.user!.role === 'org_admin' && req.user!.organizationId !== organizationId) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+      
       const vendorTiers = await storage.getVendorOrganizationTiers(organizationId);
       res.json(vendorTiers);
     } catch (error) {
       res.status(500).json({ message: 'Failed to fetch vendor tiers' });
+    }
+  });
+
+  app.patch('/api/organizations/:organizationId/vendors/:vendorId/tier', authenticateUser, requireRole(['root', 'org_admin']), async (req, res) => {
+    try {
+      const organizationId = parseInt(req.params.organizationId);
+      const vendorId = parseInt(req.params.vendorId);
+      const { tier, isActive } = req.body;
+      
+      // Only allow org admins to manage their own organization's vendors
+      if (req.user!.role === 'org_admin' && req.user!.organizationId !== organizationId) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+      
+      await storage.updateVendorOrganizationTier(vendorId, organizationId, { tier, isActive });
+      res.json({ message: 'Vendor tier updated successfully' });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to update vendor tier' });
     }
   });
 
