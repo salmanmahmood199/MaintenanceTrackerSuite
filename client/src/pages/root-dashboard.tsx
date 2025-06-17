@@ -17,7 +17,7 @@ import {
   Settings,
   LogOut
 } from "lucide-react";
-// Modal imports will be added when needed
+
 import { TicketTable } from "@/components/ticket-table";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -29,10 +29,7 @@ export default function RootDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
   const [selectedVendor, setSelectedVendor] = useState<MaintenanceVendor | null>(null);
-  const [isCreateOrgModalOpen, setIsCreateOrgModalOpen] = useState(false);
-  const [isEditOrgModalOpen, setIsEditOrgModalOpen] = useState(false);
-  const [isCreateVendorModalOpen, setIsCreateVendorModalOpen] = useState(false);
-  const [isEditVendorModalOpen, setIsEditVendorModalOpen] = useState(false);
+  // Modal states for future implementation
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -61,115 +58,7 @@ export default function RootDashboard() {
     queryKey: ["/api/tickets/stats"],
   });
 
-  // Organization mutations
-  const createOrgMutation = useMutation({
-    mutationFn: async (data: Partial<Organization>) => apiRequest("POST", "/api/organizations", data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/organizations"] });
-      setIsCreateOrgModalOpen(false);
-      toast({ title: "Success", description: "Organization created successfully" });
-    },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to create organization", variant: "destructive" });
-    },
-  });
-
-  const updateOrgMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<Organization> }) => 
-      apiRequest("PUT", `/api/organizations/${id}`, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/organizations"] });
-      setIsEditOrgModalOpen(false);
-      toast({ title: "Success", description: "Organization updated successfully" });
-    },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to update organization", variant: "destructive" });
-    },
-  });
-
-  const deleteOrgMutation = useMutation({
-    mutationFn: async (id: number) => apiRequest("DELETE", `/api/organizations/${id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/organizations"] });
-      toast({ title: "Success", description: "Organization deleted successfully" });
-    },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to delete organization", variant: "destructive" });
-    },
-  });
-
-  // Vendor mutations
-  const createVendorMutation = useMutation({
-    mutationFn: async (data: Partial<MaintenanceVendor>) => apiRequest("POST", "/api/maintenance-vendors", data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/maintenance-vendors"] });
-      setIsCreateVendorModalOpen(false);
-      toast({ title: "Success", description: "Vendor created successfully" });
-    },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to create vendor", variant: "destructive" });
-    },
-  });
-
-  const updateVendorMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<MaintenanceVendor> }) => 
-      apiRequest("PUT", `/api/maintenance-vendors/${id}`, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/maintenance-vendors"] });
-      setIsEditVendorModalOpen(false);
-      toast({ title: "Success", description: "Vendor updated successfully" });
-    },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to update vendor", variant: "destructive" });
-    },
-  });
-
-  const deleteVendorMutation = useMutation({
-    mutationFn: async (id: number) => apiRequest("DELETE", `/api/maintenance-vendors/${id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/maintenance-vendors"] });
-      toast({ title: "Success", description: "Vendor deleted successfully" });
-    },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to delete vendor", variant: "destructive" });
-    },
-  });
-
-  const resetPasswordMutation = useMutation({
-    mutationFn: async ({ type, id, newPassword }: { type: 'org' | 'vendor'; id: number; newPassword: string }) => {
-      const endpoint = type === 'org' 
-        ? `/api/organizations/${id}/reset-admin-password`
-        : `/api/maintenance-vendors/${id}/reset-admin-password`;
-      return apiRequest("POST", endpoint, { newPassword });
-    },
-    onSuccess: (data: any) => {
-      toast({ 
-        title: "Success", 
-        description: `Password reset. New password: ${data.newPassword}` 
-      });
-    },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to reset password", variant: "destructive" });
-    },
-  });
-
-  const handleEditOrganization = (org: Organization) => {
-    setSelectedOrganization(org);
-    setIsEditOrgModalOpen(true);
-  };
-
-  const handleEditVendor = (vendor: MaintenanceVendor) => {
-    setSelectedVendor(vendor);
-    setIsEditVendorModalOpen(true);
-  };
-
-  const handleResetOrgPassword = (id: number, newPassword: string) => {
-    resetPasswordMutation.mutate({ type: 'org', id, newPassword });
-  };
-
-  const handleResetVendorPassword = (id: number, newPassword: string) => {
-    resetPasswordMutation.mutate({ type: 'vendor', id, newPassword });
-  };
+  // Future implementation for CRUD operations
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -272,17 +161,11 @@ export default function RootDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Button 
-                    onClick={() => setIsCreateOrgModalOpen(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                  >
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
                     <Plus className="h-4 w-4 mr-2" />
                     Add Organization
                   </Button>
-                  <Button 
-                    onClick={() => setIsCreateVendorModalOpen(true)}
-                    className="bg-purple-600 hover:bg-purple-700 text-white"
-                  >
+                  <Button className="bg-purple-600 hover:bg-purple-700 text-white">
                     <Plus className="h-4 w-4 mr-2" />
                     Add Vendor
                   </Button>
@@ -295,10 +178,7 @@ export default function RootDashboard() {
           <TabsContent value="organizations" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold text-slate-900">Organizations</h2>
-              <Button 
-                onClick={() => setIsCreateOrgModalOpen(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Organization
               </Button>
@@ -311,18 +191,10 @@ export default function RootDashboard() {
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg">{org.name}</CardTitle>
                       <div className="flex space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditOrganization(org)}
-                        >
+                        <Button variant="ghost" size="sm">
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteOrgMutation.mutate(org.id)}
-                        >
+                        <Button variant="ghost" size="sm">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -358,10 +230,7 @@ export default function RootDashboard() {
           <TabsContent value="vendors" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold text-slate-900">Maintenance Vendors</h2>
-              <Button 
-                onClick={() => setIsCreateVendorModalOpen(true)}
-                className="bg-purple-600 hover:bg-purple-700 text-white"
-              >
+              <Button className="bg-purple-600 hover:bg-purple-700 text-white">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Vendor
               </Button>
@@ -374,18 +243,10 @@ export default function RootDashboard() {
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg">{vendor.name}</CardTitle>
                       <div className="flex space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditVendor(vendor)}
-                        >
+                        <Button variant="ghost" size="sm">
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteVendorMutation.mutate(vendor.id)}
-                        >
+                        <Button variant="ghost" size="sm">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
