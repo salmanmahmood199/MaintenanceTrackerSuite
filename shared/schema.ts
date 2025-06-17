@@ -109,11 +109,14 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   }),
   reportedTickets: many(tickets, { relationName: "reporter" }),
   assignedTickets: many(tickets, { relationName: "assignee" }),
+  locationAssignments: many(userLocationAssignments),
 }));
 
 export const organizationsRelations = relations(organizations, ({ many }) => ({
   users: many(users),
   tickets: many(tickets),
+  vendorTiers: many(vendorOrganizationTiers),
+  locations: many(locations),
 }));
 
 export const maintenanceVendorsRelations = relations(maintenanceVendors, ({ many }) => ({
@@ -130,6 +133,25 @@ export const vendorOrganizationTiersRelations = relations(vendorOrganizationTier
   organization: one(organizations, {
     fields: [vendorOrganizationTiers.organizationId],
     references: [organizations.id],
+  }),
+}));
+
+export const locationsRelations = relations(locations, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [locations.organizationId],
+    references: [organizations.id],
+  }),
+  userAssignments: many(userLocationAssignments),
+}));
+
+export const userLocationAssignmentsRelations = relations(userLocationAssignments, ({ one }) => ({
+  user: one(users, {
+    fields: [userLocationAssignments.userId],
+    references: [users.id],
+  }),
+  location: one(locations, {
+    fields: [userLocationAssignments.locationId],
+    references: [locations.id],
   }),
 }));
 
@@ -233,6 +255,18 @@ export const acceptTicketSchema = z.object({
 
 export const rejectTicketSchema = z.object({
   rejectionReason: z.string().min(1, "Rejection reason is required"),
+});
+
+export const insertLocationSchema = createInsertSchema(locations).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const updateLocationSchema = insertLocationSchema.partial();
+
+export const insertUserLocationAssignmentSchema = createInsertSchema(userLocationAssignments).omit({
+  id: true,
+  assignedAt: true,
 });
 
 export const loginSchema = z.object({
