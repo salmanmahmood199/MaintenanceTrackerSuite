@@ -591,7 +591,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const vendorTickets = allTickets.filter(ticket => ticket.maintenanceVendorId === vendorId);
         
         stats = {
-          open: vendorTickets.filter(t => t.status === 'open').length,
+          pending: vendorTickets.filter(t => t.status === 'pending').length,
+          accepted: vendorTickets.filter(t => t.status === 'accepted').length,
           inProgress: vendorTickets.filter(t => t.status === 'in-progress').length,
           completed: vendorTickets.filter(t => t.status === 'completed').length,
           highPriority: vendorTickets.filter(t => t.priority === 'high').length,
@@ -656,23 +657,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Accept ticket (assign to current user)
-  app.post("/api/tickets/:id/accept", async (req, res) => {
+  // Accept ticket with vendor assignment
+  app.post("/api/tickets/:id/accept", authenticateUser, requireRole(['org_admin', 'maintenance_admin']), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      const { maintenanceVendorId, assigneeId } = req.body;
       
-      const ticket = await storage.updateTicket(id, {
-        status: "in-progress",
-        assigneeId: req.user?.id || 1
-      });
-      
+      const ticket = await storage.acceptTicket(id, { maintenanceVendorId, assigneeId });
       if (!ticket) {
         return res.status(404).json({ message: "Ticket not found" });
       }
-      
       res.json(ticket);
     } catch (error) {
       res.status(500).json({ message: "Failed to accept ticket" });
+    }
+  });
+
+  // Reject ticket with reason
+  app.post("/api/tickets/:id/reject", authenticateUser, requireRole(['org_admin', 'maintenance_admin']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { rejectionReason } = req.body;
+      
+      if (!rejectionReason) {
+        return res.status(400).json({ message: "Rejection reason is required" });
+      }
+      
+      const ticket = await storage.rejectTicket(id, rejectionReason);
+      if (!ticket) {
+        return res.status(404).json({ message: "Ticket not found" });
+      }
+      res.json(ticket);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to reject ticket" });
     }
   });
 

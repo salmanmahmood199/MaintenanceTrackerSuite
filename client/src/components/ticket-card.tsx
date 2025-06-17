@@ -1,17 +1,20 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, User, Hash, Wrench, CheckCircle } from "lucide-react";
+import { Calendar, User, Hash, Wrench, CheckCircle, XCircle, Clock } from "lucide-react";
 import { formatDate, getPriorityColor, getStatusColor } from "@/lib/utils";
 import type { Ticket } from "@shared/schema";
 
 interface TicketCardProps {
   ticket: Ticket;
-  onAccept: (id: number) => void;
-  onComplete: (id: number) => void;
+  onAccept?: (id: number) => void;
+  onReject?: (id: number) => void;
+  onComplete?: (id: number) => void;
+  showActions?: boolean;
+  userRole?: string;
 }
 
-export function TicketCard({ ticket, onAccept, onComplete }: TicketCardProps) {
+export function TicketCard({ ticket, onAccept, onReject, onComplete, showActions = true, userRole }: TicketCardProps) {
   const priorityColor = getPriorityColor(ticket.priority);
   const statusColor = getStatusColor(ticket.status);
 
