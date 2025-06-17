@@ -4,7 +4,7 @@ import { useRoute } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Users, Clock, Wrench, Check, AlertTriangle, UserPlus, Key, Edit } from "lucide-react";
+import { ArrowLeft, Plus, Users, Clock, Wrench, Check, AlertTriangle, UserPlus, Key, Edit, LogOut } from "lucide-react";
 import { CreateTicketModal } from "@/components/create-ticket-modal";
 import { CreateSubAdminModal } from "@/components/create-subadmin-modal";
 import { EditSubAdminModal } from "@/components/edit-subadmin-modal";
@@ -104,40 +104,14 @@ export default function OrganizationView() {
       setIsCreateModalOpen(false);
       toast({
         title: "Success",
-        description: "Ticket created successfully!",
+        description: "Ticket created successfully",
       });
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to create ticket. Please try again.",
+        description: "Failed to create ticket",
         variant: "destructive",
-      });
-    },
-  });
-
-  // Accept ticket mutation
-  const acceptTicketMutation = useMutation({
-    mutationFn: (id: number) => apiRequest("POST", `/api/tickets/${id}/accept`, {}),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/tickets/stats"] });
-      toast({
-        title: "Success",
-        description: "Ticket accepted successfully!",
-      });
-    },
-  });
-
-  // Complete ticket mutation
-  const completeTicketMutation = useMutation({
-    mutationFn: (id: number) => apiRequest("POST", `/api/tickets/${id}/complete`, {}),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/tickets/stats"] });
-      toast({
-        title: "Success",
-        description: "Ticket completed successfully!",
       });
     },
   });
@@ -146,11 +120,54 @@ export default function OrganizationView() {
     createTicketMutation.mutate({ data, images });
   };
 
+  // Accept ticket mutation
+  const acceptTicketMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest("POST", `/api/tickets/${id}/accept`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets/stats"] });
+      toast({
+        title: "Success",
+        description: "Ticket accepted",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to accept ticket",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Complete ticket mutation
+  const completeTicketMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest("POST", `/api/tickets/${id}/complete`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets/stats"] });
+      toast({
+        title: "Success",
+        description: "Ticket completed",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to complete ticket",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Create sub-admin mutation
   const createSubAdminMutation = useMutation({
     mutationFn: async (data: InsertSubAdmin) => {
-      const response = await apiRequest("POST", `/api/organizations/${organizationId}/sub-admins`, data);
-      return await response.json();
+      return apiRequest("POST", `/api/organizations/${organizationId}/sub-admins`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/organizations", organizationId, "sub-admins"] });
@@ -160,7 +177,7 @@ export default function OrganizationView() {
         description: "Sub-admin created successfully",
       });
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: "Error",
         description: "Failed to create sub-admin",
@@ -175,64 +192,13 @@ export default function OrganizationView() {
 
   // Edit sub-admin mutation
   const editSubAdminMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: any }) => {
-      return apiRequest("PUT", `/api/sub-admins/${id}`, data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/organizations/${organizationId}/sub-admins`] });
-      setIsEditSubAdminOpen(false);
-      setSelectedSubAdmin(null);
-      toast({
-        title: "Success",
-        description: "Sub-admin updated successfully!",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error", 
-        description: "Failed to update sub-admin. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleEditSubAdmin = (id: number, data: any) => {
-    editSubAdminMutation.mutate({ id, data });
-  };
-
-  const openEditModal = (subAdmin: User) => {
-    setSelectedSubAdmin(subAdmin);
-    setIsEditSubAdminOpen(true);
-  };
-
-  // Sub-admin management mutations
-  const resetPasswordMutation = useMutation({
-    mutationFn: async (subAdminId: number) => {
-      const response = await apiRequest("POST", `/api/sub-admins/${subAdminId}/reset-password`, {});
-      return await response.json();
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "Password Reset",
-        description: `New password: ${data.newPassword}`,
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to reset password",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const updateSubAdminMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<InsertSubAdmin> }) => {
-      const response = await apiRequest("PUT", `/api/sub-admins/${id}`, data);
-      return await response.json();
+      return apiRequest("PATCH", `/api/sub-admins/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/organizations", organizationId, "sub-admins"] });
+      setIsEditSubAdminOpen(false);
+      setSelectedSubAdmin(null);
       toast({
         title: "Success",
         description: "Sub-admin updated successfully",
@@ -247,6 +213,15 @@ export default function OrganizationView() {
     },
   });
 
+  const handleEditSubAdmin = (id: number, data: Partial<InsertSubAdmin>) => {
+    editSubAdminMutation.mutate({ id, data });
+  };
+
+  const openEditModal = (subAdmin: User) => {
+    setSelectedSubAdmin(subAdmin);
+    setIsEditSubAdminOpen(true);
+  };
+
   const handleAcceptTicket = (id: number) => {
     acceptTicketMutation.mutate(id);
   };
@@ -260,12 +235,14 @@ export default function OrganizationView() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-xl font-semibold text-slate-900 mb-2">Organization Not Found</h2>
-          <Link href="/admin">
-            <Button variant="outline">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Admin
-            </Button>
-          </Link>
+          {user?.role === "root" && (
+            <Link href="/admin">
+              <Button variant="outline">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Admin
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     );
@@ -278,284 +255,162 @@ export default function OrganizationView() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <Link href="/admin">
-                <Button variant="ghost" size="sm">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Admin
-                </Button>
-              </Link>
+              {user?.role === "root" && (
+                <Link href="/admin">
+                  <Button variant="ghost" size="sm">
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Back to Admin
+                  </Button>
+                </Link>
+              )}
               <div>
                 <h1 className="text-xl font-bold text-slate-900">{organization.name}</h1>
                 <p className="text-sm text-slate-500">Organization Dashboard</p>
               </div>
             </div>
-            
             <div className="flex items-center space-x-4">
-              <Button
-                variant="outline"
-                onClick={() => setIsCreateSubAdminOpen(true)}
-                className="border-blue-200 text-blue-700 hover:bg-blue-50"
+              <span className="text-sm text-slate-600">
+                {user?.firstName} {user?.lastName} ({user?.email})
+              </span>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => window.location.href = '/api/auth/logout'}
               >
-                <UserPlus className="h-4 w-4 mr-2" />
-                Add Sub-Admin
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
               </Button>
-              <Button
-                onClick={() => setIsCreateModalOpen(true)}
-                className="bg-primary text-white hover:bg-blue-700"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                New Ticket
-              </Button>
-              
-              <div className="flex items-center space-x-3 pl-4 border-l border-slate-200">
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">
-                    {organization.name[0]}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">{organization.name}</p>
-                  <p className="text-xs text-slate-500">Organization View</p>
-                </div>
-              </div>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Organization Info */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Users className="h-5 w-5 mr-2" />
-              Organization Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h3 className="font-semibold text-slate-900 mb-2">{organization.name}</h3>
-                {organization.description && (
-                  <p className="text-slate-600 mb-2">{organization.description}</p>
-                )}
-                <div className="text-sm text-slate-500 space-y-1">
-                  {organization.email && <p>Email: {organization.email}</p>}
-                  {organization.phone && <p>Phone: {organization.phone}</p>}
-                  {organization.address && <p>Address: {organization.address}</p>}
-                </div>
-              </div>
-              <div className="flex items-center justify-center">
-                <Badge variant="secondary" className="text-lg px-4 py-2">
-                  Active Organization
-                </Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex justify-between items-center mb-8">
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="outline"
+              onClick={() => setIsCreateSubAdminOpen(true)}
+              className="border-blue-200 text-blue-700 hover:bg-blue-50"
+            >
+              <UserPlus className="h-4 w-4 mr-2" />
+              Add Sub-Admin
+            </Button>
+            <Button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="bg-primary text-white hover:bg-blue-700"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              New Ticket
+            </Button>
+          </div>
+        </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="p-6">
-            <CardContent className="p-0">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-600 font-medium">Open Tickets</p>
-                  <p className="text-2xl font-bold text-slate-900">{stats?.open || 0}</p>
-                </div>
-                <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
-                  <Clock className="h-6 w-6 text-amber-600" />
-                </div>
-              </div>
+        {/* Organization Info */}
+        <div className="bg-white rounded-lg shadow mb-8 p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <p className="text-sm font-medium text-slate-500">Organization</p>
+              <p className="text-lg font-semibold text-slate-900">{organization.name}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-500">Address</p>
+              <p className="text-lg font-semibold text-slate-900">{organization.address || 'Not specified'}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-500">Phone</p>
+              <p className="text-lg font-semibold text-slate-900">{organization.phone || 'Not specified'}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-500">Email</p>
+              <p className="text-lg font-semibold text-slate-900">{organization.email || 'Not specified'}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Open Tickets</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats?.open || 0}</div>
             </CardContent>
           </Card>
-          
-          <Card className="p-6">
-            <CardContent className="p-0">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-600 font-medium">In Progress</p>
-                  <p className="text-2xl font-bold text-slate-900">{stats?.inProgress || 0}</p>
-                </div>
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Wrench className="h-6 w-6 text-blue-600" />
-                </div>
-              </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+              <Wrench className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats?.inProgress || 0}</div>
             </CardContent>
           </Card>
-          
-          <Card className="p-6">
-            <CardContent className="p-0">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-600 font-medium">Completed</p>
-                  <p className="text-2xl font-bold text-slate-900">{stats?.completed || 0}</p>
-                </div>
-                <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
-                  <Check className="h-6 w-6 text-emerald-600" />
-                </div>
-              </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Completed</CardTitle>
+              <Check className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats?.completed || 0}</div>
             </CardContent>
           </Card>
-          
-          <Card className="p-6">
-            <CardContent className="p-0">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-600 font-medium">High Priority</p>
-                  <p className="text-2xl font-bold text-slate-900">{stats?.highPriority || 0}</p>
-                </div>
-                <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                  <AlertTriangle className="h-6 w-6 text-red-600" />
-                </div>
-              </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">High Priority</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats?.highPriority || 0}</div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Sub-Admins Section */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Sub-Administrators ({subAdmins.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {subAdmins.length === 0 ? (
-              <div className="text-center py-8 text-slate-500">
-                <Users className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-                <p className="text-lg font-medium mb-2">No sub-administrators yet</p>
-                <p className="text-sm mb-4">Add sub-admins to help manage tickets and operations</p>
-                <Button onClick={() => setIsCreateSubAdminOpen(true)}>
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Add First Sub-Admin
-                </Button>
-              </div>
-            ) : (
-              <div className="grid gap-4">
-                {subAdmins.map((subAdmin) => (
-                  <div key={subAdmin.id} className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <span className="text-blue-700 font-medium text-sm">
-                          {subAdmin.firstName?.[0]}{subAdmin.lastName?.[0]}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-slate-900">
-                          {subAdmin.firstName} {subAdmin.lastName}
-                        </p>
-                        <p className="text-sm text-slate-500">{subAdmin.email}</p>
-                        {subAdmin.phone && (
-                          <p className="text-sm text-slate-500">{subAdmin.phone}</p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <div className="text-right">
-                        <div className="flex flex-wrap gap-1 mb-2">
-                          {Array.isArray(subAdmin.permissions) && subAdmin.permissions.includes("place_ticket") && (
-                            <Badge variant="secondary" className="text-xs">Place Ticket</Badge>
-                          )}
-                          {Array.isArray(subAdmin.permissions) && subAdmin.permissions.includes("accept_ticket") && (
-                            <Badge variant="secondary" className="text-xs">Accept Ticket</Badge>
-                          )}
-                        </div>
-                        {Array.isArray(subAdmin.vendorTiers) && subAdmin.vendorTiers.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {subAdmin.vendorTiers.map((tier) => (
-                              <Badge key={tier} variant="outline" className="text-xs">
-                                {tier.replace('_', ' ').toUpperCase()}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => resetPasswordMutation.mutate(subAdmin.id)}
-                          disabled={resetPasswordMutation.isPending}
-                          className="h-8 w-8 p-0"
-                          title="Reset Password"
-                        >
-                          <Key className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openEditModal(subAdmin)}
-                          className="h-8 w-8 p-0"
-                          title="Edit Sub-Admin"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Filter Buttons */}
+        <div className="flex space-x-2 mb-6">
+          <Button
+            variant={statusFilter === "all" ? "default" : "outline"}
+            onClick={() => setStatusFilter("all")}
+            size="sm"
+          >
+            All Tickets
+          </Button>
+          <Button
+            variant={statusFilter === "open" ? "default" : "outline"}
+            onClick={() => setStatusFilter("open")}
+            size="sm"
+          >
+            Open
+          </Button>
+          <Button
+            variant={statusFilter === "in-progress" ? "default" : "outline"}
+            onClick={() => setStatusFilter("in-progress")}
+            size="sm"
+          >
+            In Progress
+          </Button>
+          <Button
+            variant={statusFilter === "completed" ? "default" : "outline"}
+            onClick={() => setStatusFilter("completed")}
+            size="sm"
+          >
+            Completed
+          </Button>
+        </div>
 
-        {/* Filters */}
-        <Card className="p-6 mb-8">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-            <h2 className="text-lg font-semibold text-slate-900">Maintenance Tickets</h2>
-            
-            <div className="flex items-center gap-3">
-              <div className="flex bg-slate-100 rounded-lg p-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setStatusFilter("all")}
-                  className={statusFilter === "all" ? "bg-white shadow-sm" : ""}
-                >
-                  All
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setStatusFilter("open")}
-                  className={statusFilter === "open" ? "bg-white shadow-sm" : ""}
-                >
-                  Open
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setStatusFilter("in-progress")}
-                  className={statusFilter === "in-progress" ? "bg-white shadow-sm" : ""}
-                >
-                  In Progress
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setStatusFilter("completed")}
-                  className={statusFilter === "completed" ? "bg-white shadow-sm" : ""}
-                >
-                  Completed
-                </Button>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        {/* Tickets List */}
-        <div className="space-y-4">
+        {/* Tickets Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {ticketsLoading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="text-slate-600 mt-2">Loading tickets...</p>
+            <div className="col-span-full text-center py-8">
+              <p className="text-slate-500">Loading tickets...</p>
             </div>
           ) : tickets.length === 0 ? (
-            <Card className="p-8 text-center">
-              <p className="text-slate-600">No tickets found for this organization. Create your first ticket to get started!</p>
-            </Card>
+            <div className="col-span-full text-center py-8">
+              <p className="text-slate-500">No tickets found</p>
+            </div>
           ) : (
             tickets.map((ticket) => (
               <TicketCard
@@ -567,9 +422,56 @@ export default function OrganizationView() {
             ))
           )}
         </div>
-      </div>
 
-      {/* Create Ticket Modal */}
+        {/* Sub-Admins Section */}
+        <div className="bg-white rounded-lg shadow">
+          <div className="px-6 py-4 border-b border-slate-200">
+            <h2 className="text-lg font-semibold text-slate-900 flex items-center">
+              <Users className="h-5 w-5 mr-2" />
+              Sub-Administrators
+            </h2>
+          </div>
+          <div className="p-6">
+            {subAdmins.length === 0 ? (
+              <p className="text-slate-500 text-center py-4">No sub-administrators yet</p>
+            ) : (
+              <div className="space-y-4">
+                {subAdmins.map((subAdmin) => (
+                  <div key={subAdmin.id} className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
+                    <div className="flex items-center space-x-4">
+                      <div>
+                        <p className="font-medium text-slate-900">
+                          {subAdmin.firstName} {subAdmin.lastName}
+                        </p>
+                        <p className="text-sm text-slate-500">{subAdmin.email}</p>
+                      </div>
+                      <div className="flex space-x-2">
+                        {subAdmin.permissions?.map((permission) => (
+                          <Badge key={permission} variant="secondary">
+                            {permission.replace('_', ' ')}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openEditModal(subAdmin)}
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
+
+      {/* Modals */}
       <CreateTicketModal
         open={isCreateModalOpen}
         onOpenChange={setIsCreateModalOpen}
@@ -577,7 +479,6 @@ export default function OrganizationView() {
         isLoading={createTicketMutation.isPending}
       />
 
-      {/* Create Sub-Admin Modal */}
       <CreateSubAdminModal
         open={isCreateSubAdminOpen}
         onOpenChange={setIsCreateSubAdminOpen}
@@ -585,7 +486,6 @@ export default function OrganizationView() {
         isLoading={createSubAdminMutation.isPending}
       />
 
-      {/* Edit Sub-Admin Modal */}
       <EditSubAdminModal
         open={isEditSubAdminOpen}
         onOpenChange={setIsEditSubAdminOpen}
