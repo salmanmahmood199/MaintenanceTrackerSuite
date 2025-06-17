@@ -140,6 +140,33 @@ export default function OrganizationView() {
     createTicketMutation.mutate({ data, images });
   };
 
+  // Create sub-admin mutation
+  const createSubAdminMutation = useMutation({
+    mutationFn: async (data: InsertSubAdmin) => {
+      const response = await apiRequest("POST", `/api/organizations/${organizationId}/sub-admins`, data);
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/organizations", organizationId, "sub-admins"] });
+      setIsCreateSubAdminOpen(false);
+      toast({
+        title: "Success",
+        description: "Sub-admin created successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to create sub-admin",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreateSubAdmin = (data: InsertSubAdmin) => {
+    createSubAdminMutation.mutate(data);
+  };
+
   const handleAcceptTicket = (id: number) => {
     acceptTicketMutation.mutate(id);
   };
@@ -184,6 +211,14 @@ export default function OrganizationView() {
             </div>
             
             <div className="flex items-center space-x-4">
+              <Button
+                variant="outline"
+                onClick={() => setIsCreateSubAdminOpen(true)}
+                className="border-blue-200 text-blue-700 hover:bg-blue-50"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Add Sub-Admin
+              </Button>
               <Button
                 onClick={() => setIsCreateModalOpen(true)}
                 className="bg-primary text-white hover:bg-blue-700"
@@ -372,6 +407,14 @@ export default function OrganizationView() {
         onOpenChange={setIsCreateModalOpen}
         onSubmit={handleCreateTicket}
         isLoading={createTicketMutation.isPending}
+      />
+
+      {/* Create Sub-Admin Modal */}
+      <CreateSubAdminModal
+        open={isCreateSubAdminOpen}
+        onOpenChange={setIsCreateSubAdminOpen}
+        onSubmit={handleCreateSubAdmin}
+        isLoading={createSubAdminMutation.isPending}
       />
     </div>
   );

@@ -209,6 +209,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Organization sub-admin routes
+  app.get("/api/organizations/:id/sub-admins", authenticateUser, requireRole(["root", "org_admin"]), async (req, res) => {
+    try {
+      const organizationId = parseInt(req.params.id);
+      const subAdmins = await storage.getSubAdmins(organizationId);
+      res.json(subAdmins);
+    } catch (error) {
+      console.error("Error fetching sub-admins:", error);
+      res.status(500).json({ message: "Failed to fetch sub-admins" });
+    }
+  });
+
+  app.post("/api/organizations/:id/sub-admins", authenticateUser, requireRole(["root", "org_admin"]), async (req, res) => {
+    try {
+      const organizationId = parseInt(req.params.id);
+      const result = insertSubAdminSchema.safeParse(req.body);
+      
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid input", errors: result.error.errors });
+      }
+
+      const subAdmin = await storage.createSubAdmin(result.data, organizationId);
+      res.json(subAdmin);
+    } catch (error) {
+      console.error("Error creating sub-admin:", error);
+      res.status(500).json({ message: "Failed to create sub-admin" });
+    }
+  });
+
+  app.put("/api/organizations/:orgId/sub-admins/:id", authenticateUser, requireRole(["root", "org_admin"]), async (req, res) => {
+    try {
+      const subAdminId = parseInt(req.params.id);
+      const result = insertSubAdminSchema.partial().safeParse(req.body);
+      
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid input", errors: result.error.errors });
+      }
+
+      const updatedSubAdmin = await storage.updateSubAdmin(subAdminId, result.data);
+      if (!updatedSubAdmin) {
+        return res.status(404).json({ message: "Sub-admin not found" });
+      }
+      
+      res.json(updatedSubAdmin);
+    } catch (error) {
+      console.error("Error updating sub-admin:", error);
+      res.status(500).json({ message: "Failed to update sub-admin" });
+    }
+  });
+
+  app.delete("/api/organizations/:orgId/sub-admins/:id", authenticateUser, requireRole(["root", "org_admin"]), async (req, res) => {
+    try {
+      const subAdminId = parseInt(req.params.id);
+      const deleted = await storage.deleteSubAdmin(subAdminId);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Sub-admin not found" });
+      }
+      
+      res.json({ message: "Sub-admin deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting sub-admin:", error);
+      res.status(500).json({ message: "Failed to delete sub-admin" });
+    }
+  });
+
   // Users management routes
   app.post('/api/users', authenticateUser, requireRole(['root', 'org_admin', 'maintenance_admin']), async (req, res) => {
     try {
