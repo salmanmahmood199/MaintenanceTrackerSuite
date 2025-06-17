@@ -26,8 +26,7 @@ const editSubAdminSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email address"),
-  canPlaceTickets: z.boolean().default(false),
-  canAcceptTickets: z.boolean().default(false),
+  phone: z.string().optional(),
 });
 
 type EditSubAdminFormData = z.infer<typeof editSubAdminSchema>;
@@ -53,8 +52,7 @@ export function EditSubAdminModal({
       firstName: subAdmin?.firstName || "",
       lastName: subAdmin?.lastName || "",
       email: subAdmin?.email || "",
-      canPlaceTickets: subAdmin?.canPlaceTickets || false,
-      canAcceptTickets: subAdmin?.canAcceptTickets || false,
+      phone: subAdmin?.phone || "",
     },
   });
 
@@ -118,51 +116,19 @@ export function EditSubAdminModal({
               )}
             />
 
-            <div className="space-y-3">
-              <FormLabel className="text-sm font-medium">Permissions</FormLabel>
-              
-              <FormField
-                control={form.control}
-                name="canPlaceTickets"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Can Place Tickets</FormLabel>
-                      <p className="text-sm text-muted-foreground">
-                        Allow creating new maintenance tickets
-                      </p>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="canAcceptTickets"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Can Accept Tickets</FormLabel>
-                      <p className="text-sm text-muted-foreground">
-                        Allow accepting and assigning vendors to tickets
-                      </p>
-                    </div>
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter phone number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="flex justify-end gap-3 pt-4">
               <Button

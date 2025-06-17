@@ -28,6 +28,8 @@ export function CreateTicketModal({ open, onOpenChange, onSubmit, isLoading }: C
       description: "",
       priority: "medium",
       status: "open",
+      organizationId: 1, // This will be set dynamically
+      reporterId: 1, // This will be set dynamically
     },
   });
 

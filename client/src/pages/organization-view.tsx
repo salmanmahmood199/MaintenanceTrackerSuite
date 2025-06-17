@@ -483,13 +483,7 @@ export default function OrganizationView() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => {
-                            // TODO: Open edit modal
-                            toast({
-                              title: "Edit Sub-Admin",
-                              description: "Edit functionality coming soon",
-                            });
-                          }}
+                          onClick={() => openEditModal(subAdmin)}
                           className="h-8 w-8 p-0"
                           title="Edit Sub-Admin"
                         >
@@ -586,6 +580,15 @@ export default function OrganizationView() {
         onOpenChange={setIsCreateSubAdminOpen}
         onSubmit={handleCreateSubAdmin}
         isLoading={createSubAdminMutation.isPending}
+      />
+
+      {/* Edit Sub-Admin Modal */}
+      <EditSubAdminModal
+        open={isEditSubAdminOpen}
+        onOpenChange={setIsEditSubAdminOpen}
+        onSubmit={handleEditSubAdmin}
+        isLoading={editSubAdminMutation.isPending}
+        subAdmin={selectedSubAdmin}
       />
     </div>
   );
