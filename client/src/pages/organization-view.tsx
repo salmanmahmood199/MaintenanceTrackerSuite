@@ -41,8 +41,8 @@ export default function OrganizationView() {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Use organization ID from user (for org_admin) or route (for root accessing org)
-  const organizationId = user?.role === "org_admin" ? user.organizationId : routeOrgId;
+  // Use organization ID from user (for org_admin/org_subadmin) or route (for root accessing org)
+  const organizationId = (user?.role === "org_admin" || user?.role === "org_subadmin") ? user.organizationId : routeOrgId;
 
   // Fetch organization details
   const { data: organization } = useQuery<Organization | undefined>({

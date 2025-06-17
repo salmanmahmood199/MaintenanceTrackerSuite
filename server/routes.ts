@@ -124,10 +124,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Root admin routes for managing organizations and vendors
-  app.get('/api/organizations', authenticateUser, requireRole(['root', 'org_admin']), async (req, res) => {
+  app.get('/api/organizations', authenticateUser, requireRole(['root', 'org_admin', 'org_subadmin']), async (req, res) => {
     try {
-      // If user is org_admin, only return their organization
-      if (req.user!.role === 'org_admin') {
+      // If user is org_admin or org_subadmin, only return their organization
+      if (req.user!.role === 'org_admin' || req.user!.role === 'org_subadmin') {
         const organization = await storage.getOrganization(req.user!.organizationId!);
         res.json(organization ? [organization] : []);
       } else {
@@ -315,12 +315,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Sub-admin management routes
-  app.get('/api/organizations/:organizationId/sub-admins', authenticateUser, requireRole(['root', 'org_admin']), async (req, res) => {
+  app.get('/api/organizations/:organizationId/sub-admins', authenticateUser, requireRole(['root', 'org_admin', 'org_subadmin']), async (req, res) => {
     try {
       const organizationId = parseInt(req.params.organizationId);
       
-      // If user is org_admin, ensure they can only access their own organization
-      if (req.user!.role === 'org_admin' && req.user!.organizationId !== organizationId) {
+      // If user is org_admin or org_subadmin, ensure they can only access their own organization
+      if ((req.user!.role === 'org_admin' || req.user!.role === 'org_subadmin') && req.user!.organizationId !== organizationId) {
         return res.status(403).json({ message: 'Access denied to this organization' });
       }
       
@@ -404,12 +404,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/organizations/:organizationId/vendor-tiers', authenticateUser, requireRole(['root', 'org_admin']), async (req, res) => {
+  app.get('/api/organizations/:organizationId/vendor-tiers', authenticateUser, requireRole(['root', 'org_admin', 'org_subadmin']), async (req, res) => {
     try {
       const organizationId = parseInt(req.params.organizationId);
       
-      // Only allow org admins to see their own organization's vendor tiers
-      if (req.user!.role === 'org_admin' && req.user!.organizationId !== organizationId) {
+      // Only allow org admins and org_subadmins to see their own organization's vendor tiers
+      if ((req.user!.role === 'org_admin' || req.user!.role === 'org_subadmin') && req.user!.organizationId !== organizationId) {
         return res.status(403).json({ message: 'Access denied' });
       }
       
