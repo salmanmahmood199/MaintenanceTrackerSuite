@@ -280,45 +280,45 @@ export default function TicketDetail() {
                   <div>
                     <p className="text-sm font-medium text-slate-900">Reporter</p>
                     <p className="text-sm text-slate-600">
-                      {ticket.reporterName || "Unknown"}
+                      {ticket.reporterId ? `Reporter ID: ${ticket.reporterId}` : "Unknown"}
                     </p>
                   </div>
                 </div>
 
-                {ticket.assigneeName && (
+                {ticket.assigneeId && (
                   <>
                     <Separator />
                     <div className="flex items-center space-x-3">
                       <Wrench className="h-4 w-4 text-slate-400" />
                       <div>
                         <p className="text-sm font-medium text-slate-900">Assigned To</p>
-                        <p className="text-sm text-slate-600">{ticket.assigneeName}</p>
+                        <p className="text-sm text-slate-600">Assignee ID: {ticket.assigneeId}</p>
                       </div>
                     </div>
                   </>
                 )}
 
-                {ticket.vendorName && (
+                {ticket.maintenanceVendorId && (
                   <>
                     <Separator />
                     <div className="flex items-center space-x-3">
                       <Building className="h-4 w-4 text-slate-400" />
                       <div>
                         <p className="text-sm font-medium text-slate-900">Vendor</p>
-                        <p className="text-sm text-slate-600">{ticket.vendorName}</p>
+                        <p className="text-sm text-slate-600">Vendor ID: {ticket.maintenanceVendorId}</p>
                       </div>
                     </div>
                   </>
                 )}
 
-                {ticket.locationName && (
+                {ticket.locationId && (
                   <>
                     <Separator />
                     <div className="flex items-center space-x-3">
                       <MapPin className="h-4 w-4 text-slate-400" />
                       <div>
                         <p className="text-sm font-medium text-slate-900">Location</p>
-                        <p className="text-sm text-slate-600">{ticket.locationName}</p>
+                        <p className="text-sm text-slate-600">Location ID: {ticket.locationId}</p>
                       </div>
                     </div>
                   </>
