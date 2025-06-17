@@ -166,6 +166,11 @@ export const insertMaintenanceVendorSchema = createInsertSchema(maintenanceVendo
   id: true,
   createdAt: true,
   updatedAt: true,
+});
+
+export const insertVendorOrganizationTierSchema = createInsertSchema(vendorOrganizationTiers).omit({
+  id: true,
+  createdAt: true,
 }).extend({
   tier: z.enum(["tier_1", "tier_2", "tier_3"]),
 });

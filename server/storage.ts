@@ -3,6 +3,7 @@ import {
   tickets, 
   organizations,
   maintenanceVendors,
+  vendorOrganizationTiers,
   type User, 
   type InsertUser, 
   type InsertSubAdmin,
@@ -15,7 +16,7 @@ import {
   type InsertMaintenanceVendor
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
 export interface IStorage {
@@ -183,11 +184,63 @@ export class DatabaseStorage implements IStorage {
     return vendor || undefined;
   }
 
-  async getMaintenanceVendorsByTier(tiers: string[]): Promise<MaintenanceVendor[]> {
+  async getMaintenanceVendorsByTier(tiers: string[], organizationId?: number): Promise<MaintenanceVendor[]> {
     if (tiers.length === 0) return [];
     
-    const vendors = await db.select().from(maintenanceVendors).where(eq(maintenanceVendors.isActive, true));
-    return vendors.filter(vendor => vendor.tier && tiers.includes(vendor.tier));
+    if (!organizationId) {
+      // If no organization specified, return all active vendors
+      return await db.select().from(maintenanceVendors).where(eq(maintenanceVendors.isActive, true));
+    }
+
+    // Get vendors for specific organization and tiers
+    const vendors = await db
+      .select({
+        id: maintenanceVendors.id,
+        name: maintenanceVendors.name,
+        description: maintenanceVendors.description,
+        address: maintenanceVendors.address,
+        phone: maintenanceVendors.phone,
+        email: maintenanceVendors.email,
+        specialties: maintenanceVendors.specialties,
+        isActive: maintenanceVendors.isActive,
+        createdAt: maintenanceVendors.createdAt,
+        updatedAt: maintenanceVendors.updatedAt,
+      })
+      .from(maintenanceVendors)
+      .innerJoin(vendorOrganizationTiers, eq(maintenanceVendors.id, vendorOrganizationTiers.vendorId))
+      .where(
+        and(
+          eq(maintenanceVendors.isActive, true),
+          eq(vendorOrganizationTiers.organizationId, organizationId),
+          inArray(vendorOrganizationTiers.tier, tiers)
+        )
+      );
+    return vendors;
+  }
+
+  // Vendor-Organization tier operations
+  async assignVendorToOrganization(vendorId: number, organizationId: number, tier: string): Promise<void> {
+    await db.insert(vendorOrganizationTiers).values({
+      vendorId,
+      organizationId,
+      tier,
+    }).onConflictDoUpdate({
+      target: [vendorOrganizationTiers.vendorId, vendorOrganizationTiers.organizationId],
+      set: { tier }
+    });
+  }
+
+  async getVendorOrganizationTiers(organizationId: number): Promise<Array<{vendor: MaintenanceVendor, tier: string}>> {
+    const results = await db
+      .select({
+        vendor: maintenanceVendors,
+        tier: vendorOrganizationTiers.tier,
+      })
+      .from(vendorOrganizationTiers)
+      .innerJoin(maintenanceVendors, eq(vendorOrganizationTiers.vendorId, maintenanceVendors.id))
+      .where(eq(vendorOrganizationTiers.organizationId, organizationId));
+    
+    return results.map(result => ({ vendor: result.vendor, tier: result.tier }));
   }
 
   // Ticket operations
