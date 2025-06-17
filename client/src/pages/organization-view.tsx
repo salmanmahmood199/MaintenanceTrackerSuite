@@ -83,6 +83,16 @@ export default function OrganizationView() {
     enabled: !!organizationId,
   });
 
+  // Fetch organization vendors
+  const { data: organizationVendors = [] } = useQuery<Array<{vendor: any, tier: string, isActive: boolean}>>({
+    queryKey: ["/api/organizations", organizationId, "vendor-tiers"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/organizations/${organizationId}/vendor-tiers`);
+      return await response.json();
+    },
+    enabled: !!organizationId,
+  });
+
   // Create ticket mutation
   const createTicketMutation = useMutation({
     mutationFn: async ({ data, images }: { data: InsertTicket; images: File[] }) => {
@@ -192,6 +202,31 @@ export default function OrganizationView() {
     createSubAdminMutation.mutate(data);
   };
 
+  // Update vendor mutation
+  const updateVendorMutation = useMutation({
+    mutationFn: async ({ vendorId, updates }: { vendorId: number; updates: { tier?: string; isActive?: boolean } }) => {
+      return apiRequest("PATCH", `/api/organizations/${organizationId}/vendors/${vendorId}/tier`, updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/organizations", organizationId, "vendor-tiers"] });
+      toast({
+        title: "Success",
+        description: "Vendor updated successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update vendor",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleUpdateVendor = (vendorId: number, updates: { tier?: string; isActive?: boolean }) => {
+    updateVendorMutation.mutate({ vendorId, updates });
+  };
+
   // Edit sub-admin mutation
   const editSubAdminMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<InsertSubAdmin> }) => {
@@ -298,6 +333,14 @@ export default function OrganizationView() {
             >
               <UserPlus className="h-4 w-4 mr-2" />
               Add Sub-Admin
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setIsVendorManagementOpen(true)}
+              className="border-green-200 text-green-700 hover:bg-green-50"
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Manage Vendors
             </Button>
             <Button
               onClick={() => setIsCreateModalOpen(true)}
@@ -494,6 +537,15 @@ export default function OrganizationView() {
         onSubmit={handleEditSubAdmin}
         isLoading={editSubAdminMutation.isPending}
         subAdmin={selectedSubAdmin}
+      />
+
+      <VendorManagementModal
+        open={isVendorManagementOpen}
+        onOpenChange={setIsVendorManagementOpen}
+        organizationId={organizationId!}
+        vendors={organizationVendors}
+        onUpdateVendor={handleUpdateVendor}
+        isLoading={updateVendorMutation.isPending}
       />
     </div>
   );
