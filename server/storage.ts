@@ -488,6 +488,37 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Create admin accounts for existing organizations and vendors
+  async getTicketMilestones(ticketId: number): Promise<any[]> {
+    const milestones = await db
+      .select()
+      .from(ticketMilestones)
+      .where(eq(ticketMilestones.ticketId, ticketId))
+      .orderBy(ticketMilestones.achievedAt);
+    return milestones;
+  }
+
+  async createTicketMilestone(milestone: { 
+    ticketId: number; 
+    milestoneType: string; 
+    milestoneTitle: string; 
+    milestoneDescription?: string; 
+    achievedById?: number; 
+    achievedByName?: string 
+  }): Promise<any> {
+    const [newMilestone] = await db
+      .insert(ticketMilestones)
+      .values({
+        ticketId: milestone.ticketId,
+        milestoneType: milestone.milestoneType,
+        milestoneTitle: milestone.milestoneTitle,
+        milestoneDescription: milestone.milestoneDescription,
+        achievedById: milestone.achievedById,
+        achievedByName: milestone.achievedByName,
+      })
+      .returning();
+    return newMilestone;
+  }
+
   async createMissingAdminAccounts(): Promise<void> {
     // Get all organizations without admin accounts
     const orgs = await this.getOrganizations();
