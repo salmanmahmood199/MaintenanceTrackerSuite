@@ -32,6 +32,8 @@ export function CreateTicketModal({ open, onOpenChange, onSubmit, isLoading }: C
   });
 
   const handleSubmit = (data: InsertTicket) => {
+    console.log("Form submitted with data:", data);
+    console.log("Form errors:", form.formState.errors);
     onSubmit(data, images);
     form.reset();
     setImages([]);

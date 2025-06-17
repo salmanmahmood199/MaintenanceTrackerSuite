@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Plus, Users, Clock, Wrench, Check, AlertTriangle, UserPlus, Key, Edit } from "lucide-react";
 import { CreateTicketModal } from "@/components/create-ticket-modal";
 import { CreateSubAdminModal } from "@/components/create-subadmin-modal";
+import { EditSubAdminModal } from "@/components/edit-subadmin-modal";
 import { TicketCard } from "@/components/ticket-card";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -26,6 +27,8 @@ export default function OrganizationView() {
   const organizationId = parseInt(params?.id || "0");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreateSubAdminOpen, setIsCreateSubAdminOpen] = useState(false);
+  const [isEditSubAdminOpen, setIsEditSubAdminOpen] = useState(false);
+  const [selectedSubAdmin, setSelectedSubAdmin] = useState<User | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -165,6 +168,38 @@ export default function OrganizationView() {
 
   const handleCreateSubAdmin = (data: InsertSubAdmin) => {
     createSubAdminMutation.mutate(data);
+  };
+
+  // Edit sub-admin mutation
+  const editSubAdminMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      return apiRequest("PUT", `/api/sub-admins/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/organizations/${organizationId}/sub-admins`] });
+      setIsEditSubAdminOpen(false);
+      setSelectedSubAdmin(null);
+      toast({
+        title: "Success",
+        description: "Sub-admin updated successfully!",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error", 
+        description: "Failed to update sub-admin. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleEditSubAdmin = (id: number, data: any) => {
+    editSubAdminMutation.mutate({ id, data });
+  };
+
+  const openEditModal = (subAdmin: User) => {
+    setSelectedSubAdmin(subAdmin);
+    setIsEditSubAdminOpen(true);
   };
 
   // Sub-admin management mutations
