@@ -29,7 +29,8 @@ export default function RootDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
   const [selectedVendor, setSelectedVendor] = useState<MaintenanceVendor | null>(null);
-  // Modal states for future implementation
+  const [isCreateOrganizationModalOpen, setIsCreateOrganizationModalOpen] = useState(false);
+  const [isCreateVendorModalOpen, setIsCreateVendorModalOpen] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -165,7 +166,10 @@ export default function RootDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+                  <Button 
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    onClick={() => setIsCreateOrganizationModalOpen(true)}
+                  >
                     <Plus className="h-4 w-4 mr-2" />
                     Add Organization
                   </Button>
@@ -182,7 +186,10 @@ export default function RootDashboard() {
           <TabsContent value="organizations" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold text-foreground">Organizations</h2>
-              <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+              <Button 
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                onClick={() => setIsCreateOrganizationModalOpen(true)}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Organization
               </Button>

@@ -605,8 +605,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/tickets/stats", authenticateUser, async (req, res) => {
     try {
       const { organizationId, maintenanceVendorId } = req.query;
-      const orgId = organizationId ? parseInt(organizationId as string) : undefined;
-      const vendorId = maintenanceVendorId ? parseInt(maintenanceVendorId as string) : undefined;
+      
+      // Parse query parameters safely
+      const orgId = organizationId && !isNaN(parseInt(organizationId as string)) 
+        ? parseInt(organizationId as string) 
+        : undefined;
+      const vendorId = maintenanceVendorId && !isNaN(parseInt(maintenanceVendorId as string))
+        ? parseInt(maintenanceVendorId as string) 
+        : undefined;
       
       let stats = await storage.getTicketStats(orgId);
       
