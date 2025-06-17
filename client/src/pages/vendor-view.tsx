@@ -28,12 +28,14 @@ export default function VendorView() {
   const { user } = useAuth();
 
   // Fetch vendor details
-  const { data: vendor } = useQuery<MaintenanceVendor>({
+  const { data: vendor } = useQuery<MaintenanceVendor | undefined>({
     queryKey: ["/api/maintenance-vendors", vendorId],
     queryFn: async () => {
-      const vendors = await apiRequest("GET", "/api/maintenance-vendors", {}) as MaintenanceVendor[];
+      const response = await apiRequest("GET", "/api/maintenance-vendors");
+      const vendors = await response.json() as MaintenanceVendor[];
       return vendors.find(v => v.id === vendorId);
     },
+    enabled: !!vendorId,
   });
 
   // Fetch tickets assigned to this vendor
@@ -45,7 +47,8 @@ export default function VendorView() {
       const url = statusFilter === "all" 
         ? `/api/tickets?maintenanceVendorId=${vendorId}`
         : `/api/tickets?status=${statusFilter}&maintenanceVendorId=${vendorId}`;
-      return await apiRequest("GET", url, {}) as Ticket[];
+      const response = await apiRequest("GET", url);
+      return await response.json() as Ticket[];
     },
   });
 
@@ -53,7 +56,8 @@ export default function VendorView() {
   const { data: stats } = useQuery<TicketStats>({
     queryKey: ["/api/tickets/stats", vendorId],
     queryFn: async () => {
-      return await apiRequest("GET", `/api/tickets/stats?maintenanceVendorId=${vendorId}`, {}) as TicketStats;
+      const response = await apiRequest("GET", `/api/tickets/stats?maintenanceVendorId=${vendorId}`);
+      return await response.json() as TicketStats;
     },
   });
 

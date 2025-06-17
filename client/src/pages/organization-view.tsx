@@ -30,12 +30,14 @@ export default function OrganizationView() {
   const { user } = useAuth();
 
   // Fetch organization details
-  const { data: organization } = useQuery<Organization>({
+  const { data: organization } = useQuery<Organization | undefined>({
     queryKey: ["/api/organizations", organizationId],
     queryFn: async () => {
-      const orgs = await apiRequest("GET", "/api/organizations", {}) as Organization[];
+      const response = await apiRequest("GET", "/api/organizations");
+      const orgs = await response.json() as Organization[];
       return orgs.find(org => org.id === organizationId);
     },
+    enabled: !!organizationId,
   });
 
   // Fetch tickets for this organization
@@ -47,7 +49,8 @@ export default function OrganizationView() {
       const url = statusFilter === "all" 
         ? `/api/tickets?organizationId=${organizationId}`
         : `/api/tickets?status=${statusFilter}&organizationId=${organizationId}`;
-      return await apiRequest("GET", url, {}) as Ticket[];
+      const response = await apiRequest("GET", url);
+      return await response.json() as Ticket[];
     },
   });
 
@@ -55,7 +58,8 @@ export default function OrganizationView() {
   const { data: stats } = useQuery<TicketStats>({
     queryKey: ["/api/tickets/stats", organizationId],
     queryFn: async () => {
-      return await apiRequest("GET", `/api/tickets/stats?organizationId=${organizationId}`, {}) as TicketStats;
+      const response = await apiRequest("GET", `/api/tickets/stats?organizationId=${organizationId}`);
+      return await response.json() as TicketStats;
     },
   });
 

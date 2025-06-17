@@ -176,6 +176,9 @@ Changelog:
 - June 17, 2025. Added root admin account (root@mail.com / admin)
 - June 17, 2025. Created organizational and maintenance vendor management
 - June 17, 2025. Integrated session-based authentication with role permissions
+- June 17, 2025. Completed hierarchical dashboard visibility system
+- June 17, 2025. Root admin can click into organization and vendor dashboards
+- June 17, 2025. Fixed API request handling for GET requests with proper response parsing
 ```
 
 ## User Preferences
