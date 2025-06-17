@@ -356,6 +356,59 @@ export class DatabaseStorage implements IStorage {
       isActive: true,
     });
   }
+
+  // Create admin accounts for existing organizations and vendors
+  async createMissingAdminAccounts(): Promise<void> {
+    // Get all organizations without admin accounts
+    const orgs = await this.getOrganizations();
+    for (const org of orgs) {
+      const adminEmail = `admin@${org.name.toLowerCase().replace(/\s+/g, '')}.org`;
+      const existingAdmin = await this.getUserByEmail(adminEmail);
+      
+      if (!existingAdmin) {
+        const adminPassword = Math.random().toString(36).substring(2, 10);
+        const hashedPassword = await bcrypt.hash(adminPassword, 10);
+        
+        await db.insert(users).values({
+          email: adminEmail,
+          password: hashedPassword,
+          firstName: "Organization",
+          lastName: "Admin",
+          role: "org_admin",
+          organizationId: org.id,
+          permissions: ["place_ticket", "accept_ticket"],
+          vendorTiers: ["tier_1", "tier_2", "tier_3"],
+        });
+        
+        console.log(`Created organization admin: ${adminEmail} / ${adminPassword}`);
+      }
+    }
+
+    // Get all vendors without admin accounts
+    const vendors = await this.getMaintenanceVendors();
+    for (const vendor of vendors) {
+      const adminEmail = `admin@${vendor.name.toLowerCase().replace(/\s+/g, '')}.vendor`;
+      const existingAdmin = await this.getUserByEmail(adminEmail);
+      
+      if (!existingAdmin) {
+        const adminPassword = Math.random().toString(36).substring(2, 10);
+        const hashedPassword = await bcrypt.hash(adminPassword, 10);
+        
+        await db.insert(users).values({
+          email: adminEmail,
+          password: hashedPassword,
+          firstName: "Maintenance",
+          lastName: "Admin",
+          role: "maintenance_admin",
+          maintenanceVendorId: vendor.id,
+          permissions: ["accept_ticket"],
+          vendorTiers: ["tier_1", "tier_2", "tier_3"],
+        });
+        
+        console.log(`Created vendor admin: ${adminEmail} / ${adminPassword}`);
+      }
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
