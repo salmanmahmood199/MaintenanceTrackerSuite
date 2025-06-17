@@ -12,7 +12,7 @@ import VendorView from "@/pages/vendor-view";
 import NotFound from "@/pages/not-found";
 
 function Router() {
-  const { isAuthenticated, isLoading, isRoot } = useAuth();
+  const { user, isAuthenticated, isLoading, isRoot } = useAuth();
 
   if (isLoading) {
     return (
@@ -27,6 +27,27 @@ function Router() {
       <Switch>
         <Route path="/login" component={Login} />
         <Route component={() => <Login />} />
+      </Switch>
+    );
+  }
+
+  // Redirect based on user role
+  if (user?.role === "org_admin" && user.organizationId) {
+    return (
+      <Switch>
+        <Route path="/" component={() => <OrganizationView />} />
+        <Route path="/organization/:id" component={OrganizationView} />
+        <Route component={NotFound} />
+      </Switch>
+    );
+  }
+
+  if (user?.role === "maintenance_admin" && user.maintenanceVendorId) {
+    return (
+      <Switch>
+        <Route path="/" component={() => <VendorView />} />
+        <Route path="/vendor/:id" component={VendorView} />
+        <Route component={NotFound} />
       </Switch>
     );
   }

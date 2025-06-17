@@ -24,7 +24,7 @@ interface TicketStats {
 
 export default function OrganizationView() {
   const [, params] = useRoute("/admin/organizations/:id");
-  const organizationId = parseInt(params?.id || "0");
+  const routeOrgId = parseInt(params?.id || "0");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreateSubAdminOpen, setIsCreateSubAdminOpen] = useState(false);
   const [isEditSubAdminOpen, setIsEditSubAdminOpen] = useState(false);
@@ -33,6 +33,9 @@ export default function OrganizationView() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
+
+  // Use organization ID from user (for org_admin) or route (for root accessing org)
+  const organizationId = user?.role === "org_admin" ? user.organizationId : routeOrgId;
 
   // Fetch organization details
   const { data: organization } = useQuery<Organization | undefined>({

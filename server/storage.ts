@@ -152,6 +152,24 @@ export class DatabaseStorage implements IStorage {
 
   async createOrganization(org: InsertOrganization): Promise<Organization> {
     const [organization] = await db.insert(organizations).values(org).returning();
+    
+    // Create admin user for this organization
+    const adminEmail = `admin@${organization.name.toLowerCase().replace(/\s+/g, '')}.org`;
+    const adminPassword = Math.random().toString(36).substring(2, 10); // Generate random password
+    const hashedPassword = await bcrypt.hash(adminPassword, 10);
+    
+    await db.insert(users).values({
+      email: adminEmail,
+      password: hashedPassword,
+      firstName: "Organization",
+      lastName: "Admin",
+      role: "org_admin",
+      organizationId: organization.id,
+      permissions: ["place_ticket", "accept_ticket"],
+      vendorTiers: ["tier_1", "tier_2", "tier_3"],
+    });
+    
+    console.log(`Created organization admin: ${adminEmail} / ${adminPassword}`);
     return organization;
   }
 
@@ -176,6 +194,24 @@ export class DatabaseStorage implements IStorage {
 
   async createMaintenanceVendor(vendor: InsertMaintenanceVendor): Promise<MaintenanceVendor> {
     const [maintenanceVendor] = await db.insert(maintenanceVendors).values(vendor).returning();
+    
+    // Create admin user for this maintenance vendor
+    const adminEmail = `admin@${maintenanceVendor.name.toLowerCase().replace(/\s+/g, '')}.vendor`;
+    const adminPassword = Math.random().toString(36).substring(2, 10); // Generate random password
+    const hashedPassword = await bcrypt.hash(adminPassword, 10);
+    
+    await db.insert(users).values({
+      email: adminEmail,
+      password: hashedPassword,
+      firstName: "Maintenance",
+      lastName: "Admin",
+      role: "maintenance_admin",
+      maintenanceVendorId: maintenanceVendor.id,
+      permissions: ["accept_ticket"],
+      vendorTiers: ["tier_1", "tier_2", "tier_3"],
+    });
+    
+    console.log(`Created vendor admin: ${adminEmail} / ${adminPassword}`);
     return maintenanceVendor;
   }
 
