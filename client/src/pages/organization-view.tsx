@@ -330,6 +330,18 @@ export default function OrganizationView() {
     completeTicketMutation.mutate(id);
   };
 
+  const openLocationAssignment = (userId: number, userName: string) => {
+    setSelectedUserId(userId);
+    setSelectedUserName(userName);
+    setIsLocationAssignmentOpen(true);
+  };
+
+  const closeLocationAssignment = () => {
+    setSelectedUserId(null);
+    setSelectedUserName("");
+    setIsLocationAssignmentOpen(false);
+  };
+
 
 
   if (organizationLoading) {

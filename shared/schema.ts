@@ -90,6 +90,24 @@ export const ticketMilestones = pgTable("ticket_milestones", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Location tables for organization management
+export const locations = pgTable("locations", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
+  name: varchar("name", { length: 200 }).notNull(),
+  address: text("address"),
+  description: text("description"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const userLocationAssignments = pgTable("user_location_assignments", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  locationId: integer("location_id").references(() => locations.id).notNull(),
+  assignedAt: timestamp("assigned_at").defaultNow(),
+});
+
 // Session storage table for authentication
 export const sessions = pgTable("sessions", {
   sid: varchar("sid").primaryKey(),

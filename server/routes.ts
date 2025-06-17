@@ -9,7 +9,9 @@ import {
   insertOrganizationSchema,
   insertMaintenanceVendorSchema,
   insertUserSchema,
-  insertSubAdminSchema
+  insertSubAdminSchema,
+  insertLocationSchema,
+  updateLocationSchema
 } from "@shared/schema";
 import { getSessionConfig, authenticateUser, requireRole, requireOrganization } from "./auth";
 import multer from "multer";
@@ -780,6 +782,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(ticket);
     } catch (error) {
       res.status(500).json({ message: "Failed to complete ticket" });
+    }
+  });
+
+  // Location routes
+  app.get('/api/organizations/:orgId/locations', authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const orgId = parseInt(req.params.orgId);
+      const locations = await storage.getLocations(orgId);
+      res.json(locations);
+    } catch (error) {
+      console.error("Error fetching locations:", error);
+      res.status(500).json({ message: "Failed to fetch locations" });
+    }
+  });
+
+  app.post('/api/organizations/:orgId/locations', authenticateUser, requireRole(["root", "org_admin"]), async (req: Request, res: Response) => {
+    try {
+      const orgId = parseInt(req.params.orgId);
+      const locationData = insertLocationSchema.parse({
+        ...req.body,
+        organizationId: orgId,
+      });
+      
+      const location = await storage.createLocation(locationData);
+      res.status(201).json(location);
+    } catch (error) {
+      console.error("Error creating location:", error);
+      res.status(500).json({ message: "Failed to create location" });
+    }
+  });
+
+  app.patch('/api/locations/:id', authenticateUser, requireRole(["root", "org_admin"]), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = updateLocationSchema.parse(req.body);
+      
+      const location = await storage.updateLocation(id, updates);
+      if (!location) {
+        return res.status(404).json({ message: "Location not found" });
+      }
+      
+      res.json(location);
+    } catch (error) {
+      console.error("Error updating location:", error);
+      res.status(500).json({ message: "Failed to update location" });
+    }
+  });
+
+  app.delete('/api/locations/:id', authenticateUser, requireRole(["root", "org_admin"]), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteLocation(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Location not found" });
+      }
+      
+      res.json({ message: "Location deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting location:", error);
+      res.status(500).json({ message: "Failed to delete location" });
+    }
+  });
+
+  // User-Location assignment routes
+  app.get('/api/users/:userId/locations', authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const locations = await storage.getUserLocations(userId);
+      res.json(locations);
+    } catch (error) {
+      console.error("Error fetching user locations:", error);
+      res.status(500).json({ message: "Failed to fetch user locations" });
+    }
+  });
+
+  app.get('/api/locations/:locationId/users', authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const locationId = parseInt(req.params.locationId);
+      const users = await storage.getLocationUsers(locationId);
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching location users:", error);
+      res.status(500).json({ message: "Failed to fetch location users" });
+    }
+  });
+
+  app.post('/api/users/:userId/locations', authenticateUser, requireRole(["root", "org_admin"]), async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const { locationIds } = req.body;
+      
+      if (!Array.isArray(locationIds)) {
+        return res.status(400).json({ message: "locationIds must be an array" });
+      }
+      
+      await storage.updateUserLocationAssignments(userId, locationIds);
+      res.json({ message: "User location assignments updated successfully" });
+    } catch (error) {
+      console.error("Error updating user location assignments:", error);
+      res.status(500).json({ message: "Failed to update user location assignments" });
     }
   });
 

@@ -1,9 +1,12 @@
 import { 
   users, 
   tickets, 
+  ticketMilestones,
   organizations,
   maintenanceVendors,
   vendorOrganizationTiers,
+  locations,
+  userLocationAssignments,
   type User, 
   type InsertUser, 
   type InsertSubAdmin,
@@ -13,7 +16,11 @@ import {
   type Organization,
   type InsertOrganization,
   type MaintenanceVendor,
-  type InsertMaintenanceVendor
+  type InsertMaintenanceVendor,
+  type Location,
+  type InsertLocation,
+  type UpdateLocation,
+  type InsertUserLocationAssignment,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, inArray } from "drizzle-orm";
