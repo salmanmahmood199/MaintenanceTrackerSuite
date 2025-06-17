@@ -56,7 +56,7 @@ export default function OrganizationView() {
   const canManageVendors = user?.role === "root" || user?.role === "org_admin";
 
   // Fetch organization details
-  const { data: organization } = useQuery<Organization | undefined>({
+  const { data: organization, isLoading: organizationLoading } = useQuery<Organization | undefined>({
     queryKey: ["/api/organizations", organizationId],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/organizations");
@@ -332,11 +332,20 @@ export default function OrganizationView() {
 
 
 
+  if (organizationLoading) {
+    return (
+      <div className="min-h-screen taskscout-bg flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   if (!organization) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen taskscout-bg flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-slate-900 mb-2">Organization Not Found</h2>
+          <h2 className="text-xl font-semibold text-foreground mb-2">Organization Not Found</h2>
+          <p className="text-muted-foreground mb-4">Organization ID: {organizationId}</p>
           {user?.role === "root" && (
             <Button variant="outline" asChild>
               <Link href="/">
