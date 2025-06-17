@@ -44,77 +44,70 @@
   }
   
   .taskscout-gradient {
-    background: linear-gradient(135deg, hsl(210, 40%, 50%), hsl(210, 40%, 40%));
-  }
-  
-  .taskscout-primary-gradient {
-    background: linear-gradient(135deg, hsl(210, 40%, 50%), hsl(210, 40%, 40%));
-  }
-  
-  .taskscout-secondary-gradient {
-    background: linear-gradient(135deg, hsl(0, 0%, 25%), hsl(0, 0%, 20%));
+    background: linear-gradient(135deg, hsl(174, 76%, 48%), hsl(174, 76%, 35%));
   }
   
   .taskscout-bg {
-    background: hsl(0, 0%, 7%);
+    background: hsl(210, 15%, 7%);
   }
   
   .taskscout-card {
-    background: hsl(0, 0%, 11%);
-    border: 1px solid hsl(0, 0%, 18%);
+    background: hsl(210, 20%, 10%);
+    border: 1px solid hsl(210, 25%, 20%);
   }
 }
 
 :root {
-  /* TaskScout clean dark theme */
-  --background: hsl(0, 0%, 7%); /* #121212 */
-  --foreground: hsl(0, 0%, 98%); /* Crisp white text */
-  --card: hsl(0, 0%, 11%); /* #1c1c1c */
-  --card-foreground: hsl(0, 0%, 98%); /* Crisp white text */
-  --popover: hsl(0, 0%, 11%);
-  --popover-foreground: hsl(0, 0%, 98%);
-  --primary: hsl(210, 40%, 50%); /* Subtle blue */
-  --primary-foreground: hsl(0, 0%, 100%);
-  --secondary: hsl(0, 0%, 25%);
-  --secondary-foreground: hsl(0, 0%, 98%);
-  --muted: hsl(0, 0%, 15%);
-  --muted-foreground: hsl(0, 0%, 75%); /* Lighter for better readability */
-  --accent: hsl(210, 40%, 50%); /* Same as primary for consistency */
-  --accent-foreground: hsl(0, 0%, 100%);
-  --destructive: hsl(0, 70%, 55%);
+  /* TaskScout dark theme inspired by logo */
+  --background: hsl(210, 15%, 7%);
+  --foreground: hsl(0, 0%, 95%);
+  --card: hsl(210, 20%, 10%);
+  --card-foreground: hsl(0, 0%, 95%);
+  --popover: hsl(210, 20%, 10%);
+  --popover-foreground: hsl(0, 0%, 95%);
+  --primary: hsl(174, 76%, 48%); /* TaskScout teal */
+  --primary-foreground: hsl(210, 15%, 7%);
+  --secondary: hsl(210, 25%, 15%);
+  --secondary-foreground: hsl(0, 0%, 95%);
+  --muted: hsl(210, 25%, 15%);
+  --muted-foreground: hsl(210, 15%, 65%);
+  --accent: hsl(174, 76%, 48%); /* TaskScout teal accent */
+  --accent-foreground: hsl(210, 15%, 7%);
+  --destructive: hsl(0, 84%, 60%);
   --destructive-foreground: hsl(0, 0%, 100%);
-  --border: hsl(0, 0%, 20%); /* Slightly lighter border */
-  --input: hsl(0, 0%, 15%);
-  --ring: hsl(210, 40%, 50%);
-  --radius: 0.5rem;
+  --border: hsl(210, 25%, 20%);
+  --input: hsl(210, 25%, 15%);
+  --ring: hsl(174, 76%, 48%);
+  --radius: 0.75rem;
   
   /* TaskScout specific colors */
-  --taskscout-primary: hsl(210, 40%, 50%);
-  --taskscout-bg: hsl(0, 0%, 7%);
-  --taskscout-card: hsl(0, 0%, 11%);
-  --taskscout-border: hsl(0, 0%, 18%);
+  --taskscout-teal: hsl(174, 76%, 48%);
+  --taskscout-dark-teal: hsl(174, 76%, 35%);
+  --taskscout-bg: hsl(210, 15%, 7%);
+  --taskscout-card: hsl(210, 20%, 10%);
+  --taskscout-border: hsl(210, 25%, 20%);
 }
 
 .dark {
-  --background: hsl(0, 0%, 7%);
-  --foreground: hsl(0, 0%, 98%); /* Crisp white text */
-  --card: hsl(0, 0%, 11%);
-  --card-foreground: hsl(0, 0%, 98%); /* Crisp white text */
-  --popover: hsl(0, 0%, 11%);
-  --popover-foreground: hsl(0, 0%, 98%);
-  --primary: hsl(210, 40%, 50%);
-  --primary-foreground: hsl(0, 0%, 100%);
-  --secondary: hsl(0, 0%, 25%);
-  --secondary-foreground: hsl(0, 0%, 98%);
-  --muted: hsl(0, 0%, 15%);
-  --muted-foreground: hsl(0, 0%, 75%); /* Lighter for better readability */
-  --accent: hsl(210, 40%, 50%);
-  --accent-foreground: hsl(0, 0%, 100%);
-  --destructive: hsl(0, 70%, 55%);
+  --background: hsl(210, 15%, 7%);
+  --foreground: hsl(0, 0%, 95%);
+  --card: hsl(210, 20%, 10%);
+  --card-foreground: hsl(0, 0%, 95%);
+  --popover: hsl(210, 20%, 10%);
+  --popover-foreground: hsl(0, 0%, 95%);
+  --primary: hsl(174, 76%, 48%);
+  --primary-foreground: hsl(210, 15%, 7%);
+  --secondary: hsl(210, 25%, 15%);
+  --secondary-foreground: hsl(0, 0%, 95%);
+  --muted: hsl(210, 25%, 15%);
+  --muted-foreground: hsl(210, 15%, 65%);
+  --accent: hsl(174, 76%, 48%);
+  --accent-foreground: hsl(210, 15%, 7%);
+  --destructive: hsl(0, 84%, 60%);
   --destructive-foreground: hsl(0, 0%, 100%);
-  --border: hsl(0, 0%, 20%); /* Slightly lighter border */
-  --input: hsl(0, 0%, 15%);
-  --ring: hsl(210, 40%, 50%);
+  --border: hsl(210, 25%, 20%);
+  --input: hsl(210, 25%, 15%);
+  --ring: hsl(174, 76%, 48%);
 }
 
 @layer base {

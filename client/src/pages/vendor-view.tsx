@@ -115,28 +115,28 @@ export default function VendorView() {
   }
 
   return (
-    <div className="min-h-screen taskscout-bg">
+    <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <header className="taskscout-card border-b border-border sticky top-0 z-40">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               {user?.role === "root" && (
-                <Button variant="ghost" size="sm" asChild className="text-foreground hover:text-foreground">
-                  <Link href="/">
+                <Link href="/admin">
+                  <Button variant="ghost" size="sm">
                     <ArrowLeft className="h-4 w-4 mr-2" />
-                    <span className="font-medium">Back to Admin</span>
-                  </Link>
-                </Button>
+                    Back to Admin
+                  </Button>
+                </Link>
               )}
               <div>
-                <h1 className="text-xl font-bold text-foreground">{vendor.name}</h1>
-                <p className="text-sm text-muted-foreground">Maintenance Vendor Dashboard</p>
+                <h1 className="text-xl font-bold text-slate-900">{vendor.name}</h1>
+                <p className="text-sm text-slate-500">Maintenance Vendor Dashboard</p>
               </div>
             </div>
             
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-muted-foreground">
+              <span className="text-sm text-slate-600">
                 {user?.firstName} {user?.lastName} ({user?.email})
               </span>
               <Button 
