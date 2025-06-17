@@ -135,12 +135,12 @@ export function TicketTable({
                       <div className="space-y-1 min-w-[120px]">
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-slate-600">
-                            {ticket.progressStage || "submitted"}
+                            {(ticket as any).progressStage || "submitted"}
                           </span>
-                          <span className="font-medium">{ticket.progress || 0}%</span>
+                          <span className="font-medium">{(ticket as any).progress || 0}%</span>
                         </div>
                         <Progress 
-                          value={ticket.progress || 0} 
+                          value={(ticket as any).progress || 0} 
                           className="h-2 cursor-pointer"
                           onClick={() => openProgressTracker(ticket)}
                         />
@@ -351,13 +351,15 @@ export function TicketTable({
       </Dialog>
 
       {/* Progress Tracker Modal */}
-      <ProgressTracker
-        ticket={selectedTicket!}
-        open={isProgressTrackerOpen}
-        onOpenChange={setIsProgressTrackerOpen}
-        onUpdateProgress={onUpdateProgress}
-        canUpdate={canAcceptTickets}
-      />
+      {selectedTicket && (
+        <ProgressTracker
+          ticket={selectedTicket}
+          open={isProgressTrackerOpen}
+          onOpenChange={setIsProgressTrackerOpen}
+          onUpdateProgress={onUpdateProgress || undefined}
+          canUpdate={canAcceptTickets}
+        />
+      )}
     </>
   );
 }

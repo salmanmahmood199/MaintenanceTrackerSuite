@@ -31,10 +31,12 @@ export function ProgressTracker({
   onUpdateProgress, 
   canUpdate = false 
 }: ProgressTrackerProps) {
-  const [selectedStage, setSelectedStage] = useState(ticket.progressStage || "submitted");
+  if (!ticket) return null;
+  
+  const [selectedStage, setSelectedStage] = useState((ticket as any).progressStage || "submitted");
 
-  const currentStage = progressStages.find(stage => stage.value === (ticket.progressStage || "submitted"));
-  const currentProgress = ticket.progress || currentStage?.progress || 0;
+  const currentStage = progressStages.find(stage => stage.value === ((ticket as any).progressStage || "submitted"));
+  const currentProgress = (ticket as any).progress || currentStage?.progress || 0;
 
   const handleUpdateProgress = () => {
     const stage = progressStages.find(s => s.value === selectedStage);
@@ -77,7 +79,7 @@ export function ProgressTracker({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="font-medium text-slate-900">Current Progress</h3>
-              <Badge className={getStageColor(ticket.progressStage || "submitted")}>
+              <Badge className={getStageColor((ticket as any).progressStage || "submitted")}>
                 {currentStage?.label || "Submitted"}
               </Badge>
             </div>
@@ -103,7 +105,7 @@ export function ProgressTracker({
             <div className="space-y-3">
               {progressStages.map((stage, index) => {
                 const isCompleted = currentProgress >= stage.progress;
-                const isCurrent = stage.value === (ticket.progressStage || "submitted");
+                const isCurrent = stage.value === ((ticket as any).progressStage || "submitted");
                 const Icon = stage.icon;
 
                 return (

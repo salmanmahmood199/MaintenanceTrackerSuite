@@ -66,6 +66,8 @@ export const tickets = pgTable("tickets", {
   description: text("description").notNull(),
   priority: text("priority").notNull(),
   status: text("status").notNull().default("pending"), // pending, accepted, rejected, in-progress, completed
+  progress: integer("progress").default(0), // Progress percentage 0-100
+  progressStage: varchar("progress_stage", { length: 100 }).default("submitted"), // Current stage description
   organizationId: integer("organization_id").notNull(),
   reporterId: integer("reporter_id").notNull(),
   assigneeId: integer("assignee_id"),
