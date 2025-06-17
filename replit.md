@@ -207,14 +207,16 @@ Changelog:
 - June 17, 2025. Integrated TaskScout logo throughout application and updated branding to "TaskScout"
 - June 17, 2025. Updated all gradients and buttons to use purple/pink Material-UI color palette
 - June 17, 2025. Set dark backgrounds to Material-UI standards (#121212, #1e1e1e)
+- June 17, 2025. Simplified color scheme to clean dark theme with minimal colors and subtle blue primary
+- June 17, 2025. Removed excessive gradients and vibrant colors for cleaner appearance
 ```
 
 ## User Preferences
 
 ```
 Preferred communication style: Simple, everyday language.
-UI Design: TaskScout Material-UI inspired dark theme with purple primary (#3f51b5), pink secondary (#f50057), dark backgrounds (#121212, #1e1e1e)
+UI Design: TaskScout clean dark theme with minimal colors - subtle blue primary, dark backgrounds (#121212, #1c1c1c)
 Root Admin UI: Tabbed interface with sidebar navigation for organizations, vendors, tickets, and sub-admins
-Dark Theme: Enabled by default with TaskScout logo and Material-UI color scheme
-Branding: TaskScout logo displayed throughout application with consistent purple/pink color scheme
+Dark Theme: Enabled by default with TaskScout logo and simplified color palette
+Branding: TaskScout logo displayed throughout application with clean, minimal styling
 ```
