@@ -195,6 +195,8 @@ Changelog:
 - June 17, 2025. Implemented permission-based UI filtering for sub-admin users
 - June 17, 2025. Added role-based access control (accept_ticket vs place_ticket permissions)
 - June 17, 2025. Fixed modal scrolling issue with large image uploads
+- June 17, 2025. Completed permission-based ticket management for sub-admin users
+- June 17, 2025. Enhanced image display in ticket cards to show multiple thumbnails
 ```
 
 ## User Preferences

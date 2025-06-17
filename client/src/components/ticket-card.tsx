@@ -80,11 +80,25 @@ export function TicketCard({ ticket, onAccept, onReject, onComplete, showActions
         
         <div className="flex items-center space-x-3 ml-6">
           {ticket.images && ticket.images.length > 0 && (
-            <img
-              src={ticket.images[0]}
-              alt="Ticket attachment"
-              className="w-20 h-16 rounded-lg object-cover"
-            />
+            <div className="flex space-x-2">
+              {ticket.images.slice(0, 3).map((image, index) => (
+                <img
+                  key={index}
+                  src={image}
+                  alt={`Ticket attachment ${index + 1}`}
+                  className="w-16 h-12 rounded-lg object-cover border border-slate-200"
+                  onError={(e) => {
+                    console.error('Failed to load image:', image);
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              ))}
+              {ticket.images.length > 3 && (
+                <div className="w-16 h-12 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-xs text-slate-600">
+                  +{ticket.images.length - 3}
+                </div>
+              )}
+            </div>
           )}
           
           {showActions && canAcceptTickets && (
