@@ -166,17 +166,15 @@ export class DatabaseStorage implements IStorage {
 
   async deleteTicket(id: number): Promise<boolean> {
     const result = await db.delete(tickets).where(eq(tickets.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   async getTicketsByStatus(status: string, organizationId?: number): Promise<Ticket[]> {
-    const query = db.select().from(tickets).where(eq(tickets.status, status));
-    
     if (organizationId !== undefined) {
-      return await query.where(and(eq(tickets.status, status), eq(tickets.organizationId, organizationId)));
+      return await db.select().from(tickets).where(and(eq(tickets.status, status), eq(tickets.organizationId, organizationId)));
     }
     
-    return await query;
+    return await db.select().from(tickets).where(eq(tickets.status, status));
   }
 
   async getTicketStats(organizationId?: number): Promise<{
