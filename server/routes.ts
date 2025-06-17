@@ -168,6 +168,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/organizations/:id/reset-admin-password', authenticateUser, requireRole(['root']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { newPassword } = req.body;
+      
+      if (!newPassword || newPassword.length < 6) {
+        return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+      }
+      
+      const result = await storage.resetOrganizationAdminPassword(id, newPassword);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to reset organization admin password' });
+    }
+  });
+
   app.delete('/api/organizations/:id', authenticateUser, requireRole(['root']), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
@@ -255,6 +271,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(vendor);
     } catch (error) {
       res.status(500).json({ message: 'Failed to update vendor' });
+    }
+  });
+
+  app.post('/api/maintenance-vendors/:id/reset-admin-password', authenticateUser, requireRole(['root']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { newPassword } = req.body;
+      
+      if (!newPassword || newPassword.length < 6) {
+        return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+      }
+      
+      const result = await storage.resetVendorAdminPassword(id, newPassword);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to reset vendor admin password' });
     }
   });
 

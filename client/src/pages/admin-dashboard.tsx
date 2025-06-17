@@ -646,6 +646,26 @@ export default function AdminDashboard() {
             )}
           </CardContent>
         </Card>
+
+        {/* Edit Organization Modal */}
+        <EditOrganizationModal
+          open={isEditOrgModalOpen}
+          onOpenChange={setIsEditOrgModalOpen}
+          onSubmit={handleEditOrganization}
+          onResetPassword={handleResetOrgPassword}
+          isLoading={editOrgMutation.isPending || resetOrgPasswordMutation.isPending}
+          organization={selectedOrganization}
+        />
+
+        {/* Edit Vendor Modal */}
+        <EditVendorModal
+          open={isEditVendorModalOpen}
+          onOpenChange={setIsEditVendorModalOpen}
+          onSubmit={handleEditVendor}
+          onResetPassword={handleResetVendorPassword}
+          isLoading={editVendorMutation.isPending || resetVendorPasswordMutation.isPending}
+          vendor={selectedVendor}
+        />
       </div>
     </div>
   );
