@@ -86,7 +86,7 @@ export const ticketMilestones = pgTable("ticket_milestones", {
   achievedAt: timestamp("achieved_at").defaultNow().notNull(),
   achievedById: integer("achieved_by_id").references(() => users.id),
   achievedByName: varchar("achieved_by_name", { length: 200 }),
-  metadata: jsonb("metadata"),
+  metadata: text("metadata"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

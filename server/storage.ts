@@ -72,6 +72,10 @@ export interface IStorage {
     highPriority: number;
   }>;
   
+  // Milestone operations
+  getTicketMilestones(ticketId: number): Promise<any[]>;
+  createTicketMilestone(milestone: { ticketId: number; milestoneType: string; milestoneTitle: string; milestoneDescription?: string; achievedById?: number; achievedByName?: string }): Promise<any>;
+  
   // Initialize root user
   initializeRootUser(): Promise<void>;
 }

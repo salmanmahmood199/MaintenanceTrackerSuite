@@ -658,6 +658,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get ticket milestones
+  app.get("/api/tickets/:id/milestones", authenticateUser, async (req, res) => {
+    try {
+      const ticketId = parseInt(req.params.id);
+      const milestones = await storage.getTicketMilestones(ticketId);
+      res.json(milestones);
+    } catch (error) {
+      console.error("Error fetching milestones:", error);
+      res.status(500).json({ message: "Failed to fetch milestones" });
+    }
+  });
+
+  // Create ticket milestone
+  app.post("/api/tickets/:id/milestones", authenticateUser, async (req: any, res) => {
+    try {
+      const ticketId = parseInt(req.params.id);
+      const { milestoneType, milestoneDescription } = req.body;
+      
+      // Find the milestone type to get the title
+      const milestoneTypes = [
+        { value: "submitted", label: "Ticket Submitted" },
+        { value: "reviewed", label: "Under Review" },
+        { value: "assigned", label: "Assigned to Vendor" },
+        { value: "in_progress", label: "Work Started" },
+        { value: "technician_assigned", label: "Technician Assigned" },
+        { value: "on_site", label: "Technician On-Site" },
+        { value: "diagnosis_complete", label: "Diagnosis Complete" },
+        { value: "parts_ordered", label: "Parts Ordered" },
+        { value: "repair_started", label: "Repair Started" },
+        { value: "testing", label: "Testing & Verification" },
+        { value: "completed", label: "Work Completed" },
+      ];
+      
+      const milestoneTypeObj = milestoneTypes.find(m => m.value === milestoneType);
+      if (!milestoneTypeObj) {
+        return res.status(400).json({ message: "Invalid milestone type" });
+      }
+      
+      const milestone = await storage.createTicketMilestone({
+        ticketId,
+        milestoneType,
+        milestoneTitle: milestoneTypeObj.label,
+        milestoneDescription,
+        achievedById: req.user.id,
+        achievedByName: `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || req.user.email,
+      });
+      
+      res.json(milestone);
+    } catch (error) {
+      console.error("Error creating milestone:", error);
+      res.status(500).json({ message: "Failed to create milestone" });
+    }
+  });
+
   // Accept ticket with vendor assignment
   app.post("/api/tickets/:id/accept", authenticateUser, (req, res, next) => {
     const user = req.user as any;

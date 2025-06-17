@@ -115,11 +115,11 @@ export function ProgressTracker({
             
             {isLoading ? (
               <div className="text-center py-4 text-slate-500">Loading milestones...</div>
-            ) : milestones.length === 0 ? (
+            ) : !Array.isArray(milestones) || milestones.length === 0 ? (
               <div className="text-center py-4 text-slate-500">No milestones yet</div>
             ) : (
               <div className="space-y-4">
-                {milestones.map((milestone: any, index: number) => {
+                {(milestones as any[]).map((milestone: any, index: number) => {
                   const milestoneType = milestoneTypes.find(m => m.value === milestone.milestoneType);
                   const Icon = milestoneType?.icon || FileText;
 
