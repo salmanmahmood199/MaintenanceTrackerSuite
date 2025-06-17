@@ -150,6 +150,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Sub-admin management routes
+  app.get('/api/organizations/:organizationId/sub-admins', authenticateUser, requireRole(['root', 'org_admin']), async (req, res) => {
+    try {
+      const organizationId = parseInt(req.params.organizationId);
+      const subAdmins = await storage.getSubAdmins(organizationId);
+      res.json(subAdmins);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch sub-admins' });
+    }
+  });
+
+  app.post('/api/organizations/:organizationId/sub-admins', authenticateUser, requireRole(['root', 'org_admin']), async (req, res) => {
+    try {
+      const organizationId = parseInt(req.params.organizationId);
+      const subAdmin = await storage.createSubAdmin(req.body, organizationId);
+      res.status(201).json(subAdmin);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to create sub-admin' });
+    }
+  });
+
+  app.put('/api/sub-admins/:id', authenticateUser, requireRole(['root', 'org_admin']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const subAdmin = await storage.updateSubAdmin(id, req.body);
+      if (!subAdmin) {
+        return res.status(404).json({ message: 'Sub-admin not found' });
+      }
+      res.json(subAdmin);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to update sub-admin' });
+    }
+  });
+
+  app.delete('/api/sub-admins/:id', authenticateUser, requireRole(['root', 'org_admin']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteSubAdmin(id);
+      if (!success) {
+        return res.status(404).json({ message: 'Sub-admin not found' });
+      }
+      res.json({ message: 'Sub-admin deleted successfully' });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to delete sub-admin' });
+    }
+  });
+
+  // Vendor tier filtering route
+  app.get('/api/maintenance-vendors/by-tiers', authenticateUser, async (req, res) => {
+    try {
+      const tiers = req.query.tiers as string;
+      const tierArray = tiers ? tiers.split(',') : [];
+      const vendors = await storage.getMaintenanceVendorsByTier(tierArray);
+      res.json(vendors);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch vendors by tier' });
+    }
+  });
+
   // Users management routes
   app.post('/api/users', authenticateUser, requireRole(['root', 'org_admin', 'maintenance_admin']), async (req, res) => {
     try {

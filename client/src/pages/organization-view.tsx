@@ -4,14 +4,15 @@ import { useRoute } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Users, Clock, Wrench, Check, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Plus, Users, Clock, Wrench, Check, AlertTriangle, UserPlus } from "lucide-react";
 import { CreateTicketModal } from "@/components/create-ticket-modal";
+import { CreateSubAdminModal } from "@/components/create-subadmin-modal";
 import { TicketCard } from "@/components/ticket-card";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
-import type { Ticket, InsertTicket, Organization } from "@shared/schema";
+import type { Ticket, InsertTicket, InsertSubAdmin, Organization, User } from "@shared/schema";
 
 interface TicketStats {
   open: number;
@@ -24,6 +25,7 @@ export default function OrganizationView() {
   const [, params] = useRoute("/admin/organizations/:id");
   const organizationId = parseInt(params?.id || "0");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreateSubAdminOpen, setIsCreateSubAdminOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -61,6 +63,16 @@ export default function OrganizationView() {
       const response = await apiRequest("GET", `/api/tickets/stats?organizationId=${organizationId}`);
       return await response.json() as TicketStats;
     },
+  });
+
+  // Fetch sub-admins for this organization
+  const { data: subAdmins = [] } = useQuery<User[]>({
+    queryKey: ["/api/organizations", organizationId, "sub-admins"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/organizations/${organizationId}/sub-admins`);
+      return await response.json() as User[];
+    },
+    enabled: !!organizationId,
   });
 
   // Create ticket mutation
