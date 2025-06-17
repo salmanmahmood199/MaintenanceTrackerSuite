@@ -330,30 +330,7 @@ export default function OrganizationView() {
     completeTicketMutation.mutate(id);
   };
 
-  // Progress update mutation
-  const updateProgressMutation = useMutation({
-    mutationFn: async ({ ticketId, progress, stage }: { ticketId: number; progress: number; stage: string }) => {
-      return apiRequest("PATCH", `/api/tickets/${ticketId}`, { progress, progressStage: stage });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
-      toast({
-        title: "Success",
-        description: "Progress updated successfully",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to update progress",
-        variant: "destructive",
-      });
-    },
-  });
 
-  const handleUpdateProgress = (ticketId: number, progress: number, stage: string) => {
-    updateProgressMutation.mutate({ ticketId, progress, stage });
-  };
 
   if (!organization) {
     return (
@@ -552,7 +529,6 @@ export default function OrganizationView() {
               onAccept={canAcceptTickets ? handleAcceptTicket : undefined}
               onReject={canAcceptTickets ? handleRejectTicket : undefined}
               onComplete={canAcceptTickets ? handleCompleteTicket : undefined}
-              onUpdateProgress={handleUpdateProgress}
               showActions={canAcceptTickets}
               userRole={user?.role}
               userPermissions={user?.permissions || undefined}

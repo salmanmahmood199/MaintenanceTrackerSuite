@@ -66,8 +66,6 @@ export const tickets = pgTable("tickets", {
   description: text("description").notNull(),
   priority: text("priority").notNull(),
   status: text("status").notNull().default("pending"), // pending, accepted, rejected, in-progress, completed
-  progress: integer("progress").default(0), // Progress percentage 0-100
-  progressStage: varchar("progress_stage", { length: 100 }).default("submitted"), // Current stage description
   organizationId: integer("organization_id").notNull(),
   reporterId: integer("reporter_id").notNull(),
   assigneeId: integer("assignee_id"),
@@ -76,6 +74,20 @@ export const tickets = pgTable("tickets", {
   images: text("images").array(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Ticket milestones table for tracking progress
+export const ticketMilestones = pgTable("ticket_milestones", {
+  id: serial("id").primaryKey(),
+  ticketId: integer("ticket_id").references(() => tickets.id, { onDelete: "cascade" }).notNull(),
+  milestoneType: varchar("milestone_type", { length: 50 }).notNull(),
+  milestoneTitle: varchar("milestone_title", { length: 200 }).notNull(),
+  milestoneDescription: text("milestone_description"),
+  achievedAt: timestamp("achieved_at").defaultNow().notNull(),
+  achievedById: integer("achieved_by_id").references(() => users.id),
+  achievedByName: varchar("achieved_by_name", { length: 200 }),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // Session storage table for authentication
@@ -242,4 +254,6 @@ export type UpdateTicket = z.infer<typeof updateTicketSchema>;
 export type AcceptTicket = z.infer<typeof acceptTicketSchema>;
 export type RejectTicket = z.infer<typeof rejectTicketSchema>;
 export type Ticket = typeof tickets.$inferSelect;
+export type InsertTicketMilestone = z.infer<typeof insertTicketMilestoneSchema>;
+export type TicketMilestone = typeof ticketMilestones.$inferSelect;
 export type LoginData = z.infer<typeof loginSchema>;

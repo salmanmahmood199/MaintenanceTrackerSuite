@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Progress } from "@/components/ui/progress";
+
 import { Calendar, User, Hash, Wrench, CheckCircle, XCircle, Eye, ImageIcon, Clock } from "lucide-react";
 import { formatDate, getPriorityColor, getStatusColor } from "@/lib/utils";
 import { ProgressTracker } from "@/components/progress-tracker";
@@ -14,7 +14,6 @@ interface TicketTableProps {
   onAccept?: (id: number) => void;
   onReject?: (id: number) => void;
   onComplete?: (id: number) => void;
-  onUpdateProgress?: (ticketId: number, progress: number, stage: string) => void;
   showActions?: boolean;
   userRole?: string;
   userPermissions?: string[];
@@ -24,8 +23,7 @@ export function TicketTable({
   tickets, 
   onAccept, 
   onReject, 
-  onComplete, 
-  onUpdateProgress,
+  onComplete,
   showActions = true, 
   userRole, 
   userPermissions 
@@ -91,7 +89,7 @@ export function TicketTable({
               <TableHead>Title</TableHead>
               <TableHead>Priority</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Progress</TableHead>
+              <TableHead>Timeline</TableHead>
               <TableHead>Created</TableHead>
               <TableHead>Images</TableHead>
               <TableHead>Actions</TableHead>
@@ -132,19 +130,15 @@ export function TicketTable({
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="space-y-1 min-w-[120px]">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-slate-600">
-                            {(ticket as any).progressStage || "submitted"}
-                          </span>
-                          <span className="font-medium">{(ticket as any).progress || 0}%</span>
-                        </div>
-                        <Progress 
-                          value={(ticket as any).progress || 0} 
-                          className="h-2 cursor-pointer"
-                          onClick={() => openProgressTracker(ticket)}
-                        />
-                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openProgressTracker(ticket)}
+                        className="text-xs"
+                      >
+                        <Clock className="h-3 w-3 mr-1" />
+                        View Timeline
+                      </Button>
                     </TableCell>
                     <TableCell className="text-sm text-slate-600">
                       {formatDate(ticket.createdAt)}
@@ -356,7 +350,6 @@ export function TicketTable({
           ticket={selectedTicket}
           open={isProgressTrackerOpen}
           onOpenChange={setIsProgressTrackerOpen}
-          onUpdateProgress={onUpdateProgress}
           canUpdate={!!canAcceptTickets}
         />
       )}
