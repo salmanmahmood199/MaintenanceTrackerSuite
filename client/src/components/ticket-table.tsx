@@ -81,24 +81,24 @@ export function TicketTable({
 
   return (
     <>
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="taskscout-card rounded-lg shadow overflow-hidden border-border">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Ticket #</TableHead>
-              <TableHead>Title</TableHead>
-              <TableHead>Priority</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Timeline</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead>Images</TableHead>
-              <TableHead>Actions</TableHead>
+            <TableRow className="border-border">
+              <TableHead className="text-foreground">Ticket #</TableHead>
+              <TableHead className="text-foreground">Title</TableHead>
+              <TableHead className="text-foreground">Priority</TableHead>
+              <TableHead className="text-foreground">Status</TableHead>
+              <TableHead className="text-foreground">Timeline</TableHead>
+              <TableHead className="text-foreground">Created</TableHead>
+              <TableHead className="text-foreground">Images</TableHead>
+              <TableHead className="text-foreground">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {tickets.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-slate-500">
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   No tickets found
                 </TableCell>
               </TableRow>
@@ -108,14 +108,14 @@ export function TicketTable({
                 const statusColor = getStatusColor(ticket.status);
                 
                 return (
-                  <TableRow key={ticket.id} className="hover:bg-slate-50">
-                    <TableCell className="font-mono text-sm">
+                  <TableRow key={ticket.id} className="hover:bg-muted/50 border-border">
+                    <TableCell className="font-mono text-sm font-bold text-foreground">
                       {ticket.ticketNumber || `TKT-${ticket.id.toString().padStart(3, '0')}`}
                     </TableCell>
                     <TableCell>
                       <div className="max-w-xs">
-                        <p className="font-medium text-slate-900 truncate">{ticket.title}</p>
-                        <p className="text-sm text-slate-500 truncate">{ticket.description}</p>
+                        <p className="font-medium text-foreground truncate">{ticket.title}</p>
+                        <p className="text-sm text-muted-foreground truncate">{ticket.description}</p>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -140,7 +140,7 @@ export function TicketTable({
                         View Timeline
                       </Button>
                     </TableCell>
-                    <TableCell className="text-sm text-slate-600">
+                    <TableCell className="text-sm text-foreground">
                       {formatDate(ticket.createdAt)}
                     </TableCell>
                     <TableCell>

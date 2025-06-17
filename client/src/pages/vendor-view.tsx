@@ -122,21 +122,21 @@ export default function VendorView() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               {user?.role === "root" && (
-                <Link href="/admin">
-                  <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" asChild className="text-foreground hover:text-foreground">
+                  <Link href="/">
                     <ArrowLeft className="h-4 w-4 mr-2" />
-                    Back to Admin
-                  </Button>
-                </Link>
+                    <span className="font-medium">Back to Admin</span>
+                  </Link>
+                </Button>
               )}
               <div>
-                <h1 className="text-xl font-bold text-slate-900">{vendor.name}</h1>
-                <p className="text-sm text-slate-500">Maintenance Vendor Dashboard</p>
+                <h1 className="text-xl font-bold text-foreground">{vendor.name}</h1>
+                <p className="text-sm text-muted-foreground">Maintenance Vendor Dashboard</p>
               </div>
             </div>
             
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-slate-600">
+              <span className="text-sm text-muted-foreground">
                 {user?.firstName} {user?.lastName} ({user?.email})
               </span>
               <Button 
