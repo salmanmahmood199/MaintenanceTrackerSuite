@@ -5,6 +5,7 @@ import {
   maintenanceVendors,
   type User, 
   type InsertUser, 
+  type InsertSubAdmin,
   type Ticket, 
   type InsertTicket, 
   type UpdateTicket,
@@ -24,6 +25,12 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   verifyUser(email: string, password: string): Promise<User | undefined>;
   
+  // Sub-admin operations
+  createSubAdmin(subAdmin: InsertSubAdmin, organizationId: number): Promise<User>;
+  getSubAdmins(organizationId: number): Promise<User[]>;
+  updateSubAdmin(id: number, updates: Partial<InsertSubAdmin>): Promise<User | undefined>;
+  deleteSubAdmin(id: number): Promise<boolean>;
+  
   // Organization operations
   getOrganizations(): Promise<Organization[]>;
   getOrganization(id: number): Promise<Organization | undefined>;
@@ -35,6 +42,7 @@ export interface IStorage {
   getMaintenanceVendor(id: number): Promise<MaintenanceVendor | undefined>;
   createMaintenanceVendor(vendor: InsertMaintenanceVendor): Promise<MaintenanceVendor>;
   updateMaintenanceVendor(id: number, updates: Partial<InsertMaintenanceVendor>): Promise<MaintenanceVendor | undefined>;
+  getMaintenanceVendorsByTier(tiers: string[]): Promise<MaintenanceVendor[]>;
   
   // Ticket operations
   getTickets(organizationId?: number): Promise<Ticket[]>;
@@ -76,6 +84,47 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return user;
+  }
+
+  // Sub-admin operations
+  async createSubAdmin(subAdmin: InsertSubAdmin, organizationId: number): Promise<User> {
+    const hashedPassword = await bcrypt.hash(subAdmin.password, 10);
+    const [user] = await db
+      .insert(users)
+      .values({
+        ...subAdmin,
+        password: hashedPassword,
+        role: "org_subadmin",
+        organizationId,
+      })
+      .returning();
+    return user;
+  }
+
+  async getSubAdmins(organizationId: number): Promise<User[]> {
+    return await db
+      .select()
+      .from(users)
+      .where(and(eq(users.organizationId, organizationId), eq(users.role, "org_subadmin")));
+  }
+
+  async updateSubAdmin(id: number, updates: Partial<InsertSubAdmin>): Promise<User | undefined> {
+    const updateData: any = { ...updates };
+    if (updates.password) {
+      updateData.password = await bcrypt.hash(updates.password, 10);
+    }
+    
+    const [user] = await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async deleteSubAdmin(id: number): Promise<boolean> {
+    const result = await db.delete(users).where(eq(users.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
   }
 
   async verifyUser(email: string, password: string): Promise<User | undefined> {
@@ -132,6 +181,13 @@ export class DatabaseStorage implements IStorage {
       .where(eq(maintenanceVendors.id, id))
       .returning();
     return vendor || undefined;
+  }
+
+  async getMaintenanceVendorsByTier(tiers: string[]): Promise<MaintenanceVendor[]> {
+    if (tiers.length === 0) return [];
+    
+    const vendors = await db.select().from(maintenanceVendors).where(eq(maintenanceVendors.isActive, true));
+    return vendors.filter(vendor => vendor.tier && tiers.includes(vendor.tier));
   }
 
   // Ticket operations
