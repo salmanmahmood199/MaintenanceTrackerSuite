@@ -3,8 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, User, Hash, Wrench, CheckCircle, XCircle, Eye, ImageIcon } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Calendar, User, Hash, Wrench, CheckCircle, XCircle, Eye, ImageIcon, Clock } from "lucide-react";
 import { formatDate, getPriorityColor, getStatusColor } from "@/lib/utils";
+import { ProgressTracker } from "@/components/progress-tracker";
 import type { Ticket } from "@shared/schema";
 
 interface TicketTableProps {
@@ -12,6 +14,7 @@ interface TicketTableProps {
   onAccept?: (id: number) => void;
   onReject?: (id: number) => void;
   onComplete?: (id: number) => void;
+  onUpdateProgress?: (ticketId: number, progress: number, stage: string) => void;
   showActions?: boolean;
   userRole?: string;
   userPermissions?: string[];
@@ -22,6 +25,7 @@ export function TicketTable({
   onAccept, 
   onReject, 
   onComplete, 
+  onUpdateProgress,
   showActions = true, 
   userRole, 
   userPermissions 
@@ -29,6 +33,7 @@ export function TicketTable({
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+  const [isProgressTrackerOpen, setIsProgressTrackerOpen] = useState(false);
 
   // Check if user can accept tickets based on role or permissions
   const canAcceptTickets = userRole && (
@@ -48,6 +53,11 @@ export function TicketTable({
     setSelectedTicket(ticket);
     setSelectedImageIndex(imageIndex);
     setIsImageViewerOpen(true);
+  };
+
+  const openProgressTracker = (ticket: Ticket) => {
+    setSelectedTicket(ticket);
+    setIsProgressTrackerOpen(true);
   };
 
   const closeImageViewer = () => {
@@ -81,6 +91,7 @@ export function TicketTable({
               <TableHead>Title</TableHead>
               <TableHead>Priority</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Progress</TableHead>
               <TableHead>Created</TableHead>
               <TableHead>Images</TableHead>
               <TableHead>Actions</TableHead>
@@ -89,7 +100,7 @@ export function TicketTable({
           <TableBody>
             {tickets.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-slate-500">
+                <TableCell colSpan={8} className="text-center py-8 text-slate-500">
                   No tickets found
                 </TableCell>
               </TableRow>
@@ -119,6 +130,21 @@ export function TicketTable({
                         {ticket.status === "in-progress" ? "In Progress" : 
                          ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1 min-w-[120px]">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-600">
+                            {ticket.progressStage || "submitted"}
+                          </span>
+                          <span className="font-medium">{ticket.progress || 0}%</span>
+                        </div>
+                        <Progress 
+                          value={ticket.progress || 0} 
+                          className="h-2 cursor-pointer"
+                          onClick={() => openProgressTracker(ticket)}
+                        />
+                      </div>
                     </TableCell>
                     <TableCell className="text-sm text-slate-600">
                       {formatDate(ticket.createdAt)}
@@ -323,6 +349,15 @@ export function TicketTable({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Progress Tracker Modal */}
+      <ProgressTracker
+        ticket={selectedTicket!}
+        open={isProgressTrackerOpen}
+        onOpenChange={setIsProgressTrackerOpen}
+        onUpdateProgress={onUpdateProgress}
+        canUpdate={canAcceptTickets}
+      />
     </>
   );
 }
