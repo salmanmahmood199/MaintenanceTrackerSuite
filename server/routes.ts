@@ -354,13 +354,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all tickets
   app.get("/api/tickets", async (req, res) => {
     try {
-      const { status } = req.query;
+      const { status, organizationId, maintenanceVendorId } = req.query;
       let tickets;
       
+      // Parse query parameters
+      const orgId = organizationId ? parseInt(organizationId as string) : undefined;
+      const vendorId = maintenanceVendorId ? parseInt(maintenanceVendorId as string) : undefined;
+      
       if (status && typeof status === 'string') {
-        tickets = await storage.getTicketsByStatus(status);
+        tickets = await storage.getTicketsByStatus(status, orgId);
       } else {
-        tickets = await storage.getTickets();
+        tickets = await storage.getTickets(orgId);
+      }
+      
+      // Filter by maintenance vendor if specified
+      if (vendorId) {
+        tickets = tickets.filter(ticket => ticket.maintenanceVendorId === vendorId);
       }
       
       res.json(tickets);
@@ -372,7 +381,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get ticket stats
   app.get("/api/tickets/stats", async (req, res) => {
     try {
-      const stats = await storage.getTicketStats();
+      const { organizationId, maintenanceVendorId } = req.query;
+      const orgId = organizationId ? parseInt(organizationId as string) : undefined;
+      const vendorId = maintenanceVendorId ? parseInt(maintenanceVendorId as string) : undefined;
+      
+      let stats = await storage.getTicketStats(orgId);
+      
+      // If filtering by vendor, get all tickets and calculate stats for that vendor
+      if (vendorId) {
+        const allTickets = await storage.getTickets(orgId);
+        const vendorTickets = allTickets.filter(ticket => ticket.maintenanceVendorId === vendorId);
+        
+        stats = {
+          open: vendorTickets.filter(t => t.status === 'open').length,
+          inProgress: vendorTickets.filter(t => t.status === 'in-progress').length,
+          completed: vendorTickets.filter(t => t.status === 'completed').length,
+          highPriority: vendorTickets.filter(t => t.priority === 'high').length,
+        };
+      }
+      
       res.json(stats);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch ticket stats" });

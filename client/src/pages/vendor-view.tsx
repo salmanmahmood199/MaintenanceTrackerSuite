@@ -65,8 +65,8 @@ export default function VendorView() {
   const acceptTicketMutation = useMutation({
     mutationFn: (id: number) => apiRequest("POST", `/api/tickets/${id}/accept`, {}),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/tickets/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets", { maintenanceVendorId: vendorId }] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets/stats", vendorId] });
       toast({
         title: "Success",
         description: "Ticket accepted successfully!",
@@ -78,8 +78,8 @@ export default function VendorView() {
   const completeTicketMutation = useMutation({
     mutationFn: (id: number) => apiRequest("POST", `/api/tickets/${id}/complete`, {}),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/tickets/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets", { maintenanceVendorId: vendorId }] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets/stats", vendorId] });
       toast({
         title: "Success",
         description: "Ticket completed successfully!",
