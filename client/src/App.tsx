@@ -32,7 +32,7 @@ function Router() {
   }
 
   // Redirect based on user role
-  if (user?.role === "org_admin" && user.organizationId) {
+  if ((user?.role === "org_admin" || user?.role === "org_subadmin") && user.organizationId) {
     return (
       <Switch>
         <Route path="/" component={() => <OrganizationView />} />
