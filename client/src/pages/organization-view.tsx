@@ -9,7 +9,7 @@ import { CreateTicketModal } from "@/components/create-ticket-modal";
 import { CreateSubAdminModal } from "@/components/create-subadmin-modal";
 import { EditSubAdminModal } from "@/components/edit-subadmin-modal";
 import { VendorManagementModal } from "@/components/vendor-management-modal";
-import { TicketCard } from "@/components/ticket-card";
+import { TicketTable } from "@/components/ticket-table";
 import { TicketActionModal } from "@/components/ticket-action-modal";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -515,29 +515,22 @@ export default function OrganizationView() {
           </Button>
         </div>
 
-        {/* Tickets Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {/* Tickets Table */}
+        <div className="mb-8">
           {ticketsLoading ? (
-            <div className="col-span-full text-center py-8">
+            <div className="bg-white rounded-lg shadow p-8 text-center">
               <p className="text-slate-500">Loading tickets...</p>
             </div>
-          ) : tickets.length === 0 ? (
-            <div className="col-span-full text-center py-8">
-              <p className="text-slate-500">No tickets found</p>
-            </div>
           ) : (
-            tickets.map((ticket) => (
-              <TicketCard
-                key={ticket.id}
-                ticket={ticket}
-                onAccept={canAcceptTickets ? handleAcceptTicket : undefined}
-                onReject={canAcceptTickets ? handleRejectTicket : undefined}
-                onComplete={canAcceptTickets ? handleCompleteTicket : undefined}
-                showActions={canAcceptTickets}
-                userRole={user?.role}
-                userPermissions={user?.permissions || undefined}
-              />
-            ))
+            <TicketTable
+              tickets={tickets || []}
+              onAccept={canAcceptTickets ? handleAcceptTicket : undefined}
+              onReject={canAcceptTickets ? handleRejectTicket : undefined}
+              onComplete={canAcceptTickets ? handleCompleteTicket : undefined}
+              showActions={canAcceptTickets}
+              userRole={user?.role}
+              userPermissions={user?.permissions || undefined}
+            />
           )}
         </div>
 
