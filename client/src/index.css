@@ -68,22 +68,22 @@
 :root {
   /* TaskScout clean dark theme */
   --background: hsl(0, 0%, 7%); /* #121212 */
-  --foreground: hsl(0, 0%, 95%);
+  --foreground: hsl(0, 0%, 98%); /* Crisp white text */
   --card: hsl(0, 0%, 11%); /* #1c1c1c */
-  --card-foreground: hsl(0, 0%, 95%);
+  --card-foreground: hsl(0, 0%, 98%); /* Crisp white text */
   --popover: hsl(0, 0%, 11%);
-  --popover-foreground: hsl(0, 0%, 95%);
+  --popover-foreground: hsl(0, 0%, 98%);
   --primary: hsl(210, 40%, 50%); /* Subtle blue */
   --primary-foreground: hsl(0, 0%, 100%);
   --secondary: hsl(0, 0%, 25%);
-  --secondary-foreground: hsl(0, 0%, 95%);
+  --secondary-foreground: hsl(0, 0%, 98%);
   --muted: hsl(0, 0%, 15%);
-  --muted-foreground: hsl(0, 0%, 65%);
+  --muted-foreground: hsl(0, 0%, 75%); /* Lighter for better readability */
   --accent: hsl(210, 40%, 50%); /* Same as primary for consistency */
   --accent-foreground: hsl(0, 0%, 100%);
   --destructive: hsl(0, 70%, 55%);
   --destructive-foreground: hsl(0, 0%, 100%);
-  --border: hsl(0, 0%, 18%);
+  --border: hsl(0, 0%, 20%); /* Slightly lighter border */
   --input: hsl(0, 0%, 15%);
   --ring: hsl(210, 40%, 50%);
   --radius: 0.5rem;
@@ -97,22 +97,22 @@
 
 .dark {
   --background: hsl(0, 0%, 7%);
-  --foreground: hsl(0, 0%, 95%);
+  --foreground: hsl(0, 0%, 98%); /* Crisp white text */
   --card: hsl(0, 0%, 11%);
-  --card-foreground: hsl(0, 0%, 95%);
+  --card-foreground: hsl(0, 0%, 98%); /* Crisp white text */
   --popover: hsl(0, 0%, 11%);
-  --popover-foreground: hsl(0, 0%, 95%);
+  --popover-foreground: hsl(0, 0%, 98%);
   --primary: hsl(210, 40%, 50%);
   --primary-foreground: hsl(0, 0%, 100%);
   --secondary: hsl(0, 0%, 25%);
-  --secondary-foreground: hsl(0, 0%, 95%);
+  --secondary-foreground: hsl(0, 0%, 98%);
   --muted: hsl(0, 0%, 15%);
-  --muted-foreground: hsl(0, 0%, 65%);
+  --muted-foreground: hsl(0, 0%, 75%); /* Lighter for better readability */
   --accent: hsl(210, 40%, 50%);
   --accent-foreground: hsl(0, 0%, 100%);
   --destructive: hsl(0, 70%, 55%);
   --destructive-foreground: hsl(0, 0%, 100%);
-  --border: hsl(0, 0%, 18%);
+  --border: hsl(0, 0%, 20%); /* Slightly lighter border */
   --input: hsl(0, 0%, 15%);
   --ring: hsl(210, 40%, 50%);
 }

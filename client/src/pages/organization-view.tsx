@@ -347,10 +347,10 @@ export default function OrganizationView() {
           <h2 className="text-xl font-semibold text-foreground mb-2">Organization Not Found</h2>
           <p className="text-muted-foreground mb-4">Organization ID: {organizationId}</p>
           {user?.role === "root" && (
-            <Button variant="outline" asChild>
+            <Button variant="outline" asChild className="text-foreground border-border hover:text-foreground">
               <Link href="/">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Admin
+                <span className="font-medium">Back to Admin</span>
               </Link>
             </Button>
           )}
@@ -360,23 +360,23 @@ export default function OrganizationView() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen taskscout-bg">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
+      <header className="taskscout-card border-b border-border sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               {user?.role === "root" && (
-                <Button variant="ghost" size="sm" asChild>
+                <Button variant="ghost" size="sm" asChild className="text-foreground hover:text-foreground">
                   <Link href="/">
                     <ArrowLeft className="h-4 w-4 mr-2" />
-                    Back to Admin
+                    <span className="font-medium">Back to Admin</span>
                   </Link>
                 </Button>
               )}
               <div>
-                <h1 className="text-xl font-bold text-slate-900">{organization.name}</h1>
-                <p className="text-sm text-slate-500">Organization Dashboard</p>
+                <h1 className="text-xl font-bold text-foreground">{organization.name}</h1>
+                <p className="text-sm text-muted-foreground">Organization Dashboard</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
