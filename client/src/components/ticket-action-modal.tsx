@@ -40,7 +40,7 @@ export function TicketActionModal({
 
     if (action === "accept") {
       onAccept(ticket.id, {
-        maintenanceVendorId: selectedVendorId ? parseInt(selectedVendorId) : undefined,
+        maintenanceVendorId: selectedVendorId && selectedVendorId !== "none" ? parseInt(selectedVendorId) : undefined,
       });
     } else if (action === "reject") {
       if (!rejectionReason.trim()) return;
@@ -113,7 +113,7 @@ export function TicketActionModal({
                       <SelectValue placeholder="Select a vendor..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No vendor assigned</SelectItem>
+                      <SelectItem value="none">No vendor assigned</SelectItem>
                       {availableVendors.map(({ vendor, tier }) => (
                         <SelectItem key={vendor.id} value={vendor.id.toString()}>
                           <div className="flex items-center gap-2">
