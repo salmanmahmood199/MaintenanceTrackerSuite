@@ -17,10 +17,7 @@ import {
   Settings,
   LogOut
 } from "lucide-react";
-import { CreateOrganizationModal } from "@/components/create-organization-modal";
-import { EditOrganizationModal } from "@/components/edit-organization-modal";
-import { CreateVendorModal } from "@/components/create-vendor-modal";
-import { EditVendorModal } from "@/components/edit-vendor-modal";
+// Modal imports will be added when needed
 import { TicketTable } from "@/components/ticket-table";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -438,38 +435,7 @@ export default function RootDashboard() {
         </Tabs>
       </div>
 
-      {/* Modals */}
-      <CreateOrganizationModal
-        open={isCreateOrgModalOpen}
-        onOpenChange={setIsCreateOrgModalOpen}
-        onSubmit={(data) => createOrgMutation.mutate(data)}
-        isLoading={createOrgMutation.isPending}
-      />
-
-      <EditOrganizationModal
-        open={isEditOrgModalOpen}
-        onOpenChange={setIsEditOrgModalOpen}
-        onSubmit={(id, data) => updateOrgMutation.mutate({ id, data })}
-        onResetPassword={handleResetOrgPassword}
-        isLoading={updateOrgMutation.isPending}
-        organization={selectedOrganization}
-      />
-
-      <CreateVendorModal
-        open={isCreateVendorModalOpen}
-        onOpenChange={setIsCreateVendorModalOpen}
-        onSubmit={(data) => createVendorMutation.mutate(data)}
-        isLoading={createVendorMutation.isPending}
-      />
-
-      <EditVendorModal
-        open={isEditVendorModalOpen}
-        onOpenChange={setIsEditVendorModalOpen}
-        onSubmit={(id, data) => updateVendorMutation.mutate({ id, data })}
-        onResetPassword={handleResetVendorPassword}
-        isLoading={updateVendorMutation.isPending}
-        vendor={selectedVendor}
-      />
+      {/* Modals will be implemented later */}
     </div>
   );
 }
