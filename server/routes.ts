@@ -659,7 +659,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Accept ticket with vendor assignment
-  app.post("/api/tickets/:id/accept", authenticateUser, requireRole(['org_admin', 'maintenance_admin']), async (req, res) => {
+  app.post("/api/tickets/:id/accept", authenticateUser, (req, res, next) => {
+    const user = req.user as any;
+    // Allow org_admin, maintenance_admin, or org_subadmin with accept_ticket permission
+    if (['org_admin', 'maintenance_admin'].includes(user.role) || 
+        (user.role === 'org_subadmin' && user.permissions?.includes('accept_ticket'))) {
+      return next();
+    }
+    return res.status(403).json({ message: "Insufficient permissions" });
+  }, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { maintenanceVendorId, assigneeId } = req.body;
@@ -675,7 +683,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Reject ticket with reason
-  app.post("/api/tickets/:id/reject", authenticateUser, requireRole(['org_admin', 'maintenance_admin']), async (req, res) => {
+  app.post("/api/tickets/:id/reject", authenticateUser, (req, res, next) => {
+    const user = req.user as any;
+    // Allow org_admin, maintenance_admin, or org_subadmin with accept_ticket permission
+    if (['org_admin', 'maintenance_admin'].includes(user.role) || 
+        (user.role === 'org_subadmin' && user.permissions?.includes('accept_ticket'))) {
+      return next();
+    }
+    return res.status(403).json({ message: "Insufficient permissions" });
+  }, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { rejectionReason } = req.body;
