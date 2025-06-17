@@ -584,7 +584,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       
-      if (isNaN(id)) {
+      if (isNaN(id) || id <= 0) {
         return res.status(400).json({ message: "Invalid ticket ID" });
       }
       
@@ -632,6 +632,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(stats);
     } catch (error) {
+      console.error("Error fetching ticket stats:", error);
       res.status(500).json({ message: "Failed to fetch ticket stats" });
     }
   });
