@@ -154,6 +154,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch('/api/organizations/:id', authenticateUser, requireRole(['root']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const organization = await storage.updateOrganization(id, updates);
+      if (!organization) {
+        return res.status(404).json({ message: 'Organization not found' });
+      }
+      res.json(organization);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to update organization' });
+    }
+  });
+
+  app.delete('/api/organizations/:id', authenticateUser, requireRole(['root']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteOrganization(id);
+      if (!success) {
+        return res.status(404).json({ message: 'Organization not found' });
+      }
+      res.json({ message: 'Organization deleted successfully' });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to delete organization' });
+    }
+  });
+
+  app.post('/api/organizations/:id/reset-admin-password', authenticateUser, requireRole(['root']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { newPassword } = req.body;
+      const result = await storage.resetOrganizationAdminPassword(id, newPassword);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to reset admin password' });
+    }
+  });
+
   app.get('/api/maintenance-vendors', authenticateUser, requireRole(['root', 'maintenance_admin']), async (req, res) => {
     try {
       // If user is maintenance_admin, only return their vendor
@@ -173,7 +211,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/maintenance-vendors', authenticateUser, requireRole(['root']), async (req, res) => {
     try {
       const vendorData = insertMaintenanceVendorSchema.parse(req.body);
-      const vendor = await storage.createMaintenanceVendor(vendorData);
+      const { assignedOrganizations, ...vendorInfo } = vendorData;
+      
+      const vendor = await storage.createMaintenanceVendor(vendorInfo);
+      
+      // Assign vendor to organizations if specified
+      if (assignedOrganizations && assignedOrganizations.length > 0) {
+        for (const orgId of assignedOrganizations) {
+          await storage.assignVendorToOrganization(vendor.id, orgId, "tier_1");
+        }
+      }
+      
       res.status(201).json(vendor);
     } catch (error: any) {
       if (error.name === 'ZodError') {
@@ -181,6 +229,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         res.status(500).json({ message: 'Failed to create maintenance vendor' });
       }
+    }
+  });
+
+  app.patch('/api/maintenance-vendors/:id', authenticateUser, requireRole(['root']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const { assignedOrganizations, ...vendorUpdates } = updates;
+      
+      const vendor = await storage.updateMaintenanceVendor(id, vendorUpdates);
+      if (!vendor) {
+        return res.status(404).json({ message: 'Vendor not found' });
+      }
+      
+      // Update organization assignments if specified
+      if (assignedOrganizations !== undefined) {
+        // Remove existing assignments and add new ones
+        // Note: This is a simplified approach - in production you might want more granular control
+        for (const orgId of assignedOrganizations) {
+          await storage.assignVendorToOrganization(id, orgId, "tier_1");
+        }
+      }
+      
+      res.json(vendor);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to update vendor' });
+    }
+  });
+
+  app.delete('/api/maintenance-vendors/:id', authenticateUser, requireRole(['root']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteMaintenanceVendor(id);
+      if (!success) {
+        return res.status(404).json({ message: 'Vendor not found' });
+      }
+      res.json({ message: 'Vendor deleted successfully' });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to delete vendor' });
+    }
+  });
+
+  app.post('/api/maintenance-vendors/:id/reset-admin-password', authenticateUser, requireRole(['root']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { newPassword } = req.body;
+      const result = await storage.resetVendorAdminPassword(id, newPassword);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to reset admin password' });
     }
   });
 

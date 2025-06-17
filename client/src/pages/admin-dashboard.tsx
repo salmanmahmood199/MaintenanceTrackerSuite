@@ -9,12 +9,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Building2, Wrench, Users, Activity } from "lucide-react";
+import { Plus, Building2, Wrench, Users, Activity, Edit, Key, Trash2, LogOut } from "lucide-react";
 import { Link } from "wouter";
+import { EditOrganizationModal } from "@/components/edit-organization-modal";
+import { EditVendorModal } from "@/components/edit-vendor-modal";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import type { Organization, MaintenanceVendor, InsertOrganization, InsertMaintenanceVendor } from "@shared/schema";
+import type { Organization, MaintenanceVendor, InsertOrganization, InsertMaintenanceVendor, UpdateOrganization, UpdateMaintenanceVendor } from "@shared/schema";
 import { insertOrganizationSchema, insertMaintenanceVendorSchema } from "@shared/schema";
 
 interface Organization {
