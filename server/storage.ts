@@ -37,12 +37,16 @@ export interface IStorage {
   getOrganization(id: number): Promise<Organization | undefined>;
   createOrganization(org: InsertOrganization): Promise<Organization>;
   updateOrganization(id: number, updates: Partial<InsertOrganization>): Promise<Organization | undefined>;
+  deleteOrganization(id: number): Promise<boolean>;
+  resetOrganizationAdminPassword(organizationId: number, newPassword: string): Promise<{ newPassword: string }>;
   
   // Maintenance vendor operations
   getMaintenanceVendors(): Promise<MaintenanceVendor[]>;
   getMaintenanceVendor(id: number): Promise<MaintenanceVendor | undefined>;
   createMaintenanceVendor(vendor: InsertMaintenanceVendor): Promise<MaintenanceVendor>;
   updateMaintenanceVendor(id: number, updates: Partial<InsertMaintenanceVendor>): Promise<MaintenanceVendor | undefined>;
+  deleteMaintenanceVendor(id: number): Promise<boolean>;
+  resetVendorAdminPassword(vendorId: number, newPassword: string): Promise<{ newPassword: string }>;
   getMaintenanceVendorsByTier(tiers: string[], organizationId?: number): Promise<MaintenanceVendor[]>;
   
   // Vendor-Organization tier operations
@@ -182,6 +186,29 @@ export class DatabaseStorage implements IStorage {
     return org || undefined;
   }
 
+  async deleteOrganization(id: number): Promise<boolean> {
+    // Soft delete by setting isActive to false
+    const result = await db
+      .update(organizations)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(organizations.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async resetOrganizationAdminPassword(organizationId: number, newPassword: string): Promise<{ newPassword: string }> {
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    
+    await db
+      .update(users)
+      .set({ password: hashedPassword, updatedAt: new Date() })
+      .where(and(
+        eq(users.organizationId, organizationId),
+        eq(users.role, "org_admin")
+      ));
+    
+    return { newPassword };
+  }
+
   // Maintenance vendor operations
   async getMaintenanceVendors(): Promise<MaintenanceVendor[]> {
     return await db.select().from(maintenanceVendors).where(eq(maintenanceVendors.isActive, true));
@@ -222,6 +249,29 @@ export class DatabaseStorage implements IStorage {
       .where(eq(maintenanceVendors.id, id))
       .returning();
     return vendor || undefined;
+  }
+
+  async deleteMaintenanceVendor(id: number): Promise<boolean> {
+    // Soft delete by setting isActive to false
+    const result = await db
+      .update(maintenanceVendors)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(maintenanceVendors.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async resetVendorAdminPassword(vendorId: number, newPassword: string): Promise<{ newPassword: string }> {
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    
+    await db
+      .update(users)
+      .set({ password: hashedPassword, updatedAt: new Date() })
+      .where(and(
+        eq(users.maintenanceVendorId, vendorId),
+        eq(users.role, "maintenance_admin")
+      ));
+    
+    return { newPassword };
   }
 
   async getMaintenanceVendorsByTier(tiers: string[], organizationId?: number): Promise<MaintenanceVendor[]> {

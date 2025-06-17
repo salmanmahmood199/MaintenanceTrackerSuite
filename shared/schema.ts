@@ -162,10 +162,20 @@ export const insertOrganizationSchema = createInsertSchema(organizations).omit({
   updatedAt: true,
 });
 
+export const updateOrganizationSchema = insertOrganizationSchema.partial();
+
 export const insertMaintenanceVendorSchema = createInsertSchema(maintenanceVendors).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  assignedOrganizations: z.array(z.number()).optional(),
+});
+
+export const updateMaintenanceVendorSchema = insertMaintenanceVendorSchema.partial();
+
+export const resetAdminPasswordSchema = z.object({
+  newPassword: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 export const insertVendorOrganizationTierSchema = createInsertSchema(vendorOrganizationTiers).omit({
@@ -198,9 +208,12 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertSubAdmin = z.infer<typeof insertSubAdminSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertOrganization = z.infer<typeof insertOrganizationSchema>;
+export type UpdateOrganization = z.infer<typeof updateOrganizationSchema>;
 export type Organization = typeof organizations.$inferSelect;
 export type InsertMaintenanceVendor = z.infer<typeof insertMaintenanceVendorSchema>;
+export type UpdateMaintenanceVendor = z.infer<typeof updateMaintenanceVendorSchema>;
 export type MaintenanceVendor = typeof maintenanceVendors.$inferSelect;
+export type ResetAdminPassword = z.infer<typeof resetAdminPasswordSchema>;
 export type InsertTicket = z.infer<typeof insertTicketSchema>;
 export type UpdateTicket = z.infer<typeof updateTicketSchema>;
 export type Ticket = typeof tickets.$inferSelect;
