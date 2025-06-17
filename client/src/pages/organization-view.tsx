@@ -11,6 +11,8 @@ import { EditSubAdminModal } from "@/components/edit-subadmin-modal";
 import { VendorManagementModal } from "@/components/vendor-management-modal";
 import { TicketTable } from "@/components/ticket-table";
 import { TicketActionModal } from "@/components/ticket-action-modal";
+import { LocationManagement } from "@/components/location-management";
+import { UserLocationAssignment } from "@/components/user-location-assignment";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,6 +39,9 @@ export default function OrganizationView() {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [selectedUserName, setSelectedUserName] = useState<string>("");
+  const [isLocationAssignmentOpen, setIsLocationAssignmentOpen] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -592,6 +597,16 @@ export default function OrganizationView() {
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => openLocationAssignment(
+                            subAdmin.id,
+                            `${subAdmin.firstName} ${subAdmin.lastName}`
+                          )}
+                        >
+                          Locations
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => openEditModal(subAdmin)}
                         >
                           <Edit className="h-4 w-4 mr-1" />
@@ -605,6 +620,21 @@ export default function OrganizationView() {
             </div>
           </div>
         )}
+
+        {/* Locations Tab Content */}
+        <div className={`space-y-6 ${organizationId ? '' : 'hidden'}`}>
+          <div className="bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-slate-200">
+              <h2 className="text-lg font-semibold text-slate-900">Locations</h2>
+            </div>
+            <div className="p-6">
+              <LocationManagement
+                organizationId={organizationId}
+                canManage={canManageSubAdmins}
+              />
+            </div>
+          </div>
+        </div>
       </main>
 
       {/* Modals */}
@@ -653,7 +683,7 @@ export default function OrganizationView() {
       />
 
       {/* User Location Assignment Modal */}
-      {selectedUserId && (
+      {selectedUserId && selectedUserId > 0 && (
         <UserLocationAssignment
           userId={selectedUserId}
           userName={selectedUserName}
