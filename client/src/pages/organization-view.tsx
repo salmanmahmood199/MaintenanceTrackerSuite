@@ -105,8 +105,8 @@ export default function OrganizationView() {
     enabled: !!organizationId,
   });
 
-  // Fetch organization vendors
-  const { data: organizationVendors = [] } = useQuery<Array<{vendor: any, tier: string, isActive: boolean}>>({
+  // Fetch organization vendor tiers
+  const { data: vendorTiers = [] } = useQuery<Array<{vendor: any, tier: string, isActive: boolean}>>({
     queryKey: ["/api/organizations", organizationId, "vendor-tiers"],
     queryFn: async () => {
       const response = await apiRequest("GET", `/api/organizations/${organizationId}/vendor-tiers`);
@@ -655,8 +655,8 @@ export default function OrganizationView() {
                 <div className="p-6">
                   {canManageVendors ? (
                     <div className="space-y-4">
-                      {vendorTiers && vendorTiers.length > 0 ? (
-                        vendorTiers.map((vendorTier) => (
+                      {vendorTiers && Array.isArray(vendorTiers) && vendorTiers.length > 0 ? (
+                        vendorTiers.map((vendorTier: any) => (
                           <div key={vendorTier.vendor.id} className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
                             <div className="flex items-center space-x-4">
                               <div>
