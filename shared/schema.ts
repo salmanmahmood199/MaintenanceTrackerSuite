@@ -10,9 +10,12 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   firstName: varchar("first_name", { length: 100 }),
   lastName: varchar("last_name", { length: 100 }),
-  role: text("role").notNull(), // 'root', 'org_admin', 'maintenance_admin', 'technician'
+  phone: varchar("phone", { length: 20 }),
+  role: text("role").notNull(), // 'root', 'org_admin', 'maintenance_admin', 'technician', 'org_subadmin'
   organizationId: integer("organization_id"),
   maintenanceVendorId: integer("maintenance_vendor_id"),
+  permissions: text("permissions").array(), // ["place_ticket", "accept_ticket"]
+  vendorTiers: text("vendor_tiers").array(), // ["tier_1", "tier_2", "tier_3"] - what tiers they can assign
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -40,6 +43,7 @@ export const maintenanceVendors = pgTable("maintenance_vendors", {
   phone: varchar("phone", { length: 20 }),
   email: varchar("email", { length: 255 }),
   specialties: text("specialties").array(), // e.g., ["plumbing", "electrical", "hvac"]
+  tier: text("tier").notNull().default("tier_1"), // "tier_1", "tier_2", "tier_3"
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -119,7 +123,17 @@ export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
   updatedAt: true,
 }).extend({
-  role: z.enum(["root", "org_admin", "maintenance_admin", "technician"]),
+  role: z.enum(["root", "org_admin", "maintenance_admin", "technician", "org_subadmin"]),
+});
+
+export const insertSubAdminSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  role: true,
+}).extend({
+  permissions: z.array(z.enum(["place_ticket", "accept_ticket"])).min(1),
+  vendorTiers: z.array(z.enum(["tier_1", "tier_2", "tier_3"])).optional(),
 });
 
 export const insertOrganizationSchema = createInsertSchema(organizations).omit({
@@ -132,6 +146,8 @@ export const insertMaintenanceVendorSchema = createInsertSchema(maintenanceVendo
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  tier: z.enum(["tier_1", "tier_2", "tier_3"]),
 });
 
 export const insertTicketSchema = createInsertSchema(tickets).omit({
@@ -154,6 +170,7 @@ export const loginSchema = z.object({
 
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type InsertSubAdmin = z.infer<typeof insertSubAdminSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertOrganization = z.infer<typeof insertOrganizationSchema>;
 export type Organization = typeof organizations.$inferSelect;
