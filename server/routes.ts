@@ -198,6 +198,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Vendor-Organization tier management routes
+  app.post('/api/organizations/:organizationId/vendors/:vendorId/tier', authenticateUser, requireRole(['root', 'org_admin']), async (req, res) => {
+    try {
+      const organizationId = parseInt(req.params.organizationId);
+      const vendorId = parseInt(req.params.vendorId);
+      const { tier } = req.body;
+      
+      await storage.assignVendorToOrganization(vendorId, organizationId, tier);
+      res.json({ message: 'Vendor tier assigned successfully' });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to assign vendor tier' });
+    }
+  });
+
+  app.get('/api/organizations/:organizationId/vendor-tiers', authenticateUser, requireRole(['root', 'org_admin']), async (req, res) => {
+    try {
+      const organizationId = parseInt(req.params.organizationId);
+      const vendorTiers = await storage.getVendorOrganizationTiers(organizationId);
+      res.json(vendorTiers);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch vendor tiers' });
+    }
+  });
+
   // Vendor tier filtering route
   app.get('/api/maintenance-vendors/by-tiers', authenticateUser, async (req, res) => {
     try {

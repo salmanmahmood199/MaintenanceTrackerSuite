@@ -375,14 +375,14 @@ export default function OrganizationView() {
                     <div className="flex items-center space-x-4">
                       <div className="text-right">
                         <div className="flex flex-wrap gap-1 mb-2">
-                          {subAdmin.permissions?.includes("place_ticket") && (
+                          {Array.isArray(subAdmin.permissions) && subAdmin.permissions.includes("place_ticket") && (
                             <Badge variant="secondary" className="text-xs">Place Ticket</Badge>
                           )}
-                          {subAdmin.permissions?.includes("accept_ticket") && (
+                          {Array.isArray(subAdmin.permissions) && subAdmin.permissions.includes("accept_ticket") && (
                             <Badge variant="secondary" className="text-xs">Accept Ticket</Badge>
                           )}
                         </div>
-                        {subAdmin.vendorTiers && subAdmin.vendorTiers.length > 0 && (
+                        {Array.isArray(subAdmin.vendorTiers) && subAdmin.vendorTiers.length > 0 && (
                           <div className="flex flex-wrap gap-1">
                             {subAdmin.vendorTiers.map((tier) => (
                               <Badge key={tier} variant="outline" className="text-xs">

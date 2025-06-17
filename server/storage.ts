@@ -43,7 +43,11 @@ export interface IStorage {
   getMaintenanceVendor(id: number): Promise<MaintenanceVendor | undefined>;
   createMaintenanceVendor(vendor: InsertMaintenanceVendor): Promise<MaintenanceVendor>;
   updateMaintenanceVendor(id: number, updates: Partial<InsertMaintenanceVendor>): Promise<MaintenanceVendor | undefined>;
-  getMaintenanceVendorsByTier(tiers: string[]): Promise<MaintenanceVendor[]>;
+  getMaintenanceVendorsByTier(tiers: string[], organizationId?: number): Promise<MaintenanceVendor[]>;
+  
+  // Vendor-Organization tier operations
+  assignVendorToOrganization(vendorId: number, organizationId: number, tier: string): Promise<void>;
+  getVendorOrganizationTiers(organizationId: number): Promise<Array<{vendor: MaintenanceVendor, tier: string}>>;
   
   // Ticket operations
   getTickets(organizationId?: number): Promise<Ticket[]>;
