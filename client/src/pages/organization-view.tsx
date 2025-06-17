@@ -636,10 +636,12 @@ export default function OrganizationView() {
             </TabsContent>
 
             <TabsContent value="locations" className="space-y-6">
-              <LocationManagement
-                organizationId={organizationId}
-                canManage={canManageSubAdmins}
-              />
+              {organizationId && (
+                <LocationManagement
+                  organizationId={organizationId}
+                  canManage={canManageSubAdmins}
+                />
+              )}
             </TabsContent>
 
             <TabsContent value="vendors" className="space-y-6">
@@ -696,7 +698,7 @@ export default function OrganizationView() {
       />
 
       {/* User Location Assignment Modal */}
-      {selectedUserId && selectedUserId > 0 && (
+      {selectedUserId && selectedUserId > 0 && organizationId && (
         <UserLocationAssignment
           userId={selectedUserId}
           userName={selectedUserName}

@@ -636,12 +636,15 @@ export class DatabaseStorage implements IStorage {
         email: users.email,
         firstName: users.firstName,
         lastName: users.lastName,
+        phone: users.phone,
         role: users.role,
         permissions: users.permissions,
+        vendorTiers: users.vendorTiers,
         organizationId: users.organizationId,
         maintenanceVendorId: users.maintenanceVendorId,
         isActive: users.isActive,
         createdAt: users.createdAt,
+        updatedAt: users.updatedAt,
         password: users.password,
       })
       .from(userLocationAssignments)

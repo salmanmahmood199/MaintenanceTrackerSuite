@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { MapPin } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Card, CardContent } from "@/components/ui/card";
+import { MapPin, User } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Location } from "@shared/schema";
 
@@ -26,66 +25,56 @@ export function UserLocationAssignment({
   onOpenChange,
 }: UserLocationAssignmentProps) {
   const [selectedLocationIds, setSelectedLocationIds] = useState<number[]>([]);
-  const queryClient = useQueryClient();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  // Fetch all locations for the organization
-  const { data: allLocations = [] } = useQuery<Location[]>({
+  // Fetch organization locations
+  const { data: locations, isLoading: locationsLoading } = useQuery({
     queryKey: [`/api/organizations/${organizationId}/locations`],
-    queryFn: async () => {
-      const response = await apiRequest("GET", `/api/organizations/${organizationId}/locations`);
-      return await response.json();
-    },
     enabled: open,
   });
 
-  // Fetch current user locations
-  const { data: userLocations = [] } = useQuery<Location[]>({
+  // Fetch user's current location assignments
+  const { data: userLocations, isLoading: userLocationsLoading } = useQuery({
     queryKey: [`/api/users/${userId}/locations`],
-    queryFn: async () => {
-      const response = await apiRequest("GET", `/api/users/${userId}/locations`);
-      return await response.json();
-    },
-    enabled: open && !!userId,
+    enabled: open,
   });
-
-  // Update selected locations when userLocations data changes
-  useEffect(() => {
-    if (userLocations.length > 0) {
-      setSelectedLocationIds(userLocations.map(loc => loc.id));
-    }
-  }, [userLocations]);
 
   // Update user location assignments
   const updateAssignmentsMutation = useMutation({
     mutationFn: async (locationIds: number[]) => {
-      await apiRequest("POST", `/api/users/${userId}/locations`, {
-        body: JSON.stringify({ locationIds }),
-      });
+      return await apiRequest(`/api/users/${userId}/locations`, "POST", { locationIds });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/users/${userId}/locations`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/organizations/${organizationId}/sub-admins`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/organizations/${organizationId}/locations`] });
       onOpenChange(false);
       toast({
         title: "Success",
-        description: "User location assignments updated successfully",
+        description: "Location assignments updated successfully",
       });
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to update user location assignments",
+        description: "Failed to update location assignments",
         variant: "destructive",
       });
     },
   });
 
+  // Set initial selected locations when user locations are loaded
+  useEffect(() => {
+    if (Array.isArray(userLocations)) {
+      setSelectedLocationIds(userLocations.map((loc: Location) => loc.id));
+    }
+  }, [userLocations]);
+
   const handleLocationToggle = (locationId: number, checked: boolean) => {
     if (checked) {
-      setSelectedLocationIds(prev => [...prev, locationId]);
+      setSelectedLocationIds([...selectedLocationIds, locationId]);
     } else {
-      setSelectedLocationIds(prev => prev.filter(id => id !== locationId));
+      setSelectedLocationIds(selectedLocationIds.filter(id => id !== locationId));
     }
   };
 
@@ -93,75 +82,90 @@ export function UserLocationAssignment({
     updateAssignmentsMutation.mutate(selectedLocationIds);
   };
 
-  const handleCancel = () => {
-    if (userLocations && userLocations.length > 0) {
-      setSelectedLocationIds(userLocations.map(loc => loc.id));
-    }
-    onOpenChange(false);
-  };
+  const isLoading = locationsLoading || userLocationsLoading;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="taskscout-card border-border max-w-lg">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-foreground">
-            Assign Locations to {userName}
+          <DialogTitle className="flex items-center space-x-2">
+            <User className="h-5 w-5" />
+            <span>Assign Locations to {userName}</span>
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Select the locations this user can access:
-          </p>
-          
-          {allLocations.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">
-              No locations available. Create locations first.
-            </p>
-          ) : (
-            <div className="space-y-3 max-h-64 overflow-y-auto">
-              {allLocations.map((location) => (
-                <div key={location.id} className="flex items-center space-x-3 p-3 border border-border rounded-lg">
-                  <Checkbox
-                    id={`location-${location.id}`}
-                    checked={selectedLocationIds.includes(location.id)}
-                    onCheckedChange={(checked) => 
-                      handleLocationToggle(location.id, checked as boolean)
-                    }
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2">
-                      <MapPin className="h-4 w-4 text-primary" />
-                      <Label 
-                        htmlFor={`location-${location.id}`}
-                        className="text-foreground font-medium cursor-pointer"
-                      >
-                        {location.name}
-                      </Label>
-                      <Badge variant={location.isActive ? "default" : "secondary"} className="text-xs">
-                        {location.isActive ? "Active" : "Inactive"}
-                      </Badge>
+          {isLoading ? (
+            <div className="text-center py-8">
+              <p className="text-slate-500">Loading locations...</p>
+            </div>
+          ) : Array.isArray(locations) && locations.length > 0 ? (
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {locations.map((location: Location) => (
+                <Card key={location.id} className="border border-slate-200">
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-3">
+                      <Checkbox
+                        id={`location-${location.id}`}
+                        checked={selectedLocationIds.includes(location.id)}
+                        onCheckedChange={(checked) => 
+                          handleLocationToggle(location.id, checked as boolean)
+                        }
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2">
+                          <MapPin className="h-4 w-4 text-blue-600" />
+                          <label
+                            htmlFor={`location-${location.id}`}
+                            className="font-medium text-slate-900 cursor-pointer"
+                          >
+                            {location.name}
+                          </label>
+                        </div>
+                        {location.address && (
+                          <p className="text-sm text-slate-600 mt-1 ml-6">
+                            {location.address}
+                          </p>
+                        )}
+                        {location.description && (
+                          <p className="text-sm text-slate-500 mt-1 ml-6">
+                            {location.description}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    {location.address && (
-                      <p className="text-sm text-muted-foreground mt-1">{location.address}</p>
-                    )}
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
+          ) : (
+            <div className="text-center py-8">
+              <MapPin className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+              <p className="text-slate-500">No locations available</p>
+              <p className="text-slate-400 text-sm">
+                Create locations first to assign them to users
+              </p>
+            </div>
           )}
-          
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button variant="outline" onClick={handleCancel}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={updateAssignmentsMutation.isPending || allLocations.length === 0}
-            >
-              Save Assignments
-            </Button>
-          </div>
+
+          {Array.isArray(locations) && locations.length > 0 && (
+            <div className="flex justify-between items-center pt-4 border-t border-slate-200">
+              <p className="text-sm text-slate-600">
+                {selectedLocationIds.length} of {locations.length} locations selected
+              </p>
+              <div className="flex space-x-2">
+                <Button variant="outline" onClick={() => onOpenChange(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSave}
+                  disabled={updateAssignmentsMutation.isPending}
+                >
+                  {updateAssignmentsMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
