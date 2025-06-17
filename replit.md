@@ -1,8 +1,8 @@
-# Ticket Management System
+# Maintenance Ticketing System with Hierarchical Authentication
 
 ## Overview
 
-This is a full-stack ticket management application built with React (frontend) and Express.js (backend). The system allows users to create, manage, and track support tickets with image attachments, priority levels, and status tracking.
+This is a full-stack maintenance ticketing application built with React (frontend) and Express.js (backend). The system features a hierarchical user management structure with root administration, organizational management, and maintenance vendor coordination. Users can create, manage, and track maintenance tickets with image attachments, priority levels, and status tracking across different organizational boundaries.
 
 ## System Architecture
 
@@ -14,32 +14,70 @@ This is a full-stack ticket management application built with React (frontend) a
 - **State Management**: TanStack Query (React Query) for server state management
 - **Routing**: Wouter for lightweight client-side routing
 - **Form Handling**: React Hook Form with Zod validation
+- **Authentication**: Session-based authentication with role-based access control
 
 ### Backend Architecture
 - **Framework**: Express.js with TypeScript
-- **Database**: PostgreSQL with Drizzle ORM
+- **Database**: PostgreSQL with Drizzle ORM and Neon Database serverless
+- **Authentication**: Session-based auth with bcrypt password hashing
 - **File Storage**: Local file system with multer for image uploads
 - **Session Management**: Express sessions with PostgreSQL store
 - **Validation**: Zod schemas shared between frontend and backend
 
 ### Database Schema
-- **Users Table**: Basic user authentication (id, username, password)
-- **Tickets Table**: Core ticket data with fields for title, description, priority, status, reporter, assignee, images array, and timestamps
+
+#### Hierarchical User System
+- **Users Table**: Multi-role user system with organizational and vendor associations
+  - Roles: root, org_admin, maintenance_admin, technician
+  - Foreign keys to organizations and maintenance vendors
+- **Organizations Table**: Client organizations that request maintenance
+- **Maintenance Vendors Table**: Service providers with specialties
+- **Sessions Table**: Secure session storage for authentication
+
+#### Ticket Management
+- **Tickets Table**: Enhanced ticket system with organizational context
+  - Fields: title, description, priority, status, organizationId, reporterId, assigneeId, maintenanceVendorId, images
 - **Priority Levels**: low, medium, high
 - **Status Types**: open, in-progress, completed
 
+### Authentication Hierarchy
+```
+Root Admin (root@mail.com / admin)
+├── Organizations Branch
+│   ├── Organization 1
+│   │   └── Organization Admins
+│   └── Organization 2
+│       └── Organization Admins
+└── Maintenance Vendors Branch
+    ├── Vendor 1
+    │   ├── Maintenance Admin
+    │   └── Technicians
+    └── Vendor 2
+        ├── Maintenance Admin
+        └── Technicians
+```
+
 ## Key Components
 
+### Authentication Components
+- **Login Page**: Secure login form with role-based redirection
+- **AuthHook**: Custom React hook for authentication state management
+- **Auth Middleware**: Express middleware for session validation and role checking
+- **Admin Dashboard**: Root user interface for managing organizations and vendors
+
 ### Frontend Components
-- **Dashboard**: Main ticket overview with statistics and filtering
+- **Dashboard**: Main ticket overview with statistics, filtering, and user context
 - **CreateTicketModal**: Form for creating new tickets with image upload
 - **TicketCard**: Individual ticket display with actions
 - **ImageUpload**: Drag-and-drop image upload component with preview
+- **AdminDashboard**: Root admin interface for organization and vendor management
 
 ### Backend Services
-- **Storage Layer**: Abstracted storage interface with in-memory implementation (ready for database integration)
+- **Authentication System**: Session-based auth with bcrypt password hashing
+- **Database Storage**: PostgreSQL implementation with Drizzle ORM
+- **Role-Based Access Control**: Middleware for enforcing user permissions
 - **File Upload**: Multer configuration for image handling with size and type validation
-- **API Routes**: RESTful endpoints for ticket CRUD operations and statistics
+- **API Routes**: RESTful endpoints for tickets, organizations, vendors, and authentication
 
 ### Shared Resources
 - **Schema Definitions**: Drizzle schemas with Zod validation for type safety

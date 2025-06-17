@@ -3,12 +3,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Bolt, Clock, Wrench, Check, AlertTriangle } from "lucide-react";
+import { Plus, Bolt, Clock, Wrench, Check, AlertTriangle, Settings, LogOut } from "lucide-react";
 import { CreateTicketModal } from "@/components/create-ticket-modal";
 import { TicketCard } from "@/components/ticket-card";
 import { apiRequest } from "@/lib/queryClient";
 import type { Ticket, InsertTicket } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { Link } from "wouter";
 
 interface TicketStats {
   open: number;
@@ -22,6 +24,7 @@ export default function Dashboard() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user, logout, isRoot } = useAuth();
 
   // Fetch tickets
   const { data: tickets = [], isLoading: ticketsLoading } = useQuery<Ticket[]>({
@@ -143,11 +146,30 @@ export default function Dashboard() {
                 New Ticket
               </Button>
               
+              {isRoot && (
+                <Link href="/admin">
+                  <Button variant="outline">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Admin Panel
+                  </Button>
+                </Link>
+              )}
+              
               <div className="flex items-center space-x-3 pl-4 border-l border-slate-200">
-                <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center">
-                  <span className="text-slate-600 text-sm font-medium">JT</span>
+                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-medium">
+                    {user?.firstName?.[0] || user?.email[0].toUpperCase()}
+                  </span>
                 </div>
-                <span className="text-sm font-medium">John Technician</span>
+                <div>
+                  <p className="text-sm font-medium">
+                    {user?.firstName} {user?.lastName} 
+                  </p>
+                  <p className="text-xs text-slate-500 capitalize">{user?.role?.replace('_', ' ')}</p>
+                </div>
+                <Button variant="ghost" size="sm" onClick={logout}>
+                  <LogOut className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           </div>
