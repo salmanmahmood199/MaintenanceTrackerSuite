@@ -535,6 +535,7 @@ export default function OrganizationView() {
                 onComplete={canAcceptTickets ? handleCompleteTicket : undefined}
                 showActions={canAcceptTickets}
                 userRole={user?.role}
+                userPermissions={user?.permissions || undefined}
               />
             ))
           )}

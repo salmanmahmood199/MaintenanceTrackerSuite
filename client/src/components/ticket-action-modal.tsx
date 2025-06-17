@@ -16,6 +16,8 @@ interface TicketActionModalProps {
   onAccept: (ticketId: number, data: { maintenanceVendorId?: number; assigneeId?: number }) => void;
   onReject: (ticketId: number, rejectionReason: string) => void;
   isLoading: boolean;
+  userRole?: string;
+  userPermissions?: string[];
 }
 
 export function TicketActionModal({
@@ -26,7 +28,9 @@ export function TicketActionModal({
   vendors,
   onAccept,
   onReject,
-  isLoading
+  isLoading,
+  userRole,
+  userPermissions
 }: TicketActionModalProps) {
   const [selectedVendorId, setSelectedVendorId] = useState<string>("");
   const [rejectionReason, setRejectionReason] = useState("");
@@ -54,7 +58,23 @@ export function TicketActionModal({
     onOpenChange(false);
   };
 
-  const activeVendors = vendors.filter(v => v.isActive);
+  // Filter vendors based on user role and tier access
+  const availableVendors = vendors.filter(v => {
+    if (!v.isActive) return false;
+    
+    // Root and org admins can see all active vendors
+    if (userRole === "root" || userRole === "org_admin") return true;
+    
+    // Sub-admins with accept_ticket permission can only see tier 1 and tier 2 vendors
+    if (userRole === "org_subadmin" && userPermissions?.includes("accept_ticket")) {
+      return ["tier_1", "tier_2"].includes(v.tier);
+    }
+    
+    // Maintenance admins can see all vendors assigned to their organization
+    if (userRole === "maintenance_admin") return true;
+    
+    return false;
+  });
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -94,7 +114,7 @@ export function TicketActionModal({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="">No vendor assigned</SelectItem>
-                      {activeVendors.map(({ vendor, tier }) => (
+                      {availableVendors.map(({ vendor, tier }) => (
                         <SelectItem key={vendor.id} value={vendor.id.toString()}>
                           <div className="flex items-center gap-2">
                             <Wrench className="h-4 w-4" />
@@ -105,7 +125,7 @@ export function TicketActionModal({
                       ))}
                     </SelectContent>
                   </Select>
-                  {activeVendors.length === 0 && (
+                  {availableVendors.length === 0 && (
                     <p className="text-sm text-slate-500 mt-1">
                       No active vendors available for assignment
                     </p>

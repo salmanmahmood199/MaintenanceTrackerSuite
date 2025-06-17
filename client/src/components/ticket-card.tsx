@@ -12,11 +12,18 @@ interface TicketCardProps {
   onComplete?: (id: number) => void;
   showActions?: boolean;
   userRole?: string;
+  userPermissions?: string[];
 }
 
-export function TicketCard({ ticket, onAccept, onReject, onComplete, showActions = true, userRole }: TicketCardProps) {
+export function TicketCard({ ticket, onAccept, onReject, onComplete, showActions = true, userRole, userPermissions }: TicketCardProps) {
   const priorityColor = getPriorityColor(ticket.priority);
   const statusColor = getStatusColor(ticket.status);
+  
+  // Check if user can accept tickets based on role or permissions
+  const canAcceptTickets = userRole && (
+    ["org_admin", "maintenance_admin"].includes(userRole) || 
+    (userRole === "org_subadmin" && userPermissions?.includes("accept_ticket"))
+  );
 
   return (
     <Card className="p-6 hover:shadow-md transition-shadow">
@@ -80,7 +87,7 @@ export function TicketCard({ ticket, onAccept, onReject, onComplete, showActions
             />
           )}
           
-          {showActions && userRole && ["org_admin", "maintenance_admin"].includes(userRole) && (
+          {showActions && canAcceptTickets && (
             <>
               {ticket.status === "pending" && (
                 <div className="flex space-x-2">
