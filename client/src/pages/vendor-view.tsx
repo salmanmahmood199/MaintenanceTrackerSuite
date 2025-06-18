@@ -92,11 +92,13 @@ export default function VendorView() {
     },
   });
 
-  const { data: technicians = [], isLoading: techniciansLoading, error: techniciansError } = useQuery<User[]>({
+  const { data: technicians = [], isLoading: techniciansLoading, error: techniciansError, refetch: refetchTechnicians } = useQuery<User[]>({
     queryKey: ["/api/maintenance-vendors", vendorId, "technicians"],
     enabled: !!vendorId,
     retry: 2,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 0, // Always fresh data
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
   
   // Create technician mutation
@@ -105,7 +107,7 @@ export default function VendorView() {
       apiRequest("POST", `/api/maintenance-vendors/${vendorId}/technicians`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/maintenance-vendors", vendorId, "technicians"] });
-      queryClient.refetchQueries({ queryKey: ["/api/maintenance-vendors", vendorId, "technicians"] });
+      refetchTechnicians(); // Force immediate refetch
       setIsCreateTechnicianModalOpen(false);
       toast({ title: "Success", description: "Technician added successfully" });
     },
@@ -122,6 +124,7 @@ export default function VendorView() {
       apiRequest("DELETE", `/api/maintenance-vendors/${vendorId}/technicians/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/maintenance-vendors", vendorId, "technicians"] });
+      refetchTechnicians(); // Force immediate refetch
       toast({ title: "Success", description: "Technician removed successfully" });
     },
     onError: () => {
