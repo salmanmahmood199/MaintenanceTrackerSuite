@@ -82,6 +82,10 @@ export interface IStorage {
   getTicketMilestones(ticketId: number): Promise<any[]>;
   createTicketMilestone(milestone: { ticketId: number; milestoneType: string; milestoneTitle: string; milestoneDescription?: string; achievedById?: number; achievedByName?: string }): Promise<any>;
   
+  // Work order operations
+  getTicketWorkOrders(ticketId: number): Promise<WorkOrder[]>;
+  createWorkOrder(workOrder: InsertWorkOrder & { technicianId: number; technicianName: string }): Promise<WorkOrder>;
+  
   // Initialize root user
   initializeRootUser(): Promise<void>;
 }

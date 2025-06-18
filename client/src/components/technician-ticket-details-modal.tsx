@@ -1,7 +1,8 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Hash, User, Wrench, CheckCircle, ImageIcon, X } from "lucide-react";
+import { Calendar, Hash, User, Wrench, CheckCircle, ImageIcon, X, History } from "lucide-react";
+import { WorkOrdersHistory } from "@/components/work-orders-history";
 import { format as formatTz, toZonedTime } from "date-fns-tz";
 import { formatDistanceToNow } from "date-fns";
 import { getPriorityColor, getStatusColor } from "@/lib/utils";
@@ -24,6 +25,7 @@ export function TechnicianTicketDetailsModal({
   onCreateWorkOrder,
 }: TechnicianTicketDetailsModalProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const [showWorkOrdersHistory, setShowWorkOrdersHistory] = useState(false);
 
   if (!ticket) return null;
 
@@ -127,25 +129,36 @@ export function TechnicianTicketDetailsModal({
             )}
 
             {/* Actions */}
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              {ticket.status === 'accepted' && onStart && (
-                <Button
-                  onClick={() => onStart(ticket.id)}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Wrench className="h-4 w-4 mr-2" />
-                  Start Work
-                </Button>
-              )}
-              {(ticket.status === 'in-progress' || ticket.status === 'return_needed') && onCreateWorkOrder && (
-                <Button
-                  onClick={() => onCreateWorkOrder(ticket.id)}
-                  className="bg-emerald-600 hover:bg-emerald-700"
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Create Work Order
-                </Button>
-              )}
+            <div className="flex justify-between items-center pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={() => setShowWorkOrdersHistory(true)}
+                className="flex items-center gap-2"
+              >
+                <History className="h-4 w-4" />
+                View Work Orders History
+              </Button>
+              
+              <div className="flex gap-3">
+                {ticket.status === 'accepted' && onStart && (
+                  <Button
+                    onClick={() => onStart(ticket.id)}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Wrench className="h-4 w-4 mr-2" />
+                    Start Work
+                  </Button>
+                )}
+                {(ticket.status === 'in-progress' || ticket.status === 'return_needed') && onCreateWorkOrder && (
+                  <Button
+                    onClick={() => onCreateWorkOrder(ticket.id)}
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Create Work Order
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </DialogContent>
@@ -176,6 +189,13 @@ export function TechnicianTicketDetailsModal({
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Work Orders History Modal */}
+      <WorkOrdersHistory
+        open={showWorkOrdersHistory}
+        onOpenChange={setShowWorkOrdersHistory}
+        ticketId={ticket?.id || null}
+      />
     </>
   );
 }

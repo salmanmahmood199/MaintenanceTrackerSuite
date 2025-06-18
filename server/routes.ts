@@ -796,10 +796,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const { workOrder } = req.body;
+      const user = req.user!;
       
-      // For now, just complete the ticket based on work order status
-      const status = workOrder?.completionStatus === "return_needed" ? "return_needed" : "completed";
-      
+      if (!workOrder) {
+        return res.status(400).json({ message: "Work order data required" });
+      }
+
+      // Calculate total cost
+      const partsCost = (workOrder.parts || []).reduce((sum: number, part: any) => sum + (part.cost * part.quantity), 0);
+      const otherCost = (workOrder.otherCharges || []).reduce((sum: number, charge: any) => sum + charge.cost, 0);
+      const totalCost = partsCost + otherCost;
+
+      // Create work order record
+      await storage.createWorkOrder({
+        ticketId: id,
+        workDescription: workOrder.workDescription,
+        completionStatus: workOrder.completionStatus,
+        completionNotes: workOrder.completionNotes,
+        parts: JSON.stringify(workOrder.parts || []),
+        otherCharges: JSON.stringify(workOrder.otherCharges || []),
+        totalCost: totalCost.toString(),
+        images: workOrder.images || [],
+        technicianId: user.id,
+        technicianName: `${user.firstName} ${user.lastName}`,
+      });
+
+      // Update ticket status based on work order completion status
+      const status = workOrder.completionStatus === "return_needed" ? "return_needed" : "completed";
       const ticket = await storage.updateTicket(id, { status });
       
       if (!ticket) {
@@ -808,7 +831,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(ticket);
     } catch (error) {
+      console.error("Error completing ticket:", error);
       res.status(500).json({ message: "Failed to complete ticket" });
+    }
+  });
+
+  // Get work orders for a ticket
+  app.get("/api/tickets/:id/work-orders", authenticateUser, async (req, res) => {
+    try {
+      const ticketId = parseInt(req.params.id);
+      const workOrders = await storage.getTicketWorkOrders(ticketId);
+      res.json(workOrders);
+    } catch (error) {
+      console.error("Error fetching work orders:", error);
+      res.status(500).json({ message: "Failed to fetch work orders" });
     }
   });
 
