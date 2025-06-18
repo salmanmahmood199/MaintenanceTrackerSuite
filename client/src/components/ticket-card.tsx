@@ -10,12 +10,14 @@ interface TicketCardProps {
   onAccept?: (id: number) => void;
   onReject?: (id: number) => void;
   onComplete?: (id: number) => void;
+  onStart?: (id: number) => void;
   showActions?: boolean;
+  showTechnicianActions?: boolean;
   userRole?: string;
   userPermissions?: string[];
 }
 
-export function TicketCard({ ticket, onAccept, onReject, onComplete, showActions = true, userRole, userPermissions }: TicketCardProps) {
+export function TicketCard({ ticket, onAccept, onReject, onComplete, onStart, showActions = true, showTechnicianActions = false, userRole, userPermissions }: TicketCardProps) {
   const priorityColor = getPriorityColor(ticket.priority);
   const statusColor = getStatusColor(ticket.status);
   
@@ -28,6 +30,110 @@ export function TicketCard({ ticket, onAccept, onReject, onComplete, showActions
   return (
     <Card className="p-6 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-3">
+            <h3 className="text-lg font-semibold text-slate-900">{ticket.title}</h3>
+            <Badge variant="outline" className={`${priorityColor} border-current`}>
+              {ticket.priority}
+            </Badge>
+            <Badge variant="outline" className={`${statusColor} border-current`}>
+              {ticket.status}
+            </Badge>
+          </div>
+          
+          <p className="text-slate-600 mb-4">{ticket.description}</p>
+          
+          <div className="flex items-center gap-4 text-sm text-slate-500">
+            <div className="flex items-center gap-1">
+              <Hash className="h-4 w-4" />
+              <span>{ticket.ticketNumber}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Calendar className="h-4 w-4" />
+              <span>{format(new Date(ticket.createdAt), "MMM dd, yyyy 'at' h:mm a")}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Clock className="h-4 w-4" />
+              <span>{formatDistanceToNow(new Date(ticket.createdAt), { addSuffix: true })}</span>
+            </div>
+          </div>
+          
+          {ticket.images && ticket.images.length > 0 && (
+            <div className="flex gap-2 mt-3">
+              {ticket.images.map((image, index) => (
+                <img
+                  key={index}
+                  src={image}
+                  alt={`Ticket image ${index + 1}`}
+                  className="w-16 h-16 object-cover rounded border"
+                />
+              ))}
+            </div>
+          )}
+        </div>
+        
+        <div className="ml-6 flex flex-col gap-2">
+          {showTechnicianActions && (
+            <>
+              {ticket.status === 'accepted' && onStart && (
+                <Button
+                  onClick={() => onStart(ticket.id)}
+                  className="bg-blue-600 hover:bg-blue-700"
+                  size="sm"
+                >
+                  <Wrench className="h-4 w-4 mr-2" />
+                  Start Work
+                </Button>
+              )}
+              {ticket.status === 'in-progress' && onComplete && (
+                <Button
+                  onClick={() => onComplete(ticket.id)}
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                  size="sm"
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Complete
+                </Button>
+              )}
+            </>
+          )}
+          
+          {showActions && !showTechnicianActions && canAcceptTickets && (
+            <>
+              {ticket.status === 'pending' && onAccept && (
+                <Button
+                  onClick={() => onAccept(ticket.id)}
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                  size="sm"
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Accept
+                </Button>
+              )}
+              {ticket.status === 'pending' && onReject && (
+                <Button
+                  onClick={() => onReject(ticket.id)}
+                  variant="destructive"
+                  size="sm"
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Reject
+                </Button>
+              )}
+              {ticket.status === 'in-progress' && onComplete && (
+                <Button
+                  onClick={() => onComplete(ticket.id)}
+                  className="bg-blue-600 hover:bg-blue-700"
+                  size="sm"
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Complete
+                </Button>
+              )}
+            </>
+          )}
+        </div>
+      </div>
         <div className="flex-1">
           <div className="flex items-center space-x-3 mb-3">
             <h3 className="text-lg font-semibold text-slate-900">{ticket.title}</h3>

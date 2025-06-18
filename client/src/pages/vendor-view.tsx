@@ -8,6 +8,7 @@ import { ArrowLeft, Plus, Wrench, Clock, Check, AlertTriangle, Users, LogOut, Tr
 import { TicketCard } from "@/components/ticket-card";
 import { CreateTechnicianModal } from "@/components/create-technician-modal";
 import { EditTechnicianModal } from "@/components/edit-technician-modal";
+import { VendorTicketActionModal } from "@/components/vendor-ticket-action-modal";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -28,6 +29,9 @@ export default function VendorView() {
   const [isCreateTechnicianModalOpen, setIsCreateTechnicianModalOpen] = useState(false);
   const [isEditTechnicianModalOpen, setIsEditTechnicianModalOpen] = useState(false);
   const [selectedTechnician, setSelectedTechnician] = useState<User | null>(null);
+  const [isTicketActionModalOpen, setIsTicketActionModalOpen] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -71,13 +75,34 @@ export default function VendorView() {
 
   // Accept ticket mutation
   const acceptTicketMutation = useMutation({
-    mutationFn: (id: number) => apiRequest("POST", `/api/tickets/${id}/accept`, {}),
+    mutationFn: ({ id, assigneeId }: { id: number; assigneeId?: number }) => 
+      apiRequest("POST", `/api/tickets/${id}/accept`, { maintenanceVendorId: vendorId, assigneeId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets", { maintenanceVendorId: vendorId }] });
       queryClient.invalidateQueries({ queryKey: ["/api/tickets/stats", vendorId] });
+      setIsTicketActionModalOpen(false);
+      setSelectedTicket(null);
+      setTicketAction(null);
       toast({
         title: "Success",
         description: "Ticket accepted successfully!",
+      });
+    },
+  });
+
+  // Reject ticket mutation
+  const rejectTicketMutation = useMutation({
+    mutationFn: ({ id, rejectionReason }: { id: number; rejectionReason: string }) => 
+      apiRequest("POST", `/api/tickets/${id}/reject`, { rejectionReason }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets", { maintenanceVendorId: vendorId }] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets/stats", vendorId] });
+      setIsTicketActionModalOpen(false);
+      setSelectedTicket(null);
+      setTicketAction(null);
+      toast({
+        title: "Success",
+        description: "Ticket rejected successfully!",
       });
     },
   });
@@ -170,7 +195,21 @@ export default function VendorView() {
   });
 
   const handleAcceptTicket = (id: number) => {
-    acceptTicketMutation.mutate(id);
+    const ticket = tickets.find(t => t.id === id);
+    if (ticket) {
+      setSelectedTicket(ticket);
+      setTicketAction("accept");
+      setIsTicketActionModalOpen(true);
+    }
+  };
+
+  const handleRejectTicket = (id: number) => {
+    const ticket = tickets.find(t => t.id === id);
+    if (ticket) {
+      setSelectedTicket(ticket);
+      setTicketAction("reject");
+      setIsTicketActionModalOpen(true);
+    }
   };
 
   const handleCompleteTicket = (id: number) => {
@@ -188,6 +227,14 @@ export default function VendorView() {
   const openEditModal = (technician: User) => {
     setSelectedTechnician(technician);
     setIsEditTechnicianModalOpen(true);
+  };
+
+  const handleVendorAcceptTicket = (ticketId: number, assigneeId?: number) => {
+    acceptTicketMutation.mutate({ id: ticketId, assigneeId });
+  };
+
+  const handleVendorRejectTicket = (ticketId: number, rejectionReason: string) => {
+    rejectTicketMutation.mutate({ id: ticketId, rejectionReason });
   };
 
   if (!vendor) {
@@ -495,8 +542,10 @@ export default function VendorView() {
               <TicketCard
                 key={ticket.id}
                 ticket={ticket}
-                onAccept={handleAcceptTicket}
-                onComplete={handleCompleteTicket}
+                onAccept={ticket.status === 'pending' ? handleAcceptTicket : undefined}
+                onReject={ticket.status === 'pending' ? handleRejectTicket : undefined}
+                onComplete={ticket.status === 'in-progress' ? handleCompleteTicket : undefined}
+                showActions={true}
               />
             ))
           )}
@@ -517,6 +566,17 @@ export default function VendorView() {
           onResetPassword={handleResetPassword}
           isLoading={editTechnicianMutation.isPending || resetPasswordMutation.isPending}
           technician={selectedTechnician}
+        />
+
+        <VendorTicketActionModal
+          open={isTicketActionModalOpen}
+          onOpenChange={setIsTicketActionModalOpen}
+          ticket={selectedTicket}
+          action={ticketAction}
+          technicians={technicians || []}
+          onAccept={handleVendorAcceptTicket}
+          onReject={handleVendorRejectTicket}
+          isLoading={acceptTicketMutation.isPending || rejectTicketMutation.isPending}
         />
       </div>
     </div>

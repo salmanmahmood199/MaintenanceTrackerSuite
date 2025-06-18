@@ -553,12 +553,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all tickets
   app.get("/api/tickets", async (req, res) => {
     try {
-      const { status, organizationId, maintenanceVendorId } = req.query;
+      const { status, organizationId, maintenanceVendorId, assigneeId } = req.query;
       let tickets;
       
       // Parse query parameters
       const orgId = organizationId ? parseInt(organizationId as string) : undefined;
       const vendorId = maintenanceVendorId ? parseInt(maintenanceVendorId as string) : undefined;
+      const technicianId = assigneeId ? parseInt(assigneeId as string) : undefined;
       
       if (status && typeof status === 'string') {
         tickets = await storage.getTicketsByStatus(status, orgId);
@@ -569,6 +570,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Filter by maintenance vendor if specified
       if (vendorId) {
         tickets = tickets.filter(ticket => ticket.maintenanceVendorId === vendorId);
+      }
+      
+      // Filter by assignee (technician) if specified
+      if (technicianId) {
+        tickets = tickets.filter(ticket => ticket.assigneeId === technicianId);
       }
       
       res.json(tickets);
