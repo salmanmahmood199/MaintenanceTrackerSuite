@@ -429,7 +429,7 @@ export default function VendorView() {
         {/* Filters */}
         <Card className="p-6 mb-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-            <h2 className="text-lg font-semibold text-slate-900">Assigned Tickets</h2>
+            <h2 className="text-lg font-semibold text-slate-900">Assigned Tickets ({tickets.length})</h2>
             
             <div className="flex items-center gap-3">
               <div className="flex bg-slate-100 rounded-lg p-1">
@@ -444,10 +444,10 @@ export default function VendorView() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setStatusFilter("open")}
-                  className={statusFilter === "open" ? "bg-white shadow-sm" : ""}
+                  onClick={() => setStatusFilter("accepted")}
+                  className={statusFilter === "accepted" ? "bg-white shadow-sm" : ""}
                 >
-                  Open
+                  Accepted
                 </Button>
                 <Button
                   variant="ghost"
@@ -479,7 +479,16 @@ export default function VendorView() {
             </div>
           ) : tickets.length === 0 ? (
             <Card className="p-8 text-center">
-              <p className="text-slate-600">No tickets assigned to this vendor yet.</p>
+              <p className="text-slate-600">No tickets {statusFilter === "all" ? "assigned to this vendor" : `with status "${statusFilter}"`} yet.</p>
+              {statusFilter !== "all" && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => setStatusFilter("all")}
+                  className="mt-2"
+                >
+                  Show All Tickets
+                </Button>
+              )}
             </Card>
           ) : (
             tickets.map((ticket) => (

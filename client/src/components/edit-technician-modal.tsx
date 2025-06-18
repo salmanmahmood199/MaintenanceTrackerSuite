@@ -68,11 +68,11 @@ export function EditTechnicianModal({
   };
 
   const handlePasswordReset = () => {
-    if (technician && newPassword.trim()) {
+    if (technician && newPassword.trim() && newPassword.trim().length >= 6) {
       setIsResettingPassword(true);
       onResetPassword(technician.id, newPassword.trim());
       setNewPassword("");
-      setIsResettingPassword(false);
+      setTimeout(() => setIsResettingPassword(false), 1000);
     }
   };
 
@@ -173,13 +173,13 @@ export function EditTechnicianModal({
               type="button"
               variant="outline"
               onClick={handlePasswordReset}
-              disabled={!newPassword.trim() || isResettingPassword}
+              disabled={!newPassword.trim() || newPassword.trim().length < 6 || isResettingPassword}
             >
               {isResettingPassword ? "Resetting..." : "Reset"}
             </Button>
           </div>
           <p className="text-xs text-slate-500">
-            This will immediately change the technician's password
+            Password must be at least 6 characters. This will immediately change the technician's password.
           </p>
         </div>
       </DialogContent>
