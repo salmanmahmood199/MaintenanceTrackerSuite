@@ -784,9 +784,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get technicians for maintenance vendor
-  app.get("/api/maintenance-vendors/:vendorId/technicians", authenticateUser, async (req, res) => {
+  app.get("/api/maintenance-vendors/:vendorId/technicians", authenticateUser, requireRole(["root", "maintenance_admin"]), async (req, res) => {
     try {
       const vendorId = parseInt(req.params.vendorId);
+      const user = req.user!;
+      
+      // Ensure user can only access their own vendor's technicians
+      if (user.role === "maintenance_admin" && user.maintenanceVendorId !== vendorId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
       const technicians = await storage.getTechnicians(vendorId);
       res.json(technicians);
     } catch (error) {

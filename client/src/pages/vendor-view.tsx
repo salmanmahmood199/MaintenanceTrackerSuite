@@ -344,13 +344,7 @@ export default function VendorView() {
                       {technician.phone && (
                         <p className="text-sm text-slate-600">{technician.phone}</p>
                       )}
-                      <div className="flex gap-2 mt-2">
-                        {technician.permissions?.map((permission: string) => (
-                          <Badge key={permission} variant="secondary" className="text-xs">
-                            {permission.replace("_", " ")}
-                          </Badge>
-                        ))}
-                      </div>
+                      <p className="text-xs text-blue-600 font-medium">Role: {technician.role}</p>
                     </div>
                     <Button
                       variant="ghost"
