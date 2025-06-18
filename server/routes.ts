@@ -718,7 +718,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Accept ticket with vendor assignment
+  // Accept ticket and assign to maintenance vendor
   app.post("/api/tickets/:id/accept", authenticateUser, (req, res, next) => {
     const user = req.user as any;
     // Allow org_admin, maintenance_admin, or org_subadmin with accept_ticket permission
@@ -739,6 +739,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(ticket);
     } catch (error) {
       res.status(500).json({ message: "Failed to accept ticket" });
+    }
+  });
+
+  // Start work on ticket (for technicians)
+  app.post("/api/tickets/:id/start", authenticateUser, requireRole(["technician"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = req.user!;
+      
+      const ticket = await storage.updateTicket(id, {
+        status: "in-progress",
+        assigneeId: user.id
+      });
+      
+      if (!ticket) {
+        return res.status(404).json({ message: "Ticket not found" });
+      }
+      
+      res.json(ticket);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to start work on ticket" });
     }
   });
 

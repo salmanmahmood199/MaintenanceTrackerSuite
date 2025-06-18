@@ -9,6 +9,7 @@ import Login from "@/pages/login";
 import AdminDashboard from "@/pages/admin-dashboard";
 import OrganizationView from "@/pages/organization-view";
 import VendorView from "@/pages/vendor-view";
+import TechnicianDashboard from "@/pages/technician-dashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -71,7 +72,7 @@ function Router() {
   if (user?.role === "technician") {
     return (
       <Switch>
-        <Route path="/" component={Dashboard} />
+        <Route path="/" component={TechnicianDashboard} />
         <Route component={NotFound} />
       </Switch>
     );
