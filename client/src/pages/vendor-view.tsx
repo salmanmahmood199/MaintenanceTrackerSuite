@@ -95,10 +95,10 @@ export default function VendorView() {
   const { data: technicians = [], isLoading: techniciansLoading, error: techniciansError, refetch: refetchTechnicians } = useQuery<User[]>({
     queryKey: ["/api/maintenance-vendors", vendorId, "technicians"],
     enabled: !!vendorId,
-    retry: 2,
-    staleTime: 0, // Always fresh data
+    retry: 1,
+    staleTime: 0,
     refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
   });
   
   // Create technician mutation
@@ -316,12 +316,21 @@ export default function VendorView() {
             </div>
           </CardHeader>
           <CardContent>
-            {technicians.length === 0 ? (
+            {techniciansLoading ? (
+              <div className="text-center py-8 text-slate-500">
+                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Loading technicians...</p>
+              </div>
+            ) : technicians.length === 0 ? (
               <div className="text-center py-8 text-slate-500">
                 <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>No technicians added yet</p>
                 <p className="text-sm">Add technicians to assign tickets and manage work</p>
-
+                {techniciansError && (
+                  <p className="text-xs text-red-500 mt-2">
+                    Error: {(techniciansError as any)?.message}
+                  </p>
+                )}
               </div>
             ) : (
               <div className="space-y-4">
