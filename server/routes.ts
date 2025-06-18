@@ -791,14 +791,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Complete ticket
-  app.post("/api/tickets/:id/complete", async (req, res) => {
+  // Complete ticket with work order
+  app.post("/api/tickets/:id/complete", authenticateUser, requireRole(["org_admin", "maintenance_admin", "technician"]), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      const { workOrder } = req.body;
       
-      const ticket = await storage.updateTicket(id, {
-        status: "completed"
-      });
+      // For now, just complete the ticket based on work order status
+      const status = workOrder?.completionStatus === "return_needed" ? "return_needed" : "completed";
+      
+      const ticket = await storage.updateTicket(id, { status });
       
       if (!ticket) {
         return res.status(404).json({ message: "Ticket not found" });

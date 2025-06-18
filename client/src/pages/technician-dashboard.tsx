@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, Wrench, AlertTriangle, Check, LogOut } from "lucide-react";
 import { TicketCard } from "@/components/ticket-card";
 import { TechnicianWorkOrderModal } from "@/components/technician-work-order-modal";
+import { TechnicianTicketDetailsModal } from "@/components/technician-ticket-details-modal";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -21,6 +22,7 @@ interface TicketStats {
 export default function TechnicianDashboard() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isWorkOrderModalOpen, setIsWorkOrderModalOpen] = useState(false);
+  const [isTicketDetailsModalOpen, setIsTicketDetailsModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -75,8 +77,14 @@ export default function TechnicianDashboard() {
     const ticket = tickets.find(t => t.id === id);
     if (ticket) {
       setSelectedTicket(ticket);
+      setIsTicketDetailsModalOpen(false); // Close details modal if open
       setIsWorkOrderModalOpen(true);
     }
+  };
+
+  const handleTicketClick = (ticket: Ticket) => {
+    setSelectedTicket(ticket);
+    setIsTicketDetailsModalOpen(true);
   };
 
   // Work order submission mutation
@@ -272,16 +280,30 @@ export default function TechnicianDashboard() {
             </Card>
           ) : (
             tickets.map((ticket) => (
-              <TicketCard
+              <div
                 key={ticket.id}
-                ticket={ticket}
-                onStart={ticket.status === 'accepted' ? (id) => handleStartWork(id) : undefined}
-                onComplete={ticket.status === 'in-progress' ? (id) => handleCompleteWork(id) : undefined}
-                showTechnicianActions={true}
-              />
+                onClick={() => handleTicketClick(ticket)}
+                className="cursor-pointer"
+              >
+                <TicketCard
+                  ticket={ticket}
+                  onStart={ticket.status === 'accepted' ? handleStartWork : undefined}
+                  onComplete={ticket.status === 'in-progress' ? handleCompleteWork : undefined}
+                  showTechnicianActions={true}
+                />
+              </div>
             ))
           )}
         </div>
+
+        {/* Ticket Details Modal */}
+        <TechnicianTicketDetailsModal
+          open={isTicketDetailsModalOpen}
+          onOpenChange={setIsTicketDetailsModalOpen}
+          ticket={selectedTicket}
+          onStart={selectedTicket?.status === 'accepted' ? handleStartWork : undefined}
+          onCreateWorkOrder={selectedTicket?.status === 'in-progress' ? handleCompleteWork : undefined}
+        />
 
         {/* Work Order Modal */}
         <TechnicianWorkOrderModal
