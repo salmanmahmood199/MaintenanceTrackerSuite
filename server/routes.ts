@@ -822,6 +822,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update technician
+  app.patch("/api/maintenance-vendors/:vendorId/technicians/:id", authenticateUser, requireRole(["root", "maintenance_admin"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const vendorId = parseInt(req.params.vendorId);
+      const user = req.user!;
+      
+      // Ensure user can only update their own vendor's technicians
+      if (user.role === "maintenance_admin" && user.maintenanceVendorId !== vendorId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const updateData = insertUserSchema.partial().parse(req.body);
+      const technician = await storage.updateTechnician(id, updateData);
+      
+      if (!technician) {
+        return res.status(404).json({ message: "Technician not found" });
+      }
+      
+      res.json(technician);
+    } catch (error: any) {
+      console.error("Update technician error:", error);
+      if (error.name === 'ZodError') {
+        res.status(400).json({ message: "Invalid technician data", errors: error.errors });
+      } else if (error.message?.includes("duplicate key")) {
+        res.status(409).json({ message: "Email or phone number already exists" });
+      } else {
+        res.status(500).json({ message: "Failed to update technician" });
+      }
+    }
+  });
+
+  // Reset technician password
+  app.post("/api/maintenance-vendors/:vendorId/technicians/:id/reset-password", authenticateUser, requireRole(["root", "maintenance_admin"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const vendorId = parseInt(req.params.vendorId);
+      const user = req.user!;
+      const { newPassword } = req.body;
+      
+      // Ensure user can only reset their own vendor's technicians
+      if (user.role === "maintenance_admin" && user.maintenanceVendorId !== vendorId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      if (!newPassword || newPassword.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters" });
+      }
+      
+      const technician = await storage.updateTechnician(id, { password: newPassword });
+      
+      if (!technician) {
+        return res.status(404).json({ message: "Technician not found" });
+      }
+      
+      res.json({ message: "Password reset successfully" });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      res.status(500).json({ message: "Failed to reset password" });
+    }
+  });
+
   // Delete technician
   app.delete("/api/maintenance-vendors/:vendorId/technicians/:id", authenticateUser, requireRole(["root", "maintenance_admin"]), async (req, res) => {
     try {

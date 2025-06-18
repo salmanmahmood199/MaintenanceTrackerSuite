@@ -4,9 +4,10 @@ import { useRoute } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Wrench, Clock, Check, AlertTriangle, Users, LogOut, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Wrench, Clock, Check, AlertTriangle, Users, LogOut, Trash2, Edit } from "lucide-react";
 import { TicketCard } from "@/components/ticket-card";
 import { CreateTechnicianModal } from "@/components/create-technician-modal";
+import { EditTechnicianModal } from "@/components/edit-technician-modal";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,6 +26,8 @@ export default function VendorView() {
   const routeVendorId = parseInt(params?.id || "0");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isCreateTechnicianModalOpen, setIsCreateTechnicianModalOpen] = useState(false);
+  const [isEditTechnicianModalOpen, setIsEditTechnicianModalOpen] = useState(false);
+  const [selectedTechnician, setSelectedTechnician] = useState<User | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -132,12 +135,55 @@ export default function VendorView() {
     },
   });
 
+  // Edit technician mutation
+  const editTechnicianMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      return apiRequest("PATCH", `/api/maintenance-vendors/${vendorId}/technicians/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/maintenance-vendors", vendorId, "technicians"] });
+      refetchTechnicians();
+      setIsEditTechnicianModalOpen(false);
+      setSelectedTechnician(null);
+      toast({ title: "Success", description: "Technician updated successfully" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update technician", variant: "destructive" });
+    },
+  });
+
+  // Reset password mutation
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({ id, newPassword }: { id: number; newPassword: string }) => {
+      return apiRequest("POST", `/api/maintenance-vendors/${vendorId}/technicians/${id}/reset-password`, { newPassword });
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Password reset successfully" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to reset password", variant: "destructive" });
+    },
+  });
+
   const handleAcceptTicket = (id: number) => {
     acceptTicketMutation.mutate(id);
   };
 
   const handleCompleteTicket = (id: number) => {
     completeTicketMutation.mutate(id);
+  };
+
+  const handleEditTechnician = (id: number, data: any) => {
+    editTechnicianMutation.mutate({ id, data });
+  };
+
+  const handleResetPassword = (id: number, newPassword: string) => {
+    resetPasswordMutation.mutate({ id, newPassword });
+  };
+
+  const openEditModal = (technician: User) => {
+    setSelectedTechnician(technician);
+    setIsEditTechnicianModalOpen(true);
   };
 
   if (!vendor) {
@@ -346,13 +392,22 @@ export default function VendorView() {
                       )}
                       <p className="text-xs text-blue-600 font-medium">Role: {technician.role}</p>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => deleteTechnicianMutation.mutate(technician.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex space-x-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEditModal(technician)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteTechnicianMutation.mutate(technician.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -433,6 +488,15 @@ export default function VendorView() {
           onOpenChange={setIsCreateTechnicianModalOpen}
           onSubmit={(data) => createTechnicianMutation.mutate(data)}
           isLoading={createTechnicianMutation.isPending}
+        />
+        
+        <EditTechnicianModal
+          open={isEditTechnicianModalOpen}
+          onOpenChange={setIsEditTechnicianModalOpen}
+          onSubmit={handleEditTechnician}
+          onResetPassword={handleResetPassword}
+          isLoading={editTechnicianMutation.isPending || resetPasswordMutation.isPending}
+          technician={selectedTechnician}
         />
       </div>
     </div>

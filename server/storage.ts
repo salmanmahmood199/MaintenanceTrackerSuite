@@ -35,6 +35,7 @@ export interface IStorage {
   // Technician operations
   createTechnician(technician: InsertUser, vendorId: number): Promise<User>;
   getTechnicians(vendorId: number): Promise<User[]>;
+  updateTechnician(id: number, updates: Partial<InsertUser>): Promise<User | undefined>;
   deleteTechnician(id: number): Promise<boolean>;
   
   // Organization operations
@@ -174,6 +175,20 @@ export class DatabaseStorage implements IStorage {
         eq(users.role, "technician")
       ));
     return technicians;
+  }
+
+  async updateTechnician(id: number, updates: Partial<InsertUser>): Promise<User | undefined> {
+    const updateData: any = { ...updates };
+    if (updates.password) {
+      updateData.password = await bcrypt.hash(updates.password, 10);
+    }
+    
+    const [user] = await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, id))
+      .returning();
+    return user;
   }
 
   async deleteTechnician(id: number): Promise<boolean> {
