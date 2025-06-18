@@ -171,8 +171,7 @@ export class DatabaseStorage implements IStorage {
       .from(users)
       .where(and(
         eq(users.maintenanceVendorId, vendorId),
-        eq(users.role, "technician"),
-        eq(users.isActive, true)
+        eq(users.role, "technician")
       ));
     return technicians;
   }
