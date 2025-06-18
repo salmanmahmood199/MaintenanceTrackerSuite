@@ -92,6 +92,40 @@ export default function VendorView() {
     },
   });
 
+  const { data: technicians = [] } = useQuery<User[]>({
+    queryKey: ["/api/maintenance-vendors", vendorId, "technicians"],
+    enabled: !!vendorId,
+  });
+
+  // Create technician mutation
+  const createTechnicianMutation = useMutation({
+    mutationFn: async (data: InsertUser) => 
+      apiRequest("POST", `/api/maintenance-vendors/${vendorId}/technicians`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/maintenance-vendors", vendorId, "technicians"] });
+      setIsCreateTechnicianModalOpen(false);
+      toast({ title: "Success", description: "Technician added successfully" });
+    },
+    onError: (error: any) => {
+      const message = error.message?.includes("duplicate key") 
+        ? "Email or phone number already exists" 
+        : "Failed to add technician";
+      toast({ title: "Error", description: message, variant: "destructive" });
+    },
+  });
+
+  const deleteTechnicianMutation = useMutation({
+    mutationFn: async (id: number) => 
+      apiRequest("DELETE", `/api/maintenance-vendors/${vendorId}/technicians/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/maintenance-vendors", vendorId, "technicians"] });
+      toast({ title: "Success", description: "Technician removed successfully" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to remove technician", variant: "destructive" });
+    },
+  });
+
   const handleAcceptTicket = (id: number) => {
     acceptTicketMutation.mutate(id);
   };
@@ -295,7 +329,7 @@ export default function VendorView() {
                         <p className="text-sm text-slate-600">{technician.phone}</p>
                       )}
                       <div className="flex gap-2 mt-2">
-                        {technician.permissions?.map((permission) => (
+                        {technician.permissions?.map((permission: string) => (
                           <Badge key={permission} variant="secondary" className="text-xs">
                             {permission.replace("_", " ")}
                           </Badge>
@@ -382,6 +416,14 @@ export default function VendorView() {
             ))
           )}
         </div>
+
+        {/* Modals */}
+        <CreateTechnicianModal
+          open={isCreateTechnicianModalOpen}
+          onOpenChange={setIsCreateTechnicianModalOpen}
+          onSubmit={(data) => createTechnicianMutation.mutate(data)}
+          isLoading={createTechnicianMutation.isPending}
+        />
       </div>
     </div>
   );

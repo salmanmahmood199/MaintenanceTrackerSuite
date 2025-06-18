@@ -10,7 +10,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   firstName: varchar("first_name", { length: 100 }),
   lastName: varchar("last_name", { length: 100 }),
-  phone: varchar("phone", { length: 20 }),
+  phone: varchar("phone", { length: 15 }).unique(),
   role: text("role").notNull(), // 'root', 'org_admin', 'maintenance_admin', 'technician', 'org_subadmin'
   organizationId: integer("organization_id"),
   maintenanceVendorId: integer("maintenance_vendor_id"),
@@ -182,8 +182,6 @@ export const insertOrganizationSchema = createInsertSchema(organizations).omit({
   createdAt: true,
   updatedAt: true,
 }).extend({
-  email: z.string().email("Please enter a valid email address").optional(),
-  phone: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits").optional(),
   email: z.string().email("Please enter a valid email address").optional(),
   phone: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits").optional(),
 });
