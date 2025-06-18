@@ -177,6 +177,9 @@ export const insertOrganizationSchema = createInsertSchema(organizations).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  email: z.string().email("Please enter a valid email address").optional(),
+  phone: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits").optional(),
 });
 
 export const updateOrganizationSchema = insertOrganizationSchema.partial();

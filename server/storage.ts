@@ -32,6 +32,11 @@ export interface IStorage {
   updateSubAdmin(id: number, updates: Partial<InsertSubAdmin>): Promise<User | undefined>;
   deleteSubAdmin(id: number): Promise<boolean>;
   
+  // Technician operations
+  createTechnician(technician: InsertUser, vendorId: number): Promise<User>;
+  getTechnicians(vendorId: number): Promise<User[]>;
+  deleteTechnician(id: number): Promise<boolean>;
+  
   // Organization operations
   getOrganizations(): Promise<Organization[]>;
   getOrganization(id: number): Promise<Organization | undefined>;

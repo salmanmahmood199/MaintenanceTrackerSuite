@@ -26,11 +26,30 @@ export function CreateOrganizationModal({
     phone: "",
     email: "",
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+    
+    if (formData.phone && !/^\d{10}$/.test(formData.phone)) {
+      newErrors.phone = "Phone number must be exactly 10 digits";
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) return;
+    
     onSubmit(formData);
     setFormData({ name: "", description: "", address: "", phone: "", email: "" });
+    setErrors({});
   };
 
   return (
@@ -74,12 +93,14 @@ export function CreateOrganizationModal({
           </div>
 
           <div>
-            <Label htmlFor="phone">Phone</Label>
+            <Label htmlFor="phone">Phone (10 digits)</Label>
             <Input
               id="phone"
               value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+              placeholder="1234567890"
             />
+            {errors.phone && <p className="text-sm text-red-600 mt-1">{errors.phone}</p>}
           </div>
 
           <div>
@@ -90,6 +111,7 @@ export function CreateOrganizationModal({
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             />
+            {errors.email && <p className="text-sm text-red-600 mt-1">{errors.email}</p>}
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">
