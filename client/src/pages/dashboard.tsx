@@ -32,14 +32,15 @@ interface MaintenanceVendor {
 export default function Dashboard() {
   const { user } = useAuth();
 
-  // Fetch organizations
+  // Only fetch org/vendor data for non-technician users
   const { data: organizations = [], isLoading: orgsLoading } = useQuery<Organization[]>({
     queryKey: ["/api/organizations"],
+    enabled: user?.role !== "technician",
   });
 
-  // Fetch maintenance vendors
   const { data: vendors = [], isLoading: vendorsLoading } = useQuery<MaintenanceVendor[]>({
     queryKey: ["/api/maintenance-vendors"],
+    enabled: user?.role !== "technician",
   });
 
   const handleLogout = () => {
@@ -61,8 +62,14 @@ export default function Dashboard() {
                 <Settings className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-slate-900">Root Administration</h1>
-                <p className="text-slate-600">Manage organizations and maintenance vendors</p>
+                <h1 className="text-2xl font-bold text-slate-900">
+                  {user.role === "technician" ? "Technician Dashboard" : "Root Administration"}
+                </h1>
+                <p className="text-slate-600">
+                  {user.role === "technician" 
+                    ? "View assigned tickets and maintenance tasks" 
+                    : "Manage organizations and maintenance vendors"}
+                </p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -88,34 +95,53 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Overview Cards */}
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Organizations</CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{organizations.length}</div>
-              <p className="text-xs text-muted-foreground">
-                Active client organizations
-              </p>
-            </CardContent>
-          </Card>
+        {user.role === "technician" ? (
+          <div className="grid gap-6">
+            <Card className="p-6">
+              <CardContent className="p-0">
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Settings className="h-8 w-8 text-blue-600" />
+                  </div>
+                  <h2 className="text-xl font-semibold text-slate-900 mb-2">Welcome, {user.firstName}!</h2>
+                  <p className="text-slate-600 mb-4">You're logged in as a maintenance technician.</p>
+                  <p className="text-sm text-slate-500">
+                    Your role provides access to assigned maintenance tickets and tasks.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          <>
+            {/* Overview Cards */}
+            <div className="grid md:grid-cols-2 gap-6 mb-8">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Organizations</CardTitle>
+                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{organizations.length}</div>
+                  <p className="text-xs text-muted-foreground">
+                    Active client organizations
+                  </p>
+                </CardContent>
+              </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Maintenance Vendors</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{vendors.length}</div>
-              <p className="text-xs text-muted-foreground">
-                Registered service providers
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Maintenance Vendors</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{vendors.length}</div>
+                  <p className="text-xs text-muted-foreground">
+                    Registered service providers
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
 
         {/* Quick Actions */}
         <div className="mb-8">
@@ -244,7 +270,8 @@ export default function Dashboard() {
               ))}
             </div>
           )}
-        </div>
+          </>
+        )}
       </div>
     </div>
   );

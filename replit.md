@@ -205,6 +205,9 @@ Changelog:
 - June 18, 2025. Implemented comprehensive validation: 10-digit phone numbers, unique emails/phones across system
 - June 18, 2025. Added vendor admin credentials: admin@vendor.vendor / password
 - June 18, 2025. Fixed database schema with proper unique constraints and validation
+- June 18, 2025. Fixed critical role escalation security bug where technicians showed admin interface
+- June 18, 2025. Implemented proper role-based UI separation (technicians see basic dashboard, not admin controls)
+- June 18, 2025. Fixed routing issues preventing root admin from accessing organization/vendor views
 ```
 
 ## User Preferences
