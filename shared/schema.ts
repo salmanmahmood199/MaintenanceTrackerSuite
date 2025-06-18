@@ -161,6 +161,8 @@ export const insertUserSchema = createInsertSchema(users).omit({
   updatedAt: true,
 }).extend({
   role: z.enum(["root", "org_admin", "maintenance_admin", "technician", "org_subadmin"]),
+  email: z.string().email("Please enter a valid email address"),
+  phone: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits").optional(),
 });
 
 export const insertSubAdminSchema = createInsertSchema(users).omit({
@@ -171,6 +173,8 @@ export const insertSubAdminSchema = createInsertSchema(users).omit({
 }).extend({
   permissions: z.array(z.enum(["place_ticket", "accept_ticket"])).min(1),
   vendorTiers: z.array(z.enum(["tier_1", "tier_2", "tier_3"])).optional(),
+  email: z.string().email("Please enter a valid email address"),
+  phone: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits").optional(),
 });
 
 export const insertOrganizationSchema = createInsertSchema(organizations).omit({
@@ -178,6 +182,8 @@ export const insertOrganizationSchema = createInsertSchema(organizations).omit({
   createdAt: true,
   updatedAt: true,
 }).extend({
+  email: z.string().email("Please enter a valid email address").optional(),
+  phone: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits").optional(),
   email: z.string().email("Please enter a valid email address").optional(),
   phone: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits").optional(),
 });
@@ -190,13 +196,6 @@ export const insertMaintenanceVendorSchema = createInsertSchema(maintenanceVendo
   updatedAt: true,
 }).extend({
   assignedOrganizations: z.array(z.number()).optional(),
-});
-
-export const insertMaintenanceVendorSchema = createInsertSchema(maintenanceVendors).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
   email: z.string().email("Please enter a valid email address").optional(),
   phone: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits").optional(),
 });

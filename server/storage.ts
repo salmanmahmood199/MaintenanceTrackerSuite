@@ -150,6 +150,42 @@ export class DatabaseStorage implements IStorage {
     return result.rowCount !== null && result.rowCount > 0;
   }
 
+  async createTechnician(insertTechnician: InsertUser, vendorId: number): Promise<User> {
+    const hashedPassword = await bcrypt.hash(insertTechnician.password || "technician123", 10);
+    
+    const [technician] = await db
+      .insert(users)
+      .values({
+        ...insertTechnician,
+        password: hashedPassword,
+        role: "technician",
+        maintenanceVendorId: vendorId,
+      })
+      .returning();
+    return technician;
+  }
+
+  async getTechnicians(vendorId: number): Promise<User[]> {
+    const technicians = await db
+      .select()
+      .from(users)
+      .where(and(
+        eq(users.maintenanceVendorId, vendorId),
+        eq(users.role, "technician")
+      ));
+    return technicians;
+  }
+
+  async deleteTechnician(id: number): Promise<boolean> {
+    try {
+      await db.delete(users).where(eq(users.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting technician:", error);
+      return false;
+    }
+  }
+
   async verifyUser(email: string, password: string): Promise<User | undefined> {
     const user = await this.getUserByEmail(email);
     if (!user) return undefined;
