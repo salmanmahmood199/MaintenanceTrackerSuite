@@ -783,6 +783,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get technicians for maintenance vendor
+  app.get("/api/maintenance-vendors/:vendorId/technicians", authenticateUser, async (req, res) => {
+    try {
+      const vendorId = parseInt(req.params.vendorId);
+      const technicians = await storage.getTechnicians(vendorId);
+      res.json(technicians);
+    } catch (error) {
+      console.error("Error fetching technicians:", error);
+      res.status(500).json({ message: "Failed to fetch technicians" });
+    }
+  });
+
+  // Create technician
+  app.post("/api/maintenance-vendors/:vendorId/technicians", authenticateUser, requireRole(["root", "maintenance_admin"]), async (req, res) => {
+    try {
+      const vendorId = parseInt(req.params.vendorId);
+      const technicianData = insertUserSchema.parse(req.body);
+      
+      const technician = await storage.createTechnician(technicianData, vendorId);
+      res.status(201).json(technician);
+    } catch (error: any) {
+      console.error("Create technician error:", error);
+      if (error.name === 'ZodError') {
+        res.status(400).json({ message: "Invalid technician data", errors: error.errors });
+      } else if (error.message?.includes("duplicate key")) {
+        res.status(409).json({ message: "Email or phone number already exists" });
+      } else {
+        res.status(500).json({ message: "Failed to create technician" });
+      }
+    }
+  });
+
+  // Delete technician
+  app.delete("/api/maintenance-vendors/:vendorId/technicians/:id", authenticateUser, requireRole(["root", "maintenance_admin"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteTechnician(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Technician not found" });
+      }
+      
+      res.json({ message: "Technician deleted successfully" });
+    } catch (error) {
+      console.error("Delete technician error:", error);
+      res.status(500).json({ message: "Failed to delete technician" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

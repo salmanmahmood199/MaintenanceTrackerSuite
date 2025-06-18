@@ -4,13 +4,14 @@ import { useRoute } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Wrench, Clock, Check, AlertTriangle, Users, LogOut } from "lucide-react";
+import { ArrowLeft, Plus, Wrench, Clock, Check, AlertTriangle, Users, LogOut, Trash2 } from "lucide-react";
 import { TicketCard } from "@/components/ticket-card";
+import { CreateTechnicianModal } from "@/components/create-technician-modal";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
-import type { Ticket, MaintenanceVendor } from "@shared/schema";
+import type { Ticket, MaintenanceVendor, User, InsertUser } from "@shared/schema";
 
 interface TicketStats {
   open: number;
@@ -23,6 +24,7 @@ export default function VendorView() {
   const [, params] = useRoute("/admin/vendors/:id");
   const routeVendorId = parseInt(params?.id || "0");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [isCreateTechnicianModalOpen, setIsCreateTechnicianModalOpen] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -256,22 +258,61 @@ export default function VendorView() {
           </Card>
         </div>
 
-        {/* Technician Management Section */}
+        {/* Technicians Management */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <Users className="h-5 w-5 mr-2" />
-              Technician Management
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-8">
-              <p className="text-slate-600 mb-4">Manage your technician team and assign tickets</p>
-              <Button variant="outline">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Technicians
+              </CardTitle>
+              <Button 
+                onClick={() => setIsCreateTechnicianModalOpen(true)}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Technician
               </Button>
             </div>
+          </CardHeader>
+          <CardContent>
+            {technicians.length === 0 ? (
+              <div className="text-center py-8 text-slate-500">
+                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No technicians added yet</p>
+                <p className="text-sm">Add technicians to assign tickets and manage work</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {technicians.map((technician: User) => (
+                  <div key={technician.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div>
+                      <h4 className="font-medium">
+                        {technician.firstName} {technician.lastName}
+                      </h4>
+                      <p className="text-sm text-slate-600">{technician.email}</p>
+                      {technician.phone && (
+                        <p className="text-sm text-slate-600">{technician.phone}</p>
+                      )}
+                      <div className="flex gap-2 mt-2">
+                        {technician.permissions?.map((permission) => (
+                          <Badge key={permission} variant="secondary" className="text-xs">
+                            {permission.replace("_", " ")}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deleteTechnicianMutation.mutate(technician.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 

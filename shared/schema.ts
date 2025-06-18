@@ -27,8 +27,8 @@ export const organizations = pgTable("organizations", {
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   address: text("address"),
-  phone: varchar("phone", { length: 20 }),
-  email: varchar("email", { length: 255 }),
+  phone: varchar("phone", { length: 15 }).unique(),
+  email: varchar("email", { length: 255 }).unique(),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -40,8 +40,8 @@ export const maintenanceVendors = pgTable("maintenance_vendors", {
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   address: text("address"),
-  phone: varchar("phone", { length: 20 }),
-  email: varchar("email", { length: 255 }),
+  phone: varchar("phone", { length: 15 }).unique(),
+  email: varchar("email", { length: 255 }).unique(),
   specialties: text("specialties").array(), // e.g., ["plumbing", "electrical", "hvac"]
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -190,6 +190,15 @@ export const insertMaintenanceVendorSchema = createInsertSchema(maintenanceVendo
   updatedAt: true,
 }).extend({
   assignedOrganizations: z.array(z.number()).optional(),
+});
+
+export const insertMaintenanceVendorSchema = createInsertSchema(maintenanceVendors).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  email: z.string().email("Please enter a valid email address").optional(),
+  phone: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits").optional(),
 });
 
 export const updateMaintenanceVendorSchema = insertMaintenanceVendorSchema.partial();
