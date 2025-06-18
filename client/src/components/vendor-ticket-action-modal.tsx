@@ -100,7 +100,7 @@ export function VendorTicketActionModal({
                       <SelectValue placeholder="Select a technician or leave unassigned" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No assignment (assign later)</SelectItem>
+                      <SelectItem value="none">No assignment (assign later)</SelectItem>
                       {technicians.map((tech) => (
                         <SelectItem key={tech.id} value={tech.id.toString()}>
                           {tech.firstName} {tech.lastName} ({tech.email})

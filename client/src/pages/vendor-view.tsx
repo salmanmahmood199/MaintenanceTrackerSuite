@@ -52,15 +52,21 @@ export default function VendorView() {
     enabled: !!vendorId,
   });
 
-  // Fetch tickets assigned to this vendor
+  // Fetch tickets for this vendor
   const { data: tickets = [], isLoading: ticketsLoading } = useQuery<Ticket[]>({
     queryKey: statusFilter === "all" 
       ? ["/api/tickets", { maintenanceVendorId: vendorId }] 
       : ["/api/tickets", { status: statusFilter, maintenanceVendorId: vendorId }],
     queryFn: async () => {
-      const url = statusFilter === "all" 
-        ? `/api/tickets?maintenanceVendorId=${vendorId}`
-        : `/api/tickets?status=${statusFilter}&maintenanceVendorId=${vendorId}`;
+      let url;
+      if (statusFilter === "all") {
+        url = `/api/tickets?maintenanceVendorId=${vendorId}`;
+      } else if (statusFilter === "pending") {
+        // Get pending tickets assigned to this vendor by organization admin
+        url = `/api/tickets?status=accepted&maintenanceVendorId=${vendorId}`;
+      } else {
+        url = `/api/tickets?status=${statusFilter}&maintenanceVendorId=${vendorId}`;
+      }
       const response = await apiRequest("GET", url);
       return await response.json() as Ticket[];
     },
@@ -503,7 +509,7 @@ export default function VendorView() {
                   onClick={() => setStatusFilter("pending")}
                   className={statusFilter === "pending" ? "bg-white shadow-sm" : ""}
                 >
-                  Pending
+                  Need Action
                 </Button>
                 <Button
                   variant="ghost"
@@ -591,8 +597,8 @@ export default function VendorView() {
           open={isTicketDetailsModalOpen}
           onOpenChange={setIsTicketDetailsModalOpen}
           ticket={selectedTicket}
-          onAccept={selectedTicket?.status === 'pending' ? handleAcceptTicket : undefined}
-          onReject={selectedTicket?.status === 'pending' ? handleRejectTicket : undefined}
+          onAccept={selectedTicket?.status === 'accepted' ? handleAcceptTicket : undefined}
+          onReject={selectedTicket?.status === 'accepted' ? handleRejectTicket : undefined}
           onComplete={selectedTicket?.status === 'in-progress' ? handleCompleteTicket : undefined}
           canAccept={true}
         />
