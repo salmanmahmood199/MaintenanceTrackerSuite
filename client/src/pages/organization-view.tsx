@@ -358,7 +358,7 @@ export default function OrganizationView() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               {user?.role === "root" && (
-                <Link href="/admin">
+                <Link href="/">
                   <Button variant="ghost" size="sm">
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Back to Admin

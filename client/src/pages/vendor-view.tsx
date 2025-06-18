@@ -145,7 +145,7 @@ export default function VendorView() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-xl font-semibold text-slate-900 mb-2">Vendor Not Found</h2>
-          <Link href="/admin">
+          <Link href="/">
             <Button variant="outline">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Admin
@@ -164,7 +164,7 @@ export default function VendorView() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               {user?.role === "root" && (
-                <Link href="/admin">
+                <Link href="/">
                   <Button variant="ghost" size="sm">
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Back to Admin
