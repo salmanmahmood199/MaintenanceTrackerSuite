@@ -272,23 +272,13 @@ export default function TechnicianDashboard() {
             </Card>
           ) : (
             tickets.map((ticket) => (
-              <div
+              <TicketCard
                 key={ticket.id}
-                onClick={() => {
-                  setSelectedTicket(ticket);
-                  if (ticket.status === 'in-progress') {
-                    setIsWorkOrderModalOpen(true);
-                  }
-                }}
-                className="cursor-pointer"
-              >
-                <TicketCard
-                  ticket={ticket}
-                  onStart={ticket.status === 'accepted' ? (id) => handleStartWork(id) : undefined}
-                  onComplete={ticket.status === 'in-progress' ? (id) => handleCompleteWork(id) : undefined}
-                  showTechnicianActions={true}
-                />
-              </div>
+                ticket={ticket}
+                onStart={ticket.status === 'accepted' ? (id) => handleStartWork(id) : undefined}
+                onComplete={ticket.status === 'in-progress' ? (id) => handleCompleteWork(id) : undefined}
+                showTechnicianActions={true}
+              />
             ))
           )}
         </div>
