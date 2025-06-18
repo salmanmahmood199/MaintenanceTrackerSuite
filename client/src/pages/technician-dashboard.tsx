@@ -70,7 +70,16 @@ export default function TechnicianDashboard() {
   });
 
   const handleStartWork = (id: number) => {
-    startWorkMutation.mutate(id);
+    const ticket = tickets.find(t => t.id === id);
+    if (ticket) {
+      // First change status to in-progress, then open work order modal
+      startWorkMutation.mutate(id);
+      setSelectedTicket(ticket);
+      // Open work order modal after a brief delay to allow status update
+      setTimeout(() => {
+        setIsWorkOrderModalOpen(true);
+      }, 100);
+    }
   };
 
   const handleCompleteWork = (id: number) => {
@@ -96,14 +105,24 @@ export default function TechnicianDashboard() {
         // Note: Image upload would need additional handling
       });
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets", { assigneeId: user?.id }] });
       setIsWorkOrderModalOpen(false);
-      setSelectedTicket(null);
-      toast({
-        title: "Success",
-        description: "Work order completed successfully!",
-      });
+      
+      // Only clear selected ticket if job is actually completed
+      if (variables.workOrder?.completionStatus === "completed") {
+        setSelectedTicket(null);
+        toast({
+          title: "Success",
+          description: "Work order completed successfully!",
+        });
+      } else {
+        // For return_needed, keep ticket available for more work orders
+        toast({
+          title: "Work Order Submitted",
+          description: "Work order saved. Ticket remains open for return visit.",
+        });
+      }
     },
     onError: () => {
       toast({
@@ -120,8 +139,8 @@ export default function TechnicianDashboard() {
 
   // Calculate stats
   const stats: TicketStats = {
-    assigned: tickets.filter(t => t.status === 'accepted' || t.status === 'in-progress').length,
-    inProgress: tickets.filter(t => t.status === 'in-progress').length,
+    assigned: tickets.filter(t => t.status === 'accepted' || t.status === 'in-progress' || t.status === 'return_needed').length,
+    inProgress: tickets.filter(t => t.status === 'in-progress' || t.status === 'return_needed').length,
     completed: tickets.filter(t => t.status === 'completed').length,
     highPriority: tickets.filter(t => t.priority === 'high').length,
   };
@@ -288,7 +307,7 @@ export default function TechnicianDashboard() {
                 <TicketCard
                   ticket={ticket}
                   onStart={ticket.status === 'accepted' ? handleStartWork : undefined}
-                  onComplete={ticket.status === 'in-progress' ? handleCompleteWork : undefined}
+                  onComplete={(ticket.status === 'in-progress' || ticket.status === 'return_needed') ? handleCompleteWork : undefined}
                   showTechnicianActions={true}
                 />
               </div>
@@ -302,7 +321,7 @@ export default function TechnicianDashboard() {
           onOpenChange={setIsTicketDetailsModalOpen}
           ticket={selectedTicket}
           onStart={selectedTicket?.status === 'accepted' ? handleStartWork : undefined}
-          onCreateWorkOrder={selectedTicket?.status === 'in-progress' ? handleCompleteWork : undefined}
+          onCreateWorkOrder={(selectedTicket?.status === 'in-progress' || selectedTicket?.status === 'return_needed') ? handleCompleteWork : undefined}
         />
 
         {/* Work Order Modal */}

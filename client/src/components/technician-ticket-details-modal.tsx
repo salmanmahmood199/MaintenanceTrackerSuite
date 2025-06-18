@@ -137,7 +137,7 @@ export function TechnicianTicketDetailsModal({
                   Start Work
                 </Button>
               )}
-              {ticket.status === 'in-progress' && onCreateWorkOrder && (
+              {(ticket.status === 'in-progress' || ticket.status === 'return_needed') && onCreateWorkOrder && (
                 <Button
                   onClick={() => onCreateWorkOrder(ticket.id)}
                   className="bg-emerald-600 hover:bg-emerald-700"

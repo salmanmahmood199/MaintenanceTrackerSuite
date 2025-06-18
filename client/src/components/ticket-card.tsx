@@ -79,22 +79,28 @@ export function TicketCard({ ticket, onAccept, onReject, onComplete, onStart, sh
             <>
               {ticket.status === 'accepted' && onStart && (
                 <Button
-                  onClick={() => onStart(ticket.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onStart(ticket.id);
+                  }}
                   className="bg-blue-600 hover:bg-blue-700"
                   size="sm"
                 >
                   <Wrench className="h-4 w-4 mr-2" />
-                  Start Work
+                  Start & Create Work Order
                 </Button>
               )}
-              {ticket.status === 'in-progress' && onComplete && (
+              {(ticket.status === 'in-progress' || ticket.status === 'return_needed') && onComplete && (
                 <Button
-                  onClick={() => onComplete(ticket.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onComplete(ticket.id);
+                  }}
                   className="bg-emerald-600 hover:bg-emerald-700"
                   size="sm"
                 >
                   <CheckCircle className="h-4 w-4 mr-2" />
-                  Complete
+                  Create Work Order
                 </Button>
               )}
             </>
