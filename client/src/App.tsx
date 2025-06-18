@@ -35,6 +35,8 @@ function Router() {
   if (user?.role === "root") {
     return (
       <Switch>
+        <Route path="/admin/organizations/:id" component={OrganizationView} />
+        <Route path="/admin/vendors/:id" component={VendorView} />
         <Route path="/organizations/:id" component={OrganizationView} />
         <Route path="/vendors/:id" component={VendorView} />
         <Route path="/" component={AdminDashboard} />
