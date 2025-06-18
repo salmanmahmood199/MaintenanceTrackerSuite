@@ -92,14 +92,14 @@ export default function VendorView() {
     },
   });
 
-  const { data: technicians = [], isLoading: techniciansLoading, error: techniciansError, refetch: refetchTechnicians } = useQuery<User[]>({
+  const { data: technicians = [], isLoading: techniciansLoading, error: techniciansError, refetch: refetchTechnicians } = useQuery({
     queryKey: ["/api/maintenance-vendors", vendorId, "technicians"],
     enabled: !!vendorId,
     retry: 1,
     staleTime: 0,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
-  });
+  }) as { data: User[], isLoading: boolean, error: any, refetch: () => void };
   
   // Create technician mutation
   const createTechnicianMutation = useMutation({

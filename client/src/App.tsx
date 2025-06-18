@@ -31,7 +31,19 @@ function Router() {
     );
   }
 
-  // Redirect based on user role
+  // Root user gets full admin access
+  if (user?.role === "root") {
+    return (
+      <Switch>
+        <Route path="/organizations/:id" component={OrganizationView} />
+        <Route path="/vendors/:id" component={VendorView} />
+        <Route path="/" component={RootDashboard} />
+        <Route component={NotFound} />
+      </Switch>
+    );
+  }
+
+  // Organization roles
   if ((user?.role === "org_admin" || user?.role === "org_subadmin") && user.organizationId) {
     return (
       <Switch>
@@ -42,6 +54,7 @@ function Router() {
     );
   }
 
+  // Maintenance vendor admin
   if (user?.role === "maintenance_admin" && user.maintenanceVendorId) {
     return (
       <Switch>
@@ -52,12 +65,20 @@ function Router() {
     );
   }
 
+  // Technician gets basic dashboard only
+  if (user?.role === "technician") {
+    return (
+      <Switch>
+        <Route path="/" component={Dashboard} />
+        <Route component={NotFound} />
+      </Switch>
+    );
+  }
+
+  // Default to basic dashboard for authenticated users
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
-      {isRoot && <Route path="/admin" component={AdminDashboard} />}
-      {isRoot && <Route path="/admin/organizations/:id" component={OrganizationView} />}
-      {isRoot && <Route path="/admin/vendors/:id" component={VendorView} />}
       <Route component={NotFound} />
     </Switch>
   );
