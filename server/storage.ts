@@ -166,7 +166,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTechnicians(vendorId: number): Promise<User[]> {
-    console.log(`Storage: Getting technicians for vendor ${vendorId}`);
     const technicians = await db
       .select()
       .from(users)
@@ -175,7 +174,6 @@ export class DatabaseStorage implements IStorage {
         eq(users.role, "technician"),
         eq(users.isActive, true)
       ));
-    console.log(`Storage: Found ${technicians.length} technicians:`, technicians);
     return technicians;
   }
 

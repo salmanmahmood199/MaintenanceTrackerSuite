@@ -32,8 +32,6 @@ export default function VendorView() {
   // Use vendor ID from user (for maintenance_admin) or route (for root accessing vendor)
   const vendorId = user?.role === "maintenance_admin" ? user.maintenanceVendorId : routeVendorId;
   
-  console.log("VendorView Debug:", { user: user?.role, routeVendorId, vendorId, userVendorId: user?.maintenanceVendorId });
-
   // Fetch vendor details
   const { data: vendor } = useQuery<MaintenanceVendor | undefined>({
     queryKey: ["/api/maintenance-vendors", vendorId],
@@ -101,8 +99,6 @@ export default function VendorView() {
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
   
-  console.log("Technicians Query:", { vendorId, techniciansLoading, techniciansCount: technicians.length, techniciansError });
-
   // Create technician mutation
   const createTechnicianMutation = useMutation({
     mutationFn: async (data: InsertUser) => 
@@ -322,10 +318,7 @@ export default function VendorView() {
                 <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>No technicians added yet</p>
                 <p className="text-sm">Add technicians to assign tickets and manage work</p>
-                <p className="text-xs text-gray-400 mt-2">
-                  Debug: Vendor ID {vendorId}, Loading: {techniciansLoading ? 'Yes' : 'No'}
-                  {techniciansError && <span className="text-red-500"> Error: {(techniciansError as any)?.message}</span>}
-                </p>
+
               </div>
             ) : (
               <div className="space-y-4">

@@ -201,6 +201,10 @@ Changelog:
 - June 17, 2025. Redesigned progress tracking from percentages to meaningful milestones
 - June 17, 2025. Created new root dashboard with TaskScout.ai color theme and tabbed interface
 - June 17, 2025. Added dedicated tabs for organizations, vendors, tickets overview with clean management interface
+- June 18, 2025. Completed technician management system with full CRUD operations
+- June 18, 2025. Implemented comprehensive validation: 10-digit phone numbers, unique emails/phones across system
+- June 18, 2025. Added vendor admin credentials: admin@vendor.vendor / password
+- June 18, 2025. Fixed database schema with proper unique constraints and validation
 ```
 
 ## User Preferences
