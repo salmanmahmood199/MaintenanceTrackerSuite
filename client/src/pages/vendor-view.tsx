@@ -97,12 +97,16 @@ export default function VendorView() {
 
   const { data: technicians = [], isLoading: techniciansLoading, error: techniciansError, refetch: refetchTechnicians } = useQuery({
     queryKey: ["/api/maintenance-vendors", vendorId, "technicians"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/maintenance-vendors/${vendorId}/technicians`);
+      return await response.json() as User[];
+    },
     enabled: !!vendorId,
     retry: 1,
     staleTime: 0,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
-  }) as { data: User[], isLoading: boolean, error: any, refetch: () => void };
+  });
   
   // Create technician mutation
   const createTechnicianMutation = useMutation({
@@ -367,16 +371,23 @@ export default function VendorView() {
                 <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>Loading technicians...</p>
               </div>
+            ) : techniciansError ? (
+              <div className="text-center py-8 text-red-500">
+                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Error loading technicians: {techniciansError.message}</p>
+                <Button 
+                  variant="outline" 
+                  onClick={() => refetchTechnicians()}
+                  className="mt-2"
+                >
+                  Retry
+                </Button>
+              </div>
             ) : technicians.length === 0 ? (
               <div className="text-center py-8 text-slate-500">
                 <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>No technicians added yet</p>
                 <p className="text-sm">Add technicians to assign tickets and manage work</p>
-                {techniciansError && (
-                  <p className="text-xs text-red-500 mt-2">
-                    Error: {(techniciansError as any)?.message}
-                  </p>
-                )}
               </div>
             ) : (
               <div className="space-y-4">
