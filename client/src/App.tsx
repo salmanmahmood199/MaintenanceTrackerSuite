@@ -37,7 +37,7 @@ function Router() {
       <Switch>
         <Route path="/organizations/:id" component={OrganizationView} />
         <Route path="/vendors/:id" component={VendorView} />
-        <Route path="/" component={RootDashboard} />
+        <Route path="/" component={AdminDashboard} />
         <Route component={NotFound} />
       </Switch>
     );
