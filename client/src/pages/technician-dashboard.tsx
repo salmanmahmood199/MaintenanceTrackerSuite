@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +7,7 @@ import { Clock, Wrench, AlertTriangle, Check, LogOut } from "lucide-react";
 import { TicketCard } from "@/components/ticket-card";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import type { Ticket } from "@shared/schema";
 
 interface TicketStats {
@@ -19,6 +20,8 @@ interface TicketStats {
 export default function TechnicianDashboard() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   // Fetch tickets assigned to this technician
   const { data: tickets = [], isLoading: ticketsLoading } = useQuery<Ticket[]>({
@@ -36,6 +39,38 @@ export default function TechnicianDashboard() {
     staleTime: 0,
     refetchOnMount: true,
   });
+
+  // Start work mutation
+  const startWorkMutation = useMutation({
+    mutationFn: (id: number) => apiRequest("POST", `/api/tickets/${id}/start`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets", { assigneeId: user?.id }] });
+      toast({
+        title: "Success",
+        description: "Started work on ticket!",
+      });
+    },
+  });
+
+  // Complete work mutation  
+  const completeWorkMutation = useMutation({
+    mutationFn: (id: number) => apiRequest("POST", `/api/tickets/${id}/complete`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets", { assigneeId: user?.id }] });
+      toast({
+        title: "Success", 
+        description: "Completed ticket!",
+      });
+    },
+  });
+
+  const handleStartWork = (id: number) => {
+    startWorkMutation.mutate(id);
+  };
+
+  const handleCompleteWork = (id: number) => {
+    completeWorkMutation.mutate(id);
+  };
 
   // Calculate stats
   const stats: TicketStats = {
@@ -202,8 +237,8 @@ export default function TechnicianDashboard() {
               <TicketCard
                 key={ticket.id}
                 ticket={ticket}
-                onStart={ticket.status === 'accepted' ? () => {} : undefined}
-                onComplete={ticket.status === 'in-progress' ? () => {} : undefined}
+                onStart={ticket.status === 'accepted' ? (id) => handleStartWork(id) : undefined}
+                onComplete={ticket.status === 'in-progress' ? (id) => handleCompleteWork(id) : undefined}
                 showTechnicianActions={true}
               />
             ))
