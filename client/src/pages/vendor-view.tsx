@@ -103,6 +103,7 @@ export default function VendorView() {
       apiRequest("POST", `/api/maintenance-vendors/${vendorId}/technicians`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/maintenance-vendors", vendorId, "technicians"] });
+      queryClient.refetchQueries({ queryKey: ["/api/maintenance-vendors", vendorId, "technicians"] });
       setIsCreateTechnicianModalOpen(false);
       toast({ title: "Success", description: "Technician added successfully" });
     },
@@ -315,6 +316,7 @@ export default function VendorView() {
                 <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>No technicians added yet</p>
                 <p className="text-sm">Add technicians to assign tickets and manage work</p>
+                <p className="text-xs text-gray-400 mt-2">Debug: Vendor ID {vendorId}, Query enabled: {!!vendorId}</p>
               </div>
             ) : (
               <div className="space-y-4">

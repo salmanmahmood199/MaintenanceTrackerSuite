@@ -787,7 +787,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/maintenance-vendors/:vendorId/technicians", authenticateUser, async (req, res) => {
     try {
       const vendorId = parseInt(req.params.vendorId);
+      console.log(`Fetching technicians for vendor ${vendorId}`);
       const technicians = await storage.getTechnicians(vendorId);
+      console.log(`Found ${technicians.length} technicians:`, technicians);
       res.json(technicians);
     } catch (error) {
       console.error("Error fetching technicians:", error);
