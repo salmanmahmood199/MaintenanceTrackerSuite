@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Wrench, AlertTriangle, Check, LogOut } from "lucide-react";
 import { TicketCard } from "@/components/ticket-card";
+import { TechnicianWorkOrderModal } from "@/components/technician-work-order-modal";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +20,8 @@ interface TicketStats {
 
 export default function TechnicianDashboard() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [isWorkOrderModalOpen, setIsWorkOrderModalOpen] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -69,7 +72,42 @@ export default function TechnicianDashboard() {
   };
 
   const handleCompleteWork = (id: number) => {
-    completeWorkMutation.mutate(id);
+    const ticket = tickets.find(t => t.id === id);
+    if (ticket) {
+      setSelectedTicket(ticket);
+      setIsWorkOrderModalOpen(true);
+    }
+  };
+
+  // Work order submission mutation
+  const submitWorkOrderMutation = useMutation({
+    mutationFn: async ({ id, workOrder, images }: { id: number; workOrder: any; images: File[] }) => {
+      // For now, just complete the ticket - in future this would submit full work order data
+      return apiRequest("POST", `/api/tickets/${id}/complete`, {
+        workOrder,
+        // Note: Image upload would need additional handling
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets", { assigneeId: user?.id }] });
+      setIsWorkOrderModalOpen(false);
+      setSelectedTicket(null);
+      toast({
+        title: "Success",
+        description: "Work order completed successfully!",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to submit work order",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleWorkOrderSubmit = (id: number, workOrder: any, images: File[]) => {
+    submitWorkOrderMutation.mutate({ id, workOrder, images });
   };
 
   // Calculate stats
@@ -234,16 +272,35 @@ export default function TechnicianDashboard() {
             </Card>
           ) : (
             tickets.map((ticket) => (
-              <TicketCard
+              <div
                 key={ticket.id}
-                ticket={ticket}
-                onStart={ticket.status === 'accepted' ? (id) => handleStartWork(id) : undefined}
-                onComplete={ticket.status === 'in-progress' ? (id) => handleCompleteWork(id) : undefined}
-                showTechnicianActions={true}
-              />
+                onClick={() => {
+                  setSelectedTicket(ticket);
+                  if (ticket.status === 'in-progress') {
+                    setIsWorkOrderModalOpen(true);
+                  }
+                }}
+                className="cursor-pointer"
+              >
+                <TicketCard
+                  ticket={ticket}
+                  onStart={ticket.status === 'accepted' ? (id) => handleStartWork(id) : undefined}
+                  onComplete={ticket.status === 'in-progress' ? (id) => handleCompleteWork(id) : undefined}
+                  showTechnicianActions={true}
+                />
+              </div>
             ))
           )}
         </div>
+
+        {/* Work Order Modal */}
+        <TechnicianWorkOrderModal
+          open={isWorkOrderModalOpen}
+          onOpenChange={setIsWorkOrderModalOpen}
+          ticket={selectedTicket}
+          onSubmit={handleWorkOrderSubmit}
+          isLoading={submitWorkOrderMutation.isPending}
+        />
       </div>
     </div>
   );

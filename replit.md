@@ -208,6 +208,9 @@ Changelog:
 - June 18, 2025. Fixed critical role escalation security bug where technicians showed admin interface
 - June 18, 2025. Implemented proper role-based UI separation (technicians see basic dashboard, not admin controls)
 - June 18, 2025. Fixed routing issues preventing root admin from accessing organization/vendor views
+- June 18, 2025. Created comprehensive technician work order modal with parts tracking, cost calculation, and completion status
+- June 18, 2025. Added "return_needed" status for jobs requiring follow-up visits
+- June 18, 2025. Implemented full ticket workflow: create → org accept → vendor accept → technician start → technician complete with work order
 ```
 
 ## User Preferences
