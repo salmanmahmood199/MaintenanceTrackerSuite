@@ -500,6 +500,14 @@ export default function VendorView() {
                 <Button
                   variant="ghost"
                   size="sm"
+                  onClick={() => setStatusFilter("pending")}
+                  className={statusFilter === "pending" ? "bg-white shadow-sm" : ""}
+                >
+                  Pending
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setStatusFilter("accepted")}
                   className={statusFilter === "accepted" ? "bg-white shadow-sm" : ""}
                 >
@@ -583,9 +591,9 @@ export default function VendorView() {
           open={isTicketDetailsModalOpen}
           onOpenChange={setIsTicketDetailsModalOpen}
           ticket={selectedTicket}
-          onAccept={handleAcceptTicket}
-          onReject={handleRejectTicket}
-          onComplete={handleCompleteTicket}
+          onAccept={selectedTicket?.status === 'pending' || selectedTicket?.status === 'accepted' ? handleAcceptTicket : undefined}
+          onReject={selectedTicket?.status === 'pending' ? handleRejectTicket : undefined}
+          onComplete={selectedTicket?.status === 'in-progress' ? handleCompleteTicket : undefined}
           canAccept={true}
         />
 

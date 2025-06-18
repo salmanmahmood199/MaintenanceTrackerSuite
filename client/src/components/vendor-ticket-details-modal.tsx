@@ -144,22 +144,24 @@ export function VendorTicketDetailsModal({
             {/* Actions */}
             {canAccept && (
               <div className="flex justify-end gap-3 pt-4 border-t">
-                {ticket.status === 'pending' && (
+                {(ticket.status === 'pending' || ticket.status === 'accepted') && (
                   <>
                     <Button
                       onClick={() => onAccept?.(ticket.id)}
                       className="bg-emerald-600 hover:bg-emerald-700"
                     >
                       <CheckCircle className="h-4 w-4 mr-2" />
-                      Accept Ticket
+                      {ticket.status === 'pending' ? 'Accept Ticket' : 'Reassign Ticket'}
                     </Button>
-                    <Button
-                      onClick={() => onReject?.(ticket.id)}
-                      variant="destructive"
-                    >
-                      <XCircle className="h-4 w-4 mr-2" />
-                      Reject Ticket
-                    </Button>
+                    {ticket.status === 'pending' && (
+                      <Button
+                        onClick={() => onReject?.(ticket.id)}
+                        variant="destructive"
+                      >
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Reject Ticket
+                      </Button>
+                    )}
                   </>
                 )}
                 {ticket.status === 'in-progress' && onComplete && (

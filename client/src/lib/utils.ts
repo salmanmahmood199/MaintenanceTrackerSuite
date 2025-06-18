@@ -6,22 +6,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatDate(date: string | Date) {
-  const now = new Date();
-  const targetDate = new Date(date);
-  const diffMs = now.getTime() - targetDate.getTime();
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffHours < 1) {
-    return "Just now";
-  } else if (diffHours < 24) {
-    return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
-  } else if (diffDays < 7) {
-    return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
-  } else {
-    return targetDate.toLocaleDateString();
-  }
+export function formatDate(date: string | Date): string {
+  return formatTz(toZonedTime(new Date(date), 'America/New_York'), "MMM dd, yyyy 'at' h:mm a zzz", { timeZone: 'America/New_York' });
 }
 
 export function getPriorityColor(priority: string) {
