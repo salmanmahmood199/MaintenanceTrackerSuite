@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, User, Hash, Wrench, CheckCircle, XCircle, Clock } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
+import { toZonedTime, format as formatTz } from "date-fns-tz";
 import { formatDate, getPriorityColor, getStatusColor } from "@/lib/utils";
 import type { Ticket } from "@shared/schema";
 
@@ -51,7 +52,7 @@ export function TicketCard({ ticket, onAccept, onReject, onComplete, onStart, sh
             </div>
             <div className="flex items-center gap-1">
               <Calendar className="h-4 w-4" />
-              <span>{format(new Date(ticket.createdAt), "MMM dd, yyyy 'at' h:mm a")}</span>
+              <span>{formatTz(toZonedTime(new Date(ticket.createdAt), 'America/New_York'), "MMM dd, yyyy 'at' h:mm a zzz", { timeZone: 'America/New_York' })}</span>
             </div>
             <div className="flex items-center gap-1">
               <Clock className="h-4 w-4" />

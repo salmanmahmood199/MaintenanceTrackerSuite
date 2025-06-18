@@ -9,6 +9,7 @@ import { TicketCard } from "@/components/ticket-card";
 import { CreateTechnicianModal } from "@/components/create-technician-modal";
 import { EditTechnicianModal } from "@/components/edit-technician-modal";
 import { VendorTicketActionModal } from "@/components/vendor-ticket-action-modal";
+import { VendorTicketDetailsModal } from "@/components/vendor-ticket-details-modal";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,6 +31,7 @@ export default function VendorView() {
   const [isEditTechnicianModalOpen, setIsEditTechnicianModalOpen] = useState(false);
   const [selectedTechnician, setSelectedTechnician] = useState<User | null>(null);
   const [isTicketActionModalOpen, setIsTicketActionModalOpen] = useState(false);
+  const [isTicketDetailsModalOpen, setIsTicketDetailsModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(null);
   const queryClient = useQueryClient();
@@ -199,6 +201,7 @@ export default function VendorView() {
     if (ticket) {
       setSelectedTicket(ticket);
       setTicketAction("accept");
+      setIsTicketDetailsModalOpen(false);
       setIsTicketActionModalOpen(true);
     }
   };
@@ -208,6 +211,7 @@ export default function VendorView() {
     if (ticket) {
       setSelectedTicket(ticket);
       setTicketAction("reject");
+      setIsTicketDetailsModalOpen(false);
       setIsTicketActionModalOpen(true);
     }
   };
@@ -235,6 +239,11 @@ export default function VendorView() {
 
   const handleVendorRejectTicket = (ticketId: number, rejectionReason: string) => {
     rejectTicketMutation.mutate({ id: ticketId, rejectionReason });
+  };
+
+  const handleViewTicketDetails = (ticket: Ticket) => {
+    setSelectedTicket(ticket);
+    setIsTicketDetailsModalOpen(true);
   };
 
   if (!vendor) {
@@ -539,14 +548,16 @@ export default function VendorView() {
             </Card>
           ) : (
             tickets.map((ticket) => (
-              <TicketCard
+              <div
                 key={ticket.id}
-                ticket={ticket}
-                onAccept={ticket.status === 'pending' ? handleAcceptTicket : undefined}
-                onReject={ticket.status === 'pending' ? handleRejectTicket : undefined}
-                onComplete={ticket.status === 'in-progress' ? handleCompleteTicket : undefined}
-                showActions={true}
-              />
+                onClick={() => handleViewTicketDetails(ticket)}
+                className="cursor-pointer"
+              >
+                <TicketCard
+                  ticket={ticket}
+                  showActions={false}
+                />
+              </div>
             ))
           )}
         </div>
@@ -566,6 +577,16 @@ export default function VendorView() {
           onResetPassword={handleResetPassword}
           isLoading={editTechnicianMutation.isPending || resetPasswordMutation.isPending}
           technician={selectedTechnician}
+        />
+
+        <VendorTicketDetailsModal
+          open={isTicketDetailsModalOpen}
+          onOpenChange={setIsTicketDetailsModalOpen}
+          ticket={selectedTicket}
+          onAccept={handleAcceptTicket}
+          onReject={handleRejectTicket}
+          onComplete={handleCompleteTicket}
+          canAccept={true}
         />
 
         <VendorTicketActionModal
