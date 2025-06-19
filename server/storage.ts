@@ -579,6 +579,23 @@ export class DatabaseStorage implements IStorage {
     return newMilestone;
   }
 
+  async getTicketWorkOrders(ticketId: number): Promise<WorkOrder[]> {
+    return await db.select().from(workOrders).where(eq(workOrders.ticketId, ticketId)).orderBy(workOrders.workOrderNumber);
+  }
+
+  async createWorkOrder(workOrderData: InsertWorkOrder & { technicianId: number; technicianName: string }): Promise<WorkOrder> {
+    // Get the next work order number for this ticket
+    const existingWorkOrders = await this.getTicketWorkOrders(workOrderData.ticketId);
+    const workOrderNumber = existingWorkOrders.length + 1;
+
+    const [result] = await db.insert(workOrders).values({
+      ...workOrderData,
+      workOrderNumber,
+    }).returning();
+    
+    return result;
+  }
+
   async createMissingAdminAccounts(): Promise<void> {
     // Get all organizations without admin accounts
     const orgs = await this.getOrganizations();

@@ -133,7 +133,7 @@ export const vendorOrganizationTiersRelations = relations(vendorOrganizationTier
   }),
 }));
 
-export const ticketsRelations = relations(tickets, ({ one }) => ({
+export const ticketsRelations = relations(tickets, ({ one, many }) => ({
   organization: one(organizations, {
     fields: [tickets.organizationId],
     references: [organizations.id],
@@ -151,6 +151,18 @@ export const ticketsRelations = relations(tickets, ({ one }) => ({
   maintenanceVendor: one(maintenanceVendors, {
     fields: [tickets.maintenanceVendorId],
     references: [maintenanceVendors.id],
+  }),
+  workOrders: many(workOrders),
+}));
+
+export const workOrdersRelations = relations(workOrders, ({ one }) => ({
+  ticket: one(tickets, {
+    fields: [workOrders.ticketId],
+    references: [tickets.id],
+  }),
+  technician: one(users, {
+    fields: [workOrders.technicianId],
+    references: [users.id],
   }),
 }));
 
