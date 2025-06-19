@@ -5,6 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { Calendar, User, Wrench, DollarSign, Package, Truck } from "lucide-react";
 import { format as formatTz, toZonedTime } from "date-fns-tz";
 import { formatDistanceToNow } from "date-fns";
+import { apiRequest } from "@/lib/queryClient";
 import type { WorkOrder } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
 
@@ -20,6 +21,7 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
     queryFn: async () => {
       const response = await apiRequest("GET", `/api/tickets/${ticketId}/work-orders`);
       const data = await response.json();
+      console.log(`Fetched ${Array.isArray(data) ? data.length : 0} work orders for ticket ${ticketId}:`, data);
       return Array.isArray(data) ? data : [];
     },
     enabled: !!ticketId && open,
