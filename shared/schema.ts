@@ -266,7 +266,12 @@ export const insertTicketMilestoneSchema = createInsertSchema(ticketMilestones).
   createdAt: true,
 });
 
-export const insertWorkOrderSchema = createInsertSchema(workOrders);
+export const insertWorkOrderSchema = createInsertSchema(workOrders).omit({
+  id: true,
+  workOrderNumber: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
 export const acceptTicketSchema = z.object({
   maintenanceVendorId: z.number().optional(),
