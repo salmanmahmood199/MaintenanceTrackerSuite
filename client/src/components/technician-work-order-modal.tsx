@@ -10,7 +10,7 @@ import { format as formatTz, toZonedTime } from "date-fns-tz";
 import { formatDistanceToNow } from "date-fns";
 import { getPriorityColor, getStatusColor } from "@/lib/utils";
 import type { Ticket } from "@shared/schema";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -65,6 +65,23 @@ export function TechnicianWorkOrderModal({
     },
   });
 
+  // Reset form when modal opens
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        workDescription: "",
+        completionStatus: undefined,
+        completionNotes: "",
+        parts: [],
+        otherCharges: [],
+      });
+      setParts([{ name: "", quantity: 1, cost: 0 }]);
+      setOtherCharges([{ description: "", cost: 0 }]);
+      setWorkImages([]);
+      setSelectedImageIndex(null);
+    }
+  }, [open, form]);
+
   if (!ticket) return null;
 
   const priorityColor = getPriorityColor(ticket.priority);
@@ -114,6 +131,12 @@ export function TechnicianWorkOrderModal({
       otherCharges: otherCharges.filter(c => c.description.trim() !== ""),
     };
     onSubmit?.(ticket.id, workOrder, workImages);
+    
+    // Reset form after successful submission
+    form.reset();
+    setParts([{ name: "", quantity: 1, cost: 0 }]);
+    setOtherCharges([{ description: "", cost: 0 }]);
+    setWorkImages([]);
   };
 
   const showImageViewer = (index: number) => {

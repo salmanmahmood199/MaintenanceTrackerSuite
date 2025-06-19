@@ -221,6 +221,7 @@ Changelog:
 - June 19, 2025. Fixed vendor admin accept/reject ticket functionality - vendor admins can now properly accept and assign technicians to tickets
 - June 19, 2025. Resolved UI display issues for vendor admin accept/reject buttons - buttons now appear correctly for open tickets
 - June 19, 2025. Confirmed complete vendor admin workflow: login → view open tickets → accept tickets → assign technicians → manage work orders
+- June 19, 2025. Fixed work order form reset issue - each new work order now starts with clean form fields instead of pre-populated data from previous work orders
 ```
 
 ## User Preferences
