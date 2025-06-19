@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, varchar, uuid, json, numeric } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, varchar, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -90,24 +90,6 @@ export const ticketMilestones = pgTable("ticket_milestones", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Work orders table for tracking technician work
-export const workOrders = pgTable("work_orders", {
-  id: serial("id").primaryKey(),
-  ticketId: integer("ticket_id").notNull().references(() => tickets.id, { onDelete: "cascade" }),
-  workOrderNumber: integer("work_order_number").notNull(),
-  technicianId: integer("technician_id").notNull().references(() => users.id),
-  technicianName: text("technician_name").notNull(),
-  workDescription: text("work_description").notNull(),
-  completionStatus: text("completion_status", { enum: ["completed", "return_needed"] }).notNull(),
-  completionNotes: text("completion_notes").notNull(),
-  parts: json("parts").default([]),
-  otherCharges: json("other_charges").default([]),
-  totalCost: numeric("total_cost", { precision: 10, scale: 2 }).default("0.00"),
-  images: text("images").array().default('{}'),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
 // Session storage table for authentication
 export const sessions = pgTable("sessions", {
   sid: varchar("sid").primaryKey(),
@@ -151,7 +133,7 @@ export const vendorOrganizationTiersRelations = relations(vendorOrganizationTier
   }),
 }));
 
-export const ticketsRelations = relations(tickets, ({ one, many }) => ({
+export const ticketsRelations = relations(tickets, ({ one }) => ({
   organization: one(organizations, {
     fields: [tickets.organizationId],
     references: [organizations.id],
@@ -169,18 +151,6 @@ export const ticketsRelations = relations(tickets, ({ one, many }) => ({
   maintenanceVendor: one(maintenanceVendors, {
     fields: [tickets.maintenanceVendorId],
     references: [maintenanceVendors.id],
-  }),
-  workOrders: many(workOrders),
-}));
-
-export const workOrdersRelations = relations(workOrders, ({ one }) => ({
-  ticket: one(tickets, {
-    fields: [workOrders.ticketId],
-    references: [tickets.id],
-  }),
-  technician: one(users, {
-    fields: [workOrders.technicianId],
-    references: [users.id],
   }),
 }));
 
@@ -263,15 +233,6 @@ export const updateTicketSchema = insertTicketSchema.partial().extend({
 export const insertTicketMilestoneSchema = createInsertSchema(ticketMilestones).omit({
   id: true,
   createdAt: true,
-});
-
-export const insertWorkOrderSchema = createInsertSchema(workOrders).omit({
-  id: true,
-  workOrderNumber: true,
-  technicianId: true,
-  technicianName: true,
-  createdAt: true,
-  updatedAt: true,
 });
 
 export const acceptTicketSchema = z.object({

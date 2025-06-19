@@ -4,8 +4,6 @@ import {
   organizations,
   maintenanceVendors,
   vendorOrganizationTiers,
-  ticketMilestones,
-  workOrders,
   type User, 
   type InsertUser, 
   type InsertSubAdmin,
@@ -15,9 +13,7 @@ import {
   type Organization,
   type InsertOrganization,
   type MaintenanceVendor,
-  type InsertMaintenanceVendor,
-  type WorkOrder,
-  type InsertWorkOrder
+  type InsertMaintenanceVendor
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, inArray } from "drizzle-orm";
@@ -581,23 +577,6 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return newMilestone;
-  }
-
-  async getTicketWorkOrders(ticketId: number): Promise<WorkOrder[]> {
-    return await db.select().from(workOrders).where(eq(workOrders.ticketId, ticketId)).orderBy(workOrders.workOrderNumber);
-  }
-
-  async createWorkOrder(workOrderData: InsertWorkOrder & { technicianId: number; technicianName: string }): Promise<WorkOrder> {
-    // Get the next work order number for this ticket
-    const existingWorkOrders = await this.getTicketWorkOrders(workOrderData.ticketId);
-    const workOrderNumber = existingWorkOrders.length + 1;
-
-    const [result] = await db.insert(workOrders).values({
-      ...workOrderData,
-      workOrderNumber,
-    }).returning();
-    
-    return result;
   }
 
   async createMissingAdminAccounts(): Promise<void> {
