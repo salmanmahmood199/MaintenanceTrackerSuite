@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, varchar, uuid, jsonb, decimal } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, varchar, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -98,11 +98,11 @@ export const workOrders = pgTable("work_orders", {
   technicianId: integer("technician_id").notNull().references(() => users.id),
   technicianName: text("technician_name").notNull(),
   workDescription: text("work_description").notNull(),
-  completionStatus: text("completion_status").notNull(),
+  completionStatus: text("completion_status", { enum: ["completed", "return_needed"] }).notNull(),
   completionNotes: text("completion_notes").notNull(),
-  parts: text("parts").default('[]'),
-  otherCharges: text("other_charges").default('[]'),
-  totalCost: text("total_cost").default('0.00'),
+  parts: jsonb("parts").default('[]'),
+  otherCharges: jsonb("other_charges").default('[]'),
+  totalCost: decimal("total_cost", { precision: 10, scale: 2 }).default('0.00'),
   images: text("images").array().default('{}'),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -268,6 +268,8 @@ export const insertTicketMilestoneSchema = createInsertSchema(ticketMilestones).
 export const insertWorkOrderSchema = createInsertSchema(workOrders).omit({
   id: true,
   workOrderNumber: true,
+  technicianId: true,
+  technicianName: true,
   createdAt: true,
   updatedAt: true,
 });
