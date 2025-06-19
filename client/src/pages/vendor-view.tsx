@@ -572,7 +572,7 @@ export default function VendorView() {
                   onAccept={handleAcceptTicket}
                   onReject={handleRejectTicket}
                   userRole={user?.role}
-                  userPermissions={user?.permissions || undefined}
+                  userPermissions={user?.permissions ? user.permissions : undefined}
                   showActions={true}
                 />
               </div>
