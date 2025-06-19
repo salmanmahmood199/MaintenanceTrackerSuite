@@ -110,7 +110,10 @@ export function TicketCard({ ticket, onAccept, onReject, onComplete, onStart, sh
             <>
               {(ticket.status === 'pending' || ticket.status === 'open') && onAccept && (
                 <Button
-                  onClick={() => onAccept(ticket.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAccept(ticket.id);
+                  }}
                   className="bg-emerald-600 hover:bg-emerald-700"
                   size="sm"
                 >
@@ -120,7 +123,10 @@ export function TicketCard({ ticket, onAccept, onReject, onComplete, onStart, sh
               )}
               {(ticket.status === 'pending' || ticket.status === 'open') && onReject && (
                 <Button
-                  onClick={() => onReject(ticket.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onReject(ticket.id);
+                  }}
                   variant="destructive"
                   size="sm"
                 >
