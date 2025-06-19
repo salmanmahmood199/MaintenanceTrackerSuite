@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, varchar, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, varchar, uuid, jsonb, decimal } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -266,14 +266,7 @@ export const insertTicketMilestoneSchema = createInsertSchema(ticketMilestones).
   createdAt: true,
 });
 
-export const insertWorkOrderSchema = createInsertSchema(workOrders).omit({
-  id: true,
-  workOrderNumber: true,
-  technicianId: true,
-  technicianName: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertWorkOrderSchema = createInsertSchema(workOrders);
 
 export const acceptTicketSchema = z.object({
   maintenanceVendorId: z.number().optional(),
