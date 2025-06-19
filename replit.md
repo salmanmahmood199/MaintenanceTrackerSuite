@@ -211,6 +211,9 @@ Changelog:
 - June 18, 2025. Created comprehensive technician work order modal with parts tracking, cost calculation, and completion status
 - June 18, 2025. Added "return_needed" status for jobs requiring follow-up visits
 - June 18, 2025. Implemented full ticket workflow: create → org accept → vendor accept → technician start → technician complete with work order
+- June 19, 2025. Added work orders database table with sequential numbering and complete history tracking
+- June 19, 2025. Fixed permission system for organization admins to accept tickets and assign vendors
+- June 19, 2025. Created work order history viewer showing all work orders per ticket with full details
 ```
 
 ## User Preferences

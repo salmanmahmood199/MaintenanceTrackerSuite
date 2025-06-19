@@ -792,7 +792,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Complete ticket with work order
-  app.post("/api/tickets/:id/complete", authenticateUser, requireRole(["org_admin", "maintenance_admin", "technician"]), async (req, res) => {
+  app.post("/api/tickets/:id/complete", authenticateUser, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { workOrder } = req.body;
