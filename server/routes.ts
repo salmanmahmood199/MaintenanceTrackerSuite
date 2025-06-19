@@ -16,6 +16,8 @@ import multer from "multer";
 import bcrypt from "bcrypt";
 import path from "path";
 import fs from "fs";
+import { db } from "./db";
+import { and, eq, desc } from "drizzle-orm";
 
 // Configure multer for image uploads
 const uploadDir = path.join(process.cwd(), "uploads");
