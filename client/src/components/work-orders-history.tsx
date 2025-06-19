@@ -18,14 +18,13 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
   const { data: workOrders = [], isLoading } = useQuery<WorkOrder[]>({
     queryKey: ["/api/tickets", ticketId, "work-orders"],
     queryFn: async () => {
-      const response = await fetch(`/api/tickets/${ticketId}/work-orders`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch work orders');
-      }
+      const response = await apiRequest("GET", `/api/tickets/${ticketId}/work-orders`);
       const data = await response.json();
       return Array.isArray(data) ? data : [];
     },
     enabled: !!ticketId && open,
+    staleTime: 0, // Force fresh data
+    refetchOnMount: true,
   });
 
   const getStatusColor = (status: string) => {
