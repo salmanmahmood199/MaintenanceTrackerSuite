@@ -601,8 +601,8 @@ export default function VendorView() {
           open={isTicketDetailsModalOpen}
           onOpenChange={setIsTicketDetailsModalOpen}
           ticket={selectedTicket}
-          onAccept={selectedTicket?.status === 'open' ? handleAcceptTicket : undefined}
-          onReject={selectedTicket?.status === 'open' ? handleRejectTicket : undefined}
+          onAccept={handleAcceptTicket}
+          onReject={handleRejectTicket}
           onComplete={selectedTicket?.status === 'in-progress' ? handleCompleteTicket : undefined}
           canAccept={true}
         />
