@@ -57,8 +57,22 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
             <div className="text-center py-8 text-slate-500">No work orders found for this ticket.</div>
           ) : (
             workOrders.map((workOrder) => {
-              const parts = JSON.parse((workOrder.parts as string) || '[]');
-              const otherCharges = JSON.parse((workOrder.otherCharges as string) || '[]');
+              let parts = [];
+              let otherCharges = [];
+              
+              try {
+                parts = workOrder.parts ? JSON.parse(workOrder.parts as string) : [];
+              } catch (e) {
+                console.warn('Failed to parse parts JSON:', workOrder.parts);
+                parts = [];
+              }
+              
+              try {
+                otherCharges = workOrder.otherCharges ? JSON.parse(workOrder.otherCharges as string) : [];
+              } catch (e) {
+                console.warn('Failed to parse otherCharges JSON:', workOrder.otherCharges);
+                otherCharges = [];
+              }
 
               return (
                 <Card key={workOrder.id} className="border-l-4 border-l-blue-500">

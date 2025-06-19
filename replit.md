@@ -215,6 +215,9 @@ Changelog:
 - June 19, 2025. Fixed permission system for organization admins to accept tickets and assign vendors
 - June 19, 2025. Created work order history viewer showing all work orders per ticket with full details
 - June 19, 2025. Updated ticket ordering to show newest tickets first across all views (newest at top)
+- June 19, 2025. Completed work order system implementation with proper JSON handling and database storage
+- June 19, 2025. Fixed work order creation workflow - technicians can now create detailed work orders with parts, costs, and completion status
+- June 19, 2025. Implemented sequential work order numbering (Work Order #1, #2, etc.) for multiple visits per ticket
 ```
 
 ## User Preferences
