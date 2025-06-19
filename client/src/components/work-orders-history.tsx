@@ -19,7 +19,11 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
     queryKey: ["/api/tickets", ticketId, "work-orders"],
     queryFn: async () => {
       const response = await fetch(`/api/tickets/${ticketId}/work-orders`);
-      return response.json();
+      if (!response.ok) {
+        throw new Error('Failed to fetch work orders');
+      }
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
     enabled: !!ticketId && open,
   });
