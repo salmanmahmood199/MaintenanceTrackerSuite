@@ -569,7 +569,11 @@ export default function VendorView() {
               >
                 <TicketCard
                   ticket={ticket}
-                  showActions={false}
+                  onAccept={handleAcceptTicket}
+                  onReject={handleRejectTicket}
+                  userRole={user?.role}
+                  userPermissions={user?.permissions || undefined}
+                  showActions={true}
                 />
               </div>
             ))
@@ -597,8 +601,8 @@ export default function VendorView() {
           open={isTicketDetailsModalOpen}
           onOpenChange={setIsTicketDetailsModalOpen}
           ticket={selectedTicket}
-          onAccept={selectedTicket?.status === 'accepted' ? handleAcceptTicket : undefined}
-          onReject={selectedTicket?.status === 'accepted' ? handleRejectTicket : undefined}
+          onAccept={selectedTicket?.status === 'open' ? handleAcceptTicket : undefined}
+          onReject={selectedTicket?.status === 'open' ? handleRejectTicket : undefined}
           onComplete={selectedTicket?.status === 'in-progress' ? handleCompleteTicket : undefined}
           canAccept={true}
         />
