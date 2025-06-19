@@ -1,6 +1,8 @@
 import { 
   users, 
   tickets, 
+  ticketMilestones,
+  workOrders,
   organizations,
   maintenanceVendors,
   vendorOrganizationTiers,
@@ -10,13 +12,15 @@ import {
   type Ticket, 
   type InsertTicket, 
   type UpdateTicket,
+  type WorkOrder,
+  type InsertWorkOrder,
   type Organization,
   type InsertOrganization,
   type MaintenanceVendor,
   type InsertMaintenanceVendor
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, desc } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
 export interface IStorage {
@@ -434,10 +438,10 @@ export class DatabaseStorage implements IStorage {
     const query = db.select().from(tickets);
     
     if (organizationId !== undefined) {
-      return await query.where(eq(tickets.organizationId, organizationId));
+      return await query.where(eq(tickets.organizationId, organizationId)).orderBy(desc(tickets.createdAt));
     }
     
-    return await query;
+    return await query.orderBy(desc(tickets.createdAt));
   }
 
   async getTicket(id: number): Promise<Ticket | undefined> {
@@ -479,10 +483,10 @@ export class DatabaseStorage implements IStorage {
 
   async getTicketsByStatus(status: string, organizationId?: number): Promise<Ticket[]> {
     if (organizationId !== undefined) {
-      return await db.select().from(tickets).where(and(eq(tickets.status, status), eq(tickets.organizationId, organizationId)));
+      return await db.select().from(tickets).where(and(eq(tickets.status, status), eq(tickets.organizationId, organizationId))).orderBy(desc(tickets.createdAt));
     }
     
-    return await db.select().from(tickets).where(eq(tickets.status, status));
+    return await db.select().from(tickets).where(eq(tickets.status, status)).orderBy(desc(tickets.createdAt));
   }
 
   async acceptTicket(id: number, acceptData: { maintenanceVendorId?: number; assigneeId?: number }): Promise<Ticket | undefined> {
@@ -580,6 +584,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTicketWorkOrders(ticketId: number): Promise<WorkOrder[]> {
+    return await db.select().from(workOrders).where(eq(workOrders.ticketId, ticketId)).orderBy(workOrders.workOrderNumber);
+  }
+
+  async createWorkOrder(workOrderData: InsertWorkOrder & { technicianId: number; technicianName: string }): Promise<WorkOrder> {
+    // Get the next work order number for this ticket
+    const existingWorkOrders = await this.getTicketWorkOrders(workOrderData.ticketId);
+    const workOrderNumber = existingWorkOrders.length + 1;
+
+    const [result] = await db.insert(workOrders).values({
+      ticketId: workOrderData.ticketId,
+      workOrderNumber,
+      technicianId: workOrderData.technicianId,
+      technicianName: workOrderData.technicianName,
+      workDescription: workOrderData.workDescription,
+      completionStatus: workOrderData.completionStatus,
+      completionNotes: workOrderData.completionNotes,
+      parts: workOrderData.parts,
+      otherCharges: workOrderData.otherCharges,
+      totalCost: workOrderData.totalCost,
+      images: workOrderData.images,
+    }).returning();
+    
+    return result;
+  }
     return await db.select().from(workOrders).where(eq(workOrders.ticketId, ticketId)).orderBy(workOrders.workOrderNumber);
   }
 

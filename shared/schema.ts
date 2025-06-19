@@ -90,6 +90,24 @@ export const ticketMilestones = pgTable("ticket_milestones", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Work orders table for technician work tracking
+export const workOrders = pgTable("work_orders", {
+  id: serial("id").primaryKey(),
+  ticketId: integer("ticket_id").notNull().references(() => tickets.id, { onDelete: "cascade" }),
+  workOrderNumber: integer("work_order_number").notNull(), // 1, 2, 3, etc. for this ticket
+  technicianId: integer("technician_id").notNull().references(() => users.id),
+  technicianName: text("technician_name").notNull(),
+  workDescription: text("work_description").notNull(),
+  completionStatus: text("completion_status", { enum: ["completed", "return_needed"] }).notNull(),
+  completionNotes: text("completion_notes").notNull(),
+  parts: jsonb("parts").default('[]'), // Array of {name, quantity, cost}
+  otherCharges: jsonb("other_charges").default('[]'), // Array of {description, cost}
+  totalCost: decimal("total_cost", { precision: 10, scale: 2 }).default('0.00'),
+  images: text("images").array().default([]), // Array of image paths
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Session storage table for authentication
 export const sessions = pgTable("sessions", {
   sid: varchar("sid").primaryKey(),
@@ -235,16 +253,26 @@ export const insertTicketSchema = createInsertSchema(tickets).omit({
   updatedAt: true,
 }).extend({
   priority: z.enum(["low", "medium", "high"]),
-  status: z.enum(["pending", "accepted", "rejected", "in-progress", "completed"]).default("pending"),
+  status: z.enum(["pending", "accepted", "rejected", "in-progress", "completed", "return_needed"]).default("pending"),
 });
 
 export const updateTicketSchema = insertTicketSchema.partial().extend({
   id: z.number(),
+  status: z.enum(["pending", "accepted", "rejected", "in-progress", "completed", "return_needed"]).optional(),
 });
 
 export const insertTicketMilestoneSchema = createInsertSchema(ticketMilestones).omit({
   id: true,
   createdAt: true,
+});
+
+export const insertWorkOrderSchema = createInsertSchema(workOrders).omit({
+  id: true,
+  workOrderNumber: true,
+  technicianId: true,
+  technicianName: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const acceptTicketSchema = z.object({

@@ -74,11 +74,11 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
                         <div className="flex items-center gap-1">
                           <Calendar className="h-4 w-4" />
                           <span>
-                            {formatTz(toZonedTime(new Date(workOrder.createdAt), 'America/New_York'), "MMM dd, yyyy 'at' h:mm a zzz", { timeZone: 'America/New_York' })}
+                            {workOrder.createdAt ? formatTz(toZonedTime(new Date(workOrder.createdAt), 'America/New_York'), "MMM dd, yyyy 'at' h:mm a zzz", { timeZone: 'America/New_York' }) : 'Date unavailable'}
                           </span>
                         </div>
                         <div className="text-xs">
-                          {formatDistanceToNow(new Date(workOrder.createdAt), { addSuffix: true })}
+                          {workOrder.createdAt ? formatDistanceToNow(new Date(workOrder.createdAt), { addSuffix: true }) : ''}
                         </div>
                       </div>
                     </div>
