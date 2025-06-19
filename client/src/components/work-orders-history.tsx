@@ -144,7 +144,7 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
                     )}
 
                     {/* Total Cost */}
-                    {workOrder.totalCost && parseFloat(workOrder.totalCost) > 0 && (
+                    {workOrder.totalCost && workOrder.totalCost !== "0.00" && parseFloat(workOrder.totalCost) > 0 && (
                       <div className="bg-blue-50 p-3 rounded-lg">
                         <div className="flex items-center justify-between">
                           <span className="font-medium text-blue-900 flex items-center gap-2">

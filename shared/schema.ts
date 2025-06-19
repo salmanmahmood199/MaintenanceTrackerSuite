@@ -103,7 +103,7 @@ export const workOrders = pgTable("work_orders", {
   parts: json("parts").default([]),
   otherCharges: json("other_charges").default([]),
   totalCost: numeric("total_cost", { precision: 10, scale: 2 }).default("0.00"),
-  images: text("images").array().default([]),
+  images: text("images").array().default('{}'),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
