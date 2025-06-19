@@ -74,11 +74,11 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
                         <div className="flex items-center gap-1">
                           <Calendar className="h-4 w-4" />
                           <span>
-                            {formatTz(toZonedTime(new Date(workOrder.createdAt), 'America/New_York'), "MMM dd, yyyy 'at' h:mm a zzz", { timeZone: 'America/New_York' })}
+                            {workOrder.createdAt ? formatTz(toZonedTime(new Date(workOrder.createdAt), 'America/New_York'), "MMM dd, yyyy 'at' h:mm a zzz", { timeZone: 'America/New_York' }) : 'N/A'}
                           </span>
                         </div>
                         <div className="text-xs">
-                          {formatDistanceToNow(new Date(workOrder.createdAt), { addSuffix: true })}
+                          {workOrder.createdAt ? formatDistanceToNow(new Date(workOrder.createdAt), { addSuffix: true }) : 'N/A'}
                         </div>
                       </div>
                     </div>
@@ -144,7 +144,7 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
                     )}
 
                     {/* Total Cost */}
-                    {parseFloat(workOrder.totalCost) > 0 && (
+                    {workOrder.totalCost && parseFloat(workOrder.totalCost) > 0 && (
                       <div className="bg-blue-50 p-3 rounded-lg">
                         <div className="flex items-center justify-between">
                           <span className="font-medium text-blue-900 flex items-center gap-2">
@@ -152,7 +152,7 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
                             Total Cost
                           </span>
                           <span className="text-xl font-bold text-blue-900">
-                            {formatCurrency(workOrder.totalCost)}
+                            {workOrder.totalCost ? formatCurrency(workOrder.totalCost) : '$0.00'}
                           </span>
                         </div>
                       </div>

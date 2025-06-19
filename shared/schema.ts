@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, varchar, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, varchar, uuid, json, numeric } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -100,10 +100,10 @@ export const workOrders = pgTable("work_orders", {
   workDescription: text("work_description").notNull(),
   completionStatus: text("completion_status", { enum: ["completed", "return_needed"] }).notNull(),
   completionNotes: text("completion_notes").notNull(),
-  parts: jsonb("parts").default('[]'),
-  otherCharges: jsonb("other_charges").default('[]'),
-  totalCost: decimal("total_cost", { precision: 10, scale: 2 }).default('0.00'),
-  images: text("images").array().default('{}'),
+  parts: json("parts").default([]),
+  otherCharges: json("other_charges").default([]),
+  totalCost: numeric("total_cost", { precision: 10, scale: 2 }).default("0.00"),
+  images: text("images").array().default([]),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
