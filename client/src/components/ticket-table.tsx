@@ -136,6 +136,8 @@ export function TicketTable({
                     <TableCell>
                       <Badge className={statusColor}>
                         {ticket.status === "in-progress" ? "In Progress" : 
+                         ticket.status === "pending_confirmation" ? "Pending Confirmation" :
+                         ticket.status === "ready_for_billing" ? "Ready for Billing" :
                          ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}
                       </Badge>
                     </TableCell>
@@ -198,6 +200,16 @@ export function TicketTable({
                               Reject
                             </Button>
                           </>
+                        )}
+                        {ticket.status === "pending_confirmation" && onConfirm && (
+                          <Button
+                            onClick={() => onConfirm(ticket.id)}
+                            className="bg-blue-600 text-white hover:bg-blue-700"
+                            size="sm"
+                          >
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Confirm Completion
+                          </Button>
                         )}
                         {showActions && canAcceptTickets && (ticket.status === "accepted" || ticket.status === "in-progress") && (
                           <Button

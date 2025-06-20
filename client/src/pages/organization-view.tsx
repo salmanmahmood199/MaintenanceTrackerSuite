@@ -540,7 +540,7 @@ export default function OrganizationView() {
               onReject={canAcceptTickets ? handleRejectTicket : undefined}
               onComplete={canAcceptTickets ? handleCompleteTicket : undefined}
               onConfirm={handleConfirmCompletion}
-              showActions={canAcceptTickets}
+              showActions={true}
               userRole={user?.role}
               userPermissions={user?.permissions || undefined}
             />
