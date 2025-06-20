@@ -65,12 +65,16 @@ export const tickets = pgTable("tickets", {
   title: text("title").notNull(),
   description: text("description").notNull(),
   priority: text("priority").notNull(),
-  status: text("status").notNull().default("pending"), // pending, accepted, rejected, in-progress, completed
+  status: text("status").notNull().default("pending"), // pending, accepted, rejected, in-progress, completed, pending_confirmation, confirmed
   organizationId: integer("organization_id").notNull(),
   reporterId: integer("reporter_id").notNull(),
   assigneeId: integer("assignee_id"),
   maintenanceVendorId: integer("maintenance_vendor_id"),
   rejectionReason: text("rejection_reason"),
+  completedAt: timestamp("completed_at"),
+  confirmedAt: timestamp("confirmed_at"),
+  confirmationFeedback: text("confirmation_feedback"),
+  rejectionFeedback: text("rejection_feedback"),
   images: text("images").array(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
