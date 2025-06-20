@@ -14,6 +14,7 @@ interface TicketTableProps {
   onAccept?: (id: number) => void;
   onReject?: (id: number) => void;
   onComplete?: (id: number) => void;
+  onConfirm?: (id: number) => void;
   showActions?: boolean;
   userRole?: string;
   userPermissions?: string[];
@@ -24,6 +25,7 @@ export function TicketTable({
   onAccept, 
   onReject, 
   onComplete,
+  onConfirm,
   showActions = true, 
   userRole, 
   userPermissions 

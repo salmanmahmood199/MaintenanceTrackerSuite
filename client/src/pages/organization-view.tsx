@@ -11,6 +11,7 @@ import { EditSubAdminModal } from "@/components/edit-subadmin-modal";
 import { VendorManagementModal } from "@/components/vendor-management-modal";
 import { TicketTable } from "@/components/ticket-table";
 import { TicketActionModal } from "@/components/ticket-action-modal";
+import { ConfirmCompletionModal } from "@/components/confirm-completion-modal";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -33,6 +34,7 @@ export default function OrganizationView() {
   const [isEditSubAdminOpen, setIsEditSubAdminOpen] = useState(false);
   const [isVendorManagementOpen, setIsVendorManagementOpen] = useState(false);
   const [isTicketActionOpen, setIsTicketActionOpen] = useState(false);
+  const [isConfirmCompletionModalOpen, setIsConfirmCompletionModalOpen] = useState(false);
   const [selectedSubAdmin, setSelectedSubAdmin] = useState<User | null>(null);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(null);
@@ -211,27 +213,7 @@ export default function OrganizationView() {
     },
   });
 
-  // Complete ticket mutation
-  const completeTicketMutation = useMutation({
-    mutationFn: async (id: number) => {
-      return apiRequest("POST", `/api/tickets/${id}/complete`, {});
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/tickets/stats"] });
-      toast({
-        title: "Success",
-        description: "Ticket completed",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to complete ticket",
-        variant: "destructive",
-      });
-    },
-  });
+
 
   // Create sub-admin mutation
   const createSubAdminMutation = useMutation({
@@ -344,8 +326,19 @@ export default function OrganizationView() {
   };
 
   const handleCompleteTicket = (id: number) => {
-    completeTicketMutation.mutate(id);
+    // This is for admin completion, not technician
+    console.log("Complete ticket:", id);
   };
+
+  const handleConfirmCompletion = (id: number) => {
+    const ticket = tickets.find(t => t.id === id);
+    if (ticket) {
+      setSelectedTicket(ticket);
+      setIsConfirmCompletionModalOpen(true);
+    }
+  };
+
+
 
 
 
@@ -546,6 +539,7 @@ export default function OrganizationView() {
               onAccept={canAcceptTickets ? handleAcceptTicket : undefined}
               onReject={canAcceptTickets ? handleRejectTicket : undefined}
               onComplete={canAcceptTickets ? handleCompleteTicket : undefined}
+              onConfirm={handleConfirmCompletion}
               showActions={canAcceptTickets}
               userRole={user?.role}
               userPermissions={user?.permissions || undefined}
@@ -646,6 +640,14 @@ export default function OrganizationView() {
         isLoading={acceptTicketMutation.isPending || rejectTicketMutation.isPending}
         userRole={user?.role}
         userPermissions={user?.permissions || undefined}
+      />
+
+      <ConfirmCompletionModal
+        open={isConfirmCompletionModalOpen}
+        onOpenChange={setIsConfirmCompletionModalOpen}
+        onConfirm={(confirmed, feedback) => confirmCompletionMutation.mutate({ id: selectedTicket!.id, confirmed, feedback })}
+        isLoading={confirmCompletionMutation.isPending}
+        ticket={selectedTicket}
       />
     </div>
   );
