@@ -226,6 +226,10 @@ Changelog:
 - June 19, 2025. Implemented ticket completion confirmation workflow - when technicians mark jobs as completed, tickets return to original requester for final approval
 - June 19, 2025. Added pending_confirmation status and confirm completion functionality - requesters can approve or reject completed work with feedback
 - June 19, 2025. Enhanced image gallery modal with full-screen viewing, zoom controls, and thumbnail navigation for work order images
+- June 19, 2025. Completed ticket confirmation workflow - confirmed tickets move to "ready_for_billing" status for vendor invoice generation
+- June 19, 2025. Implemented comprehensive invoice generation system for maintenance vendors with work order integration
+- June 19, 2025. Added invoice creation modal with automatic work order calculation, additional items, tax handling, and total computation
+- June 19, 2025. Created invoice database schema and API routes for full invoice lifecycle management (create, view, update)
 ```
 
 ## User Preferences

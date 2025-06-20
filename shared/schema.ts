@@ -314,4 +314,6 @@ export type InsertTicketMilestone = z.infer<typeof insertTicketMilestoneSchema>;
 export type TicketMilestone = typeof ticketMilestones.$inferSelect;
 export type InsertWorkOrder = z.infer<typeof insertWorkOrderSchema>;
 export type WorkOrder = typeof workOrders.$inferSelect;
+export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
+export type Invoice = typeof invoices.$inferSelect;
 export type LoginData = z.infer<typeof loginSchema>;

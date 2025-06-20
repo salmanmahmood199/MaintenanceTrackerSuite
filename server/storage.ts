@@ -90,6 +90,13 @@ export interface IStorage {
   getTicketWorkOrders(ticketId: number): Promise<WorkOrder[]>;
   createWorkOrder(workOrder: InsertWorkOrder & { technicianId: number; technicianName: string }): Promise<WorkOrder>;
   
+  // Invoice operations
+  getInvoices(vendorId?: number): Promise<Invoice[]>;
+  getInvoice(id: number): Promise<Invoice | undefined>;
+  createInvoice(invoice: InsertInvoice): Promise<Invoice>;
+  updateInvoice(id: number, updates: Partial<InsertInvoice>): Promise<Invoice | undefined>;
+  deleteInvoice(id: number): Promise<boolean>;
+  
   // Initialize root user
   initializeRootUser(): Promise<void>;
 }

@@ -875,9 +875,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let updatedTicket;
       if (confirmed) {
-        // Confirm completion
+        // Confirm completion - move to billing stage for vendor
         updatedTicket = await storage.updateTicket(ticketId, { 
-          status: "confirmed",
+          status: "ready_for_billing",
           confirmedAt: new Date(),
           confirmationFeedback: feedback || null
         });
@@ -893,6 +893,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error confirming ticket:", error);
       res.status(500).json({ message: "Failed to confirm ticket" });
+    }
+  });
+
+  // Invoice routes
+  app.get("/api/invoices", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const user = req.user!;
+      let invoices;
+      
+      if (user.role === "maintenance_admin" && user.maintenanceVendorId) {
+        invoices = await storage.getInvoices(user.maintenanceVendorId);
+      } else if (user.role === "root") {
+        invoices = await storage.getInvoices();
+      } else {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+      
+      res.json(invoices);
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+      res.status(500).json({ message: "Failed to fetch invoices" });
+    }
+  });
+
+  app.post("/api/invoices", authenticateUser, requireRole(["maintenance_admin", "root"]), async (req: AuthenticatedRequest, res) => {
+    try {
+      const user = req.user!;
+      const { ticketId, additionalItems, notes, tax } = req.body;
+
+      // Get ticket and work orders
+      const ticket = await storage.getTicket(ticketId);
+      if (!ticket) {
+        return res.status(404).json({ message: "Ticket not found" });
+      }
+
+      if (ticket.status !== "ready_for_billing") {
+        return res.status(400).json({ message: "Ticket is not ready for billing" });
+      }
+
+      // Verify vendor ownership
+      if (user.role === "maintenance_admin" && ticket.maintenanceVendorId !== user.maintenanceVendorId) {
+        return res.status(403).json({ message: "Not authorized for this ticket" });
+      }
+
+      const workOrders = await storage.getTicketWorkOrders(ticketId);
+      const workOrderIds = workOrders.map(wo => wo.id);
+      
+      // Calculate subtotal from work orders
+      const subtotal = workOrders.reduce((sum, wo) => sum + parseFloat(wo.totalCost || "0"), 0);
+      const taxAmount = parseFloat(tax || "0");
+      const total = subtotal + taxAmount;
+
+      // Generate invoice number
+      const invoiceNumber = `INV-${Date.now()}-${ticketId}`;
+
+      const invoice = await storage.createInvoice({
+        invoiceNumber,
+        ticketId,
+        maintenanceVendorId: ticket.maintenanceVendorId!,
+        organizationId: ticket.organizationId,
+        subtotal: subtotal.toString(),
+        tax: taxAmount.toString(),
+        total: total.toString(),
+        workOrderIds,
+        additionalItems: additionalItems ? JSON.stringify(additionalItems) : null,
+        notes,
+      });
+
+      // Update ticket status to billed
+      await storage.updateTicket(ticketId, { status: "billed" });
+
+      res.json(invoice);
+    } catch (error) {
+      console.error("Error creating invoice:", error);
+      res.status(500).json({ message: "Failed to create invoice" });
+    }
+  });
+
+  app.get("/api/invoices/:id", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const invoiceId = parseInt(req.params.id);
+      const invoice = await storage.getInvoice(invoiceId);
+      
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+
+      const user = req.user!;
+      if (user.role === "maintenance_admin" && invoice.maintenanceVendorId !== user.maintenanceVendorId) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      res.json(invoice);
+    } catch (error) {
+      console.error("Error fetching invoice:", error);
+      res.status(500).json({ message: "Failed to fetch invoice" });
     }
   });
 

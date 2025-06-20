@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-import { Calendar, User, Hash, Wrench, CheckCircle, XCircle, Eye, ImageIcon, Clock } from "lucide-react";
+import { Calendar, User, Hash, Wrench, CheckCircle, XCircle, Eye, ImageIcon, Clock, Calculator } from "lucide-react";
 import { formatDate, getPriorityColor, getStatusColor } from "@/lib/utils";
 import { ProgressTracker } from "@/components/progress-tracker";
 import type { Ticket } from "@shared/schema";
@@ -15,7 +15,11 @@ interface TicketTableProps {
   onReject?: (id: number) => void;
   onComplete?: (id: number) => void;
   onConfirm?: (id: number) => void;
+  onStart?: (id: number) => void;
+  onViewWorkOrders?: (id: number) => void;
+  onCreateInvoice?: (id: number) => void;
   showActions?: boolean;
+  showTechnicianActions?: boolean;
   userRole?: string;
   userPermissions?: string[];
 }
@@ -26,7 +30,11 @@ export function TicketTable({
   onReject, 
   onComplete,
   onConfirm,
-  showActions = true, 
+  onStart,
+  onViewWorkOrders,
+  onCreateInvoice,
+  showActions = true,
+  showTechnicianActions = false,
   userRole, 
   userPermissions 
 }: TicketTableProps) {
