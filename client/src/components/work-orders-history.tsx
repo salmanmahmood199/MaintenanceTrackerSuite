@@ -1,11 +1,14 @@
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, User, Wrench, DollarSign, Package, Truck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar, User, Wrench, DollarSign, Package, Truck, ImageIcon } from "lucide-react";
 import { format as formatTz, toZonedTime } from "date-fns-tz";
 import { formatDistanceToNow } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
+import { ImageGalleryModal } from "./image-gallery-modal";
 import type { WorkOrder } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
 
@@ -16,6 +19,9 @@ interface WorkOrdersHistoryProps {
 }
 
 export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHistoryProps) {
+  const [imageGalleryOpen, setImageGalleryOpen] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [galleryTitle, setGalleryTitle] = useState("");
   const { data: workOrders = [], isLoading } = useQuery<WorkOrder[]>({
     queryKey: ["/api/tickets", ticketId, "work-orders"],
     queryFn: async () => {
@@ -35,6 +41,12 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
 
   const getStatusText = (status: string) => {
     return status === "completed" ? "Completed" : "Return Needed";
+  };
+
+  const openImageGallery = (images: string[], title: string) => {
+    setSelectedImages(images);
+    setGalleryTitle(title);
+    setImageGalleryOpen(true);
   };
 
   const formatCurrency = (amount: string) => {
@@ -175,6 +187,46 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
 
                     <Separator />
 
+                    {/* Images */}
+                    {workOrder.images && workOrder.images.length > 0 && (
+                      <div>
+                        <h4 className="font-medium text-slate-900 mb-3 flex items-center gap-2">
+                          <ImageIcon className="h-4 w-4" />
+                          Work Order Images ({workOrder.images.length})
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {workOrder.images.slice(0, 4).map((image: string, index: number) => (
+                            <button
+                              key={index}
+                              onClick={() => openImageGallery(workOrder.images, `Work Order #${workOrder.workOrderNumber} Images`)}
+                              className="relative w-20 h-20 rounded-lg overflow-hidden border-2 border-gray-200 hover:border-blue-400 transition-colors group"
+                            >
+                              <img
+                                src={image}
+                                alt={`Work order image ${index + 1}`}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                              />
+                              {index === 3 && workOrder.images.length > 4 && (
+                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-sm font-medium">
+                                  +{workOrder.images.length - 4}
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                          {workOrder.images.length > 1 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openImageGallery(workOrder.images, `Work Order #${workOrder.workOrderNumber} Images`)}
+                              className="h-20 px-3 text-xs"
+                            >
+                              View All<br />({workOrder.images.length})
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Completion Notes */}
                     <div>
                       <h4 className="font-medium text-slate-900 mb-2">
@@ -190,6 +242,14 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
             })
           )}
         </div>
+
+        {/* Image Gallery Modal */}
+        <ImageGalleryModal
+          open={imageGalleryOpen}
+          onOpenChange={setImageGalleryOpen}
+          images={selectedImages}
+          title={galleryTitle}
+        />
       </DialogContent>
     </Dialog>
   );
