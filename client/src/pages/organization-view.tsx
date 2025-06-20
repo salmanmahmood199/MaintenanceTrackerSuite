@@ -194,6 +194,23 @@ export default function OrganizationView() {
     },
   });
 
+  // Confirm completion mutation
+  const confirmCompletionMutation = useMutation({
+    mutationFn: async ({ id, confirmed, feedback }: { id: number; confirmed: boolean; feedback?: string }) => {
+      return apiRequest("POST", `/api/tickets/${id}/confirm`, { confirmed, feedback });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets/stats"] });
+      setIsConfirmCompletionModalOpen(false);
+      setSelectedTicket(null);
+      toast({ title: "Success", description: "Ticket confirmation processed successfully" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to process confirmation", variant: "destructive" });
+    },
+  });
+
   // Complete ticket mutation
   const completeTicketMutation = useMutation({
     mutationFn: async (id: number) => {

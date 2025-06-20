@@ -135,6 +135,19 @@ export function TicketCard({ ticket, onAccept, onReject, onComplete, onStart, on
                   Reject
                 </Button>
               )}
+              {ticket.status === 'pending_confirmation' && onConfirm && (
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onConfirm(ticket.id);
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700"
+                  size="sm"
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Confirm Completion
+                </Button>
+              )}
               {ticket.status === 'in-progress' && onComplete && (
                 <Button
                   onClick={() => onComplete(ticket.id)}
