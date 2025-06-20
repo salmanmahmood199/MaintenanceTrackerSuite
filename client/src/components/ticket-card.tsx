@@ -14,13 +14,15 @@ interface TicketCardProps {
   onComplete?: (id: number) => void;
   onStart?: (id: number) => void;
   onConfirm?: (id: number) => void;
+  onViewWorkOrders?: (id: number) => void;
+  onCreateInvoice?: (id: number) => void;
   showActions?: boolean;
   showTechnicianActions?: boolean;
   userRole?: string;
   userPermissions?: string[];
 }
 
-export function TicketCard({ ticket, onAccept, onReject, onComplete, onStart, onConfirm, showActions = true, showTechnicianActions = false, userRole, userPermissions }: TicketCardProps) {
+export function TicketCard({ ticket, onAccept, onReject, onComplete, onStart, onConfirm, onViewWorkOrders, onCreateInvoice, showActions = true, showTechnicianActions = false, userRole, userPermissions }: TicketCardProps) {
   const priorityColor = getPriorityColor(ticket.priority);
   const statusColor = getStatusColor(ticket.status);
   
