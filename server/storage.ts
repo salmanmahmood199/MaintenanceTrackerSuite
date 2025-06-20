@@ -523,6 +523,8 @@ export class DatabaseStorage implements IStorage {
     accepted: number;
     inProgress: number;
     completed: number;
+    pendingConfirmation: number;
+    confirmed: number;
     highPriority: number;
   }> {
     const allTickets = await this.getTickets(organizationId);
@@ -532,6 +534,8 @@ export class DatabaseStorage implements IStorage {
       accepted: allTickets.filter(t => t.status === "accepted").length,
       inProgress: allTickets.filter(t => t.status === "in-progress").length,
       completed: allTickets.filter(t => t.status === "completed").length,
+      pendingConfirmation: allTickets.filter(t => t.status === "pending_confirmation").length,
+      confirmed: allTickets.filter(t => t.status === "confirmed").length,
       highPriority: allTickets.filter(t => t.priority === "high").length,
     };
   }

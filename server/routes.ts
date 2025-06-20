@@ -793,8 +793,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Complete ticket with work order
-  app.post("/api/tickets/:id/complete", authenticateUser, async (req, res) => {
+  // Complete ticket with work order (technician)
+  app.post("/api/tickets/:id/complete", authenticateUser, requireRole(["technician"]), async (req: AuthenticatedRequest, res) => {
     try {
       const id = parseInt(req.params.id);
       const { workOrder } = req.body;
@@ -824,8 +824,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Update ticket status based on work order completion status
-      const status = workOrder.completionStatus === "return_needed" ? "return_needed" : "completed";
-      const ticket = await storage.updateTicket(id, { status });
+      let status: string;
+      if (workOrder.completionStatus === "return_needed") {
+        status = "return_needed";
+      } else {
+        // Set to pending confirmation for original requester
+        status = "pending_confirmation";
+      }
+      
+      const ticket = await storage.updateTicket(id, { 
+        status,
+        completedAt: workOrder.completionStatus === "completed" ? new Date() : undefined
+      });
       
       if (!ticket) {
         return res.status(404).json({ message: "Ticket not found" });
@@ -835,6 +845,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error completing ticket:", error);
       res.status(500).json({ message: "Failed to complete ticket" });
+    }
+  });
+
+  // Confirm ticket completion (original requester)
+  app.post("/api/tickets/:id/confirm", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const ticketId = parseInt(req.params.id);
+      const { confirmed, feedback } = req.body;
+
+      // Verify ticket exists and is pending confirmation
+      const ticket = await storage.getTicket(ticketId);
+      if (!ticket) {
+        return res.status(404).json({ message: "Ticket not found" });
+      }
+
+      if (ticket.status !== "pending_confirmation") {
+        return res.status(400).json({ message: "Ticket is not pending confirmation" });
+      }
+
+      // Verify user is the original reporter or has accept_ticket permission
+      const user = req.user!;
+      const hasAcceptPermission = user.role === "root" || user.role === "org_admin" || 
+        (user.role === "org_subadmin" && user.permissions?.includes("accept_ticket"));
+
+      if (ticket.reporterId !== user.id && !hasAcceptPermission) {
+        return res.status(403).json({ message: "Only the original requester or admin can confirm completion" });
+      }
+
+      let updatedTicket;
+      if (confirmed) {
+        // Confirm completion
+        updatedTicket = await storage.updateTicket(ticketId, { 
+          status: "confirmed",
+          confirmedAt: new Date(),
+          confirmationFeedback: feedback || null
+        });
+      } else {
+        // Reject completion - return to in-progress
+        updatedTicket = await storage.updateTicket(ticketId, { 
+          status: "in-progress",
+          rejectionFeedback: feedback || null
+        });
+      }
+
+      res.json(updatedTicket);
+    } catch (error) {
+      console.error("Error confirming ticket:", error);
+      res.status(500).json({ message: "Failed to confirm ticket" });
     }
   });
 
