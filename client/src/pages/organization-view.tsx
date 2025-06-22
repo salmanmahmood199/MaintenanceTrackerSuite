@@ -302,6 +302,34 @@ export default function OrganizationView() {
     setIsEditSubAdminOpen(true);
   };
 
+  // Location assignment mutation
+  const assignLocationsMutation = useMutation({
+    mutationFn: async (locationIds: number[]) => {
+      return apiRequest("PUT", `/api/users/${selectedSubAdmin!.id}/locations`, { locationIds });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users", selectedSubAdmin!.id, "locations"] });
+      setIsAssignLocationsOpen(false);
+      setSelectedSubAdmin(null);
+      toast({
+        title: "Success",
+        description: "Location assignments updated successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update location assignments",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleAssignLocations = (subAdmin: User) => {
+    setSelectedSubAdmin(subAdmin);
+    setIsAssignLocationsOpen(true);
+  };
+
   // Ticket action handlers
   const handleAcceptTicket = (ticketId: number) => {
     const ticket = tickets?.find(t => t.id === ticketId);
@@ -413,16 +441,6 @@ export default function OrganizationView() {
               >
                 <UserPlus className="h-4 w-4 mr-2" />
                 Add Sub-Admin
-              </Button>
-            )}
-            {canManageVendors && (
-              <Button
-                variant="outline"
-                onClick={() => setIsVendorManagementOpen(true)}
-                className="border-green-200 text-green-700 hover:bg-green-50"
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Manage Vendors
               </Button>
             )}
             {canPlaceTickets && (
@@ -586,6 +604,13 @@ export default function OrganizationView() {
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => handleAssignLocations(subAdmin)}
+                        >
+                          Assign Locations
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => openEditModal(subAdmin)}
                         >
                           <Edit className="h-4 w-4 mr-1" />
@@ -653,6 +678,18 @@ export default function OrganizationView() {
         isLoading={confirmCompletionMutation.isPending}
         ticket={selectedTicket}
       />
+
+      {/* Assign Locations Modal */}
+      {selectedSubAdmin && (
+        <AssignLocationsModal
+          open={isAssignLocationsOpen}
+          onOpenChange={setIsAssignLocationsOpen}
+          onSubmit={assignLocationsMutation.mutate}
+          isLoading={assignLocationsMutation.isPending}
+          user={selectedSubAdmin}
+          organizationId={organizationId!}
+        />
+      )}
     </div>
   );
 }
