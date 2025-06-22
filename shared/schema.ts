@@ -137,6 +137,26 @@ export const sessions = pgTable("sessions", {
   expire: timestamp("expire").notNull(),
 });
 
+// Locations table
+export const locations = pgTable("locations", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  address: text("address"),
+  description: text("description"),
+  organizationId: integer("organization_id").notNull().references(() => organizations.id),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// User location assignments table
+export const userLocationAssignments = pgTable("user_location_assignments", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  locationId: integer("location_id").notNull().references(() => locations.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   organization: one(organizations, {

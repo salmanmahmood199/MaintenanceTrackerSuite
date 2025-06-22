@@ -1122,6 +1122,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Location routes
+  app.get("/api/organizations/:id/locations", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const organizationId = parseInt(req.params.id);
+      const user = req.user!;
+      
+      // Check if user has access to this organization
+      if (user.role !== "root" && user.organizationId !== organizationId) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+      
+      const locations = await storage.getLocations(organizationId);
+      res.json(locations);
+    } catch (error) {
+      console.error("Error fetching locations:", error);
+      res.status(500).json({ message: "Failed to fetch locations" });
+    }
+  });
+
+  app.post("/api/organizations/:id/locations", authenticateUser, requireRole(["root", "org_admin"]), async (req: AuthenticatedRequest, res) => {
+    try {
+      const organizationId = parseInt(req.params.id);
+      const user = req.user!;
+      
+      // Check if user has access to this organization
+      if (user.role !== "root" && user.organizationId !== organizationId) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+      
+      const locationData = { ...req.body, organizationId };
+      const location = await storage.createLocation(locationData);
+      res.status(201).json(location);
+    } catch (error) {
+      console.error("Error creating location:", error);
+      res.status(500).json({ message: "Failed to create location" });
+    }
+  });
+
+  app.delete("/api/locations/:id", authenticateUser, requireRole(["root", "org_admin"]), async (req: AuthenticatedRequest, res) => {
+    try {
+      const locationId = parseInt(req.params.id);
+      const success = await storage.deleteLocation(locationId);
+      
+      if (success) {
+        res.json({ message: "Location deleted successfully" });
+      } else {
+        res.status(404).json({ message: "Location not found" });
+      }
+    } catch (error) {
+      console.error("Error deleting location:", error);
+      res.status(500).json({ message: "Failed to delete location" });
+    }
+  });
+
+  // User location assignment routes
+  app.get("/api/users/:id/locations", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const locations = await storage.getUserLocationAssignments(userId);
+      res.json(locations);
+    } catch (error) {
+      console.error("Error fetching user locations:", error);
+      res.status(500).json({ message: "Failed to fetch user locations" });
+    }
+  });
+
+  app.put("/api/users/:id/locations", authenticateUser, requireRole(["root", "org_admin"]), async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const { locationIds } = req.body;
+      
+      await storage.updateUserLocationAssignments(userId, locationIds);
+      res.json({ message: "User location assignments updated successfully" });
+    } catch (error) {
+      console.error("Error updating user locations:", error);
+      res.status(500).json({ message: "Failed to update user locations" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
