@@ -85,7 +85,7 @@ export default function VendorView() {
   });
 
   // Fetch technicians for this vendor
-  const { data: technicians, isLoading: techniciansLoading, refetch: refetchTechnicians } = useQuery<User[]>({
+  const { data: technicians, isLoading: techniciansLoading, error: techniciansError, refetch: refetchTechnicians } = useQuery<User[]>({
     queryKey: ["/api/maintenance-vendors", vendorId, "technicians"],
     queryFn: async () => {
       const response = await apiRequest("GET", `/api/maintenance-vendors/${vendorId}/technicians`);
