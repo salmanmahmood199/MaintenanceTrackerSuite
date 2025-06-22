@@ -175,6 +175,28 @@ Root Admin (root@mail.com / admin)
 - **Migration**: `npm run db:push` for schema synchronization
 - **Connection**: Environment variable DATABASE_URL (Neon serverless)
 
+## Mobile Application
+
+### React Native Mobile App Structure
+- **Platform**: React Native with Expo for cross-platform development (iOS/Android)
+- **Architecture**: Separate mobile project that shares the same Express.js backend API
+- **Authentication**: Token-based auth using Expo SecureStore for secure token storage
+- **Features**: Role-based access, ticket management, image capture, offline-ready design
+- **Technology Stack**: React Native, Expo, TypeScript, React Navigation, React Query
+- **Deployment**: App Store (iOS) and Google Play Store (Android) ready
+
+### Mobile App Features by Role
+- **Organization Admin**: View/manage organization tickets, create maintenance tickets
+- **Maintenance Admin**: View assigned tickets, accept/reject, assign technicians
+- **Technician**: View assigned tickets, update status, capture photos, submit work reports
+- **Root Admin**: Full system access across organizations and vendors
+
+### Development Approach
+- Expo managed workflow for easier development and deployment
+- Same REST API endpoints as web application
+- Hot reloading and TypeScript support
+- Ready for advanced features: push notifications, GPS tracking, offline sync
+
 ## Changelog
 
 ```
@@ -244,6 +266,12 @@ Changelog:
 - June 22, 2025. Sub-admins can only see and accept tickets from their assigned locations
 - June 22, 2025. Ticket creation includes location dropdown for users with assigned locations
 - June 22, 2025. Added locationId field to tickets table for location-based filtering
+- June 22, 2025. Fixed organization routing issues - root admin can now access organization dashboards
+- June 22, 2025. Fixed vendor admin ticket acceptance - vendor admins can now see and accept tickets in "accepted" status
+- June 22, 2025. Created React Native mobile application with Expo framework
+- June 22, 2025. Implemented mobile app structure with authentication, navigation, and core screens
+- June 22, 2025. Added mobile ticket management, image capture, and role-based access control
+- June 22, 2025. Mobile app ready for development and deployment to app stores
 ```
 
 ## User Preferences
