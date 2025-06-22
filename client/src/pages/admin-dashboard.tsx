@@ -642,7 +642,7 @@ export default function AdminDashboard() {
                         size="sm"
                         onClick={() => {
                           console.log("Navigating to vendor:", vendor.id);
-                          navigate(`/vendor/${vendor.id}`);
+                          navigate(`/vendor-view/${vendor.id}`);
                         }}
                         className="border-green-200 text-green-700 hover:bg-green-50"
                       >
