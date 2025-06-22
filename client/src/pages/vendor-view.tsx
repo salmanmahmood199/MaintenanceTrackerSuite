@@ -66,6 +66,17 @@ export function VendorView() {
     enabled: !!vendorId,
   });
 
+  // Fetch technicians for this vendor
+  const { data: technicians = [] } = useQuery<User[]>({
+    queryKey: ["/api/technicians", vendorId],
+    queryFn: async () => {
+      if (!vendorId) return [];
+      const response = await apiRequest("GET", `/api/maintenance-vendors/${vendorId}/technicians`);
+      return await response.json() as User[];
+    },
+    enabled: !!vendorId,
+  });
+
   // Fetch work orders for selected ticket
   const { data: invoiceWorkOrders = [] } = useQuery<WorkOrder[]>({
     queryKey: ["/api/tickets", selectedTicketForInvoice?.id, "work-orders"],
