@@ -121,6 +121,12 @@ export interface IStorage {
   unassignUserFromLocation(userId: number, locationId: number): Promise<void>;
   updateUserLocationAssignments(userId: number, locationIds: number[]): Promise<void>;
   
+  // Ticket comment operations
+  getTicketComments(ticketId: number): Promise<(TicketComment & { user: Pick<User, 'id' | 'firstName' | 'lastName' | 'email'> })[]>;
+  createTicketComment(comment: InsertTicketComment): Promise<TicketComment>;
+  updateTicketComment(id: number, updates: Partial<InsertTicketComment>): Promise<TicketComment | undefined>;
+  deleteTicketComment(id: number): Promise<boolean>;
+  
   // Initialize root user
   initializeRootUser(): Promise<void>;
 }

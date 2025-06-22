@@ -244,6 +244,12 @@ Changelog:
 - June 22, 2025. Sub-admins can only see and accept tickets from their assigned locations
 - June 22, 2025. Ticket creation includes location dropdown for users with assigned locations
 - June 22, 2025. Added locationId field to tickets table for location-based filtering
+- June 22, 2025. Implemented comprehensive ticket comments/notes system
+- June 22, 2025. Added ticketComments table with image attachment support
+- June 22, 2025. Created TicketComments component with real-time editing and image preview
+- June 22, 2025. Added comments tab to ticket detail view with activity logging
+- June 22, 2025. All users with ticket access can now comment, edit own comments, and attach images
+- June 22, 2025. System-generated comments support for automatic activity tracking
 ```
 
 ## User Preferences
