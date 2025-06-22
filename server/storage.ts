@@ -625,7 +625,7 @@ export class DatabaseStorage implements IStorage {
 
   async getInvoices(vendorId?: number): Promise<Invoice[]> {
     if (vendorId) {
-      return await db.select().from(invoices).where(eq(invoices.vendorId, vendorId));
+      return await db.select().from(invoices).where(eq(invoices.maintenanceVendorId, vendorId));
     }
     return await db.select().from(invoices);
   }
