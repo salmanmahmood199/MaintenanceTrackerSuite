@@ -177,19 +177,28 @@ Root Admin (root@mail.com / admin)
 
 ## Mobile Application
 
-### React Native Mobile App Structure
+### Separate React Native Project
+- **Location**: `../taskscout-mobile/` (completely separate project)
 - **Platform**: React Native with Expo for cross-platform development (iOS/Android)
-- **Architecture**: Separate mobile project that shares the same Express.js backend API
+- **Architecture**: Independent mobile project that connects to the same Express.js backend API
 - **Authentication**: Token-based auth using Expo SecureStore for secure token storage
-- **Features**: Role-based access, ticket management, image capture, offline-ready design
+- **Features**: Role-based access, ticket management, streamlined mobile UI
 - **Technology Stack**: React Native, Expo, TypeScript, React Navigation, React Query
 - **Deployment**: App Store (iOS) and Google Play Store (Android) ready
 
-### Mobile App Features by Role
-- **Organization Admin**: View/manage organization tickets, create maintenance tickets
-- **Maintenance Admin**: View assigned tickets, accept/reject, assign technicians
-- **Technician**: View assigned tickets, update status, capture photos, submit work reports
-- **Root Admin**: Full system access across organizations and vendors
+### Mobile App Setup
+```bash
+cd ../taskscout-mobile
+npm install -g @expo/cli
+npm install
+npm start
+```
+
+### Mobile vs Web
+- **Web App**: Full-featured admin interface with complex dashboards
+- **Mobile App**: Streamlined interface focused on core ticket operations
+- **Shared Backend**: Both use the same Express.js API and database
+- **Independent Development**: Mobile and web can be developed/deployed separately
 
 ### Development Approach
 - Expo managed workflow for easier development and deployment
