@@ -149,11 +149,32 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   }),
   reportedTickets: many(tickets, { relationName: "reporter" }),
   assignedTickets: many(tickets, { relationName: "assignee" }),
+  locationAssignments: many(userLocationAssignments),
+}));
+
+export const locationsRelations = relations(locations, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [locations.organizationId],
+    references: [organizations.id],
+  }),
+  userAssignments: many(userLocationAssignments),
+}));
+
+export const userLocationAssignmentsRelations = relations(userLocationAssignments, ({ one }) => ({
+  user: one(users, {
+    fields: [userLocationAssignments.userId],
+    references: [users.id],
+  }),
+  location: one(locations, {
+    fields: [userLocationAssignments.locationId],
+    references: [locations.id],
+  }),
 }));
 
 export const organizationsRelations = relations(organizations, ({ many }) => ({
   users: many(users),
   tickets: many(tickets),
+  locations: many(locations),
 }));
 
 export const maintenanceVendorsRelations = relations(maintenanceVendors, ({ many }) => ({
@@ -317,6 +338,19 @@ export const insertInvoiceSchema = createInsertSchema(invoices).omit({
   paidAt: true,
 });
 
+export const insertLocationSchema = createInsertSchema(locations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updateLocationSchema = insertLocationSchema.partial();
+
+export const insertUserLocationAssignmentSchema = createInsertSchema(userLocationAssignments).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const acceptTicketSchema = z.object({
   maintenanceVendorId: z.number().optional(),
   assigneeId: z.number().optional(),
@@ -356,4 +390,9 @@ export type InsertWorkOrder = z.infer<typeof insertWorkOrderSchema>;
 export type WorkOrder = typeof workOrders.$inferSelect;
 export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
 export type Invoice = typeof invoices.$inferSelect;
+export type InsertLocation = z.infer<typeof insertLocationSchema>;
+export type UpdateLocation = z.infer<typeof updateLocationSchema>;
+export type Location = typeof locations.$inferSelect;
+export type InsertUserLocationAssignment = z.infer<typeof insertUserLocationAssignmentSchema>;
+export type UserLocationAssignment = typeof userLocationAssignments.$inferSelect;
 export type LoginData = z.infer<typeof loginSchema>;

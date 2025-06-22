@@ -6,6 +6,9 @@ import {
   organizations,
   maintenanceVendors,
   vendorOrganizationTiers,
+  locations,
+  userLocationAssignments,
+  invoices,
   type User, 
   type InsertUser, 
   type InsertSubAdmin,
@@ -18,6 +21,11 @@ import {
   type InsertOrganization,
   type MaintenanceVendor,
   type InsertMaintenanceVendor,
+  type Location,
+  type InsertLocation,
+  type UpdateLocation,
+  type Invoice,
+  type InsertInvoice,
   type Invoice,
   type InsertInvoice,
   invoices
@@ -99,6 +107,19 @@ export interface IStorage {
   createInvoice(invoice: InsertInvoice): Promise<Invoice>;
   updateInvoice(id: number, updates: Partial<InsertInvoice>): Promise<Invoice | undefined>;
   deleteInvoice(id: number): Promise<boolean>;
+  
+  // Location operations
+  getLocations(organizationId: number): Promise<Location[]>;
+  getLocation(id: number): Promise<Location | undefined>;
+  createLocation(location: InsertLocation): Promise<Location>;
+  updateLocation(id: number, updates: Partial<UpdateLocation>): Promise<Location | undefined>;
+  deleteLocation(id: number): Promise<boolean>;
+  
+  // User location assignment operations
+  getUserLocationAssignments(userId: number): Promise<Location[]>;
+  assignUserToLocation(userId: number, locationId: number): Promise<void>;
+  unassignUserFromLocation(userId: number, locationId: number): Promise<void>;
+  updateUserLocationAssignments(userId: number, locationIds: number[]): Promise<void>;
   
   // Initialize root user
   initializeRootUser(): Promise<void>;
@@ -652,6 +673,90 @@ export class DatabaseStorage implements IStorage {
   async deleteInvoice(id: number): Promise<boolean> {
     const result = await db.delete(invoices).where(eq(invoices.id, id));
     return result.rowCount > 0;
+  }
+
+  // Location operations
+  async getLocations(organizationId: number): Promise<Location[]> {
+    return await db.select().from(locations).where(eq(locations.organizationId, organizationId));
+  }
+
+  async getLocation(id: number): Promise<Location | undefined> {
+    const [location] = await db.select().from(locations).where(eq(locations.id, id));
+    return location;
+  }
+
+  async createLocation(insertLocation: InsertLocation): Promise<Location> {
+    const [location] = await db.insert(locations).values(insertLocation).returning();
+    return location;
+  }
+
+  async updateLocation(id: number, updates: Partial<UpdateLocation>): Promise<Location | undefined> {
+    const [location] = await db
+      .update(locations)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(locations.id, id))
+      .returning();
+    return location;
+  }
+
+  async deleteLocation(id: number): Promise<boolean> {
+    // First remove all user assignments
+    await db.delete(userLocationAssignments).where(eq(userLocationAssignments.locationId, id));
+    // Then delete the location
+    const result = await db.delete(locations).where(eq(locations.id, id));
+    return result.rowCount > 0;
+  }
+
+  // User location assignment operations
+  async getUserLocationAssignments(userId: number): Promise<Location[]> {
+    const assignments = await db
+      .select({
+        id: locations.id,
+        name: locations.name,
+        address: locations.address,
+        description: locations.description,
+        organizationId: locations.organizationId,
+        isActive: locations.isActive,
+        createdAt: locations.createdAt,
+        updatedAt: locations.updatedAt,
+      })
+      .from(userLocationAssignments)
+      .innerJoin(locations, eq(userLocationAssignments.locationId, locations.id))
+      .where(eq(userLocationAssignments.userId, userId));
+    
+    return assignments;
+  }
+
+  async assignUserToLocation(userId: number, locationId: number): Promise<void> {
+    await db.insert(userLocationAssignments).values({
+      userId,
+      locationId,
+    }).onConflictDoNothing();
+  }
+
+  async unassignUserFromLocation(userId: number, locationId: number): Promise<void> {
+    await db
+      .delete(userLocationAssignments)
+      .where(
+        and(
+          eq(userLocationAssignments.userId, userId),
+          eq(userLocationAssignments.locationId, locationId)
+        )
+      );
+  }
+
+  async updateUserLocationAssignments(userId: number, locationIds: number[]): Promise<void> {
+    // Remove all existing assignments
+    await db.delete(userLocationAssignments).where(eq(userLocationAssignments.userId, userId));
+    
+    // Add new assignments
+    if (locationIds.length > 0) {
+      const assignments = locationIds.map(locationId => ({
+        userId,
+        locationId,
+      }));
+      await db.insert(userLocationAssignments).values(assignments);
+    }
   }
 
   async createMissingAdminAccounts(): Promise<void> {
