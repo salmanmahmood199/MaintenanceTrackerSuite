@@ -84,6 +84,26 @@ export default function VendorView() {
     },
   });
 
+  // Fetch technicians for this vendor
+  const { data: technicians, refetch: refetchTechnicians } = useQuery<User[]>({
+    queryKey: ["/api/maintenance-vendors", vendorId, "technicians"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/maintenance-vendors/${vendorId}/technicians`);
+      return await response.json() as User[];
+    },
+    enabled: !!vendorId,
+  });
+
+  // Fetch work orders for invoice creation
+  const { data: invoiceWorkOrders = [] } = useQuery<WorkOrder[]>({
+    queryKey: ["/api/tickets", selectedTicketForInvoice?.id, "work-orders"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/tickets/${selectedTicketForInvoice!.id}/work-orders`);
+      return await response.json() as WorkOrder[];
+    },
+    enabled: !!selectedTicketForInvoice?.id,
+  });
+
   // Accept ticket mutation
   const acceptTicketMutation = useMutation({
     mutationFn: ({ id, assigneeId }: { id: number; assigneeId?: number }) => 
@@ -129,19 +149,6 @@ export default function VendorView() {
         description: "Ticket completed successfully!",
       });
     },
-  });
-
-  const { data: technicians = [], isLoading: techniciansLoading, error: techniciansError, refetch: refetchTechnicians } = useQuery({
-    queryKey: ["/api/maintenance-vendors", vendorId, "technicians"],
-    queryFn: async () => {
-      const response = await apiRequest("GET", `/api/maintenance-vendors/${vendorId}/technicians`);
-      return await response.json() as User[];
-    },
-    enabled: !!vendorId,
-    retry: 1,
-    staleTime: 0,
-    refetchOnMount: true,
-    refetchOnWindowFocus: false,
   });
   
   // Create technician mutation
