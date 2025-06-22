@@ -150,6 +150,19 @@ export function TicketCard({ ticket, onAccept, onReject, onComplete, onStart, on
                   Confirm Completion
                 </Button>
               )}
+              {ticket.status === 'ready_for_billing' && onCreateInvoice && userRole === 'maintenance_admin' && (
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCreateInvoice(ticket.id);
+                  }}
+                  className="bg-purple-600 hover:bg-purple-700"
+                  size="sm"
+                >
+                  <Calculator className="h-4 w-4 mr-2" />
+                  Create Invoice
+                </Button>
+              )}
               {ticket.status === 'in-progress' && onComplete && (
                 <Button
                   onClick={() => onComplete(ticket.id)}

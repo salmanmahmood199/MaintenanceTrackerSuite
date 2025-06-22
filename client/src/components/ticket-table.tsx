@@ -211,6 +211,16 @@ export function TicketTable({
                             Confirm Completion
                           </Button>
                         )}
+                        {ticket.status === "ready_for_billing" && onCreateInvoice && userRole === "maintenance_admin" && (
+                          <Button
+                            onClick={() => onCreateInvoice(ticket.id)}
+                            className="bg-purple-600 text-white hover:bg-purple-700"
+                            size="sm"
+                          >
+                            <Calculator className="h-4 w-4 mr-1" />
+                            Create Invoice
+                          </Button>
+                        )}
                         {showActions && canAcceptTickets && (ticket.status === "accepted" || ticket.status === "in-progress") && (
                           <Button
                             onClick={() => onComplete?.(ticket.id)}
