@@ -61,10 +61,18 @@ export function TicketComments({ ticket, userRole, userId }: TicketCommentsProps
         formData.append('images', image);
       });
       
-      return apiRequest(`/api/tickets/${ticket.id}/comments`, {
+      const response = await fetch(`/api/tickets/${ticket.id}/comments`, {
         method: 'POST',
         body: formData,
+        credentials: 'include',
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        throw new Error(errorData.message || `HTTP ${response.status}`);
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/tickets/${ticket.id}/comments`] });
@@ -75,10 +83,11 @@ export function TicketComments({ ticket, userRole, userId }: TicketCommentsProps
         description: "Comment added successfully",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
+      console.error('Comment submission error:', error);
       toast({
         title: "Error",
-        description: "Failed to add comment",
+        description: error.message || "Failed to add comment",
         variant: "destructive",
       });
     },

@@ -1,0 +1,220 @@
+
+nsr petro services
+Organization Dashboard
+
+place ticket (placeticket@nsrpetro.com)
+Logout
+New Ticket
+Organization
+
+nsr petro services
+
+Address
+
+7303 hanover pkwy, greenbelt md 20770 ste a
+
+Phone
+
+3019825400
+
+Email
+
+admin@nsrpetro.com
+
+Open Tickets
+0
+In Progress
+6
+Completed
+4
+High Priority
+11
+Tickets
+All Tickets
+Open
+In Progress
+Completed
+Ticket #	Title	Priority	Status	Timeline	Created	Images	Actions
+NSRP-724097-M2A	
+new ticket sunday
+
+new ticket sunday
+
+Medium	Billed	View Timeline	Jun 22, 2025 at 1:02 PM EDT	1	
+View
+NSRP-216404-5RG	
+new ticket 1
+
+new ticket 1
+
+Low	In Progress	View Timeline	Jun 22, 2025 at 12:53 PM EDT	1	
+View
+NSRP-900469-K87	
+new ticket
+
+ads;lafmna;
+
+Medium	Accepted	View Timeline	Jun 22, 2025 at 12:48 PM EDT	None	
+View
+NSRP-514985-PXF	
+lasfnalksf
+
+alfskaskfl
+
+Low	Accepted	View Timeline	Jun 22, 2025 at 12:08 PM EDT	1	
+View
+NSRP-826885-GCK	
+tier 3
+
+tier 3
+
+Medium	Rejected	View Timeline	Jun 22, 2025 at 11:40 AM EDT	1	
+View
+NSRP-763544-3F4	
+new ticket saturday
+
+new ticket saturday
+
+Low	Billed	View Timeline	Jun 21, 2025 at 9:12 PM EDT	1	
+View
+NSRP-067726-D43	
+test ticket june 20
+
+test ticket june 20 description
+
+Low	Billed	View Timeline	Jun 20, 2025 at 3:34 PM EDT	1	
+View
+NSRP-555216-4DU	
+work flow test ticket
+
+work flow test ticket
+
+High	Completed	View Timeline	Jun 18, 2025 at 11:25 PM EDT	1	
+View
+TKT-016	
+Final test ticket
+
+Testing button functionality
+
+High	Open	View Timeline	Jun 18, 2025 at 11:09 PM EDT	None	
+View
+TKT-015	
+Test accept button
+
+Testing the accept functionality
+
+Medium	Return_needed	View Timeline	Jun 18, 2025 at 11:04 PM EDT	None	
+View
+TKT-014	
+New vendor test ticket
+
+Test ticket for vendor to accept
+
+High	Return_needed	View Timeline	Jun 18, 2025 at 11:02 PM EDT	None	
+View
+NSRP-146706-B83	
+test ticket 1
+
+test ticket 1
+
+High	Return_needed	View Timeline	Jun 18, 2025 at 10:12 PM EDT	1	
+View
+NSRP-425596-HLA	
+asdfafva
+
+gasadggh
+
+High	Return_needed	View Timeline	Jun 18, 2025 at 4:43 PM EDT	2	
+View
+NSRP-759365-VXG	
+sdfsdf
+
+sdfsd
+
+High	In Progress	View Timeline	Jun 18, 2025 at 1:45 PM EDT	1	
+View
+NSRP-344009-1MC	
+asdasd
+
+asdasd
+
+High	Completed	View Timeline	Jun 18, 2025 at 1:22 PM EDT	1	
+View
+NSRP-571579-N57	
+place ticket
+
+place ticket
+
+High	In Progress	View Timeline	Jun 18, 2025 at 1:09 PM EDT	1	
+View
+NSRP-023636-68Z	
+njnteaknta
+
+sdfgadjkfgn
+
+High	Return_needed	View Timeline	Jun 18, 2025 at 1:00 PM EDT	1	
+View
+NSRP-997317-TUY	
+test ticket1
+
+test ticket 2
+
+High	Completed	View Timeline	Jun 18, 2025 at 12:43 PM EDT	1	
+View
+NSRP-112318-2VZ	
+full test ticket
+
+test ticket
+
+Low	In Progress	View Timeline	Jun 18, 2025 at 12:28 PM EDT	1	
+View
+NSRP-868697-Z9Q	
+asfasf
+
+asfdas
+
+Medium	In Progress	View Timeline	Jun 17, 2025 at 12:47 PM EDT	1	
+View
+NSRP-893067-Y9F	
+atafas
+
+afsdfas
+
+High	Completed	View Timeline	Jun 17, 2025 at 12:14 PM EDT	1	
+View
+NSRP-585658-A21	
+test ticket
+
+test 1
+
+Medium	Accepted	View Timeline	Jun 17, 2025 at 12:09 PM EDT	1	
+View
+TKT-002	
+test
+
+test
+
+Low	In Progress	View Timeline	Jun 16, 2025 at 11:54 PM EDT	1	
+View
+TKT-001	
+Test Ticket
+
+Test Description
+
+Medium	Accepted	View Timeline	Jun 16, 2025 at 11:45 PM EDT	None	
+View
+
+NSRP-724097-M2A
+Details
+Comments
+Work Orders
+Comments
+0
+No comments yet. Be the first to add one!
+
+laksnda;sdjas;daksf
+Selected 1
+Add Images
+1/5 images
+Add Comment
+Close
