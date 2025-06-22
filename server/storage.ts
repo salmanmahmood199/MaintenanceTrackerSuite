@@ -9,6 +9,7 @@ import {
   locations,
   userLocationAssignments,
   invoices,
+  ticketComments,
   type User, 
   type InsertUser, 
   type InsertSubAdmin,
@@ -26,9 +27,8 @@ import {
   type UpdateLocation,
   type Invoice,
   type InsertInvoice,
-  type Invoice,
-  type InsertInvoice,
-  invoices
+  type TicketComment,
+  type InsertTicketComment,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, inArray, desc, or, isNull } from "drizzle-orm";

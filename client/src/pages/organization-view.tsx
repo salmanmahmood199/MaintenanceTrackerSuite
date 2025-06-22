@@ -624,6 +624,7 @@ export default function OrganizationView() {
                 showActions={true}
                 userRole={user?.role}
                 userPermissions={user?.permissions || undefined}
+                userId={user?.id}
               />
             )}
           </div>

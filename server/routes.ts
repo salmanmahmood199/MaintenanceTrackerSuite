@@ -9,7 +9,14 @@ import {
   insertOrganizationSchema,
   insertMaintenanceVendorSchema,
   insertUserSchema,
-  insertSubAdminSchema
+  insertSubAdminSchema,
+  insertWorkOrderSchema,
+  insertInvoiceSchema,
+  insertLocationSchema,
+  insertTicketCommentSchema,
+  type Ticket,
+  type User,
+  type AuthenticatedRequest,
 } from "@shared/schema";
 import { getSessionConfig, authenticateUser, requireRole, requireOrganization } from "./auth";
 import multer from "multer";
