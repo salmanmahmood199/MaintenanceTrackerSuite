@@ -32,6 +32,13 @@ export function VendorView() {
 
   const vendorId = user?.role === "maintenance_admin" ? user.maintenanceVendorId : routeVendorId;
   
+  console.log("VendorView Debug:", {
+    userRole: user?.role,
+    routeVendorId,
+    userMaintenanceVendorId: user?.maintenanceVendorId,
+    finalVendorId: vendorId
+  });
+  
   // Fetch vendor details
   const { data: vendor } = useQuery<MaintenanceVendor | undefined>({
     queryKey: ["/api/maintenance-vendors", vendorId],

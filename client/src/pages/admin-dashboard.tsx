@@ -636,9 +636,17 @@ export default function AdminDashboard() {
                       {vendor.phone && <p>Phone: {vendor.phone}</p>}
                     </div>
                     <div className="mt-3 pt-2 border-t border-slate-100 flex justify-between items-center">
-                      <Link href={`/admin/vendors/${vendor.id}`}>
-                        <p className="text-xs text-primary font-medium hover:underline cursor-pointer">View dashboard →</p>
-                      </Link>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          console.log("Navigating to vendor:", vendor.id);
+                          navigate(`/vendor/${vendor.id}`);
+                        }}
+                        className="border-green-200 text-green-700 hover:bg-green-50"
+                      >
+                        View Dashboard
+                      </Button>
                     </div>
                   </Card>
                 ))}
