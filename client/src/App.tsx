@@ -37,9 +37,7 @@ function Router() {
     return (
       <Switch>
         <Route path="/organization/:id" component={OrganizationView} />
-        <Route path="/organization-view/:id" component={OrganizationView} />
         <Route path="/vendor/:id" component={VendorView} />
-        <Route path="/vendor-view/:id" component={VendorView} />
         <Route path="/" component={AdminDashboard} />
         <Route component={NotFound} />
       </Switch>
