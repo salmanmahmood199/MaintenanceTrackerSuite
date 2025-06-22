@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, User, Hash, Wrench, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Calendar, User, Hash, Wrench, CheckCircle, XCircle, Clock, Calculator } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { toZonedTime, format as formatTz } from "date-fns-tz";
 import { formatDate, getPriorityColor, getStatusColor } from "@/lib/utils";
