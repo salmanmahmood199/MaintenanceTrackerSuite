@@ -31,7 +31,7 @@ import {
   invoices
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, inArray, desc } from "drizzle-orm";
+import { eq, and, inArray, desc, or, isNull } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
 export interface IStorage {
@@ -465,11 +465,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Ticket operations
-  async getTickets(organizationId?: number): Promise<Ticket[]> {
-    const query = db.select().from(tickets);
+  async getTickets(organizationId?: number, userLocationIds?: number[]): Promise<Ticket[]> {
+    let query = db.select().from(tickets);
     
-    if (organizationId !== undefined) {
-      return await query.where(eq(tickets.organizationId, organizationId)).orderBy(desc(tickets.createdAt));
+    if (organizationId && userLocationIds && userLocationIds.length > 0) {
+      // Filter by organization and user's assigned locations
+      query = query.where(
+        and(
+          eq(tickets.organizationId, organizationId),
+          or(
+            isNull(tickets.locationId), // Include tickets without location
+            inArray(tickets.locationId, userLocationIds)
+          )
+        )
+      );
+    } else if (organizationId) {
+      query = query.where(eq(tickets.organizationId, organizationId));
     }
     
     return await query.orderBy(desc(tickets.createdAt));

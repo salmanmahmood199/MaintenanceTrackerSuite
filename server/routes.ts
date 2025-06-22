@@ -553,34 +553,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all tickets
-  app.get("/api/tickets", async (req, res) => {
+  app.get("/api/tickets", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
-      const { status, organizationId, maintenanceVendorId, assigneeId } = req.query;
+      const user = req.user!;
+      const organizationId = req.query.organizationId ? parseInt(req.query.organizationId as string) : undefined;
+      const maintenanceVendorId = req.query.maintenanceVendorId ? parseInt(req.query.maintenanceVendorId as string) : undefined;
+      const status = req.query.status as string;
+
       let tickets;
-      
-      // Parse query parameters
-      const orgId = organizationId ? parseInt(organizationId as string) : undefined;
-      const vendorId = maintenanceVendorId ? parseInt(maintenanceVendorId as string) : undefined;
-      const technicianId = assigneeId ? parseInt(assigneeId as string) : undefined;
-      
-      if (status && typeof status === 'string') {
-        tickets = await storage.getTicketsByStatus(status, orgId);
+
+      if (user.role === "root") {
+        if (organizationId) {
+          tickets = await storage.getTickets(organizationId);
+        } else if (maintenanceVendorId) {
+          tickets = await storage.getTickets();
+          tickets = tickets.filter(ticket => ticket.maintenanceVendorId === maintenanceVendorId);
+        } else {
+          tickets = await storage.getTickets();
+        }
+      } else if (user.role === "org_admin") {
+        tickets = await storage.getTickets(user.organizationId!);
+      } else if (user.role === "org_subadmin") {
+        // Get user's assigned locations for filtering
+        const userLocations = await storage.getUserLocationAssignments(user.id);
+        const locationIds = userLocations.map(loc => loc.id);
+        tickets = await storage.getTickets(user.organizationId!, locationIds);
+      } else if (user.role === "maintenance_admin") {
+        tickets = await storage.getTickets();
+        tickets = tickets.filter(ticket => ticket.maintenanceVendorId === user.maintenanceVendorId);
+      } else if (user.role === "technician") {
+        tickets = await storage.getTickets();
+        tickets = tickets.filter(ticket => ticket.assigneeId === user.id);
       } else {
-        tickets = await storage.getTickets(orgId);
+        return res.status(403).json({ message: "Unauthorized" });
       }
-      
-      // Filter by maintenance vendor if specified
-      if (vendorId) {
-        tickets = tickets.filter(ticket => ticket.maintenanceVendorId === vendorId);
+
+      if (status) {
+        tickets = tickets.filter(ticket => ticket.status === status);
       }
-      
-      // Filter by assignee (technician) if specified
-      if (technicianId) {
-        tickets = tickets.filter(ticket => ticket.assigneeId === technicianId);
-      }
-      
       res.json(tickets);
     } catch (error) {
+      console.error("Error fetching tickets:", error);
       res.status(500).json({ message: "Failed to fetch tickets" });
     }
   });
