@@ -517,60 +517,119 @@ export default function OrganizationView() {
           </Card>
         </div>
 
-        {/* Filter Buttons */}
-        <div className="flex space-x-2 mb-6">
-          <Button
-            variant={statusFilter === "all" ? "default" : "outline"}
-            onClick={() => setStatusFilter("all")}
-            size="sm"
-          >
-            All Tickets
-          </Button>
-          <Button
-            variant={statusFilter === "open" ? "default" : "outline"}
-            onClick={() => setStatusFilter("open")}
-            size="sm"
-          >
-            Open
-          </Button>
-          <Button
-            variant={statusFilter === "in-progress" ? "default" : "outline"}
-            onClick={() => setStatusFilter("in-progress")}
-            size="sm"
-          >
-            In Progress
-          </Button>
-          <Button
-            variant={statusFilter === "completed" ? "default" : "outline"}
-            onClick={() => setStatusFilter("completed")}
-            size="sm"
-          >
-            Completed
-          </Button>
+        {/* Navigation Tabs */}
+        <div className="mb-6">
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8">
+              <button
+                onClick={() => setActiveTab("tickets")}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "tickets"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Tickets
+              </button>
+              {canManageSubAdmins && (
+                <>
+                  <button
+                    onClick={() => setActiveTab("subadmins")}
+                    className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                      activeTab === "subadmins"
+                        ? "border-blue-500 text-blue-600"
+                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    }`}
+                  >
+                    Sub-Admins
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("locations")}
+                    className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                      activeTab === "locations"
+                        ? "border-blue-500 text-blue-600"
+                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    }`}
+                  >
+                    Locations
+                  </button>
+                </>
+              )}
+              {canManageVendors && (
+                <button
+                  onClick={() => setActiveTab("vendors")}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === "vendors"
+                      ? "border-blue-500 text-blue-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  }`}
+                >
+                  Vendors
+                </button>
+              )}
+            </nav>
+          </div>
         </div>
 
-        {/* Tickets Table */}
-        <div className="mb-8">
-          {ticketsLoading ? (
-            <div className="bg-white rounded-lg shadow p-8 text-center">
-              <p className="text-slate-500">Loading tickets...</p>
+        {/* Tab Content */}
+        {activeTab === "tickets" && (
+          <>
+            {/* Filter Buttons */}
+            <div className="flex space-x-2 mb-6">
+              <Button
+                variant={statusFilter === "all" ? "default" : "outline"}
+                onClick={() => setStatusFilter("all")}
+                size="sm"
+              >
+                All Tickets
+              </Button>
+              <Button
+                variant={statusFilter === "open" ? "default" : "outline"}
+                onClick={() => setStatusFilter("open")}
+                size="sm"
+              >
+                Open
+              </Button>
+              <Button
+                variant={statusFilter === "in-progress" ? "default" : "outline"}
+                onClick={() => setStatusFilter("in-progress")}
+                size="sm"
+              >
+                In Progress
+              </Button>
+              <Button
+                variant={statusFilter === "completed" ? "default" : "outline"}
+                onClick={() => setStatusFilter("completed")}
+                size="sm"
+              >
+                Completed
+              </Button>
             </div>
-          ) : (
-            <TicketTable
-              tickets={tickets || []}
-              onAccept={canAcceptTickets ? handleAcceptTicket : undefined}
-              onReject={canAcceptTickets ? handleRejectTicket : undefined}
-              onComplete={canAcceptTickets ? handleCompleteTicket : undefined}
-              onConfirm={handleConfirmCompletion}
-              showActions={true}
-              userRole={user?.role}
-              userPermissions={user?.permissions || undefined}
-            />
-          )}
-        </div>
+          </>
+        )}
 
-        {/* Sub-Admins Section - Only show for users who can manage sub-admins */}
-        {canManageSubAdmins && (
+        {activeTab === "tickets" && (
+          <div className="mb-8">
+            {ticketsLoading ? (
+              <div className="bg-white rounded-lg shadow p-8 text-center">
+                <p className="text-slate-500">Loading tickets...</p>
+              </div>
+            ) : (
+              <TicketTable
+                tickets={tickets || []}
+                onAccept={canAcceptTickets ? handleAcceptTicket : undefined}
+                onReject={canAcceptTickets ? handleRejectTicket : undefined}
+                onComplete={canAcceptTickets ? handleCompleteTicket : undefined}
+                onConfirm={handleConfirmCompletion}
+                showActions={true}
+                userRole={user?.role}
+                userPermissions={user?.permissions || undefined}
+              />
+            )}
+          </div>
+        )}
+
+        {activeTab === "subadmins" && canManageSubAdmins && (
           <div className="bg-white rounded-lg shadow">
             <div className="px-6 py-4 border-b border-slate-200">
               <h2 className="text-lg font-semibold text-slate-900 flex items-center">
@@ -580,7 +639,17 @@ export default function OrganizationView() {
             </div>
             <div className="p-6">
               {subAdmins.length === 0 ? (
-                <p className="text-slate-500 text-center py-4">No sub-administrators yet</p>
+                <div className="text-center py-8">
+                  <Users className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <p className="text-slate-500 text-center py-4">No sub-administrators yet</p>
+                  <Button
+                    onClick={() => setIsCreateSubAdminOpen(true)}
+                    className="mt-4"
+                  >
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Add First Sub-Admin
+                  </Button>
+                </div>
               ) : (
                 <div className="space-y-4">
                   {subAdmins.map((subAdmin) => (
@@ -621,6 +690,25 @@ export default function OrganizationView() {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "locations" && canManageSubAdmins && (
+          <LocationsManagement organizationId={organizationId!} />
+        )}
+
+        {activeTab === "vendors" && canManageVendors && (
+          <div className="bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-slate-200">
+              <h3 className="text-lg font-medium text-gray-900">Vendor Management</h3>
+              <p className="text-sm text-gray-500">Configure vendor assignments and tiers for your organization</p>
+            </div>
+            <div className="p-6">
+              <Button onClick={() => setIsVendorManagementOpen(true)}>
+                <Settings className="h-4 w-4 mr-2" />
+                Configure Vendors
+              </Button>
             </div>
           </div>
         )}
