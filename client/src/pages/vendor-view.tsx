@@ -7,11 +7,12 @@ import { ArrowLeft, LogOut, FileText } from "lucide-react";
 import { TicketCard } from "@/components/ticket-card";
 import { CreateInvoiceModal } from "@/components/create-invoice-modal";
 import { InvoicesView } from "@/components/invoices-view";
+import { VendorTicketActionModal } from "@/components/vendor-ticket-action-modal";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
-import type { Ticket, MaintenanceVendor, WorkOrder } from "@shared/schema";
+import type { Ticket, MaintenanceVendor, WorkOrder, User } from "@shared/schema";
 
 export function VendorView() {
   const [, routeParams] = useRoute("/vendor/:id");
@@ -20,6 +21,10 @@ export function VendorView() {
   const [activeTab, setActiveTab] = useState<"tickets" | "invoices">("tickets");
   const [isCreateInvoiceModalOpen, setIsCreateInvoiceModalOpen] = useState(false);
   const [selectedTicketForInvoice, setSelectedTicketForInvoice] = useState<Ticket | null>(null);
+  const [isTicketActionModalOpen, setIsTicketActionModalOpen] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(null);
+  const [isTicketDetailsModalOpen, setIsTicketDetailsModalOpen] = useState(false);
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
