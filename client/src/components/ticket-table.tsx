@@ -3,10 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-
-import { Calendar, User, Hash, Wrench, CheckCircle, XCircle, Eye, ImageIcon, Clock, Calculator } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calendar, User, Hash, Wrench, CheckCircle, XCircle, Eye, ImageIcon, Clock, Calculator, MessageSquare, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { format } from "date-fns";
 import { formatDate, getPriorityColor, getStatusColor } from "@/lib/utils";
 import { ProgressTracker } from "@/components/progress-tracker";
+import { WorkOrderHistory } from "./work-order-history";
+import { TicketComments } from "./ticket-comments";
 import type { Ticket } from "@shared/schema";
 
 interface TicketTableProps {
@@ -22,6 +26,7 @@ interface TicketTableProps {
   showTechnicianActions?: boolean;
   userRole?: string;
   userPermissions?: string[];
+  userId?: number;
 }
 
 export function TicketTable({ 
@@ -36,7 +41,8 @@ export function TicketTable({
   showActions = true,
   showTechnicianActions = false,
   userRole, 
-  userPermissions 
+  userPermissions,
+  userId
 }: TicketTableProps) {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -252,46 +258,49 @@ export function TicketTable({
           </DialogHeader>
           
           {selectedTicket && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">{selectedTicket.title}</h3>
-                <p className="text-slate-600">{selectedTicket.description}</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="flex items-center space-x-2">
-                  <Calendar className="h-4 w-4 text-slate-400" />
-                  <span className="text-slate-600">Created {formatDate(selectedTicket.createdAt)}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <User className="h-4 w-4 text-slate-400" />
-                  <span className="text-slate-600">Reporter ID: {selectedTicket.reporterId}</span>
-                </div>
-                {selectedTicket.maintenanceVendorId && (
-                  <div className="flex items-center space-x-2">
-                    <Wrench className="h-4 w-4 text-slate-400" />
-                    <span className="text-slate-600">Vendor ID: {selectedTicket.maintenanceVendorId}</span>
+            <ScrollArea className="h-[70vh]">
+              <Tabs defaultValue="details" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="details">Details</TabsTrigger>
+                  <TabsTrigger value="comments">
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Comments
+                  </TabsTrigger>
+                  <TabsTrigger value="work-orders">Work Orders</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="details" className="space-y-6 mt-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <Hash className="h-5 w-5 text-slate-500" />
+                        <span className="text-sm font-medium text-slate-600">Ticket Number</span>
+                      </div>
+                      <p className="text-lg font-mono">{selectedTicket.ticketNumber}</p>
+                    </div>
+                    
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <Calendar className="h-5 w-5 text-slate-500" />
+                        <span className="text-sm font-medium text-slate-600">Created</span>
+                      </div>
+                      <p className="text-lg">{format(new Date(selectedTicket.createdAt), 'PPp')}</p>
+                    </div>
                   </div>
-                )}
-                {selectedTicket.assigneeId && (
-                  <div className="flex items-center space-x-2">
-                    <User className="h-4 w-4 text-slate-400" />
-                    <span className="text-slate-600">Assigned to: {selectedTicket.assigneeId}</span>
-                  </div>
-                )}
-              </div>
 
-              <div className="flex items-center space-x-3">
-                <Badge className={getPriorityColor(selectedTicket.priority)}>
-                  {selectedTicket.priority.charAt(0).toUpperCase() + selectedTicket.priority.slice(1)} Priority
-                </Badge>
-                <Badge className={getStatusColor(selectedTicket.status)}>
-                  {selectedTicket.status === "in-progress" ? "In Progress" : 
-                   selectedTicket.status.charAt(0).toUpperCase() + selectedTicket.status.slice(1)}
-                </Badge>
-              </div>
+                  <div>
+                    <h3 className="text-xl font-semibold mb-2">{selectedTicket.title}</h3>
+                    <div className="flex items-center space-x-3">
+                      <Badge className={getPriorityColor(selectedTicket.priority)}>
+                        {selectedTicket.priority.charAt(0).toUpperCase() + selectedTicket.priority.slice(1)} Priority
+                      </Badge>
+                      <Badge className={getStatusColor(selectedTicket.status)}>
+                        {selectedTicket.status === "in-progress" ? "In Progress" : 
+                         selectedTicket.status.charAt(0).toUpperCase() + selectedTicket.status.slice(1)}
+                      </Badge>
+                    </div>
 
-              {selectedTicket.rejectionReason && (
+                    {selectedTicket.rejectionReason && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
                   <p className="text-sm text-red-800">
                     <strong>Rejection Reason:</strong> {selectedTicket.rejectionReason}

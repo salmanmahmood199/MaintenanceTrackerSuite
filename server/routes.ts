@@ -1214,6 +1214,167 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Ticket comment routes
+  app.get("/api/tickets/:id/comments", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const ticketId = parseInt(req.params.id);
+      const user = req.user!;
+      
+      // Verify user has access to this ticket
+      const ticket = await storage.getTicket(ticketId);
+      if (!ticket) {
+        return res.status(404).json({ message: "Ticket not found" });
+      }
+      
+      // Check access based on role
+      let hasAccess = false;
+      if (user.role === "root") {
+        hasAccess = true;
+      } else if (user.role === "org_admin" && ticket.organizationId === user.organizationId) {
+        hasAccess = true;
+      } else if (user.role === "org_subadmin" && ticket.organizationId === user.organizationId) {
+        // Sub-admin can only see tickets from their assigned locations
+        const userLocations = await storage.getUserLocationAssignments(user.id);
+        const locationIds = userLocations.map(loc => loc.id);
+        hasAccess = !ticket.locationId || locationIds.includes(ticket.locationId);
+      } else if (user.role === "maintenance_admin" && ticket.maintenanceVendorId === user.maintenanceVendorId) {
+        hasAccess = true;
+      } else if (user.role === "technician" && ticket.assigneeId === user.id) {
+        hasAccess = true;
+      }
+      
+      if (!hasAccess) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const comments = await storage.getTicketComments(ticketId);
+      res.json(comments);
+    } catch (error) {
+      console.error("Error fetching ticket comments:", error);
+      res.status(500).json({ message: "Failed to fetch comments" });
+    }
+  });
+
+  app.post("/api/tickets/:id/comments", upload.array('images', 5), authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const ticketId = parseInt(req.params.id);
+      const user = req.user!;
+      const files = req.files as Express.Multer.File[];
+      const imageUrls = files ? files.map(file => `/uploads/${file.filename}`) : [];
+      
+      // Verify user has access to this ticket
+      const ticket = await storage.getTicket(ticketId);
+      if (!ticket) {
+        return res.status(404).json({ message: "Ticket not found" });
+      }
+      
+      // Check access based on role (same logic as GET comments)
+      let hasAccess = false;
+      if (user.role === "root") {
+        hasAccess = true;
+      } else if (user.role === "org_admin" && ticket.organizationId === user.organizationId) {
+        hasAccess = true;
+      } else if (user.role === "org_subadmin" && ticket.organizationId === user.organizationId) {
+        const userLocations = await storage.getUserLocationAssignments(user.id);
+        const locationIds = userLocations.map(loc => loc.id);
+        hasAccess = !ticket.locationId || locationIds.includes(ticket.locationId);
+      } else if (user.role === "maintenance_admin" && ticket.maintenanceVendorId === user.maintenanceVendorId) {
+        hasAccess = true;
+      } else if (user.role === "technician" && ticket.assigneeId === user.id) {
+        hasAccess = true;
+      }
+      
+      if (!hasAccess) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const commentData = {
+        ticketId,
+        userId: user.id,
+        content: req.body.content,
+        images: imageUrls.length > 0 ? imageUrls : undefined,
+        isSystemGenerated: false,
+      };
+      
+      const result = insertTicketCommentSchema.safeParse(commentData);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid comment data", errors: result.error.errors });
+      }
+      
+      const comment = await storage.createTicketComment(result.data);
+      res.status(201).json(comment);
+    } catch (error) {
+      console.error("Error creating ticket comment:", error);
+      res.status(500).json({ message: "Failed to create comment" });
+    }
+  });
+
+  app.put("/api/tickets/:ticketId/comments/:commentId", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const ticketId = parseInt(req.params.ticketId);
+      const commentId = parseInt(req.params.commentId);
+      const user = req.user!;
+      
+      // Get the comment to verify ownership
+      const comments = await storage.getTicketComments(ticketId);
+      const comment = comments.find(c => c.id === commentId);
+      
+      if (!comment) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+      
+      // Only the comment author or root can edit comments
+      if (comment.userId !== user.id && user.role !== "root") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const updates = {
+        content: req.body.content,
+      };
+      
+      const updatedComment = await storage.updateTicketComment(commentId, updates);
+      if (!updatedComment) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+      
+      res.json(updatedComment);
+    } catch (error) {
+      console.error("Error updating ticket comment:", error);
+      res.status(500).json({ message: "Failed to update comment" });
+    }
+  });
+
+  app.delete("/api/tickets/:ticketId/comments/:commentId", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const ticketId = parseInt(req.params.ticketId);
+      const commentId = parseInt(req.params.commentId);
+      const user = req.user!;
+      
+      // Get the comment to verify ownership
+      const comments = await storage.getTicketComments(ticketId);
+      const comment = comments.find(c => c.id === commentId);
+      
+      if (!comment) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+      
+      // Only the comment author or root can delete comments
+      if (comment.userId !== user.id && user.role !== "root") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const success = await storage.deleteTicketComment(commentId);
+      if (!success) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+      
+      res.json({ message: "Comment deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting ticket comment:", error);
+      res.status(500).json({ message: "Failed to delete comment" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

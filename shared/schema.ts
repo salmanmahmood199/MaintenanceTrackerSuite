@@ -421,3 +421,13 @@ export type Location = typeof locations.$inferSelect;
 export type InsertUserLocationAssignment = z.infer<typeof insertUserLocationAssignmentSchema>;
 export type UserLocationAssignment = typeof userLocationAssignments.$inferSelect;
 export type LoginData = z.infer<typeof loginSchema>;
+
+// Ticket comment types
+export type TicketComment = typeof ticketComments.$inferSelect;
+export type InsertTicketComment = typeof ticketComments.$inferInsert;
+
+export const insertTicketCommentSchema = createInsertSchema(ticketComments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
