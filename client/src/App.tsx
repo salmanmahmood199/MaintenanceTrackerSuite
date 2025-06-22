@@ -8,7 +8,7 @@ import Dashboard from "@/pages/dashboard";
 import Login from "@/pages/login";
 import AdminDashboard from "@/pages/admin-dashboard";
 import OrganizationView from "@/pages/organization-view";
-import VendorView from "@/pages/vendor-view";
+import { VendorView } from "@/pages/vendor-view";
 import TechnicianDashboard from "@/pages/technician-dashboard";
 import NotFound from "@/pages/not-found";
 
