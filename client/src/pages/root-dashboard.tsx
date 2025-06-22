@@ -433,6 +433,7 @@ export default function RootDashboard() {
               showActions={false}
               userRole="root"
               userPermissions={[]}
+              userId={user?.id}
             />
           </TabsContent>
         </Tabs>
