@@ -93,6 +93,87 @@ export function VendorView() {
     },
   });
 
+  // Accept ticket mutation
+  const acceptTicketMutation = useMutation({
+    mutationFn: async ({ ticketId, assigneeId }: { ticketId: number; assigneeId?: number }) => {
+      return apiRequest("POST", `/api/tickets/${ticketId}/accept`, {
+        maintenanceVendorId: vendorId,
+        assigneeId,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+      setIsTicketActionModalOpen(false);
+      setSelectedTicket(null);
+      setTicketAction(null);
+      toast({
+        title: "Success",
+        description: "Ticket accepted successfully",
+      });
+    },
+    onError: (error: any) => {
+      console.error("Accept ticket error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to accept ticket",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Reject ticket mutation
+  const rejectTicketMutation = useMutation({
+    mutationFn: async ({ ticketId, rejectionReason }: { ticketId: number; rejectionReason: string }) => {
+      return apiRequest("POST", `/api/tickets/${ticketId}/reject`, {
+        rejectionReason,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+      setIsTicketActionModalOpen(false);
+      setSelectedTicket(null);
+      setTicketAction(null);
+      toast({
+        title: "Success",
+        description: "Ticket rejected",
+      });
+    },
+    onError: (error: any) => {
+      console.error("Reject ticket error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to reject ticket",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleAcceptTicket = (ticketId: number, assigneeId?: number) => {
+    acceptTicketMutation.mutate({ ticketId, assigneeId });
+  };
+
+  const handleRejectTicket = (ticketId: number, rejectionReason: string) => {
+    rejectTicketMutation.mutate({ ticketId, rejectionReason });
+  };
+
+  const openAcceptModal = (ticketId: number) => {
+    const ticket = tickets.find(t => t.id === ticketId);
+    if (ticket) {
+      setSelectedTicket(ticket);
+      setTicketAction("accept");
+      setIsTicketActionModalOpen(true);
+    }
+  };
+
+  const openRejectModal = (ticketId: number) => {
+    const ticket = tickets.find(t => t.id === ticketId);
+    if (ticket) {
+      setSelectedTicket(ticket);
+      setTicketAction("reject");
+      setIsTicketActionModalOpen(true);
+    }
+  };
+
   const handleCreateInvoice = (ticketId: number) => {
     const ticket = tickets?.find(t => t.id === ticketId);
     if (ticket) {
@@ -240,9 +321,15 @@ export function VendorView() {
                   <TicketCard
                     key={ticket.id}
                     ticket={ticket}
+                    onClick={(ticket) => {
+                      setSelectedTicket(ticket);
+                      setIsTicketDetailsModalOpen(true);
+                    }}
+                    onAccept={user?.role === "maintenance_admin" ? openAcceptModal : undefined}
+                    onReject={user?.role === "maintenance_admin" ? openRejectModal : undefined}
                     onCreateInvoice={handleCreateInvoice}
                     userRole={user?.role}
-                    showActions={true}
+                    showActions={user?.role === "maintenance_admin"}
                   />
                 ))
               )}
