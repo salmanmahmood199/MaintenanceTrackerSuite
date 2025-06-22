@@ -7,7 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertTicketSchema, type InsertTicket } from "@shared/schema";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { insertTicketSchema, type InsertTicket, type Location } from "@shared/schema";
 import { ImageUpload } from "./image-upload";
 import { Plus } from "lucide-react";
 
@@ -18,7 +20,7 @@ interface CreateTicketModalProps {
   isLoading: boolean;
 }
 
-export function CreateTicketModal({ open, onOpenChange, onSubmit, isLoading }: CreateTicketModalProps) {
+export function CreateTicketModal({ open, onOpenChange, onSubmit, isLoading, userId, organizationId }: CreateTicketModalProps) {
   const [images, setImages] = useState<File[]>([]);
 
   const form = useForm<InsertTicket>({

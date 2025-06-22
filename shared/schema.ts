@@ -233,6 +233,10 @@ export const ticketsRelations = relations(tickets, ({ one, many }) => ({
     fields: [tickets.maintenanceVendorId],
     references: [maintenanceVendors.id],
   }),
+  location: one(locations, {
+    fields: [tickets.locationId],
+    references: [locations.id],
+  }),
   workOrders: many(workOrders),
 }));
 

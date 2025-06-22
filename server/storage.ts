@@ -77,7 +77,7 @@ export interface IStorage {
   getOrganizationVendors(organizationId: number): Promise<Array<{vendor: MaintenanceVendor, tier: string, isActive: boolean}>>;
   
   // Ticket operations
-  getTickets(organizationId?: number): Promise<Ticket[]>;
+  getTickets(organizationId?: number, userLocationIds?: number[]): Promise<Ticket[]>;
   getTicket(id: number): Promise<Ticket | undefined>;
   createTicket(ticket: InsertTicket): Promise<Ticket>;
   updateTicket(id: number, updates: Partial<UpdateTicket>): Promise<Ticket | undefined>;

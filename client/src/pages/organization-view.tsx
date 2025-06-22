@@ -720,6 +720,8 @@ export default function OrganizationView() {
         onOpenChange={setIsCreateModalOpen}
         onSubmit={handleCreateTicket}
         isLoading={createTicketMutation.isPending}
+        userId={user?.id}
+        organizationId={organizationId}
       />
 
       <CreateSubAdminModal

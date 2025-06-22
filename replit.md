@@ -240,6 +240,10 @@ Changelog:
 - June 22, 2025. Added location creation, assignment, and management functionality
 - June 22, 2025. Created tabbed navigation in organization dashboard (Tickets, Sub-Admins, Locations, Vendors)
 - June 22, 2025. Sub-admins can now be assigned to specific locations within organizations
+- June 22, 2025. Implemented location-based ticket filtering and creation
+- June 22, 2025. Sub-admins can only see and accept tickets from their assigned locations
+- June 22, 2025. Ticket creation includes location dropdown for users with assigned locations
+- June 22, 2025. Added locationId field to tickets table for location-based filtering
 ```
 
 ## User Preferences
