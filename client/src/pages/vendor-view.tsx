@@ -14,7 +14,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
-import type { Ticket, MaintenanceVendor, User, InsertUser } from "@shared/schema";
+import { CreateInvoiceModal } from "@/components/create-invoice-modal";
+import type { Ticket, MaintenanceVendor, User, InsertUser, WorkOrder } from "@shared/schema";
 
 interface TicketStats {
   open: number;
@@ -250,6 +251,19 @@ export default function VendorView() {
   const handleViewTicketDetails = (ticket: Ticket) => {
     setSelectedTicket(ticket);
     setIsTicketDetailsModalOpen(true);
+  };
+
+  const handleViewWorkOrders = (ticketId: number) => {
+    // Work order viewing functionality can be added here if needed
+    console.log("View work orders for ticket:", ticketId);
+  };
+
+  const handleCreateInvoice = (ticketId: number) => {
+    const ticket = tickets?.find(t => t.id === ticketId);
+    if (ticket) {
+      setSelectedTicketForInvoice(ticket);
+      setIsCreateInvoiceModalOpen(true);
+    }
   };
 
   if (!vendor) {
@@ -571,6 +585,8 @@ export default function VendorView() {
                   ticket={ticket}
                   onAccept={handleAcceptTicket}
                   onReject={handleRejectTicket}
+                  onViewWorkOrders={handleViewWorkOrders}
+                  onCreateInvoice={handleCreateInvoice}
                   userRole={user?.role}
                   userPermissions={user?.permissions ? user.permissions : undefined}
                   showActions={true}
@@ -616,6 +632,15 @@ export default function VendorView() {
           onAccept={handleVendorAcceptTicket}
           onReject={handleVendorRejectTicket}
           isLoading={acceptTicketMutation.isPending || rejectTicketMutation.isPending}
+        />
+
+        <CreateInvoiceModal
+          open={isCreateInvoiceModalOpen}
+          onOpenChange={setIsCreateInvoiceModalOpen}
+          onSubmit={createInvoiceMutation.mutate}
+          isLoading={createInvoiceMutation.isPending}
+          ticket={selectedTicketForInvoice}
+          workOrders={invoiceWorkOrders}
         />
       </div>
     </div>
