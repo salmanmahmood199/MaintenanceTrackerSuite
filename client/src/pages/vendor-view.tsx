@@ -357,6 +357,17 @@ export function VendorView() {
           ticket={selectedTicketForInvoice}
           workOrders={invoiceWorkOrders}
         />
+
+        <VendorTicketActionModal
+          open={isTicketActionModalOpen}
+          onOpenChange={setIsTicketActionModalOpen}
+          ticket={selectedTicket}
+          action={ticketAction}
+          technicians={technicians || []}
+          onAccept={handleAcceptTicket}
+          onReject={handleRejectTicket}
+          isLoading={acceptTicketMutation.isPending || rejectTicketMutation.isPending}
+        />
       </div>
     </div>
   );
