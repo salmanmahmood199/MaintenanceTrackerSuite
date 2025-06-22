@@ -318,6 +318,7 @@ export default function VendorView() {
   }
 
   return (
+    <>
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
@@ -630,7 +631,7 @@ export default function VendorView() {
             ))
           )}
         </div>
-        </>
+          </div>
         )}
 
         {activeTab === "invoices" && (
@@ -684,6 +685,6 @@ export default function VendorView() {
           workOrders={invoiceWorkOrders}
         />
       </div>
-    </div>
+    </>
   );
 }
