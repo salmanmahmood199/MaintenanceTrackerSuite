@@ -17,7 +17,10 @@ import {
   type Organization,
   type InsertOrganization,
   type MaintenanceVendor,
-  type InsertMaintenanceVendor
+  type InsertMaintenanceVendor,
+  type Invoice,
+  type InsertInvoice,
+  invoices
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, inArray, desc } from "drizzle-orm";
