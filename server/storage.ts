@@ -620,6 +620,38 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
+  async getInvoices(vendorId?: number): Promise<Invoice[]> {
+    const query = db.select().from(invoices);
+    if (vendorId) {
+      return await query.where(eq(invoices.vendorId, vendorId));
+    }
+    return await query;
+  }
+
+  async getInvoice(id: number): Promise<Invoice | undefined> {
+    const [invoice] = await db.select().from(invoices).where(eq(invoices.id, id));
+    return invoice;
+  }
+
+  async createInvoice(invoice: InsertInvoice): Promise<Invoice> {
+    const [newInvoice] = await db.insert(invoices).values(invoice).returning();
+    return newInvoice;
+  }
+
+  async updateInvoice(id: number, updates: Partial<InsertInvoice>): Promise<Invoice | undefined> {
+    const [updatedInvoice] = await db
+      .update(invoices)
+      .set(updates)
+      .where(eq(invoices.id, id))
+      .returning();
+    return updatedInvoice;
+  }
+
+  async deleteInvoice(id: number): Promise<boolean> {
+    const result = await db.delete(invoices).where(eq(invoices.id, id));
+    return result.rowCount > 0;
+  }
+
   async createMissingAdminAccounts(): Promise<void> {
     // Get all organizations without admin accounts
     const orgs = await this.getOrganizations();
