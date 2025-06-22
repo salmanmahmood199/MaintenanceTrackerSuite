@@ -33,7 +33,9 @@ export default function VendorView() {
   const [selectedTechnician, setSelectedTechnician] = useState<User | null>(null);
   const [isTicketActionModalOpen, setIsTicketActionModalOpen] = useState(false);
   const [isTicketDetailsModalOpen, setIsTicketDetailsModalOpen] = useState(false);
+  const [isCreateInvoiceModalOpen, setIsCreateInvoiceModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [selectedTicketForInvoice, setSelectedTicketForInvoice] = useState<Ticket | null>(null);
   const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -200,6 +202,30 @@ export default function VendorView() {
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to reset password", variant: "destructive" });
+    },
+  });
+
+  // Create invoice mutation
+  const createInvoiceMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return apiRequest("POST", "/api/invoices", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
+      setIsCreateInvoiceModalOpen(false);
+      setSelectedTicketForInvoice(null);
+      toast({
+        title: "Success",
+        description: "Invoice created successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create invoice",
+        variant: "destructive",
+      });
     },
   });
 

@@ -112,6 +112,24 @@ export const workOrders = pgTable("work_orders", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const invoices = pgTable("invoices", {
+  id: serial("id").primaryKey(),
+  invoiceNumber: text("invoice_number").notNull().unique(),
+  ticketId: integer("ticket_id").notNull().references(() => tickets.id),
+  maintenanceVendorId: integer("maintenance_vendor_id").notNull().references(() => maintenanceVendors.id),
+  organizationId: integer("organization_id").notNull().references(() => organizations.id),
+  subtotal: text("subtotal").notNull(),
+  tax: text("tax").notNull().default("0"),
+  total: text("total").notNull(),
+  status: text("status").notNull().default("draft"), // draft, sent, paid
+  workOrderIds: integer("work_order_ids").array().notNull(),
+  additionalItems: text("additional_items"), // JSON string for extra items
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  sentAt: timestamp("sent_at"),
+  paidAt: timestamp("paid_at"),
+});
+
 // Session storage table for authentication
 export const sessions = pgTable("sessions", {
   sid: varchar("sid").primaryKey(),
@@ -185,6 +203,21 @@ export const workOrdersRelations = relations(workOrders, ({ one }) => ({
   technician: one(users, {
     fields: [workOrders.technicianId],
     references: [users.id],
+  }),
+}));
+
+export const invoicesRelations = relations(invoices, ({ one }) => ({
+  ticket: one(tickets, {
+    fields: [invoices.ticketId],
+    references: [tickets.id],
+  }),
+  maintenanceVendor: one(maintenanceVendors, {
+    fields: [invoices.maintenanceVendorId],
+    references: [maintenanceVendors.id],
+  }),
+  organization: one(organizations, {
+    fields: [invoices.organizationId],
+    references: [organizations.id],
   }),
 }));
 
@@ -275,6 +308,13 @@ export const insertWorkOrderSchema = createInsertSchema(workOrders).omit({
   workOrderNumber: true,
   createdAt: true,
   updatedAt: true,
+});
+
+export const insertInvoiceSchema = createInsertSchema(invoices).omit({
+  id: true,
+  createdAt: true,
+  sentAt: true,
+  paidAt: true,
 });
 
 export const acceptTicketSchema = z.object({
