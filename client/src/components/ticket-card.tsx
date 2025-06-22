@@ -16,13 +16,14 @@ interface TicketCardProps {
   onConfirm?: (id: number) => void;
   onViewWorkOrders?: (id: number) => void;
   onCreateInvoice?: (id: number) => void;
+  onClick?: (ticket: Ticket) => void;
   showActions?: boolean;
   showTechnicianActions?: boolean;
   userRole?: string;
   userPermissions?: string[];
 }
 
-export function TicketCard({ ticket, onAccept, onReject, onComplete, onStart, onConfirm, onViewWorkOrders, onCreateInvoice, showActions = true, showTechnicianActions = false, userRole, userPermissions }: TicketCardProps) {
+export function TicketCard({ ticket, onAccept, onReject, onComplete, onStart, onConfirm, onViewWorkOrders, onCreateInvoice, showActions = true, showTechnicianActions = false, userRole, userPermissions, onClick }: TicketCardProps) {
   const priorityColor = getPriorityColor(ticket.priority);
   const statusColor = getStatusColor(ticket.status);
   
@@ -33,7 +34,10 @@ export function TicketCard({ ticket, onAccept, onReject, onComplete, onStart, on
   );
 
   return (
-    <Card className="p-6 hover:shadow-md transition-shadow">
+    <Card 
+      className="p-6 hover:shadow-md transition-shadow cursor-pointer" 
+      onClick={() => onClick?.(ticket)}
+    >
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-3">
@@ -111,7 +115,8 @@ export function TicketCard({ ticket, onAccept, onReject, onComplete, onStart, on
           
           {showActions && !showTechnicianActions && canAcceptTickets && (
             <>
-              {(ticket.status === 'pending' || ticket.status === 'open') && onAccept && (
+              {/* Organization admin can accept pending/open tickets */}
+              {(userRole === "org_admin" || userRole === "org_subadmin") && (ticket.status === 'pending' || ticket.status === 'open') && onAccept && (
                 <Button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -124,7 +129,35 @@ export function TicketCard({ ticket, onAccept, onReject, onComplete, onStart, on
                   Accept
                 </Button>
               )}
-              {(ticket.status === 'pending' || ticket.status === 'open') && onReject && (
+              {(userRole === "org_admin" || userRole === "org_subadmin") && (ticket.status === 'pending' || ticket.status === 'open') && onReject && (
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onReject(ticket.id);
+                  }}
+                  variant="destructive"
+                  size="sm"
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Reject
+                </Button>
+              )}
+              
+              {/* Vendor admin can accept tickets in accepted status */}
+              {userRole === "maintenance_admin" && ticket.status === 'accepted' && onAccept && (
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAccept(ticket.id);
+                  }}
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                  size="sm"
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Accept & Assign
+                </Button>
+              )}
+              {userRole === "maintenance_admin" && ticket.status === 'accepted' && onReject && (
                 <Button
                   onClick={(e) => {
                     e.stopPropagation();
