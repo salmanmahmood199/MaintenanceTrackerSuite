@@ -776,6 +776,57 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Ticket comment operations
+  async getTicketComments(ticketId: number): Promise<(TicketComment & { user: Pick<User, 'id' | 'firstName' | 'lastName' | 'email'> })[]> {
+    const comments = await db
+      .select({
+        id: ticketComments.id,
+        ticketId: ticketComments.ticketId,
+        userId: ticketComments.userId,
+        content: ticketComments.content,
+        images: ticketComments.images,
+        isSystemGenerated: ticketComments.isSystemGenerated,
+        createdAt: ticketComments.createdAt,
+        updatedAt: ticketComments.updatedAt,
+        user: {
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email,
+        }
+      })
+      .from(ticketComments)
+      .leftJoin(users, eq(ticketComments.userId, users.id))
+      .where(eq(ticketComments.ticketId, ticketId))
+      .orderBy(ticketComments.createdAt);
+
+    return comments;
+  }
+
+  async createTicketComment(comment: InsertTicketComment): Promise<TicketComment> {
+    const [newComment] = await db
+      .insert(ticketComments)
+      .values(comment)
+      .returning();
+    return newComment;
+  }
+
+  async updateTicketComment(id: number, updates: Partial<InsertTicketComment>): Promise<TicketComment | undefined> {
+    const [updatedComment] = await db
+      .update(ticketComments)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(ticketComments.id, id))
+      .returning();
+    return updatedComment;
+  }
+
+  async deleteTicketComment(id: number): Promise<boolean> {
+    const result = await db
+      .delete(ticketComments)
+      .where(eq(ticketComments.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
   async createMissingAdminAccounts(): Promise<void> {
     // Get all organizations without admin accounts
     const orgs = await this.getOrganizations();

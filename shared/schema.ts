@@ -158,6 +158,18 @@ export const userLocationAssignments = pgTable("user_location_assignments", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Ticket comments/notes table
+export const ticketComments = pgTable("ticket_comments", {
+  id: serial("id").primaryKey(),
+  ticketId: integer("ticket_id").references(() => tickets.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  content: text("content").notNull(),
+  images: text("images").array(),
+  isSystemGenerated: boolean("is_system_generated").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   organization: one(organizations, {

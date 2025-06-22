@@ -9,7 +9,6 @@ import { Calendar, User, Hash, Wrench, CheckCircle, XCircle, Eye, ImageIcon, Clo
 import { format } from "date-fns";
 import { formatDate, getPriorityColor, getStatusColor } from "@/lib/utils";
 import { ProgressTracker } from "@/components/progress-tracker";
-import { WorkOrderHistory } from "./work-order-history";
 import { TicketComments } from "./ticket-comments";
 import type { Ticket } from "@shared/schema";
 
@@ -301,30 +300,56 @@ export function TicketTable({
                     </div>
 
                     {selectedTicket.rejectionReason && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-800">
-                    <strong>Rejection Reason:</strong> {selectedTicket.rejectionReason}
-                  </p>
-                </div>
-              )}
-
-              {selectedTicket.images && selectedTicket.images.length > 0 && (
-                <div>
-                  <h4 className="font-medium text-slate-900 mb-3">Attachments ({selectedTicket.images.length})</h4>
-                  <div className="grid grid-cols-4 gap-3">
-                    {selectedTicket.images.map((image, index) => (
-                      <img
-                        key={index}
-                        src={image}
-                        alt={`Attachment ${index + 1}`}
-                        className="w-full h-20 object-cover rounded-lg border border-slate-200 cursor-pointer hover:opacity-80 transition-opacity"
-                        onClick={() => openImageViewer(selectedTicket, index)}
-                      />
-                    ))}
+                      <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <p className="text-sm text-red-800">
+                          <strong>Rejection Reason:</strong> {selectedTicket.rejectionReason}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
-            </div>
+
+                  <div>
+                    <h4 className="text-lg font-semibold mb-2">Description</h4>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <p className="text-slate-700 whitespace-pre-wrap">{selectedTicket.description}</p>
+                    </div>
+                  </div>
+
+                  {selectedTicket.images && selectedTicket.images.length > 0 && (
+                    <div>
+                      <h4 className="text-lg font-semibold mb-3">Images</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {selectedTicket.images.map((image, index) => (
+                          <img
+                            key={index}
+                            src={image}
+                            alt={`Ticket image ${index + 1}`}
+                            className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => openImageViewer(selectedTicket, index)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <ProgressTracker ticketId={selectedTicket.id} />
+                </TabsContent>
+
+                <TabsContent value="comments" className="mt-6">
+                  <TicketComments 
+                    ticket={selectedTicket} 
+                    userRole={userRole}
+                    userId={userId}
+                  />
+                </TabsContent>
+
+                <TabsContent value="work-orders" className="mt-6">
+                  <div className="text-center py-8 text-slate-500">
+                    <p>Work Orders functionality will be available soon.</p>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </ScrollArea>
           )}
         </DialogContent>
       </Dialog>
