@@ -163,12 +163,19 @@ export function CreateInvoiceModal({
                         {wo.parts && (
                           <div className="text-xs text-slate-500">
                             <span className="font-medium">Parts:</span>{" "}
-                            {JSON.parse(wo.parts).map((part: any, i: number) => (
-                              <span key={i}>
-                                {part.name} (${part.cost} x {part.quantity})
-                                {i < JSON.parse(wo.parts).length - 1 ? ", " : ""}
-                              </span>
-                            ))}
+                            {(() => {
+                              try {
+                                const parts = wo.parts && wo.parts !== '[]' && wo.parts !== '' ? JSON.parse(wo.parts) : [];
+                                return parts.map((part: any, i: number) => (
+                                  <span key={i}>
+                                    {part.name} (${part.cost} x {part.quantity})
+                                    {i < parts.length - 1 ? ", " : ""}
+                                  </span>
+                                ));
+                              } catch {
+                                return <span className="text-slate-400">No parts</span>;
+                              }
+                            })()}
                           </div>
                         )}
                       </div>
