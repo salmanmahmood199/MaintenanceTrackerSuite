@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
 import { CreateInvoiceModal } from "@/components/create-invoice-modal";
+import { InvoicesView } from "@/components/invoices-view";
 import type { Ticket, MaintenanceVendor, User, InsertUser, WorkOrder } from "@shared/schema";
 
 interface TicketStats {
@@ -36,6 +37,7 @@ export default function VendorView() {
   const [isCreateInvoiceModalOpen, setIsCreateInvoiceModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [selectedTicketForInvoice, setSelectedTicketForInvoice] = useState<Ticket | null>(null);
+  const [activeTab, setActiveTab] = useState<"tickets" | "invoices">("tickets");
   const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -628,6 +630,12 @@ export default function VendorView() {
             ))
           )}
         </div>
+        </>
+        )}
+
+        {activeTab === "invoices" && (
+          <InvoicesView vendorId={vendorId} />
+        )}
 
         {/* Modals */}
         <CreateTechnicianModal
