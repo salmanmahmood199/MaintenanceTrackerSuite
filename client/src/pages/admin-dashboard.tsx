@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Building2, Wrench, Users, Activity, Edit, Key, Trash2, LogOut } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { EditOrganizationModal } from "@/components/edit-organization-modal";
 import { EditVendorModal } from "@/components/edit-vendor-modal";
 import { apiRequest } from "@/lib/queryClient";
@@ -29,6 +29,7 @@ export default function AdminDashboard() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
+  const [, navigate] = useLocation();
 
   // Organization form
   const orgForm = useForm<InsertOrganization>({
