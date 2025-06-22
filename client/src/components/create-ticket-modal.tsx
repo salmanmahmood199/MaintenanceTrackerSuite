@@ -18,10 +18,22 @@ interface CreateTicketModalProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: InsertTicket, images: File[]) => void;
   isLoading: boolean;
+  userId?: number;
+  organizationId?: number;
 }
 
 export function CreateTicketModal({ open, onOpenChange, onSubmit, isLoading, userId, organizationId }: CreateTicketModalProps) {
   const [images, setImages] = useState<File[]>([]);
+
+  // Fetch user's assigned locations
+  const { data: userLocations = [] } = useQuery<Location[]>({
+    queryKey: ["/api/users", userId, "locations"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/users/${userId}/locations`);
+      return await response.json() as Location[];
+    },
+    enabled: open && !!userId,
+  });
 
   const form = useForm<InsertTicket>({
     resolver: zodResolver(insertTicketSchema),
@@ -101,6 +113,31 @@ export function CreateTicketModal({ open, onOpenChange, onSubmit, isLoading, use
                   <p className="text-sm text-red-600 mt-1">{form.formState.errors.priority.message}</p>
                 )}
               </div>
+
+              {/* Location Selection */}
+              {userLocations.length > 0 && (
+                <div>
+                  <Label htmlFor="locationId" className="text-sm font-medium text-slate-700">
+                    Location
+                  </Label>
+                  <Select onValueChange={(value) => form.setValue("locationId", parseInt(value))}>
+                    <SelectTrigger className="mt-2">
+                      <SelectValue placeholder="Select location for this ticket" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {userLocations.map((location) => (
+                        <SelectItem key={location.id} value={location.id.toString()}>
+                          {location.name}
+                          {location.address && ` - ${location.address}`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {form.formState.errors.locationId && (
+                    <p className="text-sm text-red-600 mt-1">{form.formState.errors.locationId.message}</p>
+                  )}
+                </div>
+              )}
               
               <div>
                 <Label className="text-sm font-medium text-slate-700">Upload Images</Label>
