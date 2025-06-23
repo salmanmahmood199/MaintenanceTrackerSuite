@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, XCircle, Wrench, User } from "lucide-react";
+import { CheckCircle, XCircle, Wrench, User, DollarSign } from "lucide-react";
 import type { Ticket, MaintenanceVendor } from "@shared/schema";
 
 interface TicketActionModalProps {
@@ -13,7 +13,7 @@ interface TicketActionModalProps {
   ticket: Ticket | null;
   action: "accept" | "reject" | null;
   vendors: Array<{ vendor: MaintenanceVendor; tier: string; isActive: boolean }>;
-  onAccept: (ticketId: number, data: { maintenanceVendorId?: number; assigneeId?: number }) => void;
+  onAccept: (ticketId: number, data: { maintenanceVendorId?: number; assigneeId?: number; marketplace?: boolean }) => void;
   onReject: (ticketId: number, rejectionReason: string) => void;
   isLoading: boolean;
   userRole?: string;
@@ -39,9 +39,13 @@ export function TicketActionModal({
     if (!ticket) return;
 
     if (action === "accept") {
-      onAccept(ticket.id, {
-        maintenanceVendorId: selectedVendorId && selectedVendorId !== "none" ? parseInt(selectedVendorId) : undefined,
-      });
+      if (selectedVendorId === "marketplace") {
+        onAccept(ticket.id, { marketplace: true });
+      } else {
+        onAccept(ticket.id, {
+          maintenanceVendorId: selectedVendorId && selectedVendorId !== "none" ? parseInt(selectedVendorId) : undefined,
+        });
+      }
     } else if (action === "reject") {
       if (!rejectionReason.trim()) return;
       onReject(ticket.id, rejectionReason);
@@ -123,6 +127,14 @@ export function TicketActionModal({
                           </div>
                         </SelectItem>
                       ))}
+                      {userPermissions?.includes("marketplace") && (
+                        <SelectItem value="marketplace">
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="h-4 w-4" />
+                            <span>Marketplace (Open Bidding)</span>
+                          </div>
+                        </SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                   {availableVendors.length === 0 && (

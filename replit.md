@@ -250,6 +250,13 @@ Changelog:
 - June 22, 2025. Added comments tab to ticket detail view with activity logging
 - June 22, 2025. All users with ticket access can now comment, edit own comments, and attach images
 - June 22, 2025. System-generated comments support for automatic activity tracking
+- June 23, 2025. Implemented marketplace functionality for open ticket bidding
+- June 23, 2025. Added marketplace tier to vendor assignment options
+- June 23, 2025. Created marketplace bidding system similar to Uber model
+- June 23, 2025. Organizations can assign tickets to marketplace for vendor bidding
+- June 23, 2025. Vendors can browse marketplace tickets and submit bids
+- June 23, 2025. Added marketplace tab to vendor dashboard with bid placement interface
+- June 23, 2025. Organization admins can accept/reject marketplace bids
 ```
 
 ## User Preferences
