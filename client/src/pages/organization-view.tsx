@@ -650,7 +650,7 @@ export default function OrganizationView() {
                 onConfirm={handleConfirmCompletion}
                 showActions={true}
                 userRole={user?.role}
-                userPermissions={user?.permissions || undefined}
+                userPermissions={user?.vendorTiers || undefined}
                 userId={user?.id}
               />
             )}

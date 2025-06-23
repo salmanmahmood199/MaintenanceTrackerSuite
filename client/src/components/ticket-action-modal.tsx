@@ -147,6 +147,15 @@ export function TicketActionModal({
                     </p>
                   )}
                 </div>
+                
+                {selectedVendorId === "marketplace" && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-sm text-blue-800">
+                      <strong>Marketplace Assignment:</strong> This ticket will be visible to all vendors with marketplace access. 
+                      They can submit bids, and you can choose the best offer.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
