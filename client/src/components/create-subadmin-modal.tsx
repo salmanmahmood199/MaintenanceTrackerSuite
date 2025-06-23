@@ -96,7 +96,7 @@ export function CreateSubAdminModal({ open, onOpenChange, onSubmit, isLoading }:
     form.setValue("vendorTiers", newTiers);
   };
 
-  const handleSubmit = (data: SubAdminFormData) => {
+  const handleFormSubmit = (data: SubAdminFormData) => {
     const { confirmPassword, ...submitData } = data;
     onSubmit(submitData);
   };
@@ -111,7 +111,7 @@ export function CreateSubAdminModal({ open, onOpenChange, onSubmit, isLoading }:
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}

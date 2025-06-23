@@ -210,20 +210,39 @@ export function EditVendorModal({
               {organizations.length === 0 ? (
                 <p className="text-sm text-slate-500">No organizations available</p>
               ) : (
-                organizations.map((org) => (
-                  <div key={org.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`org-${org.id}`}
-                      checked={selectedOrganizations.includes(org.id)}
-                      onCheckedChange={(checked) => 
-                        handleOrganizationToggle(org.id, checked as boolean)
-                      }
-                    />
-                    <Label htmlFor={`org-${org.id}`} className="text-sm">
-                      {org.name}
-                    </Label>
+                <>
+                  {organizations.map((org) => (
+                    <div key={org.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`org-${org.id}`}
+                        checked={selectedOrganizations.includes(org.id)}
+                        onCheckedChange={(checked) => 
+                          handleOrganizationToggle(org.id, checked as boolean)
+                        }
+                      />
+                      <Label htmlFor={`org-${org.id}`} className="text-sm">
+                        {org.name}
+                      </Label>
+                    </div>
+                  ))}
+                  
+                  {/* Marketplace Option */}
+                  <div className="border-t pt-2 mt-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="marketplace-access"
+                        checked={selectedOrganizations.includes(-1)}
+                        onCheckedChange={(checked) => 
+                          handleOrganizationToggle(-1, checked as boolean)
+                        }
+                      />
+                      <Label htmlFor="marketplace-access" className="text-sm font-medium">
+                        Marketplace Access
+                        <span className="text-xs text-slate-500 ml-1">(open bidding system)</span>
+                      </Label>
+                    </div>
                   </div>
-                ))
+                </>
               )}
             </div>
           </div>

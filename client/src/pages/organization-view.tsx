@@ -349,9 +349,36 @@ export default function OrganizationView() {
     }
   };
 
-  const handleTicketAccept = (ticketId: number, data: { maintenanceVendorId?: number; assigneeId?: number }) => {
-    acceptTicketMutation.mutate({ ticketId, data });
+  const handleTicketAccept = (ticketId: number, data: { maintenanceVendorId?: number; assigneeId?: number; marketplace?: boolean }) => {
+    if (data.marketplace) {
+      // Assign to marketplace instead of a specific vendor
+      assignToMarketplaceMutation.mutate(ticketId);
+    } else {
+      acceptTicketMutation.mutate({ ticketId, ...data });
+    }
   };
+
+  // Assign to marketplace mutation
+  const assignToMarketplaceMutation = useMutation({
+    mutationFn: async (ticketId: number) => {
+      return apiRequest("POST", `/api/tickets/${ticketId}/assign-marketplace`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+      setIsTicketActionOpen(false);
+      toast({
+        title: "Success",
+        description: "Ticket assigned to marketplace for bidding",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to assign ticket to marketplace",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleTicketReject = (ticketId: number, rejectionReason: string) => {
     rejectTicketMutation.mutate({ ticketId, rejectionReason });
