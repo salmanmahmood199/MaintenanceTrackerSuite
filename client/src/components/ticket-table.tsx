@@ -185,7 +185,8 @@ export function TicketTable({
                           <Eye className="h-4 w-4 mr-1" />
                           View
                         </Button>
-                        {showActions && ticket.status === "pending" && onAccept && onReject && (
+                        {/* Organization level: Accept/Reject for pending tickets */}
+                        {showActions && ticket.status === "pending" && onAccept && onReject && (userRole === "org_admin" || userRole === "org_subadmin") && (
                           <>
                             <Button
                               onClick={() => onAccept?.(ticket.id)}
@@ -206,14 +207,39 @@ export function TicketTable({
                             </Button>
                           </>
                         )}
-                        {showActions && userRole === "maintenance_admin" && ticket.status === "accepted" && onAccept && (
+                        
+                        {/* Vendor level: Accept/Reject for accepted tickets (assigned to vendor but not yet accepted by vendor) */}
+                        {showActions && userRole === "maintenance_admin" && ticket.status === "accepted" && !ticket.assigneeId && onAccept && onReject && (
+                          <>
+                            <Button
+                              onClick={() => onAccept?.(ticket.id)}
+                              className="bg-green-600 text-white hover:bg-green-700"
+                              size="sm"
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Accept
+                            </Button>
+                            <Button
+                              onClick={() => onReject?.(ticket.id)}
+                              variant="outline"
+                              className="border-red-300 text-red-600 hover:bg-red-50"
+                              size="sm"
+                            >
+                              <XCircle className="h-4 w-4 mr-1" />
+                              Reject
+                            </Button>
+                          </>
+                        )}
+                        
+                        {/* Vendor level: Assign technician for accepted tickets without assignee */}
+                        {showActions && userRole === "maintenance_admin" && ticket.status === "accepted" && ticket.assigneeId && onAccept && (
                           <Button
                             onClick={() => onAccept?.(ticket.id)}
                             className="bg-blue-600 text-white hover:bg-blue-700"
                             size="sm"
                           >
                             <User className="h-4 w-4 mr-1" />
-                            Assign Technician
+                            Reassign Technician
                           </Button>
                         )}
                         {ticket.status === "pending_confirmation" && onConfirm && (
