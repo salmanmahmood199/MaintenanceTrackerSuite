@@ -468,6 +468,12 @@ export type InsertTicketComment = typeof ticketComments.$inferInsert;
 export type MarketplaceBid = typeof marketplaceBids.$inferSelect;
 export type InsertMarketplaceBid = typeof marketplaceBids.$inferInsert;
 
+export const insertMarketplaceBidSchema = createInsertSchema(marketplaceBids).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertTicketCommentSchema = createInsertSchema(ticketComments).omit({
   id: true,
   createdAt: true,

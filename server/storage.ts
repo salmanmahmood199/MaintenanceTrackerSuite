@@ -10,6 +10,7 @@ import {
   userLocationAssignments,
   invoices,
   ticketComments,
+  marketplaceBids,
   type User, 
   type InsertUser, 
   type InsertSubAdmin,
@@ -29,6 +30,8 @@ import {
   type InsertInvoice,
   type TicketComment,
   type InsertTicketComment,
+  type MarketplaceBid,
+  type InsertMarketplaceBid,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, inArray, desc, or, isNull } from "drizzle-orm";
@@ -126,6 +129,14 @@ export interface IStorage {
   createTicketComment(comment: InsertTicketComment): Promise<TicketComment>;
   updateTicketComment(id: number, updates: Partial<InsertTicketComment>): Promise<TicketComment | undefined>;
   deleteTicketComment(id: number): Promise<boolean>;
+  
+  // Marketplace bid operations
+  getMarketplaceTickets(): Promise<Ticket[]>;
+  getTicketBids(ticketId: number): Promise<(MarketplaceBid & { vendor: Pick<MaintenanceVendor, 'id' | 'name' | 'email'> })[]>;
+  createMarketplaceBid(bid: InsertMarketplaceBid): Promise<MarketplaceBid>;
+  acceptMarketplaceBid(bidId: number): Promise<{ bid: MarketplaceBid; ticket: Ticket }>;
+  rejectMarketplaceBid(bidId: number): Promise<MarketplaceBid>;
+  assignTicketToMarketplace(ticketId: number): Promise<Ticket | undefined>;
   
   // Initialize root user
   initializeRootUser(): Promise<void>;

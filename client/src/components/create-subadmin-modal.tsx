@@ -279,6 +279,18 @@ export function CreateSubAdminModal({ open, onOpenChange, onSubmit, isLoading }:
                         )}
                       </Label>
                     </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="marketplace"
+                        checked={currentVendorTiers.includes("marketplace")}
+                        onCheckedChange={(checked) => handleTierChange("marketplace", checked as boolean)}
+                      />
+                      <Label htmlFor="marketplace" className="text-sm">
+                        Marketplace 
+                        <span className="text-xs text-gray-500 ml-1">(open bidding)</span>
+                      </Label>
+                    </div>
                   </div>
                 </div>
               )}
