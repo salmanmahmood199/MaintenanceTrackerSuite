@@ -44,6 +44,11 @@ export function CreateSubAdminModal({ open, onOpenChange, onSubmit, isLoading }:
     },
   });
 
+  const handleFormSubmit = (data: SubAdminFormData) => {
+    const { confirmPassword, ...submitData } = data;
+    onSubmit(submitData);
+  };
+
   const watchedPermissions = form.watch("permissions");
 
   // Auto-manage vendor tiers based on accept_ticket permission
