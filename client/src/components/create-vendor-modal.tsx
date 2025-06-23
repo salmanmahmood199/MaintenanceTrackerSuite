@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { X, Plus, Wrench } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { X, Wrench } from "lucide-react";
 
 interface CreateVendorModalProps {
   open: boolean;
@@ -28,16 +29,16 @@ export function CreateVendorModal({
     email: "",
     specialties: [] as string[],
   });
-  const [newSpecialty, setNewSpecialty] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const addSpecialty = () => {
-    if (newSpecialty.trim() && !formData.specialties.includes(newSpecialty.trim())) {
+  const availableSpecialties = ["HVAC", "Electrical", "Plumbing", "Other"];
+
+  const addSpecialty = (specialty: string) => {
+    if (!formData.specialties.includes(specialty)) {
       setFormData({
         ...formData,
-        specialties: [...formData.specialties, newSpecialty.trim()]
+        specialties: [...formData.specialties, specialty]
       });
-      setNewSpecialty("");
     }
   };
 
@@ -143,22 +144,20 @@ export function CreateVendorModal({
 
           <div>
             <Label>Specialties</Label>
-            <div className="flex space-x-2 mt-1">
-              <Input
-                value={newSpecialty}
-                onChange={(e) => setNewSpecialty(e.target.value)}
-                placeholder="Add specialty..."
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSpecialty())}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addSpecialty}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
+            <Select onValueChange={addSpecialty}>
+              <SelectTrigger className="w-full mt-1">
+                <SelectValue placeholder="Select specialties to add..." />
+              </SelectTrigger>
+              <SelectContent>
+                {availableSpecialties
+                  .filter(specialty => !formData.specialties.includes(specialty))
+                  .map((specialty) => (
+                    <SelectItem key={specialty} value={specialty}>
+                      {specialty}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
             <div className="flex flex-wrap gap-2 mt-2">
               {formData.specialties.map((specialty) => (
                 <Badge key={specialty} variant="secondary" className="flex items-center gap-1">

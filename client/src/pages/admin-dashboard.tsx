@@ -7,9 +7,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Building2, Wrench, Users, Activity, Edit, Key, Trash2, LogOut } from "lucide-react";
+import { Plus, Building2, Wrench, Users, Activity, Edit, Key, Trash2, LogOut, X } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { EditOrganizationModal } from "@/components/edit-organization-modal";
 import { EditVendorModal } from "@/components/edit-vendor-modal";
@@ -26,10 +27,13 @@ export default function AdminDashboard() {
   const [isEditVendorModalOpen, setIsEditVendorModalOpen] = useState(false);
   const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
   const [selectedVendor, setSelectedVendor] = useState<MaintenanceVendor | null>(null);
+  const [vendorSpecialties, setVendorSpecialties] = useState<string[]>([]);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
   const [, navigate] = useLocation();
+
+  const availableSpecialties = ["HVAC", "Electrical", "Plumbing", "Other"];
 
   // Organization form
   const orgForm = useForm<InsertOrganization>({
@@ -195,17 +199,20 @@ export default function AdminDashboard() {
   });
 
   const handleCreateVendor = (data: InsertMaintenanceVendor) => {
-    // Parse specialties from comma-separated string
-    const formData = vendorForm.getValues();
-    const specialtiesString = formData.specialties as unknown as string;
-    const specialtiesArray = specialtiesString 
-      ? specialtiesString.split(',').map(s => s.trim()).filter(s => s.length > 0)
-      : [];
-    
     createVendorMutation.mutate({
       ...data,
-      specialties: specialtiesArray,
+      specialties: vendorSpecialties,
     });
+  };
+
+  const addVendorSpecialty = (specialty: string) => {
+    if (!vendorSpecialties.includes(specialty)) {
+      setVendorSpecialties([...vendorSpecialties, specialty]);
+    }
+  };
+
+  const removeVendorSpecialty = (specialty: string) => {
+    setVendorSpecialties(vendorSpecialties.filter(s => s !== specialty));
   };
 
   const handleEditOrganization = (id: number, data: UpdateOrganization) => {
@@ -525,23 +532,34 @@ export default function AdminDashboard() {
                         </FormItem>
                       )}
                     />
-                    <FormField
-                      control={vendorForm.control}
-                      name="specialties"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Specialties</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="HVAC, Plumbing, Electrical (comma-separated)" 
-                              {...field}
-                              value={field.value as string || ""}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Specialties</label>
+                      <Select onValueChange={addVendorSpecialty}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select specialties to add..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableSpecialties
+                            .filter(specialty => !vendorSpecialties.includes(specialty))
+                            .map((specialty) => (
+                              <SelectItem key={specialty} value={specialty}>
+                                {specialty}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                      <div className="flex flex-wrap gap-2">
+                        {vendorSpecialties.map((specialty) => (
+                          <Badge key={specialty} variant="secondary" className="flex items-center gap-1">
+                            {specialty}
+                            <X 
+                              className="h-3 w-3 cursor-pointer" 
+                              onClick={() => removeVendorSpecialty(specialty)}
                             />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
                     <FormField
                       control={vendorForm.control}
                       name="email"
