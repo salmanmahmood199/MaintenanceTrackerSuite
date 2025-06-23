@@ -340,6 +340,13 @@ export default function RootDashboard() {
                           {org.address || "No address"}
                         </Badge>
                       </div>
+                      <div className="text-xs text-slate-500 space-y-1">
+                        {org.email && <p>Contact: {org.email}</p>}
+                        {org.phone && <p>Phone: {org.phone}</p>}
+                        <p className="font-medium text-slate-600">
+                          Admin: admin@{org.name.toLowerCase().replace(/\s+/g, '')}.org
+                        </p>
+                      </div>
                       <Button 
                         variant="outline" 
                         size="sm" 
@@ -403,6 +410,13 @@ export default function RootDashboard() {
                             {specialty}
                           </Badge>
                         ))}
+                      </div>
+                      <div className="text-xs text-slate-500 space-y-1">
+                        {vendor.email && <p>Contact: {vendor.email}</p>}
+                        {vendor.phone && <p>Phone: {vendor.phone}</p>}
+                        <p className="font-medium text-slate-600">
+                          Admin: admin@{vendor.name.toLowerCase().replace(/\s+/g, '')}.vendor
+                        </p>
                       </div>
                       <Button 
                         variant="outline" 
