@@ -4,7 +4,7 @@ import { useRoute } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, LogOut, FileText } from "lucide-react";
-import { TicketCard } from "@/components/ticket-card";
+import { TicketTable } from "@/components/ticket-table";
 import { CreateInvoiceModal } from "@/components/create-invoice-modal";
 import { InvoicesView } from "@/components/invoices-view";
 import { VendorTicketActionModal } from "@/components/vendor-ticket-action-modal";
@@ -322,34 +322,24 @@ export function VendorView() {
               </div>
             </Card>
 
-            {/* Tickets List */}
-            <div className="space-y-4">
+            {/* Tickets Table */}
+            <div className="bg-white rounded-lg shadow">
               {ticketsLoading ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
                   <p className="text-slate-600 mt-2">Loading tickets...</p>
                 </div>
-              ) : tickets.length === 0 ? (
-                <Card className="p-8 text-center">
-                  <FileText className="h-12 w-12 mx-auto mb-4 text-slate-400" />
-                  <p className="text-slate-600">No tickets {statusFilter === "all" ? "assigned to this vendor" : `with status "${statusFilter}"`} yet.</p>
-                </Card>
               ) : (
-                tickets.map((ticket) => (
-                  <TicketCard
-                    key={ticket.id}
-                    ticket={ticket}
-                    onClick={(ticket) => {
-                      setSelectedTicket(ticket);
-                      setIsTicketDetailsModalOpen(true);
-                    }}
-                    onAccept={user?.role === "maintenance_admin" ? openAcceptModal : undefined}
-                    onReject={user?.role === "maintenance_admin" ? openRejectModal : undefined}
-                    onCreateInvoice={handleCreateInvoice}
-                    userRole={user?.role}
-                    showActions={user?.role === "maintenance_admin"}
-                  />
-                ))
+                <TicketTable
+                  tickets={tickets}
+                  onAccept={user?.role === "maintenance_admin" ? openAcceptModal : undefined}
+                  onReject={user?.role === "maintenance_admin" ? openRejectModal : undefined}
+                  onCreateInvoice={handleCreateInvoice}
+                  showActions={true}
+                  userRole={user?.role}
+                  userPermissions={user?.permissions || []}
+                  userId={user?.id}
+                />
               )}
             </div>
           </div>
