@@ -37,6 +37,12 @@ export function TicketActionModal({
   const [selectedVendorId, setSelectedVendorId] = useState<string>("");
   const [rejectionReason, setRejectionReason] = useState("");
 
+  // Debug logging
+  console.log("TicketActionModal - User role:", userRole);
+  console.log("TicketActionModal - User permissions:", userPermissions);
+  console.log("TicketActionModal - User vendor tiers:", userVendorTiers);
+  console.log("TicketActionModal - Available vendors:", vendors);
+
   const handleSubmit = () => {
     if (!ticket) return;
 
