@@ -300,7 +300,11 @@ export function CreateSubAdminModal({ open, onOpenChange, onSubmit, isLoading }:
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isLoading}>
+              <Button 
+                type="button" 
+                disabled={isLoading}
+                onClick={() => form.handleSubmit(handleFormSubmit)()}
+              >
                 {isLoading ? "Creating..." : "Create Sub-Admin"}
               </Button>
             </div>
