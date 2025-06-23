@@ -96,12 +96,12 @@ export function EditVendorModal({
   const handleSubmit = (data: VendorFormData) => {
     if (!vendor) return;
     
-    const submitData = {
-      ...data,
-      assignedOrganizations: selectedOrganizations,
-    };
+    // Filter out empty strings and prepare clean data
+    const cleanData = Object.fromEntries(
+      Object.entries(data).filter(([_, value]) => value !== "" && value !== undefined)
+    );
     
-    onSubmit(vendor.id, submitData);
+    onSubmit(vendor.id, cleanData);
   };
 
   const handleResetPassword = () => {

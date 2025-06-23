@@ -265,22 +265,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updates = req.body;
       const { assignedOrganizations, ...vendorUpdates } = updates;
       
-      const vendor = await storage.updateMaintenanceVendor(id, vendorUpdates);
+      // Filter out undefined/null values and validate data
+      const cleanUpdates = Object.fromEntries(
+        Object.entries(vendorUpdates).filter(([_, value]) => value !== undefined && value !== null)
+      );
+      
+      const vendor = await storage.updateMaintenanceVendor(id, cleanUpdates);
       if (!vendor) {
         return res.status(404).json({ message: 'Vendor not found' });
       }
       
-      // Update organization assignments if specified
-      if (assignedOrganizations !== undefined) {
-        // Remove existing assignments and add new ones
-        // Note: This is a simplified approach - in production you might want more granular control
-        for (const orgId of assignedOrganizations) {
-          await storage.assignVendorToOrganization(id, orgId, "tier_1");
-        }
-      }
-      
       res.json(vendor);
     } catch (error) {
+      console.error('Vendor update error:', error);
       res.status(500).json({ message: 'Failed to update vendor' });
     }
   });
