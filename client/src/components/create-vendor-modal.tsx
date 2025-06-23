@@ -171,6 +171,19 @@ export function CreateVendorModal({
             </div>
           </div>
 
+          <div>
+            <Label>Assign to Organizations</Label>
+            <div className="space-y-2 mt-2 max-h-32 overflow-y-auto border rounded p-3">
+              <div className="flex items-center space-x-2">
+                <input type="checkbox" id="marketplace-access" />
+                <Label htmlFor="marketplace-access" className="text-sm font-medium">
+                  Marketplace Access
+                  <span className="text-xs text-slate-500 ml-1">(open bidding system)</span>
+                </Label>
+              </div>
+            </div>
+          </div>
+
           <div className="flex justify-end space-x-2 pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel

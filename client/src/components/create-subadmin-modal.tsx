@@ -44,11 +44,6 @@ export function CreateSubAdminModal({ open, onOpenChange, onSubmit, isLoading }:
     },
   });
 
-  const handleFormSubmit = (data: SubAdminFormData) => {
-    const { confirmPassword, ...submitData } = data;
-    onSubmit(submitData);
-  };
-
   const watchedPermissions = form.watch("permissions");
 
   // Auto-manage vendor tiers based on accept_ticket permission
@@ -96,12 +91,12 @@ export function CreateSubAdminModal({ open, onOpenChange, onSubmit, isLoading }:
     form.setValue("vendorTiers", newTiers);
   };
 
+  const currentVendorTiers = form.watch("vendorTiers") || [];
+
   const handleFormSubmit = (data: SubAdminFormData) => {
     const { confirmPassword, ...submitData } = data;
     onSubmit(submitData);
   };
-
-  const currentVendorTiers = form.watch("vendorTiers") || [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

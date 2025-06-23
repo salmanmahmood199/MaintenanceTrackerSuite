@@ -356,6 +356,10 @@ export function VendorView() {
           </div>
         )}
 
+        {activeTab === "marketplace" && (
+          <MarketplaceTicketsView />
+        )}
+
         {activeTab === "invoices" && (
           <InvoicesView vendorId={vendorId} />
         )}

@@ -248,6 +248,17 @@ export function EditVendorModal({
           </div>
 
           <div className="border-t pt-4">
+            <div className="mb-4">
+              <Label className="text-sm font-medium">Marketplace Access</Label>
+              <div className="flex items-center space-x-2 mt-2">
+                <input type="checkbox" id="marketplace-access-edit" />
+                <Label htmlFor="marketplace-access-edit" className="text-sm">
+                  Enable marketplace bidding for this vendor
+                  <span className="text-xs text-slate-500 ml-1">(open bidding system)</span>
+                </Label>
+              </div>
+            </div>
+
             <Label>Reset Admin Password</Label>
             <div className="flex space-x-2 mt-2">
               <Input
