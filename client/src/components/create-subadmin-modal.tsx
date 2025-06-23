@@ -94,7 +94,9 @@ export function CreateSubAdminModal({ open, onOpenChange, onSubmit, isLoading }:
   const currentVendorTiers = form.watch("vendorTiers") || [];
 
   const handleFormSubmit = (data: SubAdminFormData) => {
+    console.log("Form submit called with data:", data);
     const { confirmPassword, ...submitData } = data;
+    console.log("Submitting data:", submitData);
     onSubmit(submitData);
   };
 
@@ -303,7 +305,11 @@ export function CreateSubAdminModal({ open, onOpenChange, onSubmit, isLoading }:
               <Button 
                 type="button" 
                 disabled={isLoading}
-                onClick={() => form.handleSubmit(handleFormSubmit)()}
+                onClick={() => {
+                  console.log("Button clicked");
+                  console.log("Form errors:", form.formState.errors);
+                  form.handleSubmit(handleFormSubmit)();
+                }}
               >
                 {isLoading ? "Creating..." : "Create Sub-Admin"}
               </Button>

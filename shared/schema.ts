@@ -324,7 +324,7 @@ export const insertSubAdminSchema = createInsertSchema(users).omit({
   role: true,
 }).extend({
   permissions: z.array(z.enum(["place_ticket", "accept_ticket"])).min(1),
-  vendorTiers: z.array(z.enum(["tier_1", "tier_2", "tier_3"])).optional(),
+  vendorTiers: z.array(z.enum(["tier_1", "tier_2", "tier_3", "marketplace"])).optional(),
   email: z.string().email("Please enter a valid email address"),
   phone: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits").optional(),
 });
