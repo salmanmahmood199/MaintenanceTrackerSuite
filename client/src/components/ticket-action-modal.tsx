@@ -80,7 +80,11 @@ export function TicketActionModal({
     // Sub-admins with accept_ticket permission can see vendors based on their tier permissions
     if (userRole === "org_subadmin" && userPermissions?.includes("accept_ticket")) {
       // Check if user has access to this vendor tier
-      return userVendorTiers?.includes(v.tier);
+      // If userVendorTiers is null/undefined, allow all basic tiers for backwards compatibility
+      if (!userVendorTiers || userVendorTiers.length === 0) {
+        return ["tier_1", "tier_2", "tier_3"].includes(v.tier);
+      }
+      return userVendorTiers.includes(v.tier);
     }
     
     // Maintenance admins can see all vendors assigned to their organization
