@@ -15,7 +15,7 @@ export const users = pgTable("users", {
   organizationId: integer("organization_id"),
   maintenanceVendorId: integer("maintenance_vendor_id"),
   permissions: text("permissions").array(), // ["place_ticket", "accept_ticket"]
-  vendorTiers: text("vendor_tiers").array(), // ["tier_1", "tier_2", "tier_3"] - what tiers they can assign
+  vendorTiers: text("vendor_tiers").array(), // ["tier_1", "tier_2", "tier_3", "marketplace"] - what tiers they can assign
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -53,7 +53,7 @@ export const vendorOrganizationTiers = pgTable("vendor_organization_tiers", {
   id: serial("id").primaryKey(),
   vendorId: integer("vendor_id").references(() => maintenanceVendors.id).notNull(),
   organizationId: integer("organization_id").references(() => organizations.id).notNull(),
-  tier: text("tier").notNull().default("tier_1"), // "tier_1", "tier_2", "tier_3"
+  tier: text("tier").notNull().default("tier_1"), // "tier_1", "tier_2", "tier_3", "marketplace"
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -65,7 +65,7 @@ export const tickets = pgTable("tickets", {
   title: text("title").notNull(),
   description: text("description").notNull(),
   priority: text("priority").notNull(),
-  status: text("status").notNull().default("pending"), // pending, accepted, rejected, in-progress, completed, pending_confirmation, confirmed
+  status: text("status").notNull().default("pending"), // pending, accepted, rejected, in-progress, completed, pending_confirmation, confirmed, marketplace
   organizationId: integer("organization_id").notNull(),
   reporterId: integer("reporter_id").notNull(),
   assigneeId: integer("assignee_id"),
@@ -170,6 +170,20 @@ export const ticketComments = pgTable("ticket_comments", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Marketplace bids table
+export const marketplaceBids = pgTable("marketplace_bids", {
+  id: serial("id").primaryKey(),
+  ticketId: integer("ticket_id").references(() => tickets.id).notNull(),
+  vendorId: integer("vendor_id").references(() => maintenanceVendors.id).notNull(),
+  bidAmount: decimal("bid_amount", { precision: 10, scale: 2 }).notNull(),
+  proposedStartDate: timestamp("proposed_start_date"),
+  estimatedDuration: integer("estimated_duration"), // in hours
+  description: text("description"),
+  status: text("status").notNull().default("pending"), // pending, accepted, rejected, withdrawn
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   organization: one(organizations, {
@@ -214,6 +228,7 @@ export const maintenanceVendorsRelations = relations(maintenanceVendors, ({ many
   technicians: many(users),
   tickets: many(tickets),
   vendorOrganizationTiers: many(vendorOrganizationTiers),
+  marketplaceBids: many(marketplaceBids),
 }));
 
 export const vendorOrganizationTiersRelations = relations(vendorOrganizationTiers, ({ one }) => ({
@@ -251,6 +266,18 @@ export const ticketsRelations = relations(tickets, ({ one, many }) => ({
     references: [locations.id],
   }),
   workOrders: many(workOrders),
+  marketplaceBids: many(marketplaceBids),
+}));
+
+export const marketplaceBidsRelations = relations(marketplaceBids, ({ one }) => ({
+  ticket: one(tickets, {
+    fields: [marketplaceBids.ticketId],
+    references: [tickets.id],
+  }),
+  vendor: one(maintenanceVendors, {
+    fields: [marketplaceBids.vendorId],
+    references: [maintenanceVendors.id],
+  }),
 }));
 
 export const workOrdersRelations = relations(workOrders, ({ one }) => ({
@@ -437,6 +464,9 @@ export type LoginData = z.infer<typeof loginSchema>;
 // Ticket comment types
 export type TicketComment = typeof ticketComments.$inferSelect;
 export type InsertTicketComment = typeof ticketComments.$inferInsert;
+
+export type MarketplaceBid = typeof marketplaceBids.$inferSelect;
+export type InsertMarketplaceBid = typeof marketplaceBids.$inferInsert;
 
 export const insertTicketCommentSchema = createInsertSchema(ticketComments).omit({
   id: true,
