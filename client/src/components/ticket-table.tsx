@@ -185,7 +185,7 @@ export function TicketTable({
                           <Eye className="h-4 w-4 mr-1" />
                           View
                         </Button>
-                        {showActions && canAcceptTickets && ticket.status === "pending" && (
+                        {showActions && ticket.status === "pending" && onAccept && onReject && (
                           <>
                             <Button
                               onClick={() => onAccept?.(ticket.id)}
@@ -205,6 +205,16 @@ export function TicketTable({
                               Reject
                             </Button>
                           </>
+                        )}
+                        {showActions && userRole === "maintenance_admin" && ticket.status === "accepted" && onAccept && (
+                          <Button
+                            onClick={() => onAccept?.(ticket.id)}
+                            className="bg-blue-600 text-white hover:bg-blue-700"
+                            size="sm"
+                          >
+                            <User className="h-4 w-4 mr-1" />
+                            Assign Technician
+                          </Button>
                         )}
                         {ticket.status === "pending_confirmation" && onConfirm && (
                           <Button
