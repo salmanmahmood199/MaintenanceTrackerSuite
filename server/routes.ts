@@ -750,14 +750,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { maintenanceVendorId, assigneeId } = req.body;
+      const { maintenanceVendorId, assigneeId, marketplace } = req.body;
       
-      const ticket = await storage.acceptTicket(id, { maintenanceVendorId, assigneeId });
-      if (!ticket) {
-        return res.status(404).json({ message: "Ticket not found" });
+      if (marketplace) {
+        // Assign ticket to marketplace for bidding
+        const ticket = await storage.assignTicketToMarketplace(id);
+        if (!ticket) {
+          return res.status(404).json({ message: "Ticket not found" });
+        }
+        res.json(ticket);
+      } else {
+        // Normal vendor assignment
+        const ticket = await storage.acceptTicket(id, { maintenanceVendorId, assigneeId });
+        if (!ticket) {
+          return res.status(404).json({ message: "Ticket not found" });
+        }
+        res.json(ticket);
       }
-      res.json(ticket);
     } catch (error) {
+      console.error('Accept ticket error:', error);
       res.status(500).json({ message: "Failed to accept ticket" });
     }
   });

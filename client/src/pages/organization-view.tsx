@@ -650,7 +650,7 @@ export default function OrganizationView() {
                 onConfirm={handleConfirmCompletion}
                 showActions={true}
                 userRole={user?.role}
-                userPermissions={user?.vendorTiers || undefined}
+                userPermissions={user?.permissions || undefined}
                 userId={user?.id}
               />
             )}
@@ -787,6 +787,7 @@ export default function OrganizationView() {
         isLoading={acceptTicketMutation.isPending || rejectTicketMutation.isPending}
         userRole={user?.role}
         userPermissions={user?.permissions || undefined}
+        userVendorTiers={user?.vendorTiers || undefined}
       />
 
       <ConfirmCompletionModal

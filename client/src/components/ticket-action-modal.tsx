@@ -18,6 +18,7 @@ interface TicketActionModalProps {
   isLoading: boolean;
   userRole?: string;
   userPermissions?: string[];
+  userVendorTiers?: string[];
 }
 
 export function TicketActionModal({
@@ -30,7 +31,8 @@ export function TicketActionModal({
   onReject,
   isLoading,
   userRole,
-  userPermissions
+  userPermissions,
+  userVendorTiers
 }: TicketActionModalProps) {
   const [selectedVendorId, setSelectedVendorId] = useState<string>("");
   const [rejectionReason, setRejectionReason] = useState("");
@@ -72,7 +74,7 @@ export function TicketActionModal({
     // Sub-admins with accept_ticket permission can see vendors based on their tier permissions
     if (userRole === "org_subadmin" && userPermissions?.includes("accept_ticket")) {
       // Check if user has access to this vendor tier
-      return userPermissions?.some(tier => v.tier === tier);
+      return userVendorTiers?.includes(v.tier);
     }
     
     // Maintenance admins can see all vendors assigned to their organization
@@ -83,7 +85,7 @@ export function TicketActionModal({
 
   // Check if user has marketplace access
   const hasMarketplaceAccess = userRole === "root" || userRole === "org_admin" || 
-    (userRole === "org_subadmin" && userPermissions?.includes("marketplace"));
+    (userRole === "org_subadmin" && userVendorTiers?.includes("marketplace"));
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
