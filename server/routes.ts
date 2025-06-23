@@ -14,6 +14,7 @@ import {
   insertInvoiceSchema,
   insertLocationSchema,
   insertTicketCommentSchema,
+  insertMarketplaceBidSchema,
   type Ticket,
   type User,
   type AuthenticatedRequest,
@@ -865,6 +866,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error completing ticket:", error);
       res.status(500).json({ message: "Failed to complete ticket" });
+    }
+  });
+
+  // Assign ticket to marketplace
+  app.post("/api/tickets/:id/assign-marketplace", authenticateUser, requireRole(["org_admin", "org_subadmin"]), async (req: AuthenticatedRequest, res) => {
+    try {
+      const ticketId = parseInt(req.params.id);
+      const ticket = await storage.assignTicketToMarketplace(ticketId);
+      if (!ticket) {
+        return res.status(404).json({ message: "Ticket not found" });
+      }
+      res.json(ticket);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to assign ticket to marketplace" });
+    }
+  });
+
+  // Get marketplace tickets (for vendors to view)
+  app.get("/api/marketplace/tickets", authenticateUser, requireRole(["maintenance_admin"]), async (req: AuthenticatedRequest, res) => {
+    try {
+      const tickets = await storage.getMarketplaceTickets();
+      res.json(tickets);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch marketplace tickets" });
+    }
+  });
+
+  // Get bids for a ticket
+  app.get("/api/tickets/:id/bids", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const ticketId = parseInt(req.params.id);
+      const bids = await storage.getTicketBids(ticketId);
+      res.json(bids);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch ticket bids" });
+    }
+  });
+
+  // Create marketplace bid
+  app.post("/api/marketplace/bids", authenticateUser, requireRole(["maintenance_admin"]), async (req: AuthenticatedRequest, res) => {
+    try {
+      const bidData = insertMarketplaceBidSchema.parse(req.body);
+      const user = req.user!;
+      
+      if (!user.maintenanceVendorId) {
+        return res.status(400).json({ message: "User must be associated with a vendor to place bids" });
+      }
+
+      const bid = await storage.createMarketplaceBid({
+        ...bidData,
+        vendorId: user.maintenanceVendorId,
+      });
+      res.status(201).json(bid);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create marketplace bid" });
+    }
+  });
+
+  // Accept marketplace bid
+  app.post("/api/marketplace/bids/:id/accept", authenticateUser, requireRole(["org_admin", "org_subadmin"]), async (req: AuthenticatedRequest, res) => {
+    try {
+      const bidId = parseInt(req.params.id);
+      const result = await storage.acceptMarketplaceBid(bidId);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to accept marketplace bid" });
+    }
+  });
+
+  // Reject marketplace bid
+  app.post("/api/marketplace/bids/:id/reject", authenticateUser, requireRole(["org_admin", "org_subadmin"]), async (req: AuthenticatedRequest, res) => {
+    try {
+      const bidId = parseInt(req.params.id);
+      const bid = await storage.rejectMarketplaceBid(bidId);
+      res.json(bid);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to reject marketplace bid" });
     }
   });
 
