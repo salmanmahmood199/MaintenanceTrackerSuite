@@ -587,6 +587,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (user.role === "maintenance_admin") {
         tickets = await storage.getTickets();
         tickets = tickets.filter(ticket => ticket.maintenanceVendorId === user.maintenanceVendorId);
+        console.log(`Vendor ${user.maintenanceVendorId} filtering tickets. Found ${tickets.length} tickets:`, 
+          tickets.map(t => ({ 
+            id: t.id, 
+            number: t.ticketNumber, 
+            status: t.status, 
+            vendorId: t.maintenanceVendorId,
+            assigneeId: t.assigneeId 
+          })));
       } else if (user.role === "technician") {
         tickets = await storage.getTickets();
         tickets = tickets.filter(ticket => ticket.assigneeId === user.id);
