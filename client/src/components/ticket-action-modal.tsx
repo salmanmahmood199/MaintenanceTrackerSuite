@@ -69,9 +69,10 @@ export function TicketActionModal({
     // Root and org admins can see all active vendors
     if (userRole === "root" || userRole === "org_admin") return true;
     
-    // Sub-admins with accept_ticket permission can only see tier 1 and tier 2 vendors
+    // Sub-admins with accept_ticket permission can see vendors based on their tier permissions
     if (userRole === "org_subadmin" && userPermissions?.includes("accept_ticket")) {
-      return ["tier_1", "tier_2"].includes(v.tier);
+      // Check if user has access to this vendor tier
+      return userPermissions?.some(tier => v.tier === tier);
     }
     
     // Maintenance admins can see all vendors assigned to their organization
@@ -79,6 +80,10 @@ export function TicketActionModal({
     
     return false;
   });
+
+  // Check if user has marketplace access
+  const hasMarketplaceAccess = userRole === "root" || userRole === "org_admin" || 
+    (userRole === "org_subadmin" && userPermissions?.includes("marketplace"));
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -127,11 +132,10 @@ export function TicketActionModal({
                           </div>
                         </SelectItem>
                       ))}
-                      {userPermissions?.includes("marketplace") && (
+                      {hasMarketplaceAccess && (
                         <SelectItem value="marketplace">
                           <div className="flex items-center gap-2">
-                            <DollarSign className="h-4 w-4" />
-                            <span>Marketplace (Open Bidding)</span>
+                            <span>🏪 Marketplace (Open Bidding)</span>
                           </div>
                         </SelectItem>
                       )}
