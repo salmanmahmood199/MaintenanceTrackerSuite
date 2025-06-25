@@ -3,15 +3,15 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, MapPin, DollarSign } from "lucide-react";
+import { Calendar, Clock, MapPin, DollarSign, Eye, Target } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { MarketplaceBidModal } from "./marketplace-bid-modal";
+import { MarketplaceTicketModal } from "./marketplace-ticket-modal";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 export function MarketplaceTicketsView() {
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
-  const [isBidModalOpen, setIsBidModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -20,35 +20,9 @@ export function MarketplaceTicketsView() {
     queryKey: ["/api/marketplace/tickets"],
   });
 
-  // Create bid mutation
-  const createBidMutation = useMutation({
-    mutationFn: async (bidData: any) => {
-      return await apiRequest("/api/marketplace/bids", "POST", bidData);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/marketplace/tickets"] });
-      setIsBidModalOpen(false);
-      toast({
-        title: "Success",
-        description: "Your bid has been submitted successfully",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to submit bid",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleBidClick = (ticket: any) => {
+  const handleViewTicket = (ticket: any) => {
     setSelectedTicket(ticket);
-    setIsBidModalOpen(true);
-  };
-
-  const handleSubmitBid = (bidData: any) => {
-    createBidMutation.mutate(bidData);
+    setIsViewModalOpen(true);
   };
 
   if (isLoading) {

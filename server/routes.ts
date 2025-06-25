@@ -931,7 +931,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create marketplace bid
   app.post("/api/marketplace/bids", authenticateUser, requireRole(["maintenance_admin"]), async (req: AuthenticatedRequest, res) => {
     try {
-      const bidData = insertMarketplaceBidSchema.parse(req.body);
+      const { ticketId, hourlyRate, estimatedHours, parts, totalAmount, additionalNotes } = req.body;
       const user = req.user!;
       
       if (!user.maintenanceVendorId) {
@@ -939,11 +939,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const bid = await storage.createMarketplaceBid({
-        ...bidData,
+        ticketId,
         vendorId: user.maintenanceVendorId,
+        hourlyRate,
+        estimatedHours,
+        parts,
+        totalAmount,
+        additionalNotes
       });
       res.status(201).json(bid);
     } catch (error) {
+      console.error('Create marketplace bid error:', error);
       res.status(500).json({ message: "Failed to create marketplace bid" });
     }
   });
