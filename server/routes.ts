@@ -931,7 +931,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create marketplace bid
   app.post("/api/marketplace/bids", authenticateUser, requireRole(["maintenance_admin"]), async (req: AuthenticatedRequest, res) => {
     try {
-      const { ticketId, hourlyRate, estimatedHours, parts, totalAmount, additionalNotes } = req.body;
+      const { ticketId, hourlyRate, estimatedHours, responseTime, parts, totalAmount, additionalNotes } = req.body;
       const user = req.user!;
       
       if (!user.maintenanceVendorId) {
@@ -943,6 +943,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         vendorId: user.maintenanceVendorId,
         hourlyRate,
         estimatedHours,
+        responseTime,
         parts,
         totalAmount,
         additionalNotes

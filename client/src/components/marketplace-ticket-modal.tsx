@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +30,7 @@ interface PartItem {
 export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceTicketModalProps) {
   const [hourlyRate, setHourlyRate] = useState("");
   const [estimatedHours, setEstimatedHours] = useState("");
+  const [responseTime, setResponseTime] = useState("");
   const [parts, setParts] = useState<PartItem[]>([]);
   const [newPartName, setNewPartName] = useState("");
   const [newPartCost, setNewPartCost] = useState("");
@@ -65,6 +66,7 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
   const resetForm = () => {
     setHourlyRate("");
     setEstimatedHours("");
+    setResponseTime("");
     setParts([]);
     setNewPartName("");
     setNewPartCost("");
@@ -99,10 +101,10 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
   };
 
   const handlePlaceBid = () => {
-    if (!ticket || !hourlyRate || !estimatedHours) {
+    if (!ticket || !hourlyRate || !estimatedHours || !responseTime) {
       toast({
         title: "Missing Information",
-        description: "Please provide hourly rate and estimated hours.",
+        description: "Please provide hourly rate, estimated hours, and response time.",
         variant: "destructive",
       });
       return;
@@ -112,11 +114,13 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
       ticketId: ticket.id,
       hourlyRate: parseFloat(hourlyRate),
       estimatedHours: parseFloat(estimatedHours),
+      responseTime,
       parts: parts,
       totalAmount: calculateTotalBid(),
       additionalNotes,
     };
 
+    console.log("Submitting bid data:", bidData);
     placeBidMutation.mutate(bidData);
   };
 
@@ -140,6 +144,9 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
               <Wrench className="h-5 w-5" />
               {ticket.ticketNumber} - {ticket.title}
             </DialogTitle>
+            <DialogDescription>
+              Review ticket details and submit your bid with hourly rate, estimated hours, and required parts.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-hidden">
@@ -194,10 +201,14 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
                         {ticket.images.map((image, index) => (
                           <img
                             key={index}
-                            src={`/uploads/${image}`}
+                            src={image.startsWith('/uploads/') ? image : `/uploads/${image}`}
                             alt={`Ticket image ${index + 1}`}
                             className="w-full h-24 object-cover rounded-md cursor-pointer hover:opacity-80 transition-opacity"
-                            onClick={() => setSelectedImage(`/uploads/${image}`)}
+                            onClick={() => setSelectedImage(image.startsWith('/uploads/') ? image : `/uploads/${image}`)}
+                            onError={(e) => {
+                              console.log("Image failed to load:", image);
+                              e.currentTarget.style.display = 'none';
+                            }}
                           />
                         ))}
                       </div>
@@ -226,7 +237,7 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
                           id="hourlyRate"
                           type="number"
                           step="0.01"
-                          placeholder="75.00"
+                          placeholder="35.00"
                           value={hourlyRate}
                           onChange={(e) => setHourlyRate(e.target.value)}
                         />
@@ -237,11 +248,22 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
                           id="estimatedHours"
                           type="number"
                           step="0.5"
-                          placeholder="4.0"
+                          placeholder="4"
                           value={estimatedHours}
                           onChange={(e) => setEstimatedHours(e.target.value)}
                         />
                       </div>
+                    </div>
+
+                    {/* Response Time */}
+                    <div>
+                      <Label htmlFor="responseTime">How quickly can you arrive?</Label>
+                      <Input
+                        id="responseTime"
+                        placeholder="e.g., Within 2 hours, Same day, Next business day"
+                        value={responseTime}
+                        onChange={(e) => setResponseTime(e.target.value)}
+                      />
                     </div>
 
                     <Separator />
@@ -344,7 +366,7 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
                     <div className="flex gap-2">
                       <Button
                         onClick={handlePlaceBid}
-                        disabled={placeBidMutation.isPending || !hourlyRate || !estimatedHours}
+                        disabled={placeBidMutation.isPending || !hourlyRate || !estimatedHours || !responseTime}
                         className="flex-1"
                       >
                         {placeBidMutation.isPending ? "Placing Bid..." : "Place Bid"}
