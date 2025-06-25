@@ -549,16 +549,35 @@ export class DatabaseStorage implements IStorage {
   }
 
   async acceptTicket(id: number, acceptData: { maintenanceVendorId?: number; assigneeId?: number }): Promise<Ticket | undefined> {
+    console.log(`AcceptTicket storage method called for ticket ${id} with data:`, acceptData);
+    
+    const updateData: any = {
+      status: "accepted",
+      updatedAt: new Date(),
+    };
+    
+    if (acceptData.maintenanceVendorId !== undefined) {
+      updateData.maintenanceVendorId = acceptData.maintenanceVendorId;
+    }
+    
+    if (acceptData.assigneeId !== undefined) {
+      updateData.assigneeId = acceptData.assigneeId;
+    }
+    
+    console.log(`Updating ticket ${id} with:`, updateData);
+    
     const [ticket] = await db
       .update(tickets)
-      .set({
-        status: "accepted",
-        maintenanceVendorId: acceptData.maintenanceVendorId,
-        assigneeId: acceptData.assigneeId,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(eq(tickets.id, id))
       .returning();
+    
+    console.log(`Ticket ${id} updated result:`, { 
+      id: ticket?.id, 
+      status: ticket?.status, 
+      vendorId: ticket?.maintenanceVendorId, 
+      assigneeId: ticket?.assigneeId 
+    });
     
     return ticket || undefined;
   }
