@@ -175,13 +175,18 @@ export const marketplaceBids = pgTable("marketplace_bids", {
   id: serial("id").primaryKey(),
   ticketId: integer("ticket_id").references(() => tickets.id).notNull(),
   vendorId: integer("vendor_id").references(() => maintenanceVendors.id).notNull(),
-  bidAmount: decimal("bid_amount", { precision: 10, scale: 2 }).notNull(),
-  proposedStartDate: timestamp("proposed_start_date"),
-  estimatedDuration: integer("estimated_duration"), // in hours
-  description: text("description"),
-  status: text("status").notNull().default("pending"), // pending, accepted, rejected, withdrawn
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  hourlyRate: decimal("hourly_rate", { precision: 10, scale: 2 }).notNull(),
+  estimatedHours: decimal("estimated_hours", { precision: 5, scale: 2 }).notNull(),
+  responseTime: varchar("response_time", { length: 100 }),
+  parts: jsonb("parts").default([]),
+  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
+  additionalNotes: text("additional_notes"),
+  status: varchar("status", { length: 20 }).default("pending").notNull(),
+  rejectionReason: text("rejection_reason"),
+  counterOffer: decimal("counter_offer", { precision: 10, scale: 2 }),
+  counterNotes: text("counter_notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Relations

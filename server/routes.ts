@@ -934,24 +934,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { ticketId, hourlyRate, estimatedHours, responseTime, parts, totalAmount, additionalNotes } = req.body;
       const user = req.user!;
       
+      console.log('Creating marketplace bid:', { ticketId, hourlyRate, estimatedHours, responseTime, parts, totalAmount, additionalNotes, vendorId: user.maintenanceVendorId });
+      
       if (!user.maintenanceVendorId) {
         return res.status(400).json({ message: "User must be associated with a vendor to place bids" });
       }
 
       const bid = await storage.createMarketplaceBid({
-        ticketId,
+        ticketId: parseInt(ticketId),
         vendorId: user.maintenanceVendorId,
-        hourlyRate,
-        estimatedHours,
+        hourlyRate: hourlyRate.toString(),
+        estimatedHours: estimatedHours.toString(),
         responseTime,
-        parts,
-        totalAmount,
+        parts: parts || [],
+        totalAmount: totalAmount.toString(),
         additionalNotes
       });
+      
+      console.log('Marketplace bid created successfully:', bid);
       res.status(201).json(bid);
     } catch (error) {
       console.error('Create marketplace bid error:', error);
-      res.status(500).json({ message: "Failed to create marketplace bid" });
+      res.status(500).json({ message: "Failed to create marketplace bid", error: error.message });
     }
   });
 
