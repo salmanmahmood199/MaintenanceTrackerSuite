@@ -60,64 +60,62 @@ export function MarketplaceTicketsView() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
+        <div className="space-y-4">
           {marketplaceTickets.map((ticket: any) => (
             <Card key={ticket.id} className="hover:shadow-md transition-shadow">
-              <CardHeader>
+              <CardContent className="p-6">
                 <div className="flex items-start justify-between">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <CardTitle className="text-lg">{ticket.title}</CardTitle>
-                      <Badge variant="secondary">#{ticket.ticketNumber}</Badge>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="text-lg font-semibold text-slate-900">{ticket.title}</h3>
+                      <Badge variant="secondary" className="text-xs">#{ticket.ticketNumber}</Badge>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <Badge variant={ticket.priority === "high" ? "destructive" : "secondary"}>
+                    <div className="flex items-center gap-3 mb-3">
+                      <Badge variant={ticket.priority === "high" ? "destructive" : ticket.priority === "medium" ? "default" : "secondary"}>
                         {ticket.priority} priority
                       </Badge>
                       <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
                         Marketplace
                       </Badge>
                     </div>
-                  </div>
-                  <Button
-                    onClick={() => handleBidClick(ticket)}
-                    className="bg-blue-600 hover:bg-blue-700"
-                    size="sm"
-                  >
-                    <DollarSign className="h-4 w-4 mr-2" />
-                    Place Bid
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <p className="text-sm text-slate-600 line-clamp-2">{ticket.description}</p>
-                  
-                  <div className="flex items-center gap-6 text-xs text-slate-500">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      <span>Posted {formatDistanceToNow(new Date(ticket.createdAt), { addSuffix: true })}</span>
-                    </div>
-                    {ticket.locationName && (
+                    <p className="text-slate-600 mb-4 line-clamp-2">{ticket.description}</p>
+                    
+                    <div className="flex items-center gap-6 text-sm text-slate-500">
                       <div className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />
-                        <span>{ticket.locationName}</span>
+                        <Calendar className="h-4 w-4" />
+                        <span>Posted {formatDistanceToNow(new Date(ticket.createdAt))} ago</span>
                       </div>
-                    )}
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      <span>Organization: {ticket.organizationName}</span>
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4" />
+                        <span>Organization</span>
+                      </div>
+                      {ticket.images && ticket.images.length > 0 && (
+                        <div className="flex items-center gap-1">
+                          <span>Attachments:</span>
+                          <Badge variant="outline" className="text-xs">
+                            {ticket.images.length} image(s)
+                          </Badge>
+                        </div>
+                      )}
                     </div>
                   </div>
-
-                  {ticket.images && ticket.images.length > 0 && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-slate-500">Attachments:</span>
-                      <Badge variant="outline" className="text-xs">
-                        {ticket.images.length} image(s)
-                      </Badge>
-                    </div>
-                  )}
+                  <div className="flex gap-2 ml-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => handleViewTicket(ticket)}
+                      className="flex items-center gap-2"
+                    >
+                      <Eye className="h-4 w-4" />
+                      View
+                    </Button>
+                    <Button
+                      onClick={() => handleViewTicket(ticket)}
+                      className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2"
+                    >
+                      <Target className="h-4 w-4" />
+                      Place Bid
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -125,12 +123,10 @@ export function MarketplaceTicketsView() {
         </div>
       )}
 
-      <MarketplaceBidModal
-        open={isBidModalOpen}
-        onOpenChange={setIsBidModalOpen}
+      <MarketplaceTicketModal
         ticket={selectedTicket}
-        onSubmitBid={handleSubmitBid}
-        isLoading={createBidMutation.isPending}
+        isOpen={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
       />
     </div>
   );
