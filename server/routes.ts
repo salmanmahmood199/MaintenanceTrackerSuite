@@ -761,16 +761,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const { maintenanceVendorId, assigneeId, marketplace } = req.body;
       
+      console.log(`=== ACCEPT TICKET MIDDLEWARE ${id} ===`);
+      console.log(`Body received:`, { maintenanceVendorId, assigneeId, marketplace });
+      
       if (marketplace) {
         // Assign ticket to marketplace for bidding
+        console.log(`Assigning ticket ${id} to marketplace`);
         const ticket = await storage.assignTicketToMarketplace(id);
         if (!ticket) {
           return res.status(404).json({ message: "Ticket not found" });
         }
+        console.log(`Marketplace assignment result:`, { id: ticket.id, status: ticket.status });
         res.json(ticket);
       } else {
         // Normal vendor assignment
+        console.log(`Calling storage.acceptTicket for ticket ${id} with vendor ${maintenanceVendorId}`);
         const ticket = await storage.acceptTicket(id, { maintenanceVendorId, assigneeId });
+        console.log(`Storage result:`, { id: ticket?.id, vendor: ticket?.maintenanceVendorId, assignee: ticket?.assigneeId, status: ticket?.status });
         if (!ticket) {
           return res.status(404).json({ message: "Ticket not found" });
         }
