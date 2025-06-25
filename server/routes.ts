@@ -962,6 +962,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = await storage.acceptMarketplaceBid(bidId);
       res.json(result);
     } catch (error) {
+      console.error('Accept marketplace bid error:', error);
+      res.status(500).json({ message: "Failed to accept marketplace bid" });
+    }
+  });
+
+  // Reject marketplace bid
+  app.post("/api/marketplace/bids/:id/reject", authenticateUser, requireRole(["org_admin", "org_subadmin"]), async (req: AuthenticatedRequest, res) => {
+    try {
+      const bidId = parseInt(req.params.id);
+      const { rejectionReason } = req.body;
+      const bid = await storage.rejectMarketplaceBid(bidId, rejectionReason);
+      res.json(bid);
+    } catch (error) {
+      console.error('Reject marketplace bid error:', error);
+      res.status(500).json({ message: "Failed to reject marketplace bid" });
+    }
+  });
+
+  // Counter marketplace bid
+  app.post("/api/marketplace/bids/:id/counter", authenticateUser, requireRole(["org_admin", "org_subadmin"]), async (req: AuthenticatedRequest, res) => {
+    try {
+      const bidId = parseInt(req.params.id);
+      const { counterOffer, counterNotes } = req.body;
+      
+      const bid = await storage.counterMarketplaceBid(bidId, counterOffer, counterNotes);
+      res.json(bid);
+    } catch (error) {
+      console.error('Counter marketplace bid error:', error);
+      res.status(500).json({ message: "Failed to send counter offer" });
+    }
+  });
+
+  // Accept marketplace bid
+  app.post("/api/marketplace/bids/:id/accept", authenticateUser, requireRole(["org_admin", "org_subadmin"]), async (req: AuthenticatedRequest, res) => {
+    try {
+      const bidId = parseInt(req.params.id);
+      const result = await storage.acceptMarketplaceBid(bidId);
+      res.json(result);
+    } catch (error) {
       res.status(500).json({ message: "Failed to accept marketplace bid" });
     }
   });

@@ -135,7 +135,8 @@ export interface IStorage {
   getTicketBids(ticketId: number): Promise<(MarketplaceBid & { vendor: Pick<MaintenanceVendor, 'id' | 'name' | 'email'> })[]>;
   createMarketplaceBid(bid: InsertMarketplaceBid): Promise<MarketplaceBid>;
   acceptMarketplaceBid(bidId: number): Promise<{ bid: MarketplaceBid; ticket: Ticket }>;
-  rejectMarketplaceBid(bidId: number): Promise<MarketplaceBid>;
+  rejectMarketplaceBid(bidId: number, rejectionReason: string): Promise<MarketplaceBid>;
+  counterMarketplaceBid(bidId: number, counterOffer: number, counterNotes: string): Promise<MarketplaceBid>;
   assignTicketToMarketplace(ticketId: number): Promise<Ticket | undefined>;
   
   // Initialize root user
