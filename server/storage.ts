@@ -935,9 +935,26 @@ export class DatabaseStorage implements IStorage {
     return { bid: updatedBid, ticket: updatedTicket };
   }
 
-  async rejectMarketplaceBid(bidId: number): Promise<MarketplaceBid> {
+  async rejectMarketplaceBid(bidId: number, rejectionReason: string): Promise<MarketplaceBid> {
     const [updatedBid] = await db.update(marketplaceBids)
-      .set({ status: "rejected", updatedAt: new Date() })
+      .set({ 
+        status: "rejected", 
+        rejectionReason,
+        updatedAt: new Date() 
+      })
+      .where(eq(marketplaceBids.id, bidId))
+      .returning();
+    return updatedBid;
+  }
+
+  async counterMarketplaceBid(bidId: number, counterOffer: number, counterNotes: string): Promise<MarketplaceBid> {
+    const [updatedBid] = await db.update(marketplaceBids)
+      .set({ 
+        status: "counter",
+        counterOffer: counterOffer.toString(),
+        counterNotes,
+        updatedAt: new Date() 
+      })
       .where(eq(marketplaceBids.id, bidId))
       .returning();
     return updatedBid;
