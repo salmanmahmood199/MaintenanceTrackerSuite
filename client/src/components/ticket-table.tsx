@@ -141,12 +141,25 @@ export function TicketTable({
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge className={statusColor}>
-                        {ticket.status === "in-progress" ? "In Progress" : 
-                         ticket.status === "pending_confirmation" ? "Pending Confirmation" :
-                         ticket.status === "ready_for_billing" ? "Ready for Billing" :
-                         ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}
-                      </Badge>
+                      <div className="flex gap-2">
+                        <Badge className={statusColor}>
+                          {ticket.status === "in-progress" ? "In Progress" : 
+                           ticket.status === "pending_confirmation" ? "Pending Confirmation" :
+                           ticket.status === "ready_for_billing" ? "Ready for Billing" :
+                           ticket.status === "marketplace" ? "Marketplace" :
+                           ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}
+                        </Badge>
+                        {ticket.status === "marketplace" && onViewBids && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onViewBids(ticket)}
+                            className="text-xs text-purple-600 border-purple-300 hover:bg-purple-50"
+                          >
+                            View Bids
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Button
