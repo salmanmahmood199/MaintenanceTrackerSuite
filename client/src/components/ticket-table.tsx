@@ -21,6 +21,7 @@ interface TicketTableProps {
   onStart?: (id: number) => void;
   onViewWorkOrders?: (id: number) => void;
   onCreateInvoice?: (id: number) => void;
+  onViewBids?: (ticket: Ticket) => void;
   showActions?: boolean;
   showTechnicianActions?: boolean;
   userRole?: string;
@@ -37,6 +38,7 @@ export function TicketTable({
   onStart,
   onViewWorkOrders,
   onCreateInvoice,
+  onViewBids,
   showActions = true,
   showTechnicianActions = false,
   userRole, 

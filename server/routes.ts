@@ -998,6 +998,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Approve a marketplace bid
+  app.post("/api/marketplace/bids/:bidId/approve", authenticateUser, requireRole(["org_admin", "org_subadmin"]), async (req: AuthenticatedRequest, res) => {
+    try {
+      const bidId = parseInt(req.params.bidId);
+      const result = await storage.approveBid(bidId);
+      res.json(result);
+    } catch (error) {
+      console.error('Approve bid error:', error);
+      res.status(500).json({ message: "Failed to approve bid", error: error.message });
+    }
+  });
+
   // Accept marketplace bid
   app.post("/api/marketplace/bids/:id/accept", authenticateUser, requireRole(["org_admin", "org_subadmin"]), async (req: AuthenticatedRequest, res) => {
     try {

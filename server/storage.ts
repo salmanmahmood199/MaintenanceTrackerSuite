@@ -1008,7 +1008,7 @@ export class DatabaseStorage implements IStorage {
       })
       .where(and(
         eq(marketplaceBids.ticketId, bid.ticketId),
-        not(eq(marketplaceBids.id, bidId)),
+        ne(marketplaceBids.id, bidId),
         eq(marketplaceBids.status, "pending")
       ));
 

@@ -8,9 +8,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { MapPin, Calendar, Clock, DollarSign, Wrench, Plus, Trash2 } from "lucide-react";
 import type { Ticket } from "@shared/schema";
 
@@ -40,6 +41,8 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const vendorId = user?.maintenanceVendorId;
 
   // Check if vendor has already submitted a bid for this ticket
   const { data: existingBid } = useQuery({
@@ -378,13 +381,24 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
 
                     {/* Action Buttons */}
                     <div className="flex gap-2">
-                      <Button
-                        onClick={handlePlaceBid}
-                        disabled={placeBidMutation.isPending || !hourlyRate || !estimatedHours || !responseTime}
-                        className="flex-1"
-                      >
-                        {placeBidMutation.isPending ? "Placing Bid..." : "Place Bid"}
-                      </Button>
+                      {existingBid ? (
+                        <div className="flex items-center gap-2 w-full">
+                          <Badge variant="secondary" className="bg-green-100 text-green-800">
+                            Bid Submitted
+                          </Badge>
+                          <span className="text-sm text-muted-foreground">
+                            Status: {existingBid.approved ? "Approved" : existingBid.status === "rejected" ? "Rejected" : "Pending"}
+                          </span>
+                        </div>
+                      ) : (
+                        <Button
+                          onClick={handlePlaceBid}
+                          disabled={placeBidMutation.isPending || !hourlyRate || !estimatedHours || !responseTime}
+                          className="flex-1"
+                        >
+                          {placeBidMutation.isPending ? "Placing Bid..." : "Place Bid"}
+                        </Button>
+                      )}
                       <Button variant="outline" onClick={onClose}>
                         Cancel
                       </Button>
