@@ -14,6 +14,7 @@ import { AssignLocationsModal } from "@/components/assign-locations-modal";
 import { TicketTable } from "@/components/ticket-table";
 import { TicketActionModal } from "@/components/ticket-action-modal";
 import { ConfirmCompletionModal } from "@/components/confirm-completion-modal";
+import { MarketplaceBidsModal } from "@/components/marketplace-bids-modal";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -43,6 +44,7 @@ export default function OrganizationView() {
   const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [activeTab, setActiveTab] = useState<"tickets" | "subadmins" | "locations" | "vendors">("tickets");
+  const [marketplaceBidsTicket, setMarketplaceBidsTicket] = useState<Ticket | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -809,6 +811,13 @@ export default function OrganizationView() {
           organizationId={organizationId!}
         />
       )}
+
+      {/* Marketplace Bids Modal */}
+      <MarketplaceBidsModal
+        ticket={marketplaceBidsTicket}
+        isOpen={!!marketplaceBidsTicket}
+        onClose={() => setMarketplaceBidsTicket(null)}
+      />
     </div>
   );
 }

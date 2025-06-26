@@ -41,6 +41,18 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Check if vendor has already submitted a bid for this ticket
+  const { data: existingBid } = useQuery({
+    queryKey: ["/api/tickets", ticket?.id, "vendor-bid", vendorId],
+    queryFn: async () => {
+      if (!ticket?.id || !vendorId) return null;
+      const response = await apiRequest("GET", `/api/tickets/${ticket.id}/bids`);
+      const bids = await response.json();
+      return bids.find((bid: any) => bid.vendorId === vendorId) || null;
+    },
+    enabled: !!ticket?.id && !!vendorId,
+  });
+
   const placeBidMutation = useMutation({
     mutationFn: async (bidData: any) => {
       console.log("Submitting bid data:", bidData);
