@@ -185,6 +185,7 @@ export const marketplaceBids = pgTable("marketplace_bids", {
   rejectionReason: text("rejection_reason"),
   counterOffer: decimal("counter_offer", { precision: 10, scale: 2 }),
   counterNotes: text("counter_notes"),
+  approved: boolean("approved").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

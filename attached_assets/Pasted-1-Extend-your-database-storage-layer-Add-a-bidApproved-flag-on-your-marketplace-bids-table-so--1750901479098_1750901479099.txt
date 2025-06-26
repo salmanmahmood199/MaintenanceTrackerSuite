@@ -1,0 +1,160 @@
+1. Extend your database & storage layer
+Add a “bidApproved” flag on your marketplace_bids table (so you can track which bid got chosen):
+
+sql
+Copy
+Edit
+ALTER TABLE marketplace_bids
+  ADD COLUMN approved BOOLEAN NOT NULL DEFAULT FALSE;
+(Optionally) Add a status column to tickets if you don’t already have one, so you can move it from “open” → “pending_bid_approval” → “assigned” → “closed”:
+
+sql
+Copy
+Edit
+ALTER TABLE tickets
+  ADD COLUMN status VARCHAR(30) NOT NULL DEFAULT 'open';
+In your storage layer (e.g. storage.ts or wherever you talk to the DB), add two new methods:
+
+ts
+Copy
+Edit
+// Mark a bid as approved
+async function approveBid(bidId: number) {
+  // 1) mark that bid approved
+  await db.query(
+    `UPDATE marketplace_bids SET approved = TRUE WHERE id = $1`,
+    [bidId]
+  );
+  // 2) fetch the chosen bid row
+  const { rows } = await db.query(
+    `SELECT ticket_id, vendor_id FROM marketplace_bids WHERE id = $1`,
+    [bidId]
+  );
+  const { ticket_id, vendor_id } = rows[0];
+  // 3) assign ticket to that vendor & update ticket status
+  await db.query(
+    `UPDATE tickets
+       SET assigned_vendor_id = $2,
+           status = 'assigned'
+     WHERE id = $1`,
+    [ticket_id, vendor_id]
+  );
+  return ticket_id;
+}
+
+// Fetch all bids for a ticket (for your “approve” UI)
+async function getBidsForTicket(ticketId: number) {
+  const { rows } = await db.query(
+    `SELECT id, vendor_id, amount, created_at, approved
+     FROM marketplace_bids
+     WHERE ticket_id = $1
+     ORDER BY created_at DESC`,
+    [ticketId]
+  );
+  return rows;
+}
+2. Add new backend routes
+In server/routes.ts (or wherever you wire up Express):
+
+ts
+Copy
+Edit
+// List bids for a given ticket (for the approver UI)
+app.get(
+  "/api/tickets/:id/bids",
+  authenticateUser,
+  requireRoles(["root", "org_admin", "org_subadmin"]),
+  async (req, res) => {
+    const ticketId = parseInt(req.params.id);
+    const bids = await storage.getBidsForTicket(ticketId);
+    res.json(bids);
+  }
+);
+
+// Approve one of those bids
+app.post(
+  "/api/bids/:bidId/approve",
+  authenticateUser,
+  requireRoles(["root", "org_admin", "org_subadmin"]),
+  async (req, res) => {
+    const bidId = parseInt(req.params.bidId);
+    try {
+      const ticketId = await storage.approveBid(bidId);
+      res.json({ ticketId });
+    } catch (err) {
+      res.status(400).json({ message: "Could not approve bid" });
+    }
+  }
+);
+3. Build the frontend “approve bid” UI
+In your Organization-View (or wherever approvers look at a ticket detail):
+
+Fetch the bids when the ticket modal opens:
+
+ts
+Copy
+Edit
+const { data: bids } = useQuery(
+  ["/api/tickets", ticket.id, "bids"],
+  () => apiRequest("GET", `/api/tickets/${ticket.id}/bids`)
+);
+Render a list inside your ticket-action modal (below the “Accept for myself / marketplace” stuff):
+
+tsx
+Copy
+Edit
+<div className="mt-6">
+  <h4 className="font-medium">Vendor Bids</h4>
+  {bids?.length ? (
+    bids.map((bid) => (
+      <div key={bid.id} className="flex justify-between items-center p-2">
+        <span>Vendor #{bid.vendor_id} – ${bid.amount}</span>
+        {bid.approved ? (
+          <Badge>Approved</Badge>
+        ) : (
+          <Button
+            size="sm"
+            onClick={() => approveBidMutation.mutate(bid.id)}
+          >
+            Approve
+          </Button>
+        )}
+      </div>
+    ))
+  ) : (
+    <p className="text-xs text-slate-500">No bids yet.</p>
+  )}
+</div>
+Wire up the approve-bid mutation:
+
+ts
+Copy
+Edit
+const approveBidMutation = useMutation({
+  mutationFn: async (bidId: number) =>
+    apiRequest("POST", `/api/bids/${bidId}/approve`),
+  onSuccess: () => {
+    toast({ title: "Bid Approved", description: "Ticket has been assigned." });
+    // refresh both the ticket list and the bids list
+    queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/tickets", ticket.id, "bids"] });
+    onClose(); // close the modal
+  },
+  onError: () => {
+    toast({ title: "Error", description: "Could not approve bid.", variant: "destructive" });
+  },
+});
+4. Pull it all together & test
+Migrate your DB so the new columns exist.
+
+Restart your backend so the new routes take effect.
+
+Rebuild your frontend so the new UI shows up.
+
+Create a ticket → send to marketplace → place a bid as a vendor → open the ticket as an approver → you’ll see the new “Vendor Bids” section with an “Approve” button.
+
+Click “Approve” and verify:
+
+The bid row flips to “Approved”
+
+The ticket’s status changes to assigned and it shows up under your assigned tickets list

@@ -138,6 +138,7 @@ export interface IStorage {
   rejectMarketplaceBid(bidId: number, rejectionReason: string): Promise<MarketplaceBid>;
   counterMarketplaceBid(bidId: number, counterOffer: number, counterNotes: string): Promise<MarketplaceBid>;
   assignTicketToMarketplace(ticketId: number): Promise<Ticket | undefined>;
+  approveBid(bidId: number): Promise<{ bid: MarketplaceBid; ticket: Ticket }>;
   
   // Initialize root user
   initializeRootUser(): Promise<void>;
@@ -880,6 +881,7 @@ export class DatabaseStorage implements IStorage {
       rejectionReason: marketplaceBids.rejectionReason,
       counterOffer: marketplaceBids.counterOffer,
       counterNotes: marketplaceBids.counterNotes,
+      approved: marketplaceBids.approved,
       createdAt: marketplaceBids.createdAt,
       updatedAt: marketplaceBids.updatedAt,
       vendor: {
@@ -966,6 +968,51 @@ export class DatabaseStorage implements IStorage {
       .where(eq(tickets.id, ticketId))
       .returning();
     return updatedTicket;
+  }
+
+  async approveBid(bidId: number): Promise<{ bid: MarketplaceBid; ticket: Ticket }> {
+    // Get the bid details first
+    const [bid] = await db.select().from(marketplaceBids).where(eq(marketplaceBids.id, bidId));
+    if (!bid) {
+      throw new Error("Bid not found");
+    }
+
+    // Mark this bid as approved
+    const [approvedBid] = await db
+      .update(marketplaceBids)
+      .set({ 
+        approved: true,
+        status: "accepted",
+        updatedAt: new Date() 
+      })
+      .where(eq(marketplaceBids.id, bidId))
+      .returning();
+
+    // Assign ticket to the vendor from this bid
+    const [assignedTicket] = await db
+      .update(tickets)
+      .set({ 
+        maintenanceVendorId: bid.vendorId,
+        status: "accepted",
+        updatedAt: new Date() 
+      })
+      .where(eq(tickets.id, bid.ticketId))
+      .returning();
+
+    // Mark all other bids for this ticket as rejected
+    await db
+      .update(marketplaceBids)
+      .set({ 
+        status: "rejected",
+        updatedAt: new Date() 
+      })
+      .where(and(
+        eq(marketplaceBids.ticketId, bid.ticketId),
+        not(eq(marketplaceBids.id, bidId)),
+        eq(marketplaceBids.status, "pending")
+      ));
+
+    return { bid: approvedBid, ticket: assignedTicket };
   }
 
   async createMissingAdminAccounts(): Promise<void> {
