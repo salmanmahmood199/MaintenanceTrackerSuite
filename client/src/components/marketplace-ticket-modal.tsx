@@ -43,7 +43,8 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
 
   const placeBidMutation = useMutation({
     mutationFn: async (bidData: any) => {
-      await apiRequest("/api/marketplace/bids", "POST", bidData);
+      console.log("Submitting bid data:", bidData);
+      await apiRequest("POST", "/api/marketplace/bids", bidData);
     },
     onSuccess: () => {
       toast({
@@ -54,10 +55,11 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
       onClose();
       resetForm();
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error("Bid submission error:", error);
       toast({
         title: "Error",
-        description: "Failed to place bid. Please try again.",
+        description: `Failed to place bid: ${error.message || "Please try again."}`,
         variant: "destructive",
       });
     },
