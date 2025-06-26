@@ -31,6 +31,7 @@ interface MarketplaceBid {
   totalAmount: number;
   additionalNotes: string;
   status: string;
+  approved?: boolean;
   rejectionReason?: string;
   counterOffer?: number;
   counterNotes?: string;
@@ -129,6 +130,29 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
       toast({
         title: "Error",
         description: "Failed to send counter offer. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Approve bid mutation
+  const approveBidMutation = useMutation({
+    mutationFn: async (bidId: number) => {
+      await apiRequest("POST", `/api/marketplace/bids/${bidId}/approve`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Bid Approved",
+        description: "The bid has been approved and the ticket has been assigned to the vendor.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets", ticket?.id, "bids"] });
+      onClose();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: `Failed to approve bid: ${error.message || "Please try again."}`,
         variant: "destructive",
       });
     },
