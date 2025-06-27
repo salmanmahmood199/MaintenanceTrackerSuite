@@ -241,18 +241,34 @@ export function CreateSubAdminModal({ open, onOpenChange, onSubmit, isLoading }:
                       
                       <div className="flex items-center space-x-2">
                         <Checkbox
-                          id="billing"
-                          checked={field.value?.includes("billing")}
+                          id="view_billing"
+                          checked={field.value?.includes("view_billing")}
                           onCheckedChange={(checked) => {
                             const currentPermissions = field.value || [];
                             if (checked) {
-                              field.onChange([...currentPermissions, "billing"]);
+                              field.onChange([...currentPermissions, "view_billing"]);
                             } else {
-                              field.onChange(currentPermissions.filter(p => p !== "billing"));
+                              field.onChange(currentPermissions.filter(p => p !== "view_billing"));
                             }
                           }}
                         />
-                        <Label htmlFor="billing">Billing (View Invoices)</Label>
+                        <Label htmlFor="view_billing">View Billing</Label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="pay_bills"
+                          checked={field.value?.includes("pay_bills")}
+                          onCheckedChange={(checked) => {
+                            const currentPermissions = field.value || [];
+                            if (checked) {
+                              field.onChange([...currentPermissions, "pay_bills"]);
+                            } else {
+                              field.onChange(currentPermissions.filter(p => p !== "pay_bills"));
+                            }
+                          }}
+                        />
+                        <Label htmlFor="pay_bills">Pay Bills (Accounting Role)</Label>
                       </div>
                     </div>
                     <FormMessage />

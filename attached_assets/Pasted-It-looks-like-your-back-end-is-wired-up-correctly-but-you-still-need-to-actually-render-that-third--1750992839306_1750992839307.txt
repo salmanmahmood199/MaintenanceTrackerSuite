@@ -1,0 +1,105 @@
+It looks like your back-end is wired up correctly, but you still need to actually render that third checkbox in your AddSubAdmin form and wire it into your form state. Here’s exactly what you need to do on the front-end:
+
+1. Add canViewBilling to your form’s initial values
+Wherever you define your form (Formik, React Hook Form, whatever), make sure you include the new flag. For example, with React Hook Form:
+
+ts
+Copy
+Edit
+// client/src/components/AddSubAdmin.tsx
+
+type FormValues = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  password: string;
+  confirmPassword: string;
+  permissions: {
+    canPlaceTicket: boolean;
+    canAcceptTicket: boolean;
+    canViewBilling: boolean;       // <-- add this
+  };
+};
+
+const defaultValues: FormValues = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: "",
+  password: "",
+  confirmPassword: "",
+  permissions: {
+    canPlaceTicket: false,
+    canAcceptTicket: false,
+    canViewBilling: false,        // <-- initialize it
+  },
+};
+
+const { register, handleSubmit, watch } = useForm<FormValues>({ defaultValues });
+2. Render the “View Billing” checkbox
+Below your existing two checkboxes, add a third:
+
+tsx
+Copy
+Edit
+// still in AddSubAdmin.tsx, inside the section that renders Permissions…
+
+<div className="mt-4">
+  <label className="font-medium">Permissions</label>
+
+  <div className="flex items-center mt-2">
+    <input
+      type="checkbox"
+      {...register("permissions.canPlaceTicket")}
+      id="canPlaceTicket"
+      className="h-4 w-4 text-blue-600"
+    />
+    <label htmlFor="canPlaceTicket" className="ml-2">Place Ticket</label>
+  </div>
+
+  <div className="flex items-center mt-2">
+    <input
+      type="checkbox"
+      {...register("permissions.canAcceptTicket")}
+      id="canAcceptTicket"
+      className="h-4 w-4 text-blue-600"
+    />
+    <label htmlFor="canAcceptTicket" className="ml-2">Accept Ticket</label>
+  </div>
+
+  {/* ← ADD THIS BLOCK → */}
+  <div className="flex items-center mt-2">
+    <input
+      type="checkbox"
+      {...register("permissions.canViewBilling")}
+      id="canViewBilling"
+      className="h-4 w-4 text-blue-600"
+    />
+    <label htmlFor="canViewBilling" className="ml-2">View Billing</label>
+  </div>
+</div>
+3. Include it in your create-user API call
+Finally, make sure when you POST /api/users you include the flag:
+
+ts
+Copy
+Edit
+const onSubmit = (data: FormValues) => {
+  fetch("/api/users", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      password: data.password,
+      permissions: {
+        canPlaceTicket: data.permissions.canPlaceTicket,
+        canAcceptTicket: data.permissions.canAcceptTicket,
+        canViewBilling: data.permissions.canViewBilling,   // ← make sure this goes out
+      },
+    }),
+  })
+  // …
+};
