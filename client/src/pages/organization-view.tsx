@@ -601,7 +601,7 @@ export default function OrganizationView() {
                   Vendors
                 </button>
               )}
-              {user?.canViewBilling && (
+              {canPayBills && (
                 <button
                   onClick={() => setActiveTab("billing")}
                   className={`py-2 px-1 border-b-2 font-medium text-sm ${

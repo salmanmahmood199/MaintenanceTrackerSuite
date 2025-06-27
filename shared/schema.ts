@@ -439,7 +439,10 @@ export const loginSchema = z.object({
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertSubAdmin = z.infer<typeof insertSubAdminSchema>;
-export type User = typeof users.$inferSelect;
+export type User = typeof users.$inferSelect & {
+  canViewBilling?: boolean;
+  vendorTiers?: any[];
+};
 export type InsertOrganization = z.infer<typeof insertOrganizationSchema>;
 export type UpdateOrganization = z.infer<typeof updateOrganizationSchema>;
 export type Organization = typeof organizations.$inferSelect;
