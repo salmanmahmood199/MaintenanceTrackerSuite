@@ -44,7 +44,15 @@ export default function OrganizationView() {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [activeTab, setActiveTab] = useState<"tickets" | "subadmins" | "locations" | "vendors" | "billing">("tickets");
+  const [activeTab, setActiveTab] = useState<"tickets" | "subadmins" | "locations" | "vendors" | "billing">(() => {
+    // If user is accounting role, default to billing tab
+    if (user?.permissions?.includes("pay_bills") && 
+        !user?.permissions?.includes("accept_ticket") && 
+        !user?.permissions?.includes("place_ticket")) {
+      return "billing";
+    }
+    return "tickets";
+  });
   const [marketplaceBidsTicket, setMarketplaceBidsTicket] = useState<Ticket | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -61,8 +69,12 @@ export default function OrganizationView() {
     (user?.role === "org_subadmin" && user?.permissions?.includes("accept_ticket"));
   
   const canManageSubAdmins = user?.role === "root" || user?.role === "org_admin";
-  
+  const canManageLocations = user?.role === "root" || user?.role === "org_admin";
   const canManageVendors = user?.role === "root" || user?.role === "org_admin";
+  const canPayBills = user?.permissions?.includes("pay_bills") || user?.role === "org_admin";
+  const isAccountingRole = user?.permissions?.includes("pay_bills") && 
+    !user?.permissions?.includes("accept_ticket") && 
+    !user?.permissions?.includes("place_ticket");
 
   // Fetch organization details
   const { data: organization } = useQuery<Organization | undefined>({
@@ -775,7 +787,7 @@ export default function OrganizationView() {
         onSubmit={handleCreateTicket}
         isLoading={createTicketMutation.isPending}
         userId={user?.id}
-        organizationId={organizationId}
+        organizationId={organizationId || 0}
       />
 
       <CreateSubAdminModal
@@ -813,7 +825,7 @@ export default function OrganizationView() {
         isLoading={acceptTicketMutation.isPending || rejectTicketMutation.isPending}
         userRole={user?.role}
         userPermissions={user?.permissions || undefined}
-        userVendorTiers={organizationVendors || undefined}
+        userVendorTiers={vendorTiers || []}
       />
 
       <ConfirmCompletionModal
