@@ -45,7 +45,7 @@ function Router() {
   }
 
   // Organization roles
-  if ((user?.role === "org_admin" || user?.role === "org_subadmin") && user.organizationId) {
+  if ((user?.role === "org_admin" || user?.role === "org_subadmin" || user?.role === "billing") && user.organizationId) {
     return (
       <Switch>
         <Route path="/" component={() => <OrganizationView />} />

@@ -11,7 +11,7 @@ export const users = pgTable("users", {
   firstName: varchar("first_name", { length: 100 }),
   lastName: varchar("last_name", { length: 100 }),
   phone: varchar("phone", { length: 15 }).unique(),
-  role: text("role").notNull(), // 'root', 'org_admin', 'maintenance_admin', 'technician', 'org_subadmin'
+  role: text("role").notNull(), // 'root', 'org_admin', 'maintenance_admin', 'technician', 'org_subadmin', 'billing'
   organizationId: integer("organization_id"),
   maintenanceVendorId: integer("maintenance_vendor_id"),
   permissions: text("permissions").array(), // ["place_ticket", "accept_ticket"]
