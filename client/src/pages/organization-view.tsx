@@ -89,15 +89,19 @@ export default function OrganizationView() {
     enabled: !!organizationId,
   });
 
-  // Fetch tickets for this organization
+  // Fetch tickets for this organization (accounting users only see billed tickets)
   const { data: tickets = [], isLoading: ticketsLoading } = useQuery<Ticket[]>({
-    queryKey: statusFilter === "all" 
-      ? ["/api/tickets", { organizationId }] 
-      : ["/api/tickets", { status: statusFilter, organizationId }],
+    queryKey: isAccountingRole 
+      ? ["/api/tickets", { status: "billed", organizationId }]
+      : statusFilter === "all" 
+        ? ["/api/tickets", { organizationId }] 
+        : ["/api/tickets", { status: statusFilter, organizationId }],
     queryFn: async () => {
-      const url = statusFilter === "all" 
-        ? `/api/tickets?organizationId=${organizationId}`
-        : `/api/tickets?status=${statusFilter}&organizationId=${organizationId}`;
+      const url = isAccountingRole
+        ? `/api/tickets?status=billed&organizationId=${organizationId}`
+        : statusFilter === "all" 
+          ? `/api/tickets?organizationId=${organizationId}`
+          : `/api/tickets?status=${statusFilter}&organizationId=${organizationId}`;
       const response = await apiRequest("GET", url);
       return await response.json() as Ticket[];
     },
@@ -573,6 +577,18 @@ export default function OrganizationView() {
         <div className="mb-6">
           <div className="border-b border-gray-200">
             <nav className="-mb-px flex space-x-8">
+              {isAccountingRole && (
+                <button
+                  onClick={() => setActiveTab("billing")}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === "billing"
+                      ? "border-blue-500 text-blue-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  }`}
+                >
+                  Billed Tickets
+                </button>
+              )}
               {!isAccountingRole && (
                 <button
                   onClick={() => setActiveTab("tickets")}
