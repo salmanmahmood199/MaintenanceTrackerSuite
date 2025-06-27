@@ -359,7 +359,13 @@ export default function OrganizationView() {
       // Assign to marketplace instead of a specific vendor
       assignToMarketplaceMutation.mutate(ticketId);
     } else {
-      acceptTicketMutation.mutate({ ticketId, ...data });
+      acceptTicketMutation.mutate({ 
+        ticketId, 
+        data: { 
+          maintenanceVendorId: data.maintenanceVendorId, 
+          assigneeId: data.assigneeId 
+        } 
+      });
     }
   };
 
@@ -807,7 +813,7 @@ export default function OrganizationView() {
         isLoading={acceptTicketMutation.isPending || rejectTicketMutation.isPending}
         userRole={user?.role}
         userPermissions={user?.permissions || undefined}
-        userVendorTiers={user?.vendorTiers || undefined}
+        userVendorTiers={organizationVendors || undefined}
       />
 
       <ConfirmCompletionModal
@@ -837,10 +843,7 @@ export default function OrganizationView() {
         onClose={() => setMarketplaceBidsTicket(null)}
       />
 
-      {/* Billing Tab */}
-      {activeTab === "billing" && user?.canViewBilling && (
-        <InvoiceTable canPayBills={canPayBills} />
-      )}
+
     </div>
   );
 }
@@ -859,7 +862,7 @@ function InvoiceTable({ canPayBills }: { canPayBills: boolean }) {
     );
   }
 
-  if (!invoices || invoices.length === 0) {
+  if (!invoices || (Array.isArray(invoices) && invoices.length === 0)) {
     return (
       <div className="bg-white rounded-lg shadow p-8 text-center">
         <p className="text-slate-500">No invoices found.</p>
@@ -897,7 +900,7 @@ function InvoiceTable({ canPayBills }: { canPayBills: boolean }) {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {invoices.map((invoice: any) => (
+            {Array.isArray(invoices) && invoices.map((invoice: any) => (
               <tr key={invoice.id}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   INV-{invoice.id.toString().padStart(6, '0')}
