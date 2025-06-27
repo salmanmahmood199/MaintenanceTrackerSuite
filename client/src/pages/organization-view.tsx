@@ -597,6 +597,18 @@ export default function OrganizationView() {
                   Vendors
                 </button>
               )}
+              {user?.canViewBilling && (
+                <button
+                  onClick={() => setActiveTab("billing")}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === "billing"
+                      ? "border-blue-500 text-blue-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  }`}
+                >
+                  Billing
+                </button>
+              )}
             </nav>
           </div>
         </div>
@@ -820,6 +832,96 @@ export default function OrganizationView() {
         isOpen={!!marketplaceBidsTicket}
         onClose={() => setMarketplaceBidsTicket(null)}
       />
+
+      {/* Billing Tab */}
+      {activeTab === "billing" && user?.canViewBilling && (
+        <InvoiceTable />
+      )}
+    </div>
+  );
+}
+
+// Invoice Table Component
+function InvoiceTable() {
+  const { data: invoices, isLoading } = useQuery({
+    queryKey: ["/api/invoices"],
+  });
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-lg shadow p-8 text-center">
+        <p className="text-slate-500">Loading invoices...</p>
+      </div>
+    );
+  }
+
+  if (!invoices || invoices.length === 0) {
+    return (
+      <div className="bg-white rounded-lg shadow p-8 text-center">
+        <p className="text-slate-500">No invoices found.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-lg shadow">
+      <div className="p-6 border-b border-slate-200">
+        <h3 className="text-lg font-semibold text-slate-900">Invoices</h3>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Invoice #
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Ticket #
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Amount
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Date
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {invoices.map((invoice: any) => (
+              <tr key={invoice.id}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  INV-{invoice.id.toString().padStart(6, '0')}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {invoice.ticketNumber || `#${invoice.ticketId}`}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  ${invoice.totalAmount}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <Badge variant={invoice.status === 'paid' ? 'default' : 'secondary'}>
+                    {invoice.status}
+                  </Badge>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {formatDate(invoice.createdAt)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <Button variant="outline" size="sm">
+                    View Details
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
