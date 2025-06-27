@@ -238,6 +238,22 @@ export function CreateSubAdminModal({ open, onOpenChange, onSubmit, isLoading }:
                         />
                         <Label htmlFor="accept_ticket">Accept Ticket</Label>
                       </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="billing"
+                          checked={field.value?.includes("billing")}
+                          onCheckedChange={(checked) => {
+                            const currentPermissions = field.value || [];
+                            if (checked) {
+                              field.onChange([...currentPermissions, "billing"]);
+                            } else {
+                              field.onChange(currentPermissions.filter(p => p !== "billing"));
+                            }
+                          }}
+                        />
+                        <Label htmlFor="billing">Billing (View Invoices)</Label>
+                      </div>
                     </div>
                     <FormMessage />
                   </FormItem>
