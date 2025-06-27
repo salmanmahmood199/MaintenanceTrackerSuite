@@ -796,6 +796,47 @@ export default function OrganizationView() {
             </div>
           </div>
         )}
+
+        {activeTab === "billing" && canPayBills && (
+          <>
+            {isAccountingRole ? (
+              // Accounting users see billed tickets, not invoices
+              <div className="bg-white rounded-lg shadow">
+                <div className="p-6 border-b border-slate-200">
+                  <h3 className="text-lg font-semibold text-slate-900">Billed Tickets</h3>
+                  <p className="text-sm text-slate-500 mt-1">Review completed and billed maintenance tickets</p>
+                </div>
+                <div className="p-6">
+                  {ticketsLoading ? (
+                    <div className="text-center py-8">
+                      <p className="text-slate-500">Loading billed tickets...</p>
+                    </div>
+                  ) : tickets.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-slate-500">No billed tickets found.</p>
+                    </div>
+                  ) : (
+                    <TicketTable
+                      tickets={tickets}
+                      onAccept={undefined}
+                      onReject={undefined}
+                      onComplete={undefined}
+                      onConfirm={undefined}
+                      onViewBids={undefined}
+                      showActions={false}
+                      userRole={user?.role}
+                      userPermissions={user?.permissions || undefined}
+                      userId={user?.id}
+                    />
+                  )}
+                </div>
+              </div>
+            ) : (
+              // Regular users see invoice table
+              <InvoiceTable canPayBills={canPayBills} />
+            )}
+          </>
+        )}
       </main>
 
       {/* Modals */}
