@@ -44,16 +44,10 @@ export default function OrganizationView() {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [activeTab, setActiveTab] = useState<"tickets" | "subadmins" | "locations" | "vendors" | "billing">(() => {
-    // If user is accounting role, default to billing tab
-    if (user?.permissions?.includes("pay_bills") && 
-        !user?.permissions?.includes("accept_ticket") && 
-        !user?.permissions?.includes("place_ticket")) {
-      return "billing";
-    }
-    return "tickets";
-  });
+  const [activeTab, setActiveTab] = useState<"tickets" | "subadmins" | "locations" | "vendors" | "billing">("tickets");
   const [marketplaceBidsTicket, setMarketplaceBidsTicket] = useState<Ticket | null>(null);
+  
+  // Get user data first
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -75,6 +69,13 @@ export default function OrganizationView() {
   const isAccountingRole = user?.permissions?.includes("pay_bills") && 
     !user?.permissions?.includes("accept_ticket") && 
     !user?.permissions?.includes("place_ticket");
+
+  // Use effect to set initial tab based on accounting role
+  useState(() => {
+    if (isAccountingRole && activeTab === "tickets") {
+      setActiveTab("billing");
+    }
+  });
 
   // Fetch organization details
   const { data: organization } = useQuery<Organization | undefined>({
