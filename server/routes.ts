@@ -19,7 +19,7 @@ import {
   type User,
   type AuthenticatedRequest,
 } from "@shared/schema";
-import { getSessionConfig, authenticateUser, requireRole, requireOrganization, requireViewBilling } from "./auth";
+import { getSessionConfig, authenticateUser, requireRole, requireOrganization } from "./auth";
 import multer from "multer";
 import bcrypt from "bcrypt";
 import path from "path";
@@ -1081,7 +1081,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Invoice routes
-  app.get("/api/invoices", authenticateUser, requireViewBilling, async (req: AuthenticatedRequest, res) => {
+  app.get("/api/invoices", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
       const user = req.user!;
       let invoices;
@@ -1090,10 +1090,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         invoices = await storage.getInvoices(user.maintenanceVendorId);
       } else if (user.role === "root") {
         invoices = await storage.getInvoices();
-      } else if (user.organizationId) {
-        const orgId = user.organizationId;
-        const locationIds = user.assignedLocationIds || [];
-        invoices = await storage.getInvoicesForOrg({ orgId, locationIds });
       } else {
         return res.status(403).json({ message: "Unauthorized" });
       }

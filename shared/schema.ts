@@ -16,7 +16,6 @@ export const users = pgTable("users", {
   maintenanceVendorId: integer("maintenance_vendor_id"),
   permissions: text("permissions").array(), // ["place_ticket", "accept_ticket"]
   vendorTiers: text("vendor_tiers").array(), // ["tier_1", "tier_2", "tier_3", "marketplace"] - what tiers they can assign
-  canViewBilling: boolean("can_view_billing").default(false).notNull(),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -330,7 +329,7 @@ export const insertSubAdminSchema = createInsertSchema(users).omit({
   updatedAt: true,
   role: true,
 }).extend({
-  permissions: z.array(z.enum(["place_ticket", "accept_ticket", "view_billing", "pay_bills"])).min(1),
+  permissions: z.array(z.enum(["place_ticket", "accept_ticket"])).min(1),
   vendorTiers: z.array(z.enum(["tier_1", "tier_2", "tier_3", "marketplace"])).optional(),
   email: z.string().email("Please enter a valid email address"),
   phone: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits").optional(),
@@ -439,10 +438,7 @@ export const loginSchema = z.object({
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertSubAdmin = z.infer<typeof insertSubAdminSchema>;
-export type User = typeof users.$inferSelect & {
-  canViewBilling?: boolean;
-  vendorTiers?: any[];
-};
+export type User = typeof users.$inferSelect;
 export type InsertOrganization = z.infer<typeof insertOrganizationSchema>;
 export type UpdateOrganization = z.infer<typeof updateOrganizationSchema>;
 export type Organization = typeof organizations.$inferSelect;

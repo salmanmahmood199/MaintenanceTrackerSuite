@@ -1,5 +1,4 @@
 import { useState } from "react";
-import * as React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRoute } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,7 +19,6 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
-import { formatDate } from "@/lib/utils";
 import type { Ticket, InsertTicket, InsertSubAdmin, Organization, User, MaintenanceVendor } from "@shared/schema";
 
 interface TicketStats {
@@ -45,10 +43,8 @@ export default function OrganizationView() {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [activeTab, setActiveTab] = useState<"tickets" | "subadmins" | "locations" | "vendors" | "billing">("tickets");
+  const [activeTab, setActiveTab] = useState<"tickets" | "subadmins" | "locations" | "vendors">("tickets");
   const [marketplaceBidsTicket, setMarketplaceBidsTicket] = useState<Ticket | null>(null);
-  
-  // Get user data first
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -64,19 +60,8 @@ export default function OrganizationView() {
     (user?.role === "org_subadmin" && user?.permissions?.includes("accept_ticket"));
   
   const canManageSubAdmins = user?.role === "root" || user?.role === "org_admin";
-  const canManageLocations = user?.role === "root" || user?.role === "org_admin";
+  
   const canManageVendors = user?.role === "root" || user?.role === "org_admin";
-  const canPayBills = user?.permissions?.includes("pay_bills") || user?.role === "org_admin";
-  const isAccountingRole = user?.permissions?.includes("pay_bills") && 
-    !user?.permissions?.includes("accept_ticket") && 
-    !user?.permissions?.includes("place_ticket");
-
-  // Use effect to set initial tab based on accounting role
-  React.useEffect(() => {
-    if (isAccountingRole) {
-      setActiveTab("billing");
-    }
-  }, [isAccountingRole]);
 
   // Fetch organization details
   const { data: organization } = useQuery<Organization | undefined>({
@@ -89,19 +74,15 @@ export default function OrganizationView() {
     enabled: !!organizationId,
   });
 
-  // Fetch tickets for this organization (accounting users only see billed tickets)
+  // Fetch tickets for this organization
   const { data: tickets = [], isLoading: ticketsLoading } = useQuery<Ticket[]>({
-    queryKey: isAccountingRole 
-      ? ["/api/tickets", { status: "billed", organizationId }]
-      : statusFilter === "all" 
-        ? ["/api/tickets", { organizationId }] 
-        : ["/api/tickets", { status: statusFilter, organizationId }],
+    queryKey: statusFilter === "all" 
+      ? ["/api/tickets", { organizationId }] 
+      : ["/api/tickets", { status: statusFilter, organizationId }],
     queryFn: async () => {
-      const url = isAccountingRole
-        ? `/api/tickets?status=billed&organizationId=${organizationId}`
-        : statusFilter === "all" 
-          ? `/api/tickets?organizationId=${organizationId}`
-          : `/api/tickets?status=${statusFilter}&organizationId=${organizationId}`;
+      const url = statusFilter === "all" 
+        ? `/api/tickets?organizationId=${organizationId}`
+        : `/api/tickets?status=${statusFilter}&organizationId=${organizationId}`;
       const response = await apiRequest("GET", url);
       return await response.json() as Ticket[];
     },
@@ -262,8 +243,6 @@ export default function OrganizationView() {
     },
   });
 
-
-
   const handleCreateSubAdmin = (data: InsertSubAdmin) => {
     createSubAdminMutation.mutate(data);
   };
@@ -377,13 +356,7 @@ export default function OrganizationView() {
       // Assign to marketplace instead of a specific vendor
       assignToMarketplaceMutation.mutate(ticketId);
     } else {
-      acceptTicketMutation.mutate({ 
-        ticketId, 
-        data: { 
-          maintenanceVendorId: data.maintenanceVendorId, 
-          assigneeId: data.assigneeId 
-        } 
-      });
+      acceptTicketMutation.mutate({ ticketId, ...data });
     }
   };
 
@@ -577,31 +550,17 @@ export default function OrganizationView() {
         <div className="mb-6">
           <div className="border-b border-gray-200">
             <nav className="-mb-px flex space-x-8">
-              {isAccountingRole && (
-                <button
-                  onClick={() => setActiveTab("billing")}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === "billing"
-                      ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  }`}
-                >
-                  Billed Tickets
-                </button>
-              )}
-              {!isAccountingRole && (
-                <button
-                  onClick={() => setActiveTab("tickets")}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === "tickets"
-                      ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  }`}
-                >
-                  Tickets
-                </button>
-              )}
-              {canManageSubAdmins && !isAccountingRole && (
+              <button
+                onClick={() => setActiveTab("tickets")}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "tickets"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Tickets
+              </button>
+              {canManageSubAdmins && (
                 <>
                   <button
                     onClick={() => setActiveTab("subadmins")}
@@ -625,7 +584,7 @@ export default function OrganizationView() {
                   </button>
                 </>
               )}
-              {canManageVendors && !isAccountingRole && (
+              {canManageVendors && (
                 <button
                   onClick={() => setActiveTab("vendors")}
                   className={`py-2 px-1 border-b-2 font-medium text-sm ${
@@ -637,24 +596,12 @@ export default function OrganizationView() {
                   Vendors
                 </button>
               )}
-              {canPayBills && (
-                <button
-                  onClick={() => setActiveTab("billing")}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === "billing"
-                      ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  }`}
-                >
-                  {isAccountingRole ? "Invoices" : "Billing"}
-                </button>
-              )}
             </nav>
           </div>
         </div>
 
         {/* Tab Content */}
-        {activeTab === "tickets" && !isAccountingRole && (
+        {activeTab === "tickets" && (
           <>
             {/* Filter Buttons */}
             <div className="flex space-x-2 mb-6">
@@ -690,7 +637,7 @@ export default function OrganizationView() {
           </>
         )}
 
-        {activeTab === "tickets" && !isAccountingRole && (
+        {activeTab === "tickets" && (
           <div className="mb-8">
             {ticketsLoading ? (
               <div className="bg-white rounded-lg shadow p-8 text-center">
@@ -713,7 +660,7 @@ export default function OrganizationView() {
           </div>
         )}
 
-        {activeTab === "subadmins" && canManageSubAdmins && !isAccountingRole && (
+        {activeTab === "subadmins" && canManageSubAdmins && (
           <div className="bg-white rounded-lg shadow">
             <div className="px-6 py-4 border-b border-slate-200">
               <h2 className="text-lg font-semibold text-slate-900 flex items-center">
@@ -778,11 +725,11 @@ export default function OrganizationView() {
           </div>
         )}
 
-        {activeTab === "locations" && canManageSubAdmins && !isAccountingRole && (
+        {activeTab === "locations" && canManageSubAdmins && (
           <LocationsManagement organizationId={organizationId!} />
         )}
 
-        {activeTab === "vendors" && canManageVendors && !isAccountingRole && (
+        {activeTab === "vendors" && canManageVendors && (
           <div className="bg-white rounded-lg shadow">
             <div className="px-6 py-4 border-b border-slate-200">
               <h3 className="text-lg font-medium text-gray-900">Vendor Management</h3>
@@ -796,47 +743,6 @@ export default function OrganizationView() {
             </div>
           </div>
         )}
-
-        {activeTab === "billing" && canPayBills && (
-          <>
-            {isAccountingRole ? (
-              // Accounting users see billed tickets, not invoices
-              <div className="bg-white rounded-lg shadow">
-                <div className="p-6 border-b border-slate-200">
-                  <h3 className="text-lg font-semibold text-slate-900">Billed Tickets</h3>
-                  <p className="text-sm text-slate-500 mt-1">Review completed and billed maintenance tickets</p>
-                </div>
-                <div className="p-6">
-                  {ticketsLoading ? (
-                    <div className="text-center py-8">
-                      <p className="text-slate-500">Loading billed tickets...</p>
-                    </div>
-                  ) : tickets.length === 0 ? (
-                    <div className="text-center py-8">
-                      <p className="text-slate-500">No billed tickets found.</p>
-                    </div>
-                  ) : (
-                    <TicketTable
-                      tickets={tickets}
-                      onAccept={undefined}
-                      onReject={undefined}
-                      onComplete={undefined}
-                      onConfirm={undefined}
-                      onViewBids={undefined}
-                      showActions={false}
-                      userRole={user?.role}
-                      userPermissions={user?.permissions || undefined}
-                      userId={user?.id}
-                    />
-                  )}
-                </div>
-              </div>
-            ) : (
-              // Regular users see invoice table
-              <InvoiceTable canPayBills={canPayBills} />
-            )}
-          </>
-        )}
       </main>
 
       {/* Modals */}
@@ -846,7 +752,7 @@ export default function OrganizationView() {
         onSubmit={handleCreateTicket}
         isLoading={createTicketMutation.isPending}
         userId={user?.id}
-        organizationId={organizationId || 0}
+        organizationId={organizationId}
       />
 
       <CreateSubAdminModal
@@ -884,7 +790,7 @@ export default function OrganizationView() {
         isLoading={acceptTicketMutation.isPending || rejectTicketMutation.isPending}
         userRole={user?.role}
         userPermissions={user?.permissions || undefined}
-        userVendorTiers={organizationVendors?.map(v => v.tier) || []}
+        userVendorTiers={user?.vendorTiers || undefined}
       />
 
       <ConfirmCompletionModal
@@ -913,100 +819,6 @@ export default function OrganizationView() {
         isOpen={!!marketplaceBidsTicket}
         onClose={() => setMarketplaceBidsTicket(null)}
       />
-
-
-    </div>
-  );
-}
-
-// Invoice Table Component  
-function InvoiceTable({ canPayBills }: { canPayBills: boolean }) {
-  const { data: invoices, isLoading } = useQuery({
-    queryKey: ["/api/invoices"],
-  });
-
-  if (isLoading) {
-    return (
-      <div className="bg-white rounded-lg shadow p-8 text-center">
-        <p className="text-slate-500">Loading invoices...</p>
-      </div>
-    );
-  }
-
-  if (!invoices || (Array.isArray(invoices) && invoices.length === 0)) {
-    return (
-      <div className="bg-white rounded-lg shadow p-8 text-center">
-        <p className="text-slate-500">No invoices found.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="bg-white rounded-lg shadow">
-      <div className="p-6 border-b border-slate-200">
-        <h3 className="text-lg font-semibold text-slate-900">Invoices</h3>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Invoice #
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Ticket #
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Amount
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Date
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {Array.isArray(invoices) && invoices.map((invoice: any) => (
-              <tr key={invoice.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  INV-{invoice.id.toString().padStart(6, '0')}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {invoice.ticketNumber || `#${invoice.ticketId}`}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  ${invoice.totalAmount}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <Badge variant={invoice.status === 'paid' ? 'default' : 'secondary'}>
-                    {invoice.status}
-                  </Badge>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {formatDate(invoice.createdAt)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <div className="flex space-x-2">
-                    <Button variant="outline" size="sm">
-                      View Details
-                    </Button>
-                    {canPayBills && invoice.status === 'pending' && (
-                      <Button variant="default" size="sm">
-                        Pay Bill
-                      </Button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
     </div>
   );
 }
