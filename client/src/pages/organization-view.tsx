@@ -73,10 +73,10 @@ export default function OrganizationView() {
 
   // Use effect to set initial tab based on accounting role
   React.useEffect(() => {
-    if (isAccountingRole && activeTab === "tickets") {
+    if (isAccountingRole) {
       setActiveTab("billing");
     }
-  }, [isAccountingRole, activeTab]);
+  }, [isAccountingRole]);
 
   // Fetch organization details
   const { data: organization } = useQuery<Organization | undefined>({
@@ -697,7 +697,7 @@ export default function OrganizationView() {
           </div>
         )}
 
-        {activeTab === "subadmins" && canManageSubAdmins && (
+        {activeTab === "subadmins" && canManageSubAdmins && !isAccountingRole && (
           <div className="bg-white rounded-lg shadow">
             <div className="px-6 py-4 border-b border-slate-200">
               <h2 className="text-lg font-semibold text-slate-900 flex items-center">
@@ -766,7 +766,7 @@ export default function OrganizationView() {
           <LocationsManagement organizationId={organizationId!} />
         )}
 
-        {activeTab === "vendors" && canManageVendors && (
+        {activeTab === "vendors" && canManageVendors && !isAccountingRole && (
           <div className="bg-white rounded-lg shadow">
             <div className="px-6 py-4 border-b border-slate-200">
               <h3 className="text-lg font-medium text-gray-900">Vendor Management</h3>
