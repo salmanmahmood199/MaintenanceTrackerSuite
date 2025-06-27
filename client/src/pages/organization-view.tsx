@@ -827,7 +827,7 @@ export default function OrganizationView() {
         isLoading={acceptTicketMutation.isPending || rejectTicketMutation.isPending}
         userRole={user?.role}
         userPermissions={user?.permissions || undefined}
-        userVendorTiers={organizationVendors.map(v => v.tier) || []}
+        userVendorTiers={organizationVendors?.map(v => v.tier) || []}
       />
 
       <ConfirmCompletionModal
