@@ -77,6 +77,14 @@ export function requireOrganization(req: Request, res: Response, next: NextFunct
   return res.status(403).json({ message: 'Organization access required' });
 }
 
+// Billing access middleware
+export function requireViewBilling(req: Request, res: Response, next: NextFunction) {
+  if (!req.user?.canViewBilling) {
+    return res.status(403).json({ message: "Billing access required" });
+  }
+  next();
+}
+
 // Declare session interface
 declare module 'express-session' {
   interface SessionData {
