@@ -1088,17 +1088,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (user.role === "maintenance_admin" && user.maintenanceVendorId) {
         invoices = await storage.getInvoices(user.maintenanceVendorId);
-      } else if (user.role === "org_admin" || user.role === "org_subadmin" || user.role === "billing") {
-        // Organization admin and billing users see invoices for their organization
-        if (user.role === "billing") {
-          // Billing users see invoices filtered by their accessible locations
-          const userLocations = await storage.getUserLocations(user.id);
-          const locationIds = userLocations.map(loc => loc.id);
-          invoices = await storage.getInvoicesByOrganizationAndLocations(user.organizationId!, locationIds);
-        } else {
-          // Org admin sees all invoices for their organization
-          invoices = await storage.getInvoicesByOrganization(user.organizationId!);
-        }
       } else if (user.role === "root") {
         invoices = await storage.getInvoices();
       } else {

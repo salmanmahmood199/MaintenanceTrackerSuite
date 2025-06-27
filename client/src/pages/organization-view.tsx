@@ -15,7 +15,6 @@ import { TicketTable } from "@/components/ticket-table";
 import { TicketActionModal } from "@/components/ticket-action-modal";
 import { ConfirmCompletionModal } from "@/components/confirm-completion-modal";
 import { MarketplaceBidsModal } from "@/components/marketplace-bids-modal";
-import { InvoicesList } from "@/components/invoices-list";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -44,14 +43,14 @@ export default function OrganizationView() {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [activeTab, setActiveTab] = useState<"tickets" | "subadmins" | "locations" | "vendors" | "invoices">("tickets");
+  const [activeTab, setActiveTab] = useState<"tickets" | "subadmins" | "locations" | "vendors">("tickets");
   const [marketplaceBidsTicket, setMarketplaceBidsTicket] = useState<Ticket | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Use organization ID from user (for org_admin/org_subadmin/billing) or route (for root accessing org)
-  const organizationId = (user?.role === "org_admin" || user?.role === "org_subadmin" || user?.role === "billing") ? user.organizationId : routeOrgId;
+  // Use organization ID from user (for org_admin/org_subadmin) or route (for root accessing org)
+  const organizationId = (user?.role === "org_admin" || user?.role === "org_subadmin") ? user.organizationId : routeOrgId;
 
   // Permission helpers
   const canPlaceTickets = user?.role === "root" || user?.role === "org_admin" || 
@@ -63,8 +62,6 @@ export default function OrganizationView() {
   const canManageSubAdmins = user?.role === "root" || user?.role === "org_admin";
   
   const canManageVendors = user?.role === "root" || user?.role === "org_admin";
-  
-  const canViewInvoices = user?.role === "org_admin" || user?.role === "billing";
 
   // Fetch organization details
   const { data: organization } = useQuery<Organization | undefined>({
@@ -599,18 +596,6 @@ export default function OrganizationView() {
                   Vendors
                 </button>
               )}
-              {canViewInvoices && (
-                <button
-                  onClick={() => setActiveTab("invoices")}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === "invoices"
-                      ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  }`}
-                >
-                  Invoices
-                </button>
-              )}
             </nav>
           </div>
         </div>
@@ -757,14 +742,6 @@ export default function OrganizationView() {
               </Button>
             </div>
           </div>
-        )}
-
-        {/* Invoices Tab */}
-        {activeTab === "invoices" && canViewInvoices && (
-          <InvoicesList 
-            organizationId={organizationId!} 
-            userRole={user?.role} 
-          />
         )}
       </main>
 
