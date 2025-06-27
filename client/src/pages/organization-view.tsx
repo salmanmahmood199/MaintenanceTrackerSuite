@@ -15,6 +15,7 @@ import { TicketTable } from "@/components/ticket-table";
 import { TicketActionModal } from "@/components/ticket-action-modal";
 import { ConfirmCompletionModal } from "@/components/confirm-completion-modal";
 import { MarketplaceBidsModal } from "@/components/marketplace-bids-modal";
+import { InvoicesList } from "@/components/invoices-list";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
