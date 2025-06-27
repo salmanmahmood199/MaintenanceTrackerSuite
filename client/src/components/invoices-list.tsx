@@ -100,7 +100,7 @@ export function InvoicesList({ organizationId, userRole }: InvoicesListProps) {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                {formatCurrency(invoices.reduce((sum, inv) => sum + inv.total, 0))}
+                {formatCurrency(invoices.reduce((sum, inv) => sum + parseFloat(inv.total.toString()), 0))}
               </div>
             </CardContent>
           </Card>
@@ -173,7 +173,7 @@ export function InvoicesList({ organizationId, userRole }: InvoicesListProps) {
                     {invoice.ticket?.location?.name || "No Location"}
                   </TableCell>
                   <TableCell className="font-medium">
-                    {formatCurrency(invoice.total)}
+                    {formatCurrency(parseFloat(invoice.total.toString()))}
                   </TableCell>
                   <TableCell>
                     <Badge className={getStatusColor(invoice.status)}>
@@ -181,7 +181,7 @@ export function InvoicesList({ organizationId, userRole }: InvoicesListProps) {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {formatDate(invoice.createdAt)}
+                    {invoice.createdAt ? formatDate(invoice.createdAt) : "N/A"}
                   </TableCell>
                   <TableCell>
                     <Button
@@ -220,7 +220,7 @@ export function InvoicesList({ organizationId, userRole }: InvoicesListProps) {
                     <div className="space-y-1 text-sm">
                       <div><span className="font-medium">Invoice #:</span> INV-{selectedInvoice.id.toString().padStart(4, '0')}</div>
                       <div><span className="font-medium">Ticket #:</span> {selectedInvoice.ticketId}</div>
-                      <div><span className="font-medium">Date:</span> {formatDate(selectedInvoice.createdAt)}</div>
+                      <div><span className="font-medium">Date:</span> {selectedInvoice.createdAt ? formatDate(selectedInvoice.createdAt) : "N/A"}</div>
                       <div><span className="font-medium">Status:</span> 
                         <Badge className={`ml-2 ${getStatusColor(selectedInvoice.status)}`}>
                           {selectedInvoice.status.charAt(0).toUpperCase() + selectedInvoice.status.slice(1)}
@@ -259,7 +259,9 @@ export function InvoicesList({ organizationId, userRole }: InvoicesListProps) {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {selectedInvoice.additionalItems.map((item, index) => (
+                        {(typeof selectedInvoice.additionalItems === 'string' 
+                          ? JSON.parse(selectedInvoice.additionalItems) 
+                          : selectedInvoice.additionalItems || []).map((item: any, index: number) => (
                           <TableRow key={index}>
                             <TableCell>{item.description}</TableCell>
                             <TableCell className="text-right">{formatCurrency(item.amount)}</TableCell>
@@ -276,15 +278,15 @@ export function InvoicesList({ organizationId, userRole }: InvoicesListProps) {
                     <div className="w-64 space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>Subtotal:</span>
-                        <span>{formatCurrency(selectedInvoice.subtotal)}</span>
+                        <span>{formatCurrency(parseFloat(selectedInvoice.subtotal.toString()))}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span>Tax:</span>
-                        <span>{formatCurrency(selectedInvoice.tax)}</span>
+                        <span>{formatCurrency(parseFloat(selectedInvoice.tax.toString()))}</span>
                       </div>
                       <div className="flex justify-between font-semibold text-lg border-t border-slate-200 pt-2">
                         <span>Total:</span>
-                        <span>{formatCurrency(selectedInvoice.total)}</span>
+                        <span>{formatCurrency(parseFloat(selectedInvoice.total.toString()))}</span>
                       </div>
                     </div>
                   </div>

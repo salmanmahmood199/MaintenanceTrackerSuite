@@ -700,6 +700,45 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(invoices);
   }
 
+  async getInvoicesByOrganization(organizationId: number): Promise<Invoice[]> {
+    return await db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.organizationId, organizationId))
+      .orderBy(desc(invoices.createdAt));
+  }
+
+  async getInvoicesByOrganizationAndLocations(organizationId: number, locationIds: number[]): Promise<Invoice[]> {
+    if (locationIds.length === 0) {
+      return [];
+    }
+    
+    // Get invoices for tickets that belong to the specified locations
+    return await db
+      .select({
+        id: invoices.id,
+        ticketId: invoices.ticketId,
+        vendorId: invoices.vendorId,
+        organizationId: invoices.organizationId,
+        workOrderIds: invoices.workOrderIds,
+        additionalItems: invoices.additionalItems,
+        subtotal: invoices.subtotal,
+        tax: invoices.tax,
+        total: invoices.total,
+        status: invoices.status,
+        notes: invoices.notes,
+        createdAt: invoices.createdAt,
+        updatedAt: invoices.updatedAt,
+      })
+      .from(invoices)
+      .leftJoin(tickets, eq(invoices.ticketId, tickets.id))
+      .where(and(
+        eq(invoices.organizationId, organizationId),
+        inArray(tickets.locationId, locationIds)
+      ))
+      .orderBy(desc(invoices.createdAt));
+  }
+
   async getInvoice(id: number): Promise<Invoice | undefined> {
     const [invoice] = await db.select().from(invoices).where(eq(invoices.id, id));
     return invoice;

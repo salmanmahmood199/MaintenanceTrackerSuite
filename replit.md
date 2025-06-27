@@ -257,6 +257,10 @@ Changelog:
 - June 23, 2025. Vendors can browse marketplace tickets and submit bids
 - June 23, 2025. Added marketplace tab to vendor dashboard with bid placement interface
 - June 23, 2025. Organization admins can accept/reject marketplace bids
+- June 27, 2025. Implemented billing role for sub-admins with location-based invoice access
+- June 27, 2025. Added billing user role that can view invoices for their assigned locations
+- June 27, 2025. Enhanced organization dashboard with invoices tab for billing and admin roles
+- June 27, 2025. Completed marketplace bidding workflow with proper vendor bid submission and approval process
 ```
 
 ## User Preferences

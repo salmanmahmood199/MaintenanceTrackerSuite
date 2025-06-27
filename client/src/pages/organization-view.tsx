@@ -758,6 +758,14 @@ export default function OrganizationView() {
             </div>
           </div>
         )}
+
+        {/* Invoices Tab */}
+        {activeTab === "invoices" && canViewInvoices && (
+          <InvoicesList 
+            organizationId={organizationId!} 
+            userRole={user?.role} 
+          />
+        )}
       </main>
 
       {/* Modals */}
