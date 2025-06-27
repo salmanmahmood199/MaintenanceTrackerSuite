@@ -19,6 +19,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
+import { formatDate } from "@/lib/utils";
 import type { Ticket, InsertTicket, InsertSubAdmin, Organization, User, MaintenanceVendor } from "@shared/schema";
 
 interface TicketStats {
@@ -43,7 +44,7 @@ export default function OrganizationView() {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [activeTab, setActiveTab] = useState<"tickets" | "subadmins" | "locations" | "vendors">("tickets");
+  const [activeTab, setActiveTab] = useState<"tickets" | "subadmins" | "locations" | "vendors" | "billing">("tickets");
   const [marketplaceBidsTicket, setMarketplaceBidsTicket] = useState<Ticket | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();

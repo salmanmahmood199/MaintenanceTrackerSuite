@@ -19,7 +19,7 @@ import {
   type User,
   type AuthenticatedRequest,
 } from "@shared/schema";
-import { getSessionConfig, authenticateUser, requireRole, requireOrganization } from "./auth";
+import { getSessionConfig, authenticateUser, requireRole, requireOrganization, requireViewBilling } from "./auth";
 import multer from "multer";
 import bcrypt from "bcrypt";
 import path from "path";
