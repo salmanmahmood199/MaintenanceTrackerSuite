@@ -585,7 +585,7 @@ export default function OrganizationView() {
                   Tickets
                 </button>
               )}
-              {canManageSubAdmins && (
+              {canManageSubAdmins && !isAccountingRole && (
                 <>
                   <button
                     onClick={() => setActiveTab("subadmins")}
@@ -609,7 +609,7 @@ export default function OrganizationView() {
                   </button>
                 </>
               )}
-              {canManageVendors && (
+              {canManageVendors && !isAccountingRole && (
                 <button
                   onClick={() => setActiveTab("vendors")}
                   className={`py-2 px-1 border-b-2 font-medium text-sm ${
@@ -674,7 +674,7 @@ export default function OrganizationView() {
           </>
         )}
 
-        {activeTab === "tickets" && (
+        {activeTab === "tickets" && !isAccountingRole && (
           <div className="mb-8">
             {ticketsLoading ? (
               <div className="bg-white rounded-lg shadow p-8 text-center">
@@ -762,7 +762,7 @@ export default function OrganizationView() {
           </div>
         )}
 
-        {activeTab === "locations" && canManageSubAdmins && (
+        {activeTab === "locations" && canManageSubAdmins && !isAccountingRole && (
           <LocationsManagement organizationId={organizationId!} />
         )}
 
