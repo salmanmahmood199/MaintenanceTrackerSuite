@@ -171,6 +171,10 @@ export class DatabaseStorage implements IStorage {
   // Sub-admin operations
   async createSubAdmin(subAdmin: InsertSubAdmin, organizationId: number): Promise<User> {
     const hashedPassword = await bcrypt.hash(subAdmin.password, 10);
+    
+    // Set canViewBilling based on permissions
+    const canViewBilling = subAdmin.permissions?.includes("view_billing") || false;
+    
     const [user] = await db
       .insert(users)
       .values({
@@ -178,6 +182,7 @@ export class DatabaseStorage implements IStorage {
         password: hashedPassword,
         role: "org_subadmin",
         organizationId,
+        canViewBilling,
       })
       .returning();
     return user;

@@ -79,9 +79,20 @@ export function requireOrganization(req: Request, res: Response, next: NextFunct
 
 // Billing access middleware
 export function requireViewBilling(req: Request, res: Response, next: NextFunction) {
-  if (!req.user?.canViewBilling) {
+  if (!req.user) {
+    return res.status(401).json({ message: 'Not authenticated' });
+  }
+
+  // Root admin and maintenance admin always have billing access
+  if (req.user.role === 'root' || req.user.role === 'maintenance_admin') {
+    return next();
+  }
+
+  // Check if user has billing permission
+  if (!req.user.canViewBilling) {
     return res.status(403).json({ message: "Billing access required" });
   }
+  
   next();
 }
 
