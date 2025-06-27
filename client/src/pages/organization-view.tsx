@@ -614,7 +614,7 @@ export default function OrganizationView() {
         </div>
 
         {/* Tab Content */}
-        {activeTab === "tickets" && (
+        {activeTab === "tickets" && !isAccountingRole && (
           <>
             {/* Filter Buttons */}
             <div className="flex space-x-2 mb-6">
@@ -835,14 +835,14 @@ export default function OrganizationView() {
 
       {/* Billing Tab */}
       {activeTab === "billing" && user?.canViewBilling && (
-        <InvoiceTable />
+        <InvoiceTable canPayBills={canPayBills} />
       )}
     </div>
   );
 }
 
-// Invoice Table Component
-function InvoiceTable() {
+// Invoice Table Component  
+function InvoiceTable({ canPayBills }: { canPayBills: boolean }) {
   const { data: invoices, isLoading } = useQuery({
     queryKey: ["/api/invoices"],
   });
@@ -913,9 +913,16 @@ function InvoiceTable() {
                   {formatDate(invoice.createdAt)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <Button variant="outline" size="sm">
-                    View Details
-                  </Button>
+                  <div className="flex space-x-2">
+                    <Button variant="outline" size="sm">
+                      View Details
+                    </Button>
+                    {canPayBills && invoice.status === 'pending' && (
+                      <Button variant="default" size="sm">
+                        Pay Bill
+                      </Button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
