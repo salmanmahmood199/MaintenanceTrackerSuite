@@ -171,10 +171,6 @@ export class DatabaseStorage implements IStorage {
   // Sub-admin operations
   async createSubAdmin(subAdmin: InsertSubAdmin, organizationId: number): Promise<User> {
     const hashedPassword = await bcrypt.hash(subAdmin.password, 10);
-    
-    // Set canViewBilling based on permissions
-    const canViewBilling = subAdmin.permissions?.includes("view_billing") || false;
-    
     const [user] = await db
       .insert(users)
       .values({
@@ -182,7 +178,6 @@ export class DatabaseStorage implements IStorage {
         password: hashedPassword,
         role: "org_subadmin",
         organizationId,
-        canViewBilling,
       })
       .returning();
     return user;
@@ -703,6 +698,45 @@ export class DatabaseStorage implements IStorage {
       return await db.select().from(invoices).where(eq(invoices.maintenanceVendorId, vendorId));
     }
     return await db.select().from(invoices);
+  }
+
+  async getInvoicesByOrganization(organizationId: number): Promise<Invoice[]> {
+    return await db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.organizationId, organizationId))
+      .orderBy(desc(invoices.createdAt));
+  }
+
+  async getInvoicesByOrganizationAndLocations(organizationId: number, locationIds: number[]): Promise<Invoice[]> {
+    if (locationIds.length === 0) {
+      return [];
+    }
+    
+    // Get invoices for tickets that belong to the specified locations
+    return await db
+      .select({
+        id: invoices.id,
+        ticketId: invoices.ticketId,
+        vendorId: invoices.vendorId,
+        organizationId: invoices.organizationId,
+        workOrderIds: invoices.workOrderIds,
+        additionalItems: invoices.additionalItems,
+        subtotal: invoices.subtotal,
+        tax: invoices.tax,
+        total: invoices.total,
+        status: invoices.status,
+        notes: invoices.notes,
+        createdAt: invoices.createdAt,
+        updatedAt: invoices.updatedAt,
+      })
+      .from(invoices)
+      .leftJoin(tickets, eq(invoices.ticketId, tickets.id))
+      .where(and(
+        eq(invoices.organizationId, organizationId),
+        inArray(tickets.locationId, locationIds)
+      ))
+      .orderBy(desc(invoices.createdAt));
   }
 
   async getInvoice(id: number): Promise<Invoice | undefined> {
