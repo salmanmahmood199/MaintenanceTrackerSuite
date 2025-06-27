@@ -244,6 +244,8 @@ export default function OrganizationView() {
     },
   });
 
+
+
   const handleCreateSubAdmin = (data: InsertSubAdmin) => {
     createSubAdminMutation.mutate(data);
   };
@@ -551,16 +553,18 @@ export default function OrganizationView() {
         <div className="mb-6">
           <div className="border-b border-gray-200">
             <nav className="-mb-px flex space-x-8">
-              <button
-                onClick={() => setActiveTab("tickets")}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === "tickets"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
-              >
-                Tickets
-              </button>
+              {!isAccountingRole && (
+                <button
+                  onClick={() => setActiveTab("tickets")}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === "tickets"
+                      ? "border-blue-500 text-blue-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  }`}
+                >
+                  Tickets
+                </button>
+              )}
               {canManageSubAdmins && (
                 <>
                   <button
@@ -606,7 +610,7 @@ export default function OrganizationView() {
                       : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                   }`}
                 >
-                  Billing
+                  {isAccountingRole ? "Invoices" : "Billing"}
                 </button>
               )}
             </nav>
