@@ -359,7 +359,7 @@ export default function OrganizationView() {
       // Assign to marketplace instead of a specific vendor
       assignToMarketplaceMutation.mutate(ticketId);
     } else {
-      acceptTicketMutation.mutate({ ticketId, ...data });
+      acceptTicketMutation.mutate({ ticketId, data });
     }
   };
 
@@ -775,7 +775,7 @@ export default function OrganizationView() {
         onSubmit={handleCreateTicket}
         isLoading={createTicketMutation.isPending}
         userId={user?.id}
-        organizationId={organizationId}
+        organizationId={organizationId || undefined}
       />
 
       <CreateSubAdminModal
@@ -813,7 +813,7 @@ export default function OrganizationView() {
         isLoading={acceptTicketMutation.isPending || rejectTicketMutation.isPending}
         userRole={user?.role}
         userPermissions={user?.permissions || undefined}
-        userVendorTiers={user?.vendorTiers || undefined}
+        userVendorTiers={organizationVendors.map(v => v.tier)}
       />
 
       <ConfirmCompletionModal
