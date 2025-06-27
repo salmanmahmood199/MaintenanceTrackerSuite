@@ -1,4 +1,5 @@
 import { useState } from "react";
+import * as React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRoute } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -71,11 +72,11 @@ export default function OrganizationView() {
     !user?.permissions?.includes("place_ticket");
 
   // Use effect to set initial tab based on accounting role
-  useState(() => {
+  React.useEffect(() => {
     if (isAccountingRole && activeTab === "tickets") {
       setActiveTab("billing");
     }
-  });
+  }, [isAccountingRole, activeTab]);
 
   // Fetch organization details
   const { data: organization } = useQuery<Organization | undefined>({
@@ -826,7 +827,7 @@ export default function OrganizationView() {
         isLoading={acceptTicketMutation.isPending || rejectTicketMutation.isPending}
         userRole={user?.role}
         userPermissions={user?.permissions || undefined}
-        userVendorTiers={vendorTiers || []}
+        userVendorTiers={organizationVendors.map(v => v.tier) || []}
       />
 
       <ConfirmCompletionModal
