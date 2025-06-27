@@ -39,7 +39,6 @@ export function CreateSubAdminModal({ open, onOpenChange, onSubmit, isLoading }:
       phone: "",
       password: "",
       confirmPassword: "",
-      role: "",
       permissions: [],
       vendorTiers: [],
     },
@@ -97,13 +96,6 @@ export function CreateSubAdminModal({ open, onOpenChange, onSubmit, isLoading }:
   const handleFormSubmit = (data: SubAdminFormData) => {
     console.log("Form submit called with data:", data);
     const { confirmPassword, ...submitData } = data;
-    
-    // Clear permissions and vendor tiers for billing role
-    if (submitData.role === "billing") {
-      submitData.permissions = [];
-      submitData.vendorTiers = [];
-    }
-    
     console.log("Submitting data:", submitData);
     onSubmit(submitData);
   };
