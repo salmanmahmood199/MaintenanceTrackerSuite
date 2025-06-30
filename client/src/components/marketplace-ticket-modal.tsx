@@ -419,7 +419,7 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
                       ) : (
                         <Button
                           onClick={handlePlaceBid}
-                          disabled={placeBidMutation.isPending || !hourlyRate || !estimatedHours || !responseTime}
+                          disabled={placeBidMutation.isPending || !hourlyRate || !estimatedHours || !responseTimeValue || !responseTimeUnit}
                           className="flex-1"
                         >
                           {placeBidMutation.isPending ? "Placing Bid..." : "Place Bid"}
