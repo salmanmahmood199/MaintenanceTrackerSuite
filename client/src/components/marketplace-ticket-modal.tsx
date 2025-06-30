@@ -233,6 +233,8 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
                               onClick={() => setSelectedImage(fullPath)}
                               onError={(e) => {
                                 console.log("Video failed to load:", fileName);
+                                console.log("Video detection result:", isVideo);
+                                console.log("Full path:", fullPath);
                                 e.currentTarget.style.display = 'none';
                               }}
                             />
@@ -245,6 +247,8 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
                               onClick={() => setSelectedImage(fullPath)}
                               onError={(e) => {
                                 console.log("Image failed to load:", fileName);
+                                console.log("Video detection result:", isVideo);
+                                console.log("Full path:", fullPath);
                                 e.currentTarget.style.display = 'none';
                               }}
                             />
@@ -433,15 +437,29 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
         </DialogContent>
       </Dialog>
 
-      {/* Image Viewer Modal */}
+      {/* Media Viewer Modal */}
       {selectedImage && (
         <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
           <DialogContent className="max-w-4xl">
-            <img
-              src={selectedImage}
-              alt="Enlarged view"
-              className="w-full h-auto max-h-[80vh] object-contain"
-            />
+            <DialogHeader>
+              <DialogTitle>Media Preview</DialogTitle>
+            </DialogHeader>
+            {selectedImage.toLowerCase().includes('.mp4') ||
+             selectedImage.toLowerCase().includes('.mov') ||
+             selectedImage.toLowerCase().includes('.avi') ||
+             selectedImage.toLowerCase().includes('.webm') ? (
+              <video
+                src={selectedImage}
+                controls
+                className="w-full h-auto max-h-[70vh] object-contain rounded-lg"
+              />
+            ) : (
+              <img
+                src={selectedImage}
+                alt="Enlarged view"
+                className="w-full h-auto max-h-[70vh] object-contain rounded-lg"
+              />
+            )}
           </DialogContent>
         </Dialog>
       )}
