@@ -257,6 +257,10 @@ Changelog:
 - June 23, 2025. Vendors can browse marketplace tickets and submit bids
 - June 23, 2025. Added marketplace tab to vendor dashboard with bid placement interface
 - June 23, 2025. Organization admins can accept/reject marketplace bids
+- June 30, 2025. Enhanced file upload system to support both images and videos
+- June 30, 2025. Updated MediaUpload component with video preview and 50MB limit for videos
+- June 30, 2025. Modified ticket creation, comments, and work orders to handle video files
+- June 30, 2025. Updated media viewer to display videos with controls in ticket table
 ```
 
 ## User Preferences

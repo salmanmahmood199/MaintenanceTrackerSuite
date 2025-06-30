@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, User, Hash, Wrench, CheckCircle, XCircle, Eye, ImageIcon, Clock, Calculator, MessageSquare, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Calendar, User, Hash, Wrench, CheckCircle, XCircle, Eye, ImageIcon, Clock, Calculator, MessageSquare, ChevronLeft, ChevronRight, X, Video } from "lucide-react";
 import { format } from "date-fns";
 import { formatDate, getPriorityColor, getStatusColor } from "@/lib/utils";
 import { ProgressTracker } from "@/components/progress-tracker";
@@ -184,7 +184,7 @@ export function TicketTable({
                           className="text-blue-600"
                         >
                           <ImageIcon className="h-4 w-4 mr-1" />
-                          {ticket.images.length}
+                          {ticket.images.length} file{ticket.images.length > 1 ? 's' : ''}
                         </Button>
                       ) : (
                         <span className="text-slate-400 text-sm">None</span>
