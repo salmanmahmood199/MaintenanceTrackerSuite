@@ -217,10 +217,10 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
                       <div className="grid grid-cols-2 gap-2">
                         {ticket.images.map((fileName, index) => {
                           const fullPath = fileName.startsWith('/uploads/') ? fileName : `/uploads/${fileName}`;
-                          const isVideo = fileName?.toLowerCase().includes('.mp4') ||
-                                         fileName?.toLowerCase().includes('.mov') ||
-                                         fileName?.toLowerCase().includes('.avi') ||
-                                         fileName?.toLowerCase().includes('.webm');
+                          const isVideo = fullPath?.toLowerCase().includes('.mp4') ||
+                                         fullPath?.toLowerCase().includes('.mov') ||
+                                         fullPath?.toLowerCase().includes('.avi') ||
+                                         fullPath?.toLowerCase().includes('.webm');
                           
                           return isVideo ? (
                             <video
