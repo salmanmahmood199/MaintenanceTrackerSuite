@@ -10,7 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { insertTicketSchema, type InsertTicket, type Location } from "@shared/schema";
-import { ImageUpload } from "./image-upload";
+import { MediaUpload } from "./media-upload";
 import { Plus } from "lucide-react";
 
 interface CreateTicketModalProps {
