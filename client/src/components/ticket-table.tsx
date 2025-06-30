@@ -368,17 +368,34 @@ export function TicketTable({
 
                   {selectedTicket.images && selectedTicket.images.length > 0 && (
                     <div>
-                      <h4 className="text-lg font-semibold mb-3">Images</h4>
+                      <h4 className="text-lg font-semibold mb-3">Media Files</h4>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {selectedTicket.images.map((image, index) => (
-                          <img
-                            key={index}
-                            src={image}
-                            alt={`Ticket image ${index + 1}`}
-                            className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
-                            onClick={() => openImageViewer(selectedTicket, index)}
-                          />
-                        ))}
+                        {selectedTicket.images.map((fileName, index) => {
+                          const isVideo = fileName?.toLowerCase().includes('.mp4') ||
+                                         fileName?.toLowerCase().includes('.mov') ||
+                                         fileName?.toLowerCase().includes('.avi') ||
+                                         fileName?.toLowerCase().includes('.webm');
+                          
+                          return isVideo ? (
+                            <video
+                              key={index}
+                              src={`/uploads/${fileName}`}
+                              className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                              controls={false}
+                              muted
+                              preload="metadata"
+                              onClick={() => openImageViewer(selectedTicket, index)}
+                            />
+                          ) : (
+                            <img
+                              key={index}
+                              src={`/uploads/${fileName}`}
+                              alt={`Ticket media ${index + 1}`}
+                              className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                              onClick={() => openImageViewer(selectedTicket, index)}
+                            />
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -410,18 +427,29 @@ export function TicketTable({
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>
-              Image {selectedImageIndex + 1} of {selectedTicket?.images?.length || 0}
+              Media {selectedImageIndex + 1} of {selectedTicket?.images?.length || 0}
             </DialogTitle>
           </DialogHeader>
           
           {selectedTicket && selectedTicket.images && (
             <div className="space-y-4">
               <div className="relative">
-                <img
-                  src={selectedTicket.images[selectedImageIndex]}
-                  alt={`Attachment ${selectedImageIndex + 1}`}
-                  className="w-full max-h-[60vh] object-contain rounded-lg"
-                />
+                {selectedTicket.images[selectedImageIndex]?.toLowerCase().includes('.mp4') ||
+                 selectedTicket.images[selectedImageIndex]?.toLowerCase().includes('.mov') ||
+                 selectedTicket.images[selectedImageIndex]?.toLowerCase().includes('.avi') ||
+                 selectedTicket.images[selectedImageIndex]?.toLowerCase().includes('.webm') ? (
+                  <video
+                    src={selectedTicket.images[selectedImageIndex]}
+                    controls
+                    className="w-full max-h-[60vh] object-contain rounded-lg"
+                  />
+                ) : (
+                  <img
+                    src={selectedTicket.images[selectedImageIndex]}
+                    alt={`Attachment ${selectedImageIndex + 1}`}
+                    className="w-full max-h-[60vh] object-contain rounded-lg"
+                  />
+                )}
                 
                 {selectedTicket.images.length > 1 && (
                   <>
