@@ -17,18 +17,18 @@ import { z } from "zod";
 
 const workOrderSchema = z.object({
   workDescription: z.string().min(10, "Work description must be at least 10 characters"),
+  timeEntries: z.array(z.object({
+    timeIn: z.string().min(1, "Time in required"),
+    timeOut: z.string().min(1, "Time out required"),
+    hours: z.number().min(0.1, "Hours must be greater than 0")
+  })).min(1, "At least one time entry required"),
   completionStatus: z.enum(["completed", "return_needed"], {
     required_error: "Please select completion status"
   }),
   completionNotes: z.string().min(5, "Completion notes must be at least 5 characters"),
   parts: z.array(z.object({
     name: z.string().min(1, "Part name required"),
-    quantity: z.number().min(1, "Quantity must be at least 1"),
-    cost: z.number().min(0, "Cost must be positive")
-  })).optional(),
-  otherCharges: z.array(z.object({
-    description: z.string().min(1, "Description required"),
-    cost: z.number().min(0, "Cost must be positive")
+    quantity: z.number().min(1, "Quantity must be at least 1")
   })).optional(),
 });
 
