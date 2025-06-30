@@ -261,6 +261,8 @@ Changelog:
 - June 30, 2025. Updated MediaUpload component with video preview and 50MB limit for videos
 - June 30, 2025. Modified ticket creation, comments, and work orders to handle video files
 - June 30, 2025. Updated media viewer to display videos with controls in ticket table
+- June 30, 2025. Fixed video playback for marketplace system - vendors can now properly view video files in marketplace tickets
+- June 30, 2025. Updated marketplace ticket modal, vendor dashboard, and bids modal to support video file display and playback
 ```
 
 ## User Preferences
