@@ -207,27 +207,49 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
                   </CardContent>
                 </Card>
 
-                {/* Images */}
+                {/* Media Files */}
                 {ticket.images && ticket.images.length > 0 && (
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg">Images</CardTitle>
+                      <CardTitle className="text-lg">Media Files</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-2 gap-2">
-                        {ticket.images.map((image, index) => (
-                          <img
-                            key={index}
-                            src={image.startsWith('/uploads/') ? image : `/uploads/${image}`}
-                            alt={`Ticket image ${index + 1}`}
-                            className="w-full h-24 object-cover rounded-md cursor-pointer hover:opacity-80 transition-opacity"
-                            onClick={() => setSelectedImage(image.startsWith('/uploads/') ? image : `/uploads/${image}`)}
-                            onError={(e) => {
-                              console.log("Image failed to load:", image);
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
-                        ))}
+                        {ticket.images.map((fileName, index) => {
+                          const fullPath = fileName.startsWith('/uploads/') ? fileName : `/uploads/${fileName}`;
+                          const isVideo = fileName?.toLowerCase().includes('.mp4') ||
+                                         fileName?.toLowerCase().includes('.mov') ||
+                                         fileName?.toLowerCase().includes('.avi') ||
+                                         fileName?.toLowerCase().includes('.webm');
+                          
+                          return isVideo ? (
+                            <video
+                              key={index}
+                              src={fullPath}
+                              className="w-full h-24 object-cover rounded-md cursor-pointer hover:opacity-80 transition-opacity"
+                              controls={false}
+                              muted
+                              preload="metadata"
+                              onClick={() => setSelectedImage(fullPath)}
+                              onError={(e) => {
+                                console.log("Video failed to load:", fileName);
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <img
+                              key={index}
+                              src={fullPath}
+                              alt={`Ticket media ${index + 1}`}
+                              className="w-full h-24 object-cover rounded-md cursor-pointer hover:opacity-80 transition-opacity"
+                              onClick={() => setSelectedImage(fullPath)}
+                              onError={(e) => {
+                                console.log("Image failed to load:", fileName);
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          );
+                        })}
                       </div>
                     </CardContent>
                   </Card>
