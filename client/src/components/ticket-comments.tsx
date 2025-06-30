@@ -351,11 +351,20 @@ export function TicketComments({ ticket, userRole, userId }: TicketCommentsProps
             <div className="flex flex-wrap gap-2">
               {selectedImages.map((file, index) => (
                 <div key={index} className="relative">
-                  <img
-                    src={URL.createObjectURL(file)}
-                    alt={`Selected ${index + 1}`}
-                    className="h-16 w-16 object-cover rounded"
-                  />
+                  {file.type.startsWith('video/') ? (
+                    <video
+                      src={URL.createObjectURL(file)}
+                      className="h-16 w-16 object-cover rounded"
+                      muted
+                      preload="metadata"
+                    />
+                  ) : (
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={`Selected ${index + 1}`}
+                      className="h-16 w-16 object-cover rounded"
+                    />
+                  )}
                   <Button
                     variant="destructive"
                     size="sm"
@@ -373,22 +382,22 @@ export function TicketComments({ ticket, userRole, userId }: TicketCommentsProps
             <div className="flex items-center space-x-2">
               <Input
                 type="file"
-                accept="image/*"
+                accept="image/*,video/*"
                 multiple
                 onChange={handleImageSelect}
                 className="hidden"
-                id="comment-images"
+                id="comment-media"
               />
-              <label htmlFor="comment-images">
+              <label htmlFor="comment-media">
                 <Button variant="outline" size="sm" asChild>
                   <span className="cursor-pointer">
                     <ImageIcon className="h-4 w-4 mr-2" />
-                    Add Images
+                    Add Media
                   </span>
                 </Button>
               </label>
               <span className="text-xs text-slate-500">
-                {selectedImages.length}/5 images
+                {selectedImages.length}/5 files
               </span>
             </div>
             

@@ -140,9 +140,9 @@ export function CreateTicketModal({ open, onOpenChange, onSubmit, isLoading, use
               )}
               
               <div>
-                <Label className="text-sm font-medium text-slate-700">Upload Images</Label>
+                <Label className="text-sm font-medium text-slate-700">Upload Images & Videos</Label>
                 <div className="mt-2">
-                  <ImageUpload onImagesChange={setImages} />
+                  <MediaUpload onFilesChange={setImages} />
                 </div>
               </div>
           
