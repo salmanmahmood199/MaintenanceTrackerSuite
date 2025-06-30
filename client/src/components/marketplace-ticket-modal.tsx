@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,11 +8,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { MapPin, Calendar, Clock, DollarSign, Wrench, Plus, Trash2 } from "lucide-react";
+import { MapPin, Calendar, Clock, DollarSign, Wrench, Plus, Trash2, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import type { Ticket } from "@shared/schema";
 
 interface MarketplaceTicketModalProps {
@@ -31,6 +36,9 @@ interface PartItem {
 export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceTicketModalProps) {
   const [hourlyRate, setHourlyRate] = useState("");
   const [estimatedHours, setEstimatedHours] = useState("");
+  const [responseTimeValue, setResponseTimeValue] = useState("");
+  const [responseTimeUnit, setResponseTimeUnit] = useState("hours");
+  const [responseDate, setResponseDate] = useState<Date | undefined>(undefined);
   const [responseTime, setResponseTime] = useState("");
   const [parts, setParts] = useState<PartItem[]>([]);
   const [newPartName, setNewPartName] = useState("");
@@ -38,6 +46,7 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
   const [newPartQuantity, setNewPartQuantity] = useState("1");
   const [additionalNotes, setAdditionalNotes] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -80,15 +89,37 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
     },
   });
 
+  // Update response time string when value or unit changes
+  useEffect(() => {
+    if (responseTimeValue && responseTimeUnit) {
+      if (responseTimeUnit === "hours") {
+        setResponseTime(`${responseTimeValue} ${responseTimeValue === "1" ? "hour" : "hours"}`);
+      } else if (responseTimeUnit === "days" || responseTimeUnit === "weeks") {
+        if (responseDate) {
+          const dateStr = format(responseDate, "MMM dd, yyyy");
+          setResponseTime(`By ${dateStr} (${responseTimeValue} ${responseTimeValue === "1" ? responseTimeUnit.slice(0, -1) : responseTimeUnit})`);
+        } else {
+          setResponseTime(`${responseTimeValue} ${responseTimeValue === "1" ? responseTimeUnit.slice(0, -1) : responseTimeUnit}`);
+        }
+      }
+    } else {
+      setResponseTime("");
+    }
+  }, [responseTimeValue, responseTimeUnit, responseDate]);
+
   const resetForm = () => {
     setHourlyRate("");
     setEstimatedHours("");
+    setResponseTimeValue("");
+    setResponseTimeUnit("hours");
+    setResponseDate(undefined);
     setResponseTime("");
     setParts([]);
     setNewPartName("");
     setNewPartCost("");
     setNewPartQuantity("1");
     setAdditionalNotes("");
+    setShowDatePicker(false);
   };
 
   const addPart = () => {
@@ -118,7 +149,7 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
   };
 
   const handlePlaceBid = () => {
-    if (!ticket || !hourlyRate || !estimatedHours || !responseTime) {
+    if (!ticket || !hourlyRate || !estimatedHours || !responseTimeValue || !responseTimeUnit) {
       toast({
         title: "Missing Information",
         description: "Please provide hourly rate, estimated hours, and response time.",
@@ -300,13 +331,77 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
 
                     {/* Response Time */}
                     <div>
-                      <Label htmlFor="responseTime">How quickly can you arrive?</Label>
-                      <Input
-                        id="responseTime"
-                        placeholder="e.g., Within 2 hours, Same day, Next business day"
-                        value={responseTime}
-                        onChange={(e) => setResponseTime(e.target.value)}
-                      />
+                      <Label htmlFor="response-time">How quickly can you arrive?</Label>
+                      <div className="mt-1 space-y-2">
+                        <div className="flex gap-2">
+                          <Input
+                            id="response-time-value"
+                            type="number"
+                            min="1"
+                            placeholder="1"
+                            value={responseTimeValue}
+                            onChange={(e) => setResponseTimeValue(e.target.value)}
+                            className="w-20"
+                          />
+                          <Select value={responseTimeUnit} onValueChange={(value) => {
+                            setResponseTimeUnit(value);
+                            setShowDatePicker(value === "days" || value === "weeks");
+                            if (value === "hours") {
+                              setResponseDate(undefined);
+                              setShowDatePicker(false);
+                            }
+                          }}>
+                            <SelectTrigger className="w-24">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="hours">Hours</SelectItem>
+                              <SelectItem value="days">Days</SelectItem>
+                              <SelectItem value="weeks">Weeks</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        {(responseTimeUnit === "days" || responseTimeUnit === "weeks") && (
+                          <div>
+                            <Label className="text-sm text-muted-foreground">Select target date (optional)</Label>
+                            <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className={cn(
+                                    "w-full justify-start text-left font-normal mt-1",
+                                    !responseDate && "text-muted-foreground"
+                                  )}
+                                >
+                                  <CalendarIcon className="mr-2 h-4 w-4" />
+                                  {responseDate ? format(responseDate, "PPP") : "Pick a date"}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <CalendarComponent
+                                  mode="single"
+                                  selected={responseDate}
+                                  onSelect={(date) => {
+                                    setResponseDate(date);
+                                    setShowDatePicker(false);
+                                  }}
+                                  disabled={(date) =>
+                                    date < new Date() || date < new Date("1900-01-01")
+                                  }
+                                  initialFocus
+                                />
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+                        )}
+                        
+                        {responseTime && (
+                          <div className="text-sm text-muted-foreground bg-slate-50 p-2 rounded">
+                            <strong>Response:</strong> {responseTime}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     <Separator />
