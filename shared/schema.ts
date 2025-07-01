@@ -364,6 +364,42 @@ export const partPriceHistoryRelations = relations(partPriceHistory, ({ one }) =
   }),
 }));
 
+// Calendar events table for universal scheduling
+export const calendarEvents = pgTable("calendar_events", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  eventType: varchar("event_type", { length: 50 }).notNull(), // 'availability', 'work_assignment', 'meeting', 'maintenance', 'personal'
+  startDate: date("start_date").notNull(),
+  startTime: time("start_time"),
+  endDate: date("end_date").notNull(), 
+  endTime: time("end_time"),
+  isAllDay: boolean("is_all_day").default(false).notNull(),
+  isRecurring: boolean("is_recurring").default(false).notNull(),
+  recurrencePattern: text("recurrence_pattern"), // JSON: {"type": "weekly", "days": ["monday", "tuesday"], "endDate": "2025-12-31"}
+  location: varchar("location", { length: 255 }),
+  attendees: text("attendees").array(), // Array of user IDs as strings
+  priority: varchar("priority", { length: 20 }).default("medium").notNull(), // 'low', 'medium', 'high'
+  status: varchar("status", { length: 20 }).default("confirmed").notNull(), // 'confirmed', 'tentative', 'cancelled'
+  relatedTicketId: integer("related_ticket_id"), // Link to ticket if it's a work assignment
+  color: varchar("color", { length: 7 }).default("#3B82F6"), // Hex color for calendar display
+  isAvailability: boolean("is_availability").default(false).notNull(), // Special flag for availability blocks
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const calendarEventsRelations = relations(calendarEvents, ({ one }) => ({
+  user: one(users, {
+    fields: [calendarEvents.userId],
+    references: [users.id],
+  }),
+  relatedTicket: one(tickets, {
+    fields: [calendarEvents.relatedTicketId],
+    references: [tickets.id],
+  }),
+}));
+
 // Update maintenance vendors relations to include parts
 export const maintenanceVendorsRelationsExtended = relations(maintenanceVendors, ({ many }) => ({
   technicians: many(users),
@@ -540,6 +576,9 @@ export type InsertPart = typeof parts.$inferInsert;
 export type PartPriceHistory = typeof partPriceHistory.$inferSelect;
 export type InsertPartPriceHistory = typeof partPriceHistory.$inferInsert;
 
+export type CalendarEvent = typeof calendarEvents.$inferSelect;
+export type InsertCalendarEvent = typeof calendarEvents.$inferInsert;
+
 export const insertMarketplaceBidSchema = createInsertSchema(marketplaceBids).omit({
   id: true,
   createdAt: true,
@@ -550,4 +589,20 @@ export const insertTicketCommentSchema = createInsertSchema(ticketComments).omit
   id: true,
   createdAt: true,
   updatedAt: true,
+});
+
+export const insertCalendarEventSchema = createInsertSchema(calendarEvents).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  eventType: z.enum(["availability", "work_assignment", "meeting", "maintenance", "personal"]),
+  priority: z.enum(["low", "medium", "high"]).default("medium"),
+  status: z.enum(["confirmed", "tentative", "cancelled"]).default("confirmed"),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
+});
+
+export const updateCalendarEventSchema = insertCalendarEventSchema.partial().extend({
+  id: z.number(),
 });
