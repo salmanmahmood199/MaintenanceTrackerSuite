@@ -22,6 +22,8 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
   const [imageGalleryOpen, setImageGalleryOpen] = useState(false);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [galleryTitle, setGalleryTitle] = useState("");
+  const [selectedWorkOrder, setSelectedWorkOrder] = useState<WorkOrder | null>(null);
+  const [workOrderDetailOpen, setWorkOrderDetailOpen] = useState(false);
   const { data: workOrders = [], isLoading } = useQuery<WorkOrder[]>({
     queryKey: ["/api/tickets", ticketId, "work-orders"],
     queryFn: async () => {
@@ -49,11 +51,17 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
     setImageGalleryOpen(true);
   };
 
+  const openWorkOrderDetail = (workOrder: WorkOrder) => {
+    setSelectedWorkOrder(workOrder);
+    setWorkOrderDetailOpen(true);
+  };
+
   const formatCurrency = (amount: string) => {
     return `$${parseFloat(amount).toFixed(2)}`;
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
@@ -88,7 +96,11 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
               }
 
               return (
-                <Card key={workOrder.id} className="border-l-4 border-l-blue-500">
+                <Card 
+                  key={workOrder.id} 
+                  className="border-l-4 border-l-blue-500 hover:bg-slate-50 cursor-pointer transition-colors"
+                  onClick={() => openWorkOrderDetail(workOrder)}
+                >
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg flex items-center gap-2">
@@ -252,5 +264,215 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
         />
       </DialogContent>
     </Dialog>
+
+    {/* Detailed Work Order Modal */}
+    <Dialog open={workOrderDetailOpen} onOpenChange={setWorkOrderDetailOpen}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Wrench className="h-5 w-5" />
+            Work Order #{selectedWorkOrder?.workOrderNumber} - Complete Details
+          </DialogTitle>
+        </DialogHeader>
+
+        {selectedWorkOrder && (
+          <div className="space-y-6 py-4">
+            {/* Header Info */}
+            <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-lg">
+              <div>
+                <h3 className="font-medium text-slate-900 mb-2">Work Order Information</h3>
+                <div className="space-y-1 text-sm">
+                  <div><strong>Work Order #:</strong> {selectedWorkOrder.workOrderNumber}</div>
+                  <div><strong>Technician:</strong> {selectedWorkOrder.technicianName}</div>
+                  <div><strong>Status:</strong> 
+                    <Badge className={`ml-2 ${getStatusColor(selectedWorkOrder.completionStatus)}`}>
+                      {getStatusText(selectedWorkOrder.completionStatus)}
+                    </Badge>
+                  </div>
+                  <div><strong>Created:</strong> {selectedWorkOrder.createdAt ? formatTz(toZonedTime(new Date(selectedWorkOrder.createdAt), 'America/New_York'), "MMM dd, yyyy 'at' h:mm a zzz", { timeZone: 'America/New_York' }) : 'Date unavailable'}</div>
+                </div>
+              </div>
+              
+              {/* Time Tracking Section */}
+              {(selectedWorkOrder.workDate || selectedWorkOrder.timeIn || selectedWorkOrder.timeOut || selectedWorkOrder.totalHours) && (
+                <div>
+                  <h3 className="font-medium text-slate-900 mb-2">Time Tracking</h3>
+                  <div className="space-y-1 text-sm">
+                    {selectedWorkOrder.workDate && <div><strong>Work Date:</strong> {selectedWorkOrder.workDate}</div>}
+                    {selectedWorkOrder.timeIn && <div><strong>Time In:</strong> {selectedWorkOrder.timeIn}</div>}
+                    {selectedWorkOrder.timeOut && <div><strong>Time Out:</strong> {selectedWorkOrder.timeOut}</div>}
+                    {selectedWorkOrder.totalHours && (
+                      <div className="font-medium text-green-700">
+                        <strong>Total Hours:</strong> {selectedWorkOrder.totalHours} hours
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Work Description */}
+            <div>
+              <h3 className="font-medium text-slate-900 mb-2">Work Performed</h3>
+              <div className="bg-slate-50 p-4 rounded-lg">
+                <p className="text-slate-700">{selectedWorkOrder.workDescription}</p>
+              </div>
+            </div>
+
+            {/* Parts Used */}
+            {(() => {
+              try {
+                const parts = typeof selectedWorkOrder.parts === 'string' ? JSON.parse(selectedWorkOrder.parts) : selectedWorkOrder.parts || [];
+                return parts.length > 0 ? (
+                  <div>
+                    <h3 className="font-medium text-slate-900 mb-2 flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      Parts & Equipment Used
+                    </h3>
+                    <div className="space-y-3">
+                      {parts.map((part: any, index: number) => (
+                        <div key={index} className="bg-slate-50 p-3 rounded-lg">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="font-medium text-slate-900">{part.name}</div>
+                              {part.description && <div className="text-sm text-slate-600">{part.description}</div>}
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm text-slate-600">Qty: {part.quantity}</div>
+                              <div className="text-sm text-slate-600">Unit: ${part.cost}</div>
+                              <div className="font-medium text-slate-900">Total: ${(part.quantity * part.cost).toFixed(2)}</div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null;
+              } catch {
+                return null;
+              }
+            })()}
+
+            {/* Other Charges */}
+            {(() => {
+              try {
+                const otherCharges = typeof selectedWorkOrder.otherCharges === 'string' ? JSON.parse(selectedWorkOrder.otherCharges) : selectedWorkOrder.otherCharges || [];
+                return otherCharges.length > 0 ? (
+                  <div>
+                    <h3 className="font-medium text-slate-900 mb-2 flex items-center gap-2">
+                      <DollarSign className="h-4 w-4" />
+                      Additional Charges
+                    </h3>
+                    <div className="space-y-2">
+                      {otherCharges.map((charge: any, index: number) => (
+                        <div key={index} className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
+                          <div>
+                            <div className="font-medium text-slate-900">{charge.description}</div>
+                          </div>
+                          <div className="font-medium text-slate-900">${charge.cost}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null;
+              } catch {
+                return null;
+              }
+            })()}
+
+            {/* Total Cost */}
+            {selectedWorkOrder.totalCost && (
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-medium text-blue-900">Total Work Order Cost</h3>
+                  <div className="text-2xl font-bold text-blue-900">${selectedWorkOrder.totalCost}</div>
+                </div>
+              </div>
+            )}
+
+            {/* Manager Verification */}
+            {(selectedWorkOrder.managerName || selectedWorkOrder.managerSignature) && (
+              <div>
+                <h3 className="font-medium text-slate-900 mb-2">Manager Verification</h3>
+                <div className="bg-slate-50 p-4 rounded-lg space-y-3">
+                  {selectedWorkOrder.managerName && (
+                    <div>
+                      <strong>Manager Name:</strong> {selectedWorkOrder.managerName}
+                    </div>
+                  )}
+                  {selectedWorkOrder.managerSignature && (
+                    <div>
+                      <strong>Manager Signature:</strong>
+                      <div className="mt-2 p-2 bg-white border rounded">
+                        <img 
+                          src={selectedWorkOrder.managerSignature} 
+                          alt="Manager Signature" 
+                          className="max-w-full h-auto"
+                          style={{ maxHeight: '100px' }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Work Images */}
+            {selectedWorkOrder.images && selectedWorkOrder.images.length > 0 && (
+              <div>
+                <h3 className="font-medium text-slate-900 mb-2 flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4" />
+                  Work Documentation ({selectedWorkOrder.images.length} file{selectedWorkOrder.images.length !== 1 ? 's' : ''})
+                </h3>
+                <div className="grid grid-cols-4 gap-2">
+                  {selectedWorkOrder.images.slice(0, 8).map((image: string, index: number) => {
+                    const isVideo = image.includes('.mp4') || image.includes('.mov') || image.includes('.avi') || image.includes('.webm');
+                    return (
+                      <div key={index} className="relative">
+                        {isVideo ? (
+                          <video
+                            src={`/api/uploads/${image}`}
+                            className="w-full h-20 object-cover rounded cursor-pointer"
+                            onClick={() => openImageGallery(selectedWorkOrder.images || [], `Work Order #${selectedWorkOrder.workOrderNumber} Documentation`)}
+                          />
+                        ) : (
+                          <img
+                            src={`/api/uploads/${image}`}
+                            alt={`Work image ${index + 1}`}
+                            className="w-full h-20 object-cover rounded cursor-pointer"
+                            onClick={() => openImageGallery(selectedWorkOrder.images || [], `Work Order #${selectedWorkOrder.workOrderNumber} Documentation`)}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                {selectedWorkOrder.images.length > 8 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                    onClick={() => openImageGallery(selectedWorkOrder.images || [], `Work Order #${selectedWorkOrder.workOrderNumber} Documentation`)}
+                  >
+                    View All {selectedWorkOrder.images.length} Files
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {/* Completion Notes */}
+            <div>
+              <h3 className="font-medium text-slate-900 mb-2">
+                {selectedWorkOrder.completionStatus === "return_needed" ? "Return Details" : "Completion Notes"}
+              </h3>
+              <div className="bg-slate-50 p-4 rounded-lg">
+                <p className="text-slate-700">{selectedWorkOrder.completionNotes}</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
