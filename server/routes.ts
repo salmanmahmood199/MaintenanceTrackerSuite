@@ -1819,6 +1819,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create event exception (for deleting specific occurrences of recurring events)
+  app.post("/api/calendar/events/:id/exceptions", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const user = req.user!;
+      const eventId = parseInt(req.params.id);
+      const { exceptionDate } = req.body;
+      
+      // Verify event exists and user has access
+      const event = await storage.getCalendarEvent(eventId);
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
+      if (event.userId !== user.id && user.role !== "root") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const exception = await storage.createEventException(eventId, exceptionDate);
+      res.status(201).json(exception);
+    } catch (error) {
+      console.error("Error creating event exception:", error);
+      res.status(500).json({ message: "Failed to create event exception" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

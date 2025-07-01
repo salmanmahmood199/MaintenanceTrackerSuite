@@ -393,14 +393,26 @@ export const calendarEvents = pgTable("calendar_events", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const calendarEventsRelations = relations(calendarEvents, ({ one }) => ({
+// Event exceptions table for handling deleted instances of recurring events
+export const eventExceptions = pgTable("event_exceptions", {
+  id: serial("id").primaryKey(),
+  eventId: integer("event_id").notNull().references(() => calendarEvents.id, { onDelete: "cascade" }),
+  exceptionDate: date("exception_date").notNull(), // Date when the recurring event should be skipped
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const calendarEventsRelations = relations(calendarEvents, ({ one, many }) => ({
   user: one(users, {
     fields: [calendarEvents.userId],
     references: [users.id],
   }),
-  relatedTicket: one(tickets, {
-    fields: [calendarEvents.relatedTicketId],
-    references: [tickets.id],
+  exceptions: many(eventExceptions),
+}));
+
+export const eventExceptionsRelations = relations(eventExceptions, ({ one }) => ({
+  event: one(calendarEvents, {
+    fields: [eventExceptions.eventId],
+    references: [calendarEvents.id],
   }),
 }));
 

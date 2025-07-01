@@ -14,6 +14,7 @@ import {
   parts,
   partPriceHistory,
   calendarEvents,
+  eventExceptions,
   type User, 
   type InsertUser, 
   type InsertSubAdmin,
@@ -167,6 +168,7 @@ export interface IStorage {
   getUserAvailability(userId: number, date: string): Promise<CalendarEvent[]>;
   createAvailabilityBlock(userId: number, title: string, startDate: string, endDate: string, startTime?: string, endTime?: string): Promise<CalendarEvent>;
   getWorkAssignments(userId: number, startDate?: string, endDate?: string): Promise<CalendarEvent[]>;
+  createEventException(eventId: number, exceptionDate: string): Promise<{ id: number; eventId: number; exceptionDate: string }>;
   
   // Initialize root user
   initializeRootUser(): Promise<void>;
