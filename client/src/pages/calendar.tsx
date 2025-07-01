@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Calendar as CalendarIcon, Plus, Clock, Users, MapPin, Edit2, Trash2 } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, Clock, Users, MapPin, Edit2, Trash2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { CreateEventModal } from "@/components/create-event-modal";
+import { Link } from "wouter";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isToday } from "date-fns";
 
 interface CalendarEvent {
@@ -125,6 +126,22 @@ export default function Calendar() {
     }
   };
 
+  const getDashboardRoute = () => {
+    switch (user?.role) {
+      case "root":
+        return "/";
+      case "org_admin":
+      case "org_subadmin":
+        return user?.organizationId ? `/admin/organizations/${user.organizationId}` : "/";
+      case "maintenance_admin":
+        return user?.maintenanceVendorId ? `/vendor/${user.maintenanceVendorId}` : "/";
+      case "technician":
+        return "/";
+      default:
+        return "/";
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-6">
@@ -143,14 +160,22 @@ export default function Calendar() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
-              <CalendarIcon className="h-8 w-8 text-blue-600" />
-              Calendar
-            </h1>
-            <p className="text-slate-600 mt-1">
-              {getUserRoleDescription()} • Manage your schedule and availability
-            </p>
+          <div className="flex items-center gap-4">
+            <Link href={getDashboardRoute()}>
+              <Button variant="outline" size="sm">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Dashboard
+              </Button>
+            </Link>
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
+                <CalendarIcon className="h-8 w-8 text-blue-600" />
+                Calendar
+              </h1>
+              <p className="text-slate-600 mt-1">
+                {getUserRoleDescription()} • Manage your schedule and availability
+              </p>
+            </div>
           </div>
           <Button 
             onClick={() => setCreateEventOpen(true)}

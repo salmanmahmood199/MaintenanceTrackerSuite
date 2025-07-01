@@ -16,6 +16,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { zonedTimeToUtc, utcToZonedTime } from "date-fns-tz";
 
 const eventSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -29,6 +30,12 @@ const eventSchema = z.object({
   priority: z.enum(["low", "medium", "high"]).default("medium"),
   location: z.string().optional(),
   color: z.string().default("#3B82F6"),
+  timezone: z.string().default("America/New_York"),
+  // For availability events - enhanced fields
+  availabilityDays: z.array(z.string()).optional(),
+  availabilityStartTime: z.string().optional(),
+  availabilityEndTime: z.string().optional(),
+  isRecurring: z.boolean().default(false),
 });
 
 type EventFormData = z.infer<typeof eventSchema>;
