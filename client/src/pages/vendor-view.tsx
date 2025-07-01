@@ -375,7 +375,7 @@ export function VendorView() {
           <InvoicesView vendorId={vendorId} />
         )}
 
-        {activeTab === "parts" && (
+        {activeTab === "parts" && vendorId && (
           <PartsManagement />
         )}
 

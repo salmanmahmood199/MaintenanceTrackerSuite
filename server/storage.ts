@@ -145,6 +145,15 @@ export interface IStorage {
   counterMarketplaceBid(bidId: number, counterOffer: number, counterNotes: string): Promise<MarketplaceBid>;
   assignTicketToMarketplace(ticketId: number): Promise<Ticket | undefined>;
   approveBid(bidId: number): Promise<{ bid: MarketplaceBid; ticket: Ticket }>;
+  getVendorMarketplaceBidForTicket(ticketId: number, vendorId: number): Promise<MarketplaceBid | undefined>;
+  
+  // Parts management
+  getPartsByVendorId(vendorId: number): Promise<Part[]>;
+  createPart(part: InsertPart): Promise<Part>;
+  updatePart(partId: number, part: Partial<InsertPart>): Promise<Part | undefined>;
+  deletePart(partId: number): Promise<boolean>;
+  getPartPriceHistory(partId: number): Promise<PartPriceHistory[]>;
+  createPartPriceHistory(history: InsertPartPriceHistory): Promise<PartPriceHistory>;
   
   // Initialize root user
   initializeRootUser(): Promise<void>;
@@ -1070,6 +1079,104 @@ export class DatabaseStorage implements IStorage {
         
         console.log(`Created vendor admin: ${adminEmail} / ${adminPassword}`);
       }
+    }
+  }
+
+  async getVendorMarketplaceBidForTicket(ticketId: number, vendorId: number): Promise<MarketplaceBid | undefined> {
+    const [bid] = await db
+      .select()
+      .from(marketplaceBids)
+      .where(and(eq(marketplaceBids.ticketId, ticketId), eq(marketplaceBids.vendorId, vendorId)));
+    return bid;
+  }
+
+  // Parts management implementation
+  async getPartsByVendorId(vendorId: number): Promise<Part[]> {
+    return await db
+      .select()
+      .from(parts)
+      .where(eq(parts.vendorId, vendorId))
+      .orderBy(desc(parts.updatedAt));
+  }
+
+  async createPart(partData: InsertPart): Promise<Part> {
+    const [part] = await db
+      .insert(parts)
+      .values(partData)
+      .returning();
+    return part;
+  }
+
+  async updatePart(partId: number, partData: Partial<InsertPart>): Promise<Part | undefined> {
+    // Get current part for price history
+    const [currentPart] = await db
+      .select()
+      .from(parts)
+      .where(eq(parts.id, partId));
+
+    if (!currentPart) return undefined;
+
+    // Update the part
+    const [updatedPart] = await db
+      .update(parts)
+      .set({ ...partData, updatedAt: new Date() })
+      .where(eq(parts.id, partId))
+      .returning();
+
+    // Create price history if cost changed
+    if (partData.currentCost && Number(partData.currentCost) !== Number(currentPart.currentCost)) {
+      await db.insert(partPriceHistory).values({
+        partId: partId,
+        oldPrice: currentPart.currentCost,
+        newPrice: partData.currentCost,
+        markupPercentage: partData.markupPercentage || currentPart.markupPercentage,
+        roundToNinteyNine: partData.roundToNinteyNine !== undefined ? partData.roundToNinteyNine : currentPart.roundToNinteyNine,
+        changedBy: 1, // TODO: Get actual user ID from context
+      });
+    }
+
+    return updatedPart;
+  }
+
+  async deletePart(partId: number): Promise<boolean> {
+    const result = await db
+      .delete(parts)
+      .where(eq(parts.id, partId));
+    return result.rowCount! > 0;
+  }
+
+  async getPartPriceHistory(partId: number): Promise<PartPriceHistory[]> {
+    return await db
+      .select()
+      .from(partPriceHistory)
+      .where(eq(partPriceHistory.partId, partId))
+      .orderBy(desc(partPriceHistory.changedAt));
+  }
+
+  async createPartPriceHistory(historyData: InsertPartPriceHistory): Promise<PartPriceHistory> {
+    const [history] = await db
+      .insert(partPriceHistory)
+      .values(historyData)
+      .returning();
+    return history;
+  }
+
+  // Initialize root user
+  async initializeRootUser(): Promise<void> {
+    try {
+      const rootExists = await this.getUserByEmail("root@mail.com");
+      if (!rootExists) {
+        await this.createUser({
+          email: "root@mail.com",
+          password: "admin",
+          firstName: "Root",
+          lastName: "Admin",
+          role: "root",
+        });
+        console.log("Root user created successfully");
+      }
+    } catch (error) {
+      console.error("Error initializing root user:", error);
     }
   }
 }

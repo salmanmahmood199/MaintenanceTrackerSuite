@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, varchar, uuid, jsonb, decimal } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, varchar, uuid, jsonb, decimal, numeric, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -235,7 +235,6 @@ export const maintenanceVendorsRelations = relations(maintenanceVendors, ({ many
   tickets: many(tickets),
   vendorOrganizationTiers: many(vendorOrganizationTiers),
   marketplaceBids: many(marketplaceBids),
-  parts: many(parts),
 }));
 
 export const vendorOrganizationTiersRelations = relations(vendorOrganizationTiers, ({ one }) => ({
@@ -311,6 +310,59 @@ export const invoicesRelations = relations(invoices, ({ one }) => ({
     fields: [invoices.organizationId],
     references: [organizations.id],
   }),
+}));
+
+// Parts management for maintenance vendors
+export const parts = pgTable("parts", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  currentCost: numeric("current_cost", { precision: 10, scale: 2 }).notNull(),
+  markupPercentage: numeric("markup_percentage", { precision: 5, scale: 2 }).notNull().default("20.00"),
+  roundToNinteyNine: boolean("round_to_nintey_nine").notNull().default(false),
+  vendorId: integer("vendor_id").notNull().references(() => maintenanceVendors.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Price history tracking for parts
+export const partPriceHistory = pgTable("part_price_history", {
+  id: serial("id").primaryKey(),
+  partId: integer("part_id").notNull().references(() => parts.id, { onDelete: "cascade" }),
+  oldPrice: numeric("old_price", { precision: 10, scale: 2 }).notNull(),
+  newPrice: numeric("new_price", { precision: 10, scale: 2 }).notNull(),
+  markupPercentage: numeric("markup_percentage", { precision: 5, scale: 2 }).notNull(),
+  roundToNinteyNine: boolean("round_to_nintey_nine").notNull().default(false),
+  changedAt: timestamp("changed_at").defaultNow(),
+  changedBy: integer("changed_by").notNull().references(() => users.id),
+});
+
+export const partsRelations = relations(parts, ({ one, many }) => ({
+  vendor: one(maintenanceVendors, {
+    fields: [parts.vendorId],
+    references: [maintenanceVendors.id],
+  }),
+  priceHistory: many(partPriceHistory),
+}));
+
+export const partPriceHistoryRelations = relations(partPriceHistory, ({ one }) => ({
+  part: one(parts, {
+    fields: [partPriceHistory.partId],
+    references: [parts.id],
+  }),
+  changedByUser: one(users, {
+    fields: [partPriceHistory.changedBy],
+    references: [users.id],
+  }),
+}));
+
+// Update maintenance vendors relations to include parts
+export const maintenanceVendorsRelationsExtended = relations(maintenanceVendors, ({ many }) => ({
+  technicians: many(users),
+  tickets: many(tickets),
+  vendorOrganizationTiers: many(vendorOrganizationTiers),
+  marketplaceBids: many(marketplaceBids),
+  parts: many(parts),
 }));
 
 // Schemas for validation
@@ -474,6 +526,11 @@ export type InsertTicketComment = typeof ticketComments.$inferInsert;
 
 export type MarketplaceBid = typeof marketplaceBids.$inferSelect;
 export type InsertMarketplaceBid = typeof marketplaceBids.$inferInsert;
+
+export type Part = typeof parts.$inferSelect;
+export type InsertPart = typeof parts.$inferInsert;
+export type PartPriceHistory = typeof partPriceHistory.$inferSelect;
+export type InsertPartPriceHistory = typeof partPriceHistory.$inferInsert;
 
 export const insertMarketplaceBidSchema = createInsertSchema(marketplaceBids).omit({
   id: true,
