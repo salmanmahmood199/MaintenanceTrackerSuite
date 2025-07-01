@@ -59,21 +59,14 @@ export function TechnicianWorkOrderModal({
 
   // Fetch available parts for this vendor
   const { data: availableParts = [], error: partsError } = useQuery({
-    queryKey: ['/api/maintenance-vendors', user?.maintenanceVendorId, 'parts'],
+    queryKey: [`/api/maintenance-vendors/${user?.maintenanceVendorId}/parts`],
     enabled: !!user?.maintenanceVendorId && open,
   });
 
   // Type the available parts properly
   const partsArray = Array.isArray(availableParts) ? availableParts : [];
 
-  // Debug logging
-  console.log("TechnicianWorkOrderModal Debug:", {
-    userRole: user?.role,
-    userMaintenanceVendorId: user?.maintenanceVendorId,
-    partsArray: partsArray,
-    partsError: partsError,
-    modalOpen: open
-  });
+
 
   const form = useForm<WorkOrderData>({
     resolver: zodResolver(workOrderSchema),
