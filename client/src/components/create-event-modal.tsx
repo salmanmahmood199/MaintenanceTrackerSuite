@@ -78,11 +78,7 @@ export function CreateEventModal({ open, onOpenChange, defaultDate, onSuccess }:
         status: "confirmed",
       };
       
-      return await apiRequest("/api/calendar/events", {
-        method: "POST",
-        body: JSON.stringify(eventData),
-        headers: { "Content-Type": "application/json" },
-      });
+      return await apiRequest("POST", "/api/calendar/events", eventData);
     },
     onSuccess: () => {
       toast({

@@ -53,7 +53,7 @@ export default function Calendar() {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
   // Fetch calendar events
-  const { data: events = [], isLoading } = useQuery({
+  const { data: events = [], isLoading } = useQuery<CalendarEvent[]>({
     queryKey: ["/api/calendar/events"],
     enabled: !!user,
   });
@@ -61,9 +61,7 @@ export default function Calendar() {
   // Delete event mutation
   const deleteEventMutation = useMutation({
     mutationFn: async (eventId: number) => {
-      await apiRequest(`/api/calendar/events/${eventId}`, {
-        method: "DELETE",
-      });
+      await apiRequest("DELETE", `/api/calendar/events/${eventId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/calendar/events"] });
