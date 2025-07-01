@@ -13,6 +13,7 @@ import {
   marketplaceBids,
   parts,
   partPriceHistory,
+  calendarEvents,
   type User, 
   type InsertUser, 
   type InsertSubAdmin,
@@ -38,6 +39,8 @@ import {
   type InsertPart,
   type PartPriceHistory,
   type InsertPartPriceHistory,
+  type CalendarEvent,
+  type InsertCalendarEvent,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, inArray, desc, or, isNull } from "drizzle-orm";
@@ -154,6 +157,16 @@ export interface IStorage {
   deletePart(partId: number): Promise<boolean>;
   getPartPriceHistory(partId: number): Promise<PartPriceHistory[]>;
   createPartPriceHistory(history: InsertPartPriceHistory): Promise<PartPriceHistory>;
+  
+  // Calendar operations
+  getCalendarEvents(userId: number, startDate?: string, endDate?: string): Promise<CalendarEvent[]>;
+  getCalendarEvent(id: number): Promise<CalendarEvent | undefined>;
+  createCalendarEvent(event: InsertCalendarEvent): Promise<CalendarEvent>;
+  updateCalendarEvent(id: number, updates: Partial<InsertCalendarEvent>): Promise<CalendarEvent | undefined>;
+  deleteCalendarEvent(id: number): Promise<boolean>;
+  getUserAvailability(userId: number, date: string): Promise<CalendarEvent[]>;
+  createAvailabilityBlock(userId: number, title: string, startDate: string, endDate: string, startTime?: string, endTime?: string): Promise<CalendarEvent>;
+  getWorkAssignments(userId: number, startDate?: string, endDate?: string): Promise<CalendarEvent[]>;
   
   // Initialize root user
   initializeRootUser(): Promise<void>;
@@ -1186,6 +1199,143 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error initializing root user:", error);
     }
+  }
+
+  // Calendar operations
+  async getCalendarEvents(userId: number, startDate?: string, endDate?: string): Promise<CalendarEvent[]> {
+    if (startDate && endDate) {
+      return await db
+        .select()
+        .from(calendarEvents)
+        .where(
+          and(
+            eq(calendarEvents.userId, userId),
+            or(
+              and(
+                db.sql`${calendarEvents.startDate}::text >= ${startDate}`,
+                db.sql`${calendarEvents.startDate}::text <= ${endDate}`
+              ),
+              and(
+                db.sql`${calendarEvents.endDate}::text >= ${startDate}`,
+                db.sql`${calendarEvents.endDate}::text <= ${endDate}`
+              ),
+              and(
+                db.sql`${calendarEvents.startDate}::text <= ${startDate}`,
+                db.sql`${calendarEvents.endDate}::text >= ${endDate}`
+              )
+            )
+          )
+        )
+        .orderBy(calendarEvents.startDate, calendarEvents.startTime);
+    }
+    
+    return await db
+      .select()
+      .from(calendarEvents)
+      .where(eq(calendarEvents.userId, userId))
+      .orderBy(calendarEvents.startDate, calendarEvents.startTime);
+  }
+
+  async getCalendarEvent(id: number): Promise<CalendarEvent | undefined> {
+    const [event] = await db.select().from(calendarEvents).where(eq(calendarEvents.id, id));
+    return event;
+  }
+
+  async createCalendarEvent(event: InsertCalendarEvent): Promise<CalendarEvent> {
+    const [newEvent] = await db.insert(calendarEvents).values(event).returning();
+    return newEvent;
+  }
+
+  async updateCalendarEvent(id: number, updates: Partial<InsertCalendarEvent>): Promise<CalendarEvent | undefined> {
+    const [updatedEvent] = await db
+      .update(calendarEvents)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(calendarEvents.id, id))
+      .returning();
+    return updatedEvent;
+  }
+
+  async deleteCalendarEvent(id: number): Promise<boolean> {
+    const result = await db.delete(calendarEvents).where(eq(calendarEvents.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async getUserAvailability(userId: number, date: string): Promise<CalendarEvent[]> {
+    return await db
+      .select()
+      .from(calendarEvents)
+      .where(
+        and(
+          eq(calendarEvents.userId, userId),
+          eq(calendarEvents.isAvailability, true),
+          or(
+            eq(calendarEvents.startDate, date),
+            and(
+              db.sql`${calendarEvents.startDate} <= ${date}`,
+              db.sql`${calendarEvents.endDate} >= ${date}`
+            )
+          )
+        )
+      )
+      .orderBy(calendarEvents.startTime);
+  }
+
+  async createAvailabilityBlock(
+    userId: number, 
+    title: string, 
+    startDate: string, 
+    endDate: string, 
+    startTime?: string, 
+    endTime?: string
+  ): Promise<CalendarEvent> {
+    const availabilityEvent: InsertCalendarEvent = {
+      userId,
+      title,
+      eventType: "availability",
+      startDate,
+      endDate,
+      startTime,
+      endTime,
+      isAvailability: true,
+      status: "confirmed",
+      priority: "medium",
+      color: "#10B981" // Green for availability
+    };
+
+    return await this.createCalendarEvent(availabilityEvent);
+  }
+
+  async getWorkAssignments(userId: number, startDate?: string, endDate?: string): Promise<CalendarEvent[]> {
+    let query = db
+      .select()
+      .from(calendarEvents)
+      .where(
+        and(
+          eq(calendarEvents.userId, userId),
+          eq(calendarEvents.eventType, "work_assignment")
+        )
+      );
+
+    if (startDate && endDate) {
+      query = query.where(
+        and(
+          eq(calendarEvents.userId, userId),
+          eq(calendarEvents.eventType, "work_assignment"),
+          or(
+            and(
+              db.sql`${calendarEvents.startDate} >= ${startDate}`,
+              db.sql`${calendarEvents.startDate} <= ${endDate}`
+            ),
+            and(
+              db.sql`${calendarEvents.endDate} >= ${startDate}`,
+              db.sql`${calendarEvents.endDate} <= ${endDate}`
+            )
+          )
+        )
+      );
+    }
+
+    return await query.orderBy(calendarEvents.startDate, calendarEvents.startTime);
   }
 }
 

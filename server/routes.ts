@@ -1663,6 +1663,162 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Calendar API routes
+  app.get("/api/calendar/events", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const user = req.user!;
+      const { startDate, endDate } = req.query;
+      
+      const events = await storage.getCalendarEvents(
+        user.id, 
+        startDate as string, 
+        endDate as string
+      );
+      res.json(events);
+    } catch (error) {
+      console.error("Error fetching calendar events:", error);
+      res.status(500).json({ message: "Failed to fetch calendar events" });
+    }
+  });
+
+  app.get("/api/calendar/events/:id", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const eventId = parseInt(req.params.id);
+      const user = req.user!;
+      
+      const event = await storage.getCalendarEvent(eventId);
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
+      // Verify user owns the event or has access
+      if (event.userId !== user.id && user.role !== "root") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      res.json(event);
+    } catch (error) {
+      console.error("Error fetching calendar event:", error);
+      res.status(500).json({ message: "Failed to fetch calendar event" });
+    }
+  });
+
+  app.post("/api/calendar/events", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const user = req.user!;
+      const eventData = { ...req.body, userId: user.id };
+      
+      const event = await storage.createCalendarEvent(eventData);
+      res.status(201).json(event);
+    } catch (error) {
+      console.error("Error creating calendar event:", error);
+      res.status(500).json({ message: "Failed to create calendar event" });
+    }
+  });
+
+  app.put("/api/calendar/events/:id", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const eventId = parseInt(req.params.id);
+      const user = req.user!;
+      
+      // Verify user owns the event
+      const existingEvent = await storage.getCalendarEvent(eventId);
+      if (!existingEvent) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
+      if (existingEvent.userId !== user.id && user.role !== "root") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const updatedEvent = await storage.updateCalendarEvent(eventId, req.body);
+      res.json(updatedEvent);
+    } catch (error) {
+      console.error("Error updating calendar event:", error);
+      res.status(500).json({ message: "Failed to update calendar event" });
+    }
+  });
+
+  app.delete("/api/calendar/events/:id", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const eventId = parseInt(req.params.id);
+      const user = req.user!;
+      
+      // Verify user owns the event
+      const existingEvent = await storage.getCalendarEvent(eventId);
+      if (!existingEvent) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
+      if (existingEvent.userId !== user.id && user.role !== "root") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const deleted = await storage.deleteCalendarEvent(eventId);
+      if (deleted) {
+        res.json({ message: "Event deleted successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to delete event" });
+      }
+    } catch (error) {
+      console.error("Error deleting calendar event:", error);
+      res.status(500).json({ message: "Failed to delete calendar event" });
+    }
+  });
+
+  // Get user availability for a specific date
+  app.get("/api/calendar/availability/:date", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const user = req.user!;
+      const date = req.params.date;
+      
+      const availability = await storage.getUserAvailability(user.id, date);
+      res.json(availability);
+    } catch (error) {
+      console.error("Error fetching availability:", error);
+      res.status(500).json({ message: "Failed to fetch availability" });
+    }
+  });
+
+  // Create availability block
+  app.post("/api/calendar/availability", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const user = req.user!;
+      const { title, startDate, endDate, startTime, endTime } = req.body;
+      
+      const availability = await storage.createAvailabilityBlock(
+        user.id,
+        title,
+        startDate,
+        endDate,
+        startTime,
+        endTime
+      );
+      res.status(201).json(availability);
+    } catch (error) {
+      console.error("Error creating availability:", error);
+      res.status(500).json({ message: "Failed to create availability" });
+    }
+  });
+
+  // Get work assignments for user
+  app.get("/api/calendar/work-assignments", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const user = req.user!;
+      const { startDate, endDate } = req.query;
+      
+      const assignments = await storage.getWorkAssignments(
+        user.id,
+        startDate as string,
+        endDate as string
+      );
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching work assignments:", error);
+      res.status(500).json({ message: "Failed to fetch work assignments" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
