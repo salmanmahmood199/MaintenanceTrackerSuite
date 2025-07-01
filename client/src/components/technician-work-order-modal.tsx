@@ -63,6 +63,9 @@ export function TechnicianWorkOrderModal({
     enabled: !!user?.maintenanceVendorId && open,
   });
 
+  // Type the available parts properly
+  const partsArray = Array.isArray(availableParts) ? availableParts : [];
+
   const form = useForm<WorkOrderData>({
     resolver: zodResolver(workOrderSchema),
     defaultValues: {
@@ -117,6 +120,26 @@ export function TechnicianWorkOrderModal({
     setParts(prev => prev.map((part, i) => 
       i === index ? { ...part, [field]: value } : part
     ));
+  };
+
+  const selectPart = (index: number, partName: string) => {
+    if (partName === "custom") {
+      setParts(prev => prev.map((part, i) => 
+        i === index ? { ...part, name: "custom", cost: 0 } : part
+      ));
+      return;
+    }
+    
+    const selectedPart = partsArray.find((p: any) => p.name === partName);
+    if (selectedPart) {
+      setParts(prev => prev.map((part, i) => 
+        i === index ? { 
+          ...part, 
+          name: partName, 
+          cost: Number(selectedPart.currentCost) 
+        } : part
+      ));
+    }
   };
 
   const addOtherCharge = () => {
@@ -295,14 +318,14 @@ export function TechnicianWorkOrderModal({
                       <div key={index} className="grid grid-cols-12 gap-2 items-end">
                         <div className="col-span-5">
                           <Select
-                            value={part.name}
+                            value={part.name && part.name !== "custom" ? part.name : ""}
                             onValueChange={(value) => selectPart(index, value)}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Select a part" />
                             </SelectTrigger>
                             <SelectContent>
-                              {availableParts.map((availablePart: any) => (
+                              {partsArray.map((availablePart: any) => (
                                 <SelectItem key={availablePart.id} value={availablePart.name}>
                                   <div className="flex flex-col">
                                     <span className="font-medium">{availablePart.name}</span>
@@ -321,6 +344,7 @@ export function TechnicianWorkOrderModal({
                             <Input
                               placeholder="Enter custom part name"
                               className="mt-2"
+                              value={part.name === "custom" ? "" : part.name}
                               onChange={(e) => updatePart(index, "name", e.target.value)}
                             />
                           )}
