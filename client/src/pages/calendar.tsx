@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Calendar as CalendarIcon, Plus, Clock, Users, MapPin, Edit2, Trash2, ArrowLeft } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, Clock, Users, MapPin, Edit2, Trash2, ArrowLeft, Ban, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { CreateEventModal } from "@/components/create-event-modal";
 import { AvailabilityModal } from "@/components/availability-modal";
+import { UnavailabilityModal } from "@/components/unavailability-modal";
+import { DeleteEventModal } from "@/components/delete-event-modal";
 import { Link } from "wouter";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isToday } from "date-fns";
 
@@ -50,8 +52,11 @@ export default function Calendar() {
   const queryClient = useQueryClient();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDateString, setSelectedDateString] = useState<string | null>(null);
   const [createEventOpen, setCreateEventOpen] = useState(false);
   const [availabilityModalOpen, setAvailabilityModalOpen] = useState(false);
+  const [unavailabilityModalOpen, setUnavailabilityModalOpen] = useState(false);
+  const [deleteEventModalOpen, setDeleteEventModalOpen] = useState(false);
   const [eventDetailOpen, setEventDetailOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
