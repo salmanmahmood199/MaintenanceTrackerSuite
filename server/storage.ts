@@ -1286,6 +1286,17 @@ export class DatabaseStorage implements IStorage {
       )
       .orderBy(calendarEvents.startDate, calendarEvents.startTime);
   }
+
+  async createEventException(eventId: number, exceptionDate: string): Promise<{ id: number; eventId: number; exceptionDate: string }> {
+    const [exception] = await db
+      .insert(eventExceptions)
+      .values({
+        eventId,
+        exceptionDate
+      })
+      .returning();
+    return exception;
+  }
 }
 
 export const storage = new DatabaseStorage();
