@@ -102,10 +102,8 @@ export function AvailabilityModal({ isOpen, onClose }: AvailabilityModalProps) {
           : undefined,
       };
 
-      return await apiRequest("/api/calendar/events", {
-        method: "POST",
-        body: eventData,
-      });
+      const response = await apiRequest("POST", "/api/calendar/events", eventData);
+      return await response.json();
     },
     onSuccess: () => {
       toast({

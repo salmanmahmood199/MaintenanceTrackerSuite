@@ -352,6 +352,12 @@ export default function Calendar() {
           }}
         />
 
+        {/* Availability Modal */}
+        <AvailabilityModal
+          isOpen={availabilityModalOpen}
+          onClose={() => setAvailabilityModalOpen(false)}
+        />
+
         {/* Event Detail Modal */}
         <Dialog open={eventDetailOpen} onOpenChange={setEventDetailOpen}>
           <DialogContent className="max-w-md">
