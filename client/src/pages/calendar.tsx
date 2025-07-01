@@ -102,7 +102,20 @@ export default function Calendar() {
 
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
+    setSelectedDateString(format(date, "yyyy-MM-dd"));
     setCreateEventOpen(true);
+  };
+
+  const handleDayUnavailabilityClick = (date: Date) => {
+    setSelectedDate(date);
+    setSelectedDateString(format(date, "yyyy-MM-dd"));
+    setUnavailabilityModalOpen(true);
+  };
+
+  const handleEventDelete = (event: CalendarEvent, specificDate?: string) => {
+    setSelectedEvent(event);
+    setSelectedDateString(specificDate || null);
+    setDeleteEventModalOpen(true);
   };
 
   const handleEventClick = (event: CalendarEvent) => {
@@ -243,24 +256,37 @@ export default function Calendar() {
                   return (
                     <div
                       key={day.toString()}
-                      className={`min-h-[120px] p-2 border rounded cursor-pointer transition-colors ${
+                      className={`min-h-[120px] p-2 border rounded cursor-pointer transition-colors relative group ${
                         isCurrentMonth 
                           ? "bg-white hover:bg-blue-50" 
                           : "bg-gray-50 text-gray-400"
                       } ${isDayToday ? "ring-2 ring-blue-500" : ""}`}
                       onClick={() => handleDateClick(day)}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        handleDayUnavailabilityClick(day);
+                      }}
                     >
-                      <div className={`text-sm font-medium mb-1 ${
-                        isDayToday ? "text-blue-600" : ""
-                      }`}>
-                        {format(day, "d")}
+                      <div className="flex items-center justify-between mb-1">
+                        <div className={`text-sm font-medium ${
+                          isDayToday ? "text-blue-600" : ""
+                        }`}>
+                          {format(day, "d")}
+                        </div>
+                        {isCurrentMonth && (
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="text-xs text-gray-500" title="Right-click to set unavailability">
+                              <Ban className="h-3 w-3" />
+                            </div>
+                          </div>
+                        )}
                       </div>
                       
                       <div className="space-y-1">
                         {dayEvents.slice(0, 3).map((event: CalendarEvent) => (
                           <div
                             key={event.id}
-                            className={`text-xs p-1 rounded cursor-pointer ${
+                            className={`text-xs p-1 rounded cursor-pointer group/event relative ${
                               eventTypeColors[event.eventType]
                             } ${priorityColors[event.priority]}`}
                             onClick={(e) => {
@@ -268,12 +294,26 @@ export default function Calendar() {
                               handleEventClick(event);
                             }}
                           >
-                            <div className="font-medium truncate">{event.title}</div>
-                            {event.startTime && (
-                              <div className="text-xs opacity-75">
-                                {event.startTime}
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium truncate">{event.title}</div>
+                                {event.startTime && (
+                                  <div className="text-xs opacity-75">
+                                    {event.startTime}
+                                  </div>
+                                )}
                               </div>
-                            )}
+                              <button
+                                className="opacity-0 group-hover/event:opacity-100 transition-opacity p-0.5 hover:bg-red-100 rounded"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEventDelete(event, format(day, "yyyy-MM-dd"));
+                                }}
+                                title="Delete event"
+                              >
+                                <X className="h-3 w-3 text-red-600" />
+                              </button>
+                            </div>
                           </div>
                         ))}
                         {dayEvents.length > 3 && (
@@ -302,6 +342,15 @@ export default function Calendar() {
               >
                 <Clock className="h-4 w-4 mr-2" />
                 Set Availability
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                className="w-full justify-start text-red-700 border-red-200 hover:bg-red-50"
+                onClick={() => setUnavailabilityModalOpen(true)}
+              >
+                <Ban className="h-4 w-4 mr-2" />
+                Set Unavailability
               </Button>
               
               <Button 
@@ -441,6 +490,21 @@ export default function Calendar() {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Unavailability Modal */}
+        <UnavailabilityModal
+          isOpen={unavailabilityModalOpen}
+          onOpenChange={setUnavailabilityModalOpen}
+          selectedDate={selectedDateString}
+        />
+
+        {/* Delete Event Modal */}
+        <DeleteEventModal
+          isOpen={deleteEventModalOpen}
+          onOpenChange={setDeleteEventModalOpen}
+          event={selectedEvent}
+          selectedDate={selectedDateString}
+        />
       </div>
     </div>
   );
