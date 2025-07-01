@@ -703,6 +703,14 @@ export class DatabaseStorage implements IStorage {
       otherCharges: typeof workOrderData.otherCharges === 'string' ? workOrderData.otherCharges : JSON.stringify(workOrderData.otherCharges),
       totalCost: workOrderData.totalCost,
       images: workOrderData.images,
+      // Time tracking fields
+      workDate: workOrderData.workDate,
+      timeIn: workOrderData.timeIn,
+      timeOut: workOrderData.timeOut,
+      totalHours: workOrderData.totalHours,
+      // Manager signature fields
+      managerName: workOrderData.managerName,
+      managerSignature: workOrderData.managerSignature,
     }).returning();
     
     return result;
