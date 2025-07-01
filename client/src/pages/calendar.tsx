@@ -9,6 +9,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { CreateEventModal } from "@/components/create-event-modal";
+import { AvailabilityModal } from "@/components/availability-modal";
 import { Link } from "wouter";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isToday } from "date-fns";
 
@@ -50,6 +51,7 @@ export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [createEventOpen, setCreateEventOpen] = useState(false);
+  const [availabilityModalOpen, setAvailabilityModalOpen] = useState(false);
   const [eventDetailOpen, setEventDetailOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
@@ -288,19 +290,14 @@ export default function Calendar() {
               <CardTitle className="text-lg">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {user?.role === "technician" && (
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => {
-                    setSelectedDate(new Date());
-                    setCreateEventOpen(true);
-                  }}
-                >
-                  <Clock className="h-4 w-4 mr-2" />
-                  Set Availability
-                </Button>
-              )}
+              <Button 
+                variant="outline" 
+                className="w-full justify-start text-green-700 border-green-200 hover:bg-green-50"
+                onClick={() => setAvailabilityModalOpen(true)}
+              >
+                <Clock className="h-4 w-4 mr-2" />
+                Set Availability
+              </Button>
               
               <Button 
                 variant="outline" 
