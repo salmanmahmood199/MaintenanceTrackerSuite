@@ -512,8 +512,8 @@ export default function PartsManagement() {
                         <TableCell>
                           {formatDistanceToNow(new Date(history.changedAt), { addSuffix: true })}
                         </TableCell>
-                        <TableCell>${history.oldPrice.toFixed(2)}</TableCell>
-                        <TableCell>${history.newPrice.toFixed(2)}</TableCell>
+                        <TableCell>${Number(history.oldPrice).toFixed(2)}</TableCell>
+                        <TableCell>${Number(history.newPrice).toFixed(2)}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
                             {change > 0 ? (
@@ -527,7 +527,7 @@ export default function PartsManagement() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="secondary">{history.markupPercentage}%</Badge>
+                          <Badge variant="secondary">{Number(history.markupPercentage).toFixed(1)}%</Badge>
                           {history.roundToNinteyNine && (
                             <Badge variant="outline" className="ml-1">$.99</Badge>
                           )}

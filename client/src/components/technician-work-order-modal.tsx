@@ -14,6 +14,8 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
 
 const workOrderSchema = z.object({
   workDescription: z.string().min(10, "Work description must be at least 10 characters"),
@@ -49,10 +51,17 @@ export function TechnicianWorkOrderModal({
   onSubmit,
   isLoading = false,
 }: TechnicianWorkOrderModalProps) {
+  const { user } = useAuth();
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [workImages, setWorkImages] = useState<File[]>([]);
   const [parts, setParts] = useState([{ name: "", quantity: 1, cost: 0 }]);
   const [otherCharges, setOtherCharges] = useState([{ description: "", cost: 0 }]);
+
+  // Fetch available parts for this vendor
+  const { data: availableParts = [] } = useQuery({
+    queryKey: ['/api/maintenance-vendors', user?.maintenanceVendorId, 'parts'],
+    enabled: !!user?.maintenanceVendorId && open,
+  });
 
   const form = useForm<WorkOrderData>({
     resolver: zodResolver(workOrderSchema),
@@ -285,11 +294,36 @@ export function TechnicianWorkOrderModal({
                     {parts.map((part, index) => (
                       <div key={index} className="grid grid-cols-12 gap-2 items-end">
                         <div className="col-span-5">
-                          <Input
-                            placeholder="Part name"
+                          <Select
                             value={part.name}
-                            onChange={(e) => updatePart(index, "name", e.target.value)}
-                          />
+                            onValueChange={(value) => selectPart(index, value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a part" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableParts.map((availablePart: any) => (
+                                <SelectItem key={availablePart.id} value={availablePart.name}>
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">{availablePart.name}</span>
+                                    {availablePart.description && (
+                                      <span className="text-xs text-gray-500">{availablePart.description}</span>
+                                    )}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                              <SelectItem value="custom">
+                                <span className="italic text-gray-600">Custom part...</span>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                          {part.name === "custom" && (
+                            <Input
+                              placeholder="Enter custom part name"
+                              className="mt-2"
+                              onChange={(e) => updatePart(index, "name", e.target.value)}
+                            />
+                          )}
                         </div>
                         <div className="col-span-2">
                           <Input
