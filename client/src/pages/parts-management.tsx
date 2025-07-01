@@ -342,17 +342,17 @@ export default function PartsManagement() {
                   <TableRow key={part.id}>
                     <TableCell className="font-medium">{part.name}</TableCell>
                     <TableCell>{part.description || "-"}</TableCell>
-                    <TableCell>${part.currentCost.toFixed(2)}</TableCell>
+                    <TableCell>${Number(part.currentCost).toFixed(2)}</TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{part.markupPercentage}%</Badge>
+                      <Badge variant="secondary">{Number(part.markupPercentage).toFixed(1)}%</Badge>
                       {part.roundToNinteyNine && (
                         <Badge variant="outline" className="ml-1">$.99</Badge>
                       )}
                     </TableCell>
                     <TableCell className="font-bold text-green-600">
                       ${calculateSellingPrice(
-                        part.currentCost,
-                        part.markupPercentage,
+                        Number(part.currentCost),
+                        Number(part.markupPercentage),
                         part.roundToNinteyNine
                       ).toFixed(2)}
                     </TableCell>
