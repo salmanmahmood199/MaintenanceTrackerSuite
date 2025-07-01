@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Building2, Wrench, Users, Activity, Edit, Key, Trash2, LogOut, X } from "lucide-react";
+import { Plus, Building2, Wrench, Users, Activity, Edit, Key, Trash2, LogOut, X, Calendar } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { EditOrganizationModal } from "@/components/edit-organization-modal";
 import { EditVendorModal } from "@/components/edit-vendor-modal";
@@ -270,13 +270,21 @@ export default function AdminDashboard() {
               </div>
             </div>
             
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-medium">R</span>
-              </div>
-              <div>
-                <p className="text-sm font-medium">Root Admin</p>
-                <p className="text-xs text-slate-500">{user.email}</p>
+            <div className="flex items-center space-x-4">
+              <Link href="/calendar">
+                <Button variant="outline" size="sm">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Calendar
+                </Button>
+              </Link>
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-medium">R</span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Root Admin</p>
+                  <p className="text-xs text-slate-500">{user.email}</p>
+                </div>
               </div>
             </div>
           </div>

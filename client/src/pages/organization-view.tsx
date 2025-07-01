@@ -4,7 +4,7 @@ import { useRoute } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Users, Clock, Wrench, Check, AlertTriangle, UserPlus, Key, Edit, LogOut, Settings } from "lucide-react";
+import { ArrowLeft, Plus, Users, Clock, Wrench, Check, AlertTriangle, UserPlus, Key, Edit, LogOut, Settings, Calendar } from "lucide-react";
 import { CreateTicketModal } from "@/components/create-ticket-modal";
 import { CreateSubAdminModal } from "@/components/create-subadmin-modal";
 import { EditSubAdminModal } from "@/components/edit-subadmin-modal";
@@ -442,6 +442,12 @@ export default function OrganizationView() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              <Link href="/calendar">
+                <Button variant="outline" size="sm">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Calendar
+                </Button>
+              </Link>
               <span className="text-sm text-slate-600">
                 {user?.firstName} {user?.lastName} ({user?.email})
               </span>

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRoute } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, LogOut, FileText, Package } from "lucide-react";
+import { ArrowLeft, LogOut, FileText, Package, Calendar } from "lucide-react";
 import { TicketTable } from "@/components/ticket-table";
 import { CreateInvoiceModal } from "@/components/create-invoice-modal";
 import { InvoicesView } from "@/components/invoices-view";
@@ -240,6 +240,12 @@ export function VendorView() {
             </div>
             
             <div className="flex items-center space-x-4">
+              <Link href="/calendar">
+                <Button variant="outline" size="sm">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Calendar
+                </Button>
+              </Link>
               <span className="text-sm text-slate-600">
                 {user?.firstName} {user?.lastName} ({user?.email})
               </span>
