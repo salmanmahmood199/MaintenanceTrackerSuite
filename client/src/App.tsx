@@ -10,6 +10,7 @@ import AdminDashboard from "@/pages/admin-dashboard";
 import OrganizationView from "@/pages/organization-view";
 import { VendorView } from "@/pages/vendor-view";
 import TechnicianDashboard from "@/pages/technician-dashboard";
+import Calendar from "@/pages/calendar";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -38,6 +39,7 @@ function Router() {
       <Switch>
         <Route path="/organization/:id" component={OrganizationView} />
         <Route path="/vendor/:id" component={VendorView} />
+        <Route path="/calendar" component={Calendar} />
         <Route path="/" component={AdminDashboard} />
         <Route component={NotFound} />
       </Switch>
@@ -48,6 +50,7 @@ function Router() {
   if ((user?.role === "org_admin" || user?.role === "org_subadmin") && user.organizationId) {
     return (
       <Switch>
+        <Route path="/calendar" component={Calendar} />
         <Route path="/" component={() => <OrganizationView />} />
         <Route path="/organization/:id" component={OrganizationView} />
         <Route component={NotFound} />
@@ -59,6 +62,7 @@ function Router() {
   if (user?.role === "maintenance_admin" && user.maintenanceVendorId) {
     return (
       <Switch>
+        <Route path="/calendar" component={Calendar} />
         <Route path="/" component={() => <VendorView />} />
         <Route path="/vendor/:id" component={VendorView} />
         <Route component={NotFound} />
@@ -70,6 +74,7 @@ function Router() {
   if (user?.role === "technician") {
     return (
       <Switch>
+        <Route path="/calendar" component={Calendar} />
         <Route path="/" component={TechnicianDashboard} />
         <Route component={NotFound} />
       </Switch>

@@ -1203,32 +1203,6 @@ export class DatabaseStorage implements IStorage {
 
   // Calendar operations
   async getCalendarEvents(userId: number, startDate?: string, endDate?: string): Promise<CalendarEvent[]> {
-    if (startDate && endDate) {
-      return await db
-        .select()
-        .from(calendarEvents)
-        .where(
-          and(
-            eq(calendarEvents.userId, userId),
-            or(
-              and(
-                db.sql`${calendarEvents.startDate}::text >= ${startDate}`,
-                db.sql`${calendarEvents.startDate}::text <= ${endDate}`
-              ),
-              and(
-                db.sql`${calendarEvents.endDate}::text >= ${startDate}`,
-                db.sql`${calendarEvents.endDate}::text <= ${endDate}`
-              ),
-              and(
-                db.sql`${calendarEvents.startDate}::text <= ${startDate}`,
-                db.sql`${calendarEvents.endDate}::text >= ${endDate}`
-              )
-            )
-          )
-        )
-        .orderBy(calendarEvents.startDate, calendarEvents.startTime);
-    }
-    
     return await db
       .select()
       .from(calendarEvents)
@@ -1267,14 +1241,7 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(calendarEvents.userId, userId),
-          eq(calendarEvents.isAvailability, true),
-          or(
-            eq(calendarEvents.startDate, date),
-            and(
-              db.sql`${calendarEvents.startDate} <= ${date}`,
-              db.sql`${calendarEvents.endDate} >= ${date}`
-            )
-          )
+          eq(calendarEvents.isAvailability, true)
         )
       )
       .orderBy(calendarEvents.startTime);
@@ -1306,7 +1273,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getWorkAssignments(userId: number, startDate?: string, endDate?: string): Promise<CalendarEvent[]> {
-    let query = db
+    return await db
       .select()
       .from(calendarEvents)
       .where(
@@ -1314,28 +1281,8 @@ export class DatabaseStorage implements IStorage {
           eq(calendarEvents.userId, userId),
           eq(calendarEvents.eventType, "work_assignment")
         )
-      );
-
-    if (startDate && endDate) {
-      query = query.where(
-        and(
-          eq(calendarEvents.userId, userId),
-          eq(calendarEvents.eventType, "work_assignment"),
-          or(
-            and(
-              db.sql`${calendarEvents.startDate} >= ${startDate}`,
-              db.sql`${calendarEvents.startDate} <= ${endDate}`
-            ),
-            and(
-              db.sql`${calendarEvents.endDate} >= ${startDate}`,
-              db.sql`${calendarEvents.endDate} <= ${endDate}`
-            )
-          )
-        )
-      );
-    }
-
-    return await query.orderBy(calendarEvents.startDate, calendarEvents.startTime);
+      )
+      .orderBy(calendarEvents.startDate, calendarEvents.startTime);
   }
 }
 
