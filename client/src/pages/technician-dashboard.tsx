@@ -3,13 +3,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Wrench, AlertTriangle, Check, LogOut } from "lucide-react";
+import { Clock, Wrench, AlertTriangle, Check, LogOut, Calendar } from "lucide-react";
 import { TicketCard } from "@/components/ticket-card";
 import { TechnicianWorkOrderModal } from "@/components/technician-work-order-modal";
 import { TechnicianTicketDetailsModal } from "@/components/technician-ticket-details-modal";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
 import type { Ticket } from "@shared/schema";
 
 interface TicketStats {
@@ -157,6 +158,12 @@ export default function TechnicianDashboard() {
             </div>
             
             <div className="flex items-center space-x-4">
+              <Link href="/calendar">
+                <Button variant="outline" size="sm">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Calendar
+                </Button>
+              </Link>
               <span className="text-sm text-slate-600">
                 {user?.firstName} {user?.lastName} ({user?.email})
               </span>
