@@ -66,6 +66,19 @@ export function TechnicianWorkOrderModal({
   // Type the available parts properly
   const partsArray = Array.isArray(availableParts) ? availableParts : [];
 
+  // Calculate selling price from cost and markup
+  const calculateSellingPrice = (cost: number, markupPercentage: number, roundToNinteyNine: boolean) => {
+    const markup = cost * (markupPercentage / 100);
+    let sellingPrice = cost + markup;
+    
+    if (roundToNinteyNine) {
+      // Round to nearest .99 (e.g., 12.34 becomes 12.99)
+      sellingPrice = Math.floor(sellingPrice) + 0.99;
+    }
+    
+    return sellingPrice;
+  };
+
 
 
   const form = useForm<WorkOrderData>({
@@ -134,11 +147,17 @@ export function TechnicianWorkOrderModal({
     
     const selectedPart = partsArray.find((p: any) => p.name === partName);
     if (selectedPart) {
+      const sellingPrice = calculateSellingPrice(
+        Number(selectedPart.currentCost), 
+        Number(selectedPart.markupPercentage),
+        selectedPart.roundToNinteyNine
+      );
+      
       setParts(prev => prev.map((part, i) => 
         i === index ? { 
           ...part, 
           name: partName, 
-          cost: Number(selectedPart.currentCost) 
+          cost: sellingPrice 
         } : part
       ));
     }
@@ -364,11 +383,11 @@ export function TechnicianWorkOrderModal({
                         </div>
                         <div className="col-span-3">
                           <Label className="text-xs text-gray-600">
-                            {part.name === "custom" ? "Cost ($)" : "Cost (Auto-filled)"}
+                            {part.name === "custom" ? "Selling Price ($)" : "Selling Price (Auto-filled)"}
                           </Label>
                           <Input
                             type="number"
-                            placeholder="Cost ($)"
+                            placeholder="Selling Price ($)"
                             min="0"
                             step="0.01"
                             value={part.cost}
@@ -393,7 +412,7 @@ export function TechnicianWorkOrderModal({
                   </div>
                   {parts.length > 0 && (
                     <div className="text-sm text-slate-600 mt-2">
-                      Parts Total: ${totalPartsCost.toFixed(2)}
+                      Parts Total (Selling Price): ${totalPartsCost.toFixed(2)}
                     </div>
                   )}
                 </div>
@@ -403,7 +422,7 @@ export function TechnicianWorkOrderModal({
                 {totalCost > 0 && (
                   <div className="bg-blue-50 p-3 rounded-lg">
                     <div className="font-medium text-blue-900">
-                      Total Cost: ${totalCost.toFixed(2)}
+                      Total Selling Price: ${totalCost.toFixed(2)}
                     </div>
                   </div>
                 )}
