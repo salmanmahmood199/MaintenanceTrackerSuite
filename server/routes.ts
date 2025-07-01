@@ -854,6 +854,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const otherCost = (workOrder.otherCharges || []).reduce((sum: number, charge: any) => sum + charge.cost, 0);
       const totalCost = partsCost + otherCost;
 
+      // Calculate total hours
+      const calculateHours = (timeIn: string, timeOut: string) => {
+        if (!timeIn || !timeOut) return "0.00";
+        
+        const [inHour, inMin] = timeIn.split(':').map(Number);
+        const [outHour, outMin] = timeOut.split(':').map(Number);
+        
+        const inMinutes = inHour * 60 + inMin;
+        const outMinutes = outHour * 60 + outMin;
+        
+        let totalMinutes = outMinutes - inMinutes;
+        if (totalMinutes < 0) {
+          totalMinutes += 24 * 60; // Add 24 hours for next day
+        }
+        
+        const hours = totalMinutes / 60;
+        return hours.toFixed(2);
+      };
+
+      const totalHours = calculateHours(workOrder.timeIn || "", workOrder.timeOut || "");
+
       // Create work order record
       await storage.createWorkOrder({
         ticketId: id,
@@ -866,6 +887,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         images: workOrder.images || [],
         technicianId: user.id,
         technicianName: `${user.firstName} ${user.lastName}`,
+        // Time tracking fields
+        workDate: new Date().toISOString().split('T')[0], // Current date in YYYY-MM-DD format
+        timeIn: workOrder.timeIn,
+        timeOut: workOrder.timeOut,
+        totalHours: totalHours,
+        // Manager signature fields
+        managerName: workOrder.managerName,
+        managerSignature: workOrder.managerSignature,
       });
 
       // Update ticket status based on work order completion status

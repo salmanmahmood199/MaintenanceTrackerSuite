@@ -32,6 +32,12 @@ const workOrderSchema = z.object({
     description: z.string().min(1, "Description required"),
     cost: z.number().min(0, "Cost must be positive")
   })).optional(),
+  // Time tracking fields
+  timeIn: z.string().min(1, "Time in is required"),
+  timeOut: z.string().min(1, "Time out is required"),
+  // Manager signature fields
+  managerName: z.string().min(2, "Manager name is required"),
+  managerSignature: z.string().min(1, "Manager signature is required"),
 });
 
 type WorkOrderData = z.infer<typeof workOrderSchema>;
@@ -81,6 +87,29 @@ export function TechnicianWorkOrderModal({
 
 
 
+  const getCurrentDate = () => {
+    return new Date().toISOString().split('T')[0]; // Returns YYYY-MM-DD format
+  };
+
+  // Calculate hours between time in and time out
+  const calculateHours = (timeIn: string, timeOut: string) => {
+    if (!timeIn || !timeOut) return 0;
+    
+    const [inHour, inMin] = timeIn.split(':').map(Number);
+    const [outHour, outMin] = timeOut.split(':').map(Number);
+    
+    const inMinutes = inHour * 60 + inMin;
+    const outMinutes = outHour * 60 + outMin;
+    
+    // Handle next day scenarios
+    let totalMinutes = outMinutes - inMinutes;
+    if (totalMinutes < 0) {
+      totalMinutes += 24 * 60; // Add 24 hours
+    }
+    
+    return Math.round((totalMinutes / 60) * 100) / 100; // Round to 2 decimal places
+  };
+
   const form = useForm<WorkOrderData>({
     resolver: zodResolver(workOrderSchema),
     defaultValues: {
@@ -89,6 +118,10 @@ export function TechnicianWorkOrderModal({
       completionNotes: "",
       parts: [],
       otherCharges: [],
+      timeIn: "",
+      timeOut: "",
+      managerName: "",
+      managerSignature: "",
     },
   });
 
@@ -101,6 +134,10 @@ export function TechnicianWorkOrderModal({
         completionNotes: "",
         parts: [],
         otherCharges: [],
+        timeIn: "",
+        timeOut: "",
+        managerName: "",
+        managerSignature: "",
       });
       setParts([{ name: "", quantity: 1, cost: 0 }]);
       setOtherCharges([{ description: "", cost: 0 }]);
@@ -427,8 +464,111 @@ export function TechnicianWorkOrderModal({
                   </div>
                 )}
 
+                {/* Time Tracking Section */}
+                <div className="border-t pt-4">
+                  <h3 className="text-lg font-medium mb-4">Time Tracking</h3>
+                  
+                  {/* Work Date - Auto-filled and grayed out */}
+                  <div className="grid grid-cols-3 gap-4 mb-4">
+                    <div>
+                      <Label>Work Date</Label>
+                      <Input
+                        type="date"
+                        value={getCurrentDate()}
+                        disabled
+                        className="bg-gray-100 text-gray-600"
+                      />
+                    </div>
+                    
+                    {/* Time In */}
+                    <div>
+                      <Label htmlFor="timeIn">Time In</Label>
+                      <Input
+                        type="time"
+                        {...form.register("timeIn")}
+                        onChange={(e) => {
+                          form.setValue("timeIn", e.target.value);
+                          const timeOut = form.getValues("timeOut");
+                          if (timeOut) {
+                            const hours = calculateHours(e.target.value, timeOut);
+                            console.log(`Calculated hours: ${hours}`);
+                          }
+                        }}
+                      />
+                      {form.formState.errors.timeIn && (
+                        <p className="text-sm text-red-500 mt-1">{form.formState.errors.timeIn.message}</p>
+                      )}
+                    </div>
+                    
+                    {/* Time Out */}
+                    <div>
+                      <Label htmlFor="timeOut">Time Out</Label>
+                      <Input
+                        type="time"
+                        {...form.register("timeOut")}
+                        onChange={(e) => {
+                          form.setValue("timeOut", e.target.value);
+                          const timeIn = form.getValues("timeIn");
+                          if (timeIn) {
+                            const hours = calculateHours(timeIn, e.target.value);
+                            console.log(`Calculated hours: ${hours}`);
+                          }
+                        }}
+                      />
+                      {form.formState.errors.timeOut && (
+                        <p className="text-sm text-red-500 mt-1">{form.formState.errors.timeOut.message}</p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Calculated Hours Display */}
+                  {form.watch("timeIn") && form.watch("timeOut") && (
+                    <div className="bg-green-50 p-3 rounded-lg mb-4">
+                      <div className="font-medium text-green-900">
+                        Total Hours: {calculateHours(form.watch("timeIn"), form.watch("timeOut"))} hours
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Manager Signature Section */}
+                <div className="border-t pt-4">
+                  <h3 className="text-lg font-medium mb-4">Manager Verification</h3>
+                  
+                  {/* Manager Name */}
+                  <div className="mb-4">
+                    <Label htmlFor="managerName">Manager Name</Label>
+                    <Input
+                      placeholder="Enter manager's full name"
+                      {...form.register("managerName")}
+                    />
+                    {form.formState.errors.managerName && (
+                      <p className="text-sm text-red-500 mt-1">{form.formState.errors.managerName.message}</p>
+                    )}
+                  </div>
+                  
+                  {/* Manager Signature */}
+                  <div className="mb-4">
+                    <Label htmlFor="managerSignature">Manager Signature</Label>
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 h-24 bg-gray-50">
+                      <Input
+                        placeholder="Manager signature (can be typed or drawn)"
+                        {...form.register("managerSignature")}
+                        className="h-full border-none bg-transparent text-lg font-script"
+                        style={{ fontFamily: "'Dancing Script', cursive" }}
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Manager can type their signature to verify work completion
+                    </p>
+                    {form.formState.errors.managerSignature && (
+                      <p className="text-sm text-red-500 mt-1">{form.formState.errors.managerSignature.message}</p>
+                    )}
+                  </div>
+                </div>
+
                 {/* Completion Status */}
-                <div>
+                <div className="border-t pt-4">
                   <Label htmlFor="completionStatus">Job Status</Label>
                   <Select onValueChange={(value) => form.setValue("completionStatus", value as "completed" | "return_needed")}>
                     <SelectTrigger>
