@@ -235,6 +235,7 @@ export const maintenanceVendorsRelations = relations(maintenanceVendors, ({ many
   tickets: many(tickets),
   vendorOrganizationTiers: many(vendorOrganizationTiers),
   marketplaceBids: many(marketplaceBids),
+  parts: many(parts),
 }));
 
 export const vendorOrganizationTiersRelations = relations(vendorOrganizationTiers, ({ one }) => ({

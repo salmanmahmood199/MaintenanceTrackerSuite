@@ -3,12 +3,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRoute } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, LogOut, FileText } from "lucide-react";
+import { ArrowLeft, LogOut, FileText, Package } from "lucide-react";
 import { TicketTable } from "@/components/ticket-table";
 import { CreateInvoiceModal } from "@/components/create-invoice-modal";
 import { InvoicesView } from "@/components/invoices-view";
 import { VendorTicketActionModal } from "@/components/vendor-ticket-action-modal";
 import { MarketplaceTicketsView } from "@/components/marketplace-tickets-view";
+import PartsManagement from "./parts-management";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -19,7 +20,7 @@ export function VendorView() {
   const [, routeParams] = useRoute("/vendor/:id");
   const routeVendorId = routeParams?.id ? parseInt(routeParams.id) : undefined;
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [activeTab, setActiveTab] = useState<"tickets" | "marketplace" | "invoices">("tickets");
+  const [activeTab, setActiveTab] = useState<"tickets" | "marketplace" | "invoices" | "parts">("tickets");
   const [isCreateInvoiceModalOpen, setIsCreateInvoiceModalOpen] = useState(false);
   const [selectedTicketForInvoice, setSelectedTicketForInvoice] = useState<Ticket | null>(null);
   const [isTicketActionModalOpen, setIsTicketActionModalOpen] = useState(false);
@@ -291,6 +292,16 @@ export function VendorView() {
               >
                 Invoices
               </button>
+              <button
+                onClick={() => setActiveTab("parts")}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "parts"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Parts
+              </button>
             </nav>
           </div>
         </div>
@@ -362,6 +373,10 @@ export function VendorView() {
 
         {activeTab === "invoices" && (
           <InvoicesView vendorId={vendorId} />
+        )}
+
+        {activeTab === "parts" && (
+          <PartsManagement />
         )}
 
         {/* Modals */}

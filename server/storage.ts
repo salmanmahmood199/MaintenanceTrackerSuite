@@ -11,6 +11,8 @@ import {
   invoices,
   ticketComments,
   marketplaceBids,
+  parts,
+  partPriceHistory,
   type User, 
   type InsertUser, 
   type InsertSubAdmin,
@@ -32,6 +34,10 @@ import {
   type InsertTicketComment,
   type MarketplaceBid,
   type InsertMarketplaceBid,
+  type Part,
+  type InsertPart,
+  type PartPriceHistory,
+  type InsertPartPriceHistory,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, inArray, desc, or, isNull } from "drizzle-orm";

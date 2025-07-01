@@ -270,7 +270,7 @@ export default function PartsManagement() {
                 <Checkbox
                   id="roundToNinteyNine"
                   checked={roundToNinteyNine}
-                  onCheckedChange={setRoundToNinteyNine}
+                  onCheckedChange={(checked) => setRoundToNinteyNine(checked === true)}
                 />
                 <Label htmlFor="roundToNinteyNine">Round up to nearest .99</Label>
               </div>
@@ -440,7 +440,7 @@ export default function PartsManagement() {
               <Checkbox
                 id="editRoundToNinteyNine"
                 checked={roundToNinteyNine}
-                onCheckedChange={setRoundToNinteyNine}
+                onCheckedChange={(checked) => setRoundToNinteyNine(checked === true)}
               />
               <Label htmlFor="editRoundToNinteyNine">Round up to nearest .99</Label>
             </div>
