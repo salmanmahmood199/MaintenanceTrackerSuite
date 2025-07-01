@@ -16,7 +16,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { zonedTimeToUtc, utcToZonedTime } from "date-fns-tz";
+import { fromZonedTime, toZonedTime } from "date-fns-tz";
 
 const eventSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -55,6 +55,39 @@ const eventTypeOptions = [
   { value: "personal", label: "Personal", description: "Personal events and appointments", color: "#6B7280" },
 ];
 
+const timezoneOptions = [
+  { value: "America/New_York", label: "New York (EST/EDT)" },
+  { value: "America/Chicago", label: "Chicago (CST/CDT)" },
+  { value: "America/Denver", label: "Denver (MST/MDT)" },
+  { value: "America/Los_Angeles", label: "Los Angeles (PST/PDT)" },
+  { value: "America/Phoenix", label: "Phoenix (MST)" },
+  { value: "America/Anchorage", label: "Anchorage (AKST/AKDT)" },
+  { value: "Pacific/Honolulu", label: "Hawaii (HST)" },
+  { value: "America/Toronto", label: "Toronto (EST/EDT)" },
+  { value: "America/Vancouver", label: "Vancouver (PST/PDT)" },
+  { value: "Europe/London", label: "London (GMT/BST)" },
+  { value: "Europe/Paris", label: "Paris (CET/CEST)" },
+  { value: "Asia/Tokyo", label: "Tokyo (JST)" },
+  { value: "Australia/Sydney", label: "Sydney (AEST/AEDT)" },
+];
+
+const dayOptions = [
+  { value: "monday", label: "Monday" },
+  { value: "tuesday", label: "Tuesday" },
+  { value: "wednesday", label: "Wednesday" },
+  { value: "thursday", label: "Thursday" },
+  { value: "friday", label: "Friday" },
+  { value: "saturday", label: "Saturday" },
+  { value: "sunday", label: "Sunday" },
+];
+
+const timeOptions = Array.from({ length: 24 }, (_, i) => {
+  const hour = i;
+  const time12 = hour === 0 ? "12:00 AM" : hour < 12 ? `${hour}:00 AM` : hour === 12 ? "12:00 PM" : `${hour - 12}:00 PM`;
+  const time24 = `${hour.toString().padStart(2, '0')}:00`;
+  return { value: time24, label: time12 };
+});
+
 export function CreateEventModal({ open, onOpenChange, defaultDate, onSuccess }: CreateEventModalProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -74,6 +107,11 @@ export function CreateEventModal({ open, onOpenChange, defaultDate, onSuccess }:
       priority: "medium",
       location: "",
       color: "#3B82F6",
+      timezone: "America/New_York",
+      availabilityDays: [],
+      availabilityStartTime: "08:00",
+      availabilityEndTime: "18:00",
+      isRecurring: false,
     },
   });
 
@@ -339,6 +377,154 @@ export function CreateEventModal({ open, onOpenChange, defaultDate, onSuccess }:
                 )}
               />
             </div>
+
+            {/* Timezone Selection */}
+            <FormField
+              control={form.control}
+              name="timezone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Timezone</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select timezone" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {timezoneOptions.map((timezone) => (
+                        <SelectItem key={timezone.value} value={timezone.value}>
+                          {timezone.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Enhanced Availability Configuration */}
+            {selectedEventType === "availability" && (
+              <div className="space-y-4 p-4 border rounded-lg bg-green-50">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-500 rounded"></div>
+                  <h3 className="font-medium text-green-800">Availability Configuration</h3>
+                </div>
+                
+                {/* Recurring Toggle */}
+                <FormField
+                  control={form.control}
+                  name="isRecurring"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between">
+                      <div>
+                        <FormLabel>Recurring Availability</FormLabel>
+                        <div className="text-sm text-gray-600">Set availability for multiple days</div>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                {/* Day Selection for Recurring */}
+                {form.watch("isRecurring") && (
+                  <FormField
+                    control={form.control}
+                    name="availabilityDays"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Available Days</FormLabel>
+                        <div className="grid grid-cols-4 gap-2">
+                          {dayOptions.map((day) => (
+                            <Button
+                              key={day.value}
+                              type="button"
+                              variant={field.value?.includes(day.value) ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => {
+                                const currentDays = field.value || [];
+                                if (currentDays.includes(day.value)) {
+                                  field.onChange(currentDays.filter(d => d !== day.value));
+                                } else {
+                                  field.onChange([...currentDays, day.value]);
+                                }
+                              }}
+                              className="text-xs"
+                            >
+                              {day.label.slice(0, 3)}
+                            </Button>
+                          ))}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {/* Time Range for Availability */}
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="availabilityStartTime"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Start Time</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Start time" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {timeOptions.map((time) => (
+                              <SelectItem key={time.value} value={time.value}>
+                                {time.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="availabilityEndTime"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>End Time</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="End time" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {timeOptions.map((time) => (
+                              <SelectItem key={time.value} value={time.value}>
+                                {time.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="text-sm text-green-700 bg-green-100 p-3 rounded">
+                  <strong>Example:</strong> Select Monday-Friday with 8:00 AM - 6:00 PM to set availability for weekdays
+                </div>
+              </div>
+            )}
 
             {/* Submit Buttons */}
             <div className="flex gap-3 pt-4">

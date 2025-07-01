@@ -385,6 +385,10 @@ export const calendarEvents = pgTable("calendar_events", {
   relatedTicketId: integer("related_ticket_id"), // Link to ticket if it's a work assignment
   color: varchar("color", { length: 7 }).default("#3B82F6"), // Hex color for calendar display
   isAvailability: boolean("is_availability").default(false).notNull(), // Special flag for availability blocks
+  timezone: varchar("timezone", { length: 50 }).default("America/New_York"), // Timezone for the event
+  availabilityDays: text("availability_days").array(), // Days available for recurring availability ["monday", "tuesday", etc.]
+  availabilityStartTime: time("availability_start_time"), // Start time for availability blocks
+  availabilityEndTime: time("availability_end_time"), // End time for availability blocks
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -601,6 +605,10 @@ export const insertCalendarEventSchema = createInsertSchema(calendarEvents).omit
   status: z.enum(["confirmed", "tentative", "cancelled"]).default("confirmed"),
   startTime: z.string().optional(),
   endTime: z.string().optional(),
+  timezone: z.string().default("America/New_York"),
+  availabilityDays: z.array(z.string()).optional(),
+  availabilityStartTime: z.string().optional(),
+  availabilityEndTime: z.string().optional(),
 });
 
 export const updateCalendarEventSchema = insertCalendarEventSchema.partial().extend({
