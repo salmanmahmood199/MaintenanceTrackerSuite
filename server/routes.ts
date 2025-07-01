@@ -1547,12 +1547,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Parts management routes for vendors
-  app.get("/api/maintenance-vendors/:vendorId/parts", authenticateUser, requireRole(["maintenance_admin"]), async (req: AuthenticatedRequest, res) => {
+  app.get("/api/maintenance-vendors/:vendorId/parts", authenticateUser, requireRole(["maintenance_admin", "technician"]), async (req: AuthenticatedRequest, res) => {
     try {
       const vendorId = parseInt(req.params.vendorId);
       const user = req.user!;
       
-      // Ensure vendor admin can only access their own parts
+      // Ensure vendor admin or technician can only access their own vendor's parts
       if (user.maintenanceVendorId !== vendorId) {
         return res.status(403).json({ message: "Access denied" });
       }

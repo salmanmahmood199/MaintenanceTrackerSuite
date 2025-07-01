@@ -58,13 +58,22 @@ export function TechnicianWorkOrderModal({
   const [otherCharges, setOtherCharges] = useState([{ description: "", cost: 0 }]);
 
   // Fetch available parts for this vendor
-  const { data: availableParts = [] } = useQuery({
+  const { data: availableParts = [], error: partsError } = useQuery({
     queryKey: ['/api/maintenance-vendors', user?.maintenanceVendorId, 'parts'],
     enabled: !!user?.maintenanceVendorId && open,
   });
 
   // Type the available parts properly
   const partsArray = Array.isArray(availableParts) ? availableParts : [];
+
+  // Debug logging
+  console.log("TechnicianWorkOrderModal Debug:", {
+    userRole: user?.role,
+    userMaintenanceVendorId: user?.maintenanceVendorId,
+    partsArray: partsArray,
+    partsError: partsError,
+    modalOpen: open
+  });
 
   const form = useForm<WorkOrderData>({
     resolver: zodResolver(workOrderSchema),
@@ -180,8 +189,8 @@ export function TechnicianWorkOrderModal({
   };
 
   const totalPartsCost = parts.reduce((sum, part) => sum + (part.cost * part.quantity), 0);
-  const totalOtherCost = otherCharges.reduce((sum, charge) => sum + charge.cost, 0);
-  const totalCost = totalPartsCost + totalOtherCost;
+  const totalOtherCost = 0; // Hidden from technicians
+  const totalCost = totalPartsCost; // Only parts cost for technicians
 
   return (
     <>
@@ -341,15 +350,17 @@ export function TechnicianWorkOrderModal({
                             </SelectContent>
                           </Select>
                           {part.name === "custom" && (
-                            <Input
-                              placeholder="Enter custom part name"
-                              className="mt-2"
-                              value={part.name === "custom" ? "" : part.name}
-                              onChange={(e) => updatePart(index, "name", e.target.value)}
-                            />
+                            <div className="mt-2">
+                              <Label className="text-xs text-gray-600">Custom Part Name</Label>
+                              <Input
+                                placeholder="Enter custom part name"
+                                onChange={(e) => updatePart(index, "name", e.target.value)}
+                              />
+                            </div>
                           )}
                         </div>
                         <div className="col-span-2">
+                          <Label className="text-xs text-gray-600">Quantity</Label>
                           <Input
                             type="number"
                             placeholder="Qty"
@@ -359,12 +370,17 @@ export function TechnicianWorkOrderModal({
                           />
                         </div>
                         <div className="col-span-3">
+                          <Label className="text-xs text-gray-600">
+                            {part.name === "custom" ? "Cost ($)" : "Cost (Auto-filled)"}
+                          </Label>
                           <Input
                             type="number"
                             placeholder="Cost ($)"
                             min="0"
                             step="0.01"
                             value={part.cost}
+                            disabled={part.name !== "custom"}
+                            className={part.name !== "custom" ? "bg-gray-50" : ""}
                             onChange={(e) => updatePart(index, "cost", parseFloat(e.target.value) || 0)}
                           />
                         </div>
@@ -389,55 +405,7 @@ export function TechnicianWorkOrderModal({
                   )}
                 </div>
 
-                {/* Other Charges */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <Label>Other Charges</Label>
-                    <Button type="button" size="sm" variant="outline" onClick={addOtherCharge}>
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add Charge
-                    </Button>
-                  </div>
-                  <div className="space-y-2">
-                    {otherCharges.map((charge, index) => (
-                      <div key={index} className="grid grid-cols-12 gap-2 items-end">
-                        <div className="col-span-7">
-                          <Input
-                            placeholder="Description (e.g., truck charge, travel time)"
-                            value={charge.description}
-                            onChange={(e) => updateOtherCharge(index, "description", e.target.value)}
-                          />
-                        </div>
-                        <div className="col-span-3">
-                          <Input
-                            type="number"
-                            placeholder="Cost ($)"
-                            min="0"
-                            step="0.01"
-                            value={charge.cost}
-                            onChange={(e) => updateOtherCharge(index, "cost", parseFloat(e.target.value) || 0)}
-                          />
-                        </div>
-                        <div className="col-span-2">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => removeOtherCharge(index)}
-                            disabled={otherCharges.length === 1}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  {otherCharges.length > 0 && (
-                    <div className="text-sm text-slate-600 mt-2">
-                      Other Charges Total: ${totalOtherCost.toFixed(2)}
-                    </div>
-                  )}
-                </div>
+                {/* Other Charges - Hidden from technicians */}
 
                 {totalCost > 0 && (
                   <div className="bg-blue-50 p-3 rounded-lg">
