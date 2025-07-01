@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, varchar, uuid, jsonb, decimal, numeric, index } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, varchar, uuid, jsonb, decimal, numeric, index, date, time } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -109,6 +109,14 @@ export const workOrders = pgTable("work_orders", {
   otherCharges: jsonb("other_charges").default('[]'), // Array of {description, cost}
   totalCost: decimal("total_cost", { precision: 10, scale: 2 }).default('0.00'),
   images: text("images").array().default([]), // Array of image paths
+  // Time tracking fields
+  workDate: varchar("work_date", { length: 10 }).notNull(), // Date of work (YYYY-MM-DD)
+  timeIn: varchar("time_in", { length: 8 }), // Time started work (HH:MM:SS)
+  timeOut: varchar("time_out", { length: 8 }), // Time finished work (HH:MM:SS)
+  totalHours: decimal("total_hours", { precision: 4, scale: 2 }), // Calculated hours worked
+  // Manager signature fields
+  managerName: text("manager_name"), // Manager who verified work
+  managerSignature: text("manager_signature"), // Base64 signature or signature path
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
