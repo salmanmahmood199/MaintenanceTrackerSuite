@@ -1546,6 +1546,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Parts management routes for vendors
+  app.get("/api/maintenance-vendors/:vendorId/parts", authenticateUser, requireRole(["maintenance_admin"]), async (req: AuthenticatedRequest, res) => {
+    try {
+      const vendorId = parseInt(req.params.vendorId);
+      const user = req.user!;
+      
+      // Ensure vendor admin can only access their own parts
+      if (user.maintenanceVendorId !== vendorId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const parts = await storage.getPartsByVendorId(vendorId);
+      res.json(parts);
+    } catch (error) {
+      console.error("Error fetching parts:", error);
+      res.status(500).json({ message: "Failed to fetch parts" });
+    }
+  });
+
+  app.post("/api/maintenance-vendors/:vendorId/parts", authenticateUser, requireRole(["maintenance_admin"]), async (req: AuthenticatedRequest, res) => {
+    try {
+      const vendorId = parseInt(req.params.vendorId);
+      const user = req.user!;
+      
+      // Ensure vendor admin can only add parts to their own vendor
+      if (user.maintenanceVendorId !== vendorId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const partData = {
+        ...req.body,
+        vendorId: vendorId,
+      };
+      
+      const part = await storage.createPart(partData);
+      res.json(part);
+    } catch (error) {
+      console.error("Error creating part:", error);
+      res.status(500).json({ message: "Failed to create part" });
+    }
+  });
+
+  app.put("/api/parts/:partId", authenticateUser, requireRole(["maintenance_admin"]), async (req: AuthenticatedRequest, res) => {
+    try {
+      const partId = parseInt(req.params.partId);
+      const user = req.user!;
+      
+      // Get the part to verify ownership
+      const parts = await storage.getPartsByVendorId(user.maintenanceVendorId!);
+      const existingPart = parts.find(p => p.id === partId);
+      
+      if (!existingPart) {
+        return res.status(404).json({ message: "Part not found" });
+      }
+      
+      const updatedPart = await storage.updatePart(partId, req.body);
+      if (!updatedPart) {
+        return res.status(404).json({ message: "Part not found" });
+      }
+      
+      res.json(updatedPart);
+    } catch (error) {
+      console.error("Error updating part:", error);
+      res.status(500).json({ message: "Failed to update part" });
+    }
+  });
+
+  app.get("/api/parts/:partId/price-history", authenticateUser, requireRole(["maintenance_admin"]), async (req: AuthenticatedRequest, res) => {
+    try {
+      const partId = parseInt(req.params.partId);
+      const user = req.user!;
+      
+      // Get the part to verify ownership
+      const parts = await storage.getPartsByVendorId(user.maintenanceVendorId!);
+      const existingPart = parts.find(p => p.id === partId);
+      
+      if (!existingPart) {
+        return res.status(404).json({ message: "Part not found" });
+      }
+      
+      const history = await storage.getPartPriceHistory(partId);
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching price history:", error);
+      res.status(500).json({ message: "Failed to fetch price history" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
