@@ -10,7 +10,7 @@ import { format as formatTz, toZonedTime } from "date-fns-tz";
 import { formatDistanceToNow } from "date-fns";
 import { getPriorityColor, getStatusColor } from "@/lib/utils";
 import type { Ticket } from "@shared/schema";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -110,6 +110,88 @@ export function TechnicianWorkOrderModal({
     return Math.round((totalMinutes / 60) * 100) / 100; // Round to 2 decimal places
   };
 
+  // Validate time out is after time in
+  const validateTimeOrder = (timeIn: string, timeOut: string) => {
+    if (!timeIn || !timeOut) return true; // Allow empty values
+    
+    const [inHour, inMin] = timeIn.split(':').map(Number);
+    const [outHour, outMin] = timeOut.split(':').map(Number);
+    
+    const inMinutes = inHour * 60 + inMin;
+    const outMinutes = outHour * 60 + outMin;
+    
+    return outMinutes > inMinutes; // Must be same day and time out after time in
+  };
+
+  // Signature canvas state and functions
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [signatureData, setSignatureData] = useState<string>("");
+
+  // Initialize canvas
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+      }
+    }
+  }, [open]);
+
+  // Drawing functions
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    setIsDrawing(true);
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.beginPath();
+        ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+      }
+    }
+  };
+
+  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDrawing) return;
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+        ctx.stroke();
+      }
+    }
+  };
+
+  const stopDrawing = () => {
+    if (isDrawing) {
+      setIsDrawing(false);
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const dataURL = canvas.toDataURL();
+        setSignatureData(dataURL);
+        form.setValue("managerSignature", dataURL);
+      }
+    }
+  };
+
+  const clearSignature = () => {
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        setSignatureData("");
+        form.setValue("managerSignature", "");
+      }
+    }
+  };
+
   const form = useForm<WorkOrderData>({
     resolver: zodResolver(workOrderSchema),
     defaultValues: {
@@ -139,6 +221,8 @@ export function TechnicianWorkOrderModal({
         managerName: "",
         managerSignature: "",
       });
+      // Clear signature canvas
+      clearSignature();
       setParts([{ name: "", quantity: 1, cost: 0 }]);
       setOtherCharges([{ description: "", cost: 0 }]);
       setWorkImages([]);
@@ -507,11 +591,22 @@ export function TechnicianWorkOrderModal({
                         type="time"
                         {...form.register("timeOut")}
                         onChange={(e) => {
-                          form.setValue("timeOut", e.target.value);
                           const timeIn = form.getValues("timeIn");
-                          if (timeIn) {
-                            const hours = calculateHours(timeIn, e.target.value);
-                            console.log(`Calculated hours: ${hours}`);
+                          const timeOut = e.target.value;
+                          
+                          // Validate time order
+                          if (timeIn && timeOut && !validateTimeOrder(timeIn, timeOut)) {
+                            form.setError("timeOut", {
+                              type: "manual",
+                              message: "Time Out must be after Time In"
+                            });
+                          } else {
+                            form.clearErrors("timeOut");
+                            form.setValue("timeOut", timeOut);
+                            if (timeIn) {
+                              const hours = calculateHours(timeIn, timeOut);
+                              console.log(`Calculated hours: ${hours}`);
+                            }
                           }
                         }}
                       />
@@ -549,17 +644,33 @@ export function TechnicianWorkOrderModal({
                   
                   {/* Manager Signature */}
                   <div className="mb-4">
-                    <Label htmlFor="managerSignature">Manager Signature</Label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 h-24 bg-gray-50">
-                      <Input
-                        placeholder="Manager signature (can be typed or drawn)"
-                        {...form.register("managerSignature")}
-                        className="h-full border-none bg-transparent text-lg font-script"
-                        style={{ fontFamily: "'Dancing Script', cursive" }}
+                    <div className="flex justify-between items-center mb-2">
+                      <Label htmlFor="managerSignature">Manager Signature</Label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={clearSignature}
+                        className="text-xs"
+                      >
+                        Clear
+                      </Button>
+                    </div>
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg bg-white">
+                      <canvas
+                        ref={canvasRef}
+                        width={400}
+                        height={100}
+                        className="w-full h-24 cursor-crosshair"
+                        onMouseDown={startDrawing}
+                        onMouseMove={draw}
+                        onMouseUp={stopDrawing}
+                        onMouseLeave={stopDrawing}
+                        style={{ touchAction: 'none' }}
                       />
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      Manager can type their signature to verify work completion
+                      Click and drag to draw manager's signature for work verification
                     </p>
                     {form.formState.errors.managerSignature && (
                       <p className="text-sm text-red-500 mt-1">{form.formState.errors.managerSignature.message}</p>
