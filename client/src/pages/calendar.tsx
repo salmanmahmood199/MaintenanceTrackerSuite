@@ -15,7 +15,7 @@ import { UnavailabilityModal } from "@/components/unavailability-modal";
 import { DeleteEventModal } from "@/components/delete-event-modal";
 import AvailabilityConfigModal from "@/components/availability-config-modal";
 import { CalendarDayDetail } from "@/components/calendar-day-detail";
-import { EventDetailsModal } from "@/components/event-details-modal";
+import { EventDetailsModal } from "@/components/event-details-modal-enhanced";
 import { Link } from "wouter";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isToday } from "date-fns";
 
