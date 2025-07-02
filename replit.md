@@ -268,6 +268,10 @@ Changelog:
 - July 2, 2025. Added blocked periods management with delete functionality and confirmation dialogs
 - July 2, 2025. Enhanced calendar day detail modal to show blocked periods separately with edit/delete controls
 - July 2, 2025. Added proper error handling for calendar event deletion to prevent double-delete errors
+- July 2, 2025. Implemented user-friendly error messages for booking conflicts (409 errors) with detailed explanations
+- July 2, 2025. Added click-to-book functionality on calendar time slots with quick event creation modal
+- July 2, 2025. Created comprehensive event details modal with full event information, priority badges, and delete functionality
+- July 2, 2025. Implemented year/month selector for calendar navigation with dropdown controls for easy date jumping
 ```
 
 ## User Preferences
