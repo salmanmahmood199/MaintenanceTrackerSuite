@@ -33,7 +33,6 @@ interface QuickEventModalProps {
 }
 
 const eventTypeOptions = [
-  { value: "availability", label: "Availability", color: "#10B981" },
   { value: "work_assignment", label: "Work Assignment", color: "#3B82F6" },
   { value: "meeting", label: "Meeting", color: "#8B5CF6" },
   { value: "maintenance", label: "Maintenance", color: "#F59E0B" },

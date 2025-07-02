@@ -272,6 +272,9 @@ Changelog:
 - July 2, 2025. Added click-to-book functionality on calendar time slots with quick event creation modal
 - July 2, 2025. Created comprehensive event details modal with full event information, priority badges, and delete functionality
 - July 2, 2025. Implemented year/month selector for calendar navigation with dropdown controls for easy date jumping
+- July 2, 2025. Separated availability from calendar event display - availability now works as background configuration data (like 9-5 or 8-6 work hours) and doesn't populate the calendar visually
+- July 2, 2025. Added duration selection to event booking (15min, 30min, 45min, 1hr, 2hr, 3hr) for flexible scheduling
+- July 2, 2025. Calendar now only shows scheduled events and blocked time periods, providing cleaner visual organization
 ```
 
 ## User Preferences

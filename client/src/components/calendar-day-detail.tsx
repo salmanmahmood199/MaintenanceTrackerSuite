@@ -91,9 +91,13 @@ export function CalendarDayDetail({ isOpen, onOpenChange, selectedDate }: Calend
     return eventStartDate === dateString;
   });
 
-  // Get blocked periods for this day
+  // Get blocked periods for this day (unavailability events)
   const blockedPeriods = dayEvents.filter((event: any) => event.eventType === 'unavailability');
-  const regularEvents = dayEvents.filter((event: any) => event.eventType !== 'unavailability');
+  
+  // Get regular events (exclude both unavailability and availability from display)
+  const regularEvents = dayEvents.filter((event: any) => 
+    event.eventType !== 'unavailability' && event.eventType !== 'availability'
+  );
 
   // Generate hourly slots from 6 AM to 10 PM
   const hours = [];
@@ -113,10 +117,11 @@ export function CalendarDayDetail({ isOpen, onOpenChange, selectedDate }: Calend
       return !!(eventStart && eventEnd && timeSlot >= eventStart && timeSlot < eventEnd);
     });
 
-    // Get events that start in this hour
+    // Get events that start in this hour (exclude availability events from display)
     const hourEvents = dayEvents.filter((event: any) => {
       if (event.isAllDay) return false;
       if (!event.startTime) return false;
+      if (event.eventType === 'availability') return false; // Don't show availability events
       const eventStart = event.startTime.includes('T') ? event.startTime.split('T')[1]?.substring(0, 5) : event.startTime;
       return !!(eventStart && eventStart >= timeSlot && eventStart < nextHour);
     });
