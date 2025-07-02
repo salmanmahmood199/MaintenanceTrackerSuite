@@ -98,14 +98,18 @@ export default function Calendar() {
   const calendarDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
   const getEventsForDate = (date: Date) => {
+    const dateString = format(date, 'yyyy-MM-dd');
     return events.filter((event: CalendarEvent) => {
       // Filter out availability events - only show scheduled events and blocked periods
       if (event.eventType === 'availability') {
         return false;
       }
-      const eventStart = new Date(event.startDate);
-      const eventEnd = new Date(event.endDate);
-      return date >= eventStart && date <= eventEnd;
+      
+      // More robust date matching - check if the date falls within the event's date range
+      const eventStartDate = event.startDate.split('T')[0]; // Get just the date part
+      const eventEndDate = event.endDate.split('T')[0]; // Get just the date part
+      
+      return dateString >= eventStartDate && dateString <= eventEndDate;
     });
   };
 
@@ -350,12 +354,13 @@ export default function Calendar() {
                       </div>
                       
                       <div className="space-y-1">
+                        {/* Display events for this day */}
                         {dayEvents.slice(0, 2).map((event: CalendarEvent) => (
                           <div
                             key={event.id}
                             className={`text-xs p-1 rounded cursor-pointer group/event relative ${
-                              eventTypeColors[event.eventType]
-                            } ${priorityColors[event.priority]}`}
+                              eventTypeColors[event.eventType] || 'bg-gray-100 text-gray-800 border-gray-200'
+                            } ${priorityColors[event.priority] || ''}`}
                             onClick={(e) => {
                               e.stopPropagation();
                               handleEventClick(event);
@@ -384,8 +389,8 @@ export default function Calendar() {
                           </div>
                         ))}
                         
-                        {/* Show summary when there are more events or when day has events but limited space */}
-                        {(dayEvents.length > 2 || (dayEvents.length > 0 && dayEvents.slice(0, 2).length === 0)) && (
+                        {/* Show summary when there are more events */}
+                        {dayEvents.length > 2 && (
                           <div 
                             className="text-xs p-1 bg-gray-100 rounded cursor-pointer hover:bg-gray-200 transition-colors"
                             onClick={(e) => {
@@ -394,14 +399,14 @@ export default function Calendar() {
                             }}
                           >
                             <div className="font-medium text-gray-600">
-                              {dayEvents.length > 2 ? `${dayEvents.length} events` : 'View details'}
+                              +{dayEvents.length - 2} more
                             </div>
                             <div className="text-xs text-gray-500">Click to see all</div>
                           </div>
                         )}
                         
-                        {/* Show "Click to view" hint when there are events but none displayed */}
-                        {dayEvents.length > 0 && dayEvents.slice(0, 2).length === 0 && (
+                        {/* Show event count when there are events but none displayed (fallback) */}
+                        {dayEvents.length > 0 && dayEvents.slice(0, 2).every(e => !e.title) && (
                           <div 
                             className="text-xs p-1 bg-blue-50 rounded cursor-pointer hover:bg-blue-100 transition-colors border border-blue-200"
                             onClick={(e) => {
@@ -413,6 +418,18 @@ export default function Calendar() {
                               {dayEvents.length} event{dayEvents.length > 1 ? 's' : ''}
                             </div>
                             <div className="text-xs text-blue-500">Click to view</div>
+                          </div>
+                        )}
+                        
+                        {/* Debug info - temporarily show event count for troubleshooting */}
+                        {dayEvents.length > 0 && format(day, 'd') === '12' && (
+                          <div className="text-xs p-1 bg-yellow-100 rounded">
+                            <div className="font-medium text-yellow-800">
+                              Debug: {dayEvents.length} events found
+                            </div>
+                            <div className="text-xs text-yellow-600">
+                              {dayEvents.map(e => e.title).join(', ')}
+                            </div>
                           </div>
                         )}
                       </div>
