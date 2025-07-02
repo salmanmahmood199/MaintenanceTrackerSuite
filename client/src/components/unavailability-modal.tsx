@@ -89,7 +89,10 @@ export function UnavailabilityModal({ isOpen, onOpenChange, selectedDate }: Unav
   // Initialize with selected date if provided
   useEffect(() => {
     if (selectedDate && isOpen) {
-      const date = new Date(selectedDate);
+      // Parse the date string properly to avoid timezone issues
+      // selectedDate comes as "yyyy-MM-dd" format, so we need to treat it as local date
+      const [year, month, day] = selectedDate.split('-').map(Number);
+      const date = new Date(year, month - 1, day); // month is 0-indexed
       setSelectedDates([date]);
       form.setValue("selectedDates", [date]);
     }
@@ -218,7 +221,11 @@ export function UnavailabilityModal({ isOpen, onOpenChange, selectedDate }: Unav
             Set Unavailability
             {selectedDate && (
               <span className="text-sm font-normal text-muted-foreground">
-                for {format(new Date(selectedDate), "MMMM d, yyyy")}
+                for {(() => {
+                  const [year, month, day] = selectedDate.split('-').map(Number);
+                  const date = new Date(year, month - 1, day);
+                  return format(date, "MMMM d, yyyy");
+                })()}
               </span>
             )}
           </DialogTitle>

@@ -47,11 +47,23 @@ export function CalendarDayDetail({ isOpen, onOpenChange, selectedDate }: Calend
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/calendar/events"] });
     },
+    onError: (error: Error) => {
+      // Handle errors gracefully - if event is already deleted, just refresh
+      if (error.message.includes("404") || error.message.includes("not found")) {
+        queryClient.invalidateQueries({ queryKey: ["/api/calendar/events"] });
+      } else {
+        console.error("Error deleting event:", error);
+      }
+    },
   });
 
   const handleDeleteBlockedPeriod = async (eventId: number) => {
     if (confirm("Are you sure you want to remove this blocked period?")) {
-      await deleteEventMutation.mutateAsync(eventId);
+      try {
+        await deleteEventMutation.mutateAsync(eventId);
+      } catch (error) {
+        // Error is already handled in the mutation onError
+      }
     }
   };
 
@@ -154,7 +166,8 @@ export function CalendarDayDetail({ isOpen, onOpenChange, selectedDate }: Calend
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDeleteBlockedPeriod(period.id)}
-                      className="h-6 w-6 p-1 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/40"
+                      disabled={deleteEventMutation.isPending}
+                      className="h-6 w-6 p-1 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/40 disabled:opacity-50"
                     >
                       <X className="h-3 w-3" />
                     </Button>

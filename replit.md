@@ -263,6 +263,11 @@ Changelog:
 - June 30, 2025. Updated media viewer to display videos with controls in ticket table
 - June 30, 2025. Fixed video playback for marketplace system - vendors can now properly view video files in marketplace tickets
 - June 30, 2025. Updated marketplace ticket modal, vendor dashboard, and bids modal to support video file display and playback
+- July 2, 2025. Fixed calendar date offset issue by removing double timezone correction in unavailability modal
+- July 2, 2025. Implemented comprehensive conflict checking system that prevents booking during blocked time periods
+- July 2, 2025. Added blocked periods management with delete functionality and confirmation dialogs
+- July 2, 2025. Enhanced calendar day detail modal to show blocked periods separately with edit/delete controls
+- July 2, 2025. Added proper error handling for calendar event deletion to prevent double-delete errors
 ```
 
 ## User Preferences
