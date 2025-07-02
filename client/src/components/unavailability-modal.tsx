@@ -101,7 +101,9 @@ export function UnavailabilityModal({ isOpen, onOpenChange, selectedDate }: Unav
       const events = [];
       
       for (const date of data.selectedDates) {
-        const dateString = format(date, 'yyyy-MM-dd');
+        // Fix timezone offset issue by using local date
+        const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
+        const dateString = format(localDate, 'yyyy-MM-dd');
         
         if (data.isAllDay) {
           // Create a single all-day event

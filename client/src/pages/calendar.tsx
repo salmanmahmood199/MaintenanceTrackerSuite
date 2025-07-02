@@ -12,6 +12,7 @@ import { CreateEventModal } from "@/components/create-event-modal";
 import { AvailabilityModal } from "@/components/availability-modal";
 import { UnavailabilityModal } from "@/components/unavailability-modal";
 import { DeleteEventModal } from "@/components/delete-event-modal";
+import { CalendarDayDetail } from "@/components/calendar-day-detail";
 import { Link } from "wouter";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isToday } from "date-fns";
 
@@ -58,6 +59,7 @@ export default function Calendar() {
   const [unavailabilityModalOpen, setUnavailabilityModalOpen] = useState(false);
   const [deleteEventModalOpen, setDeleteEventModalOpen] = useState(false);
   const [eventDetailOpen, setEventDetailOpen] = useState(false);
+  const [dayDetailOpen, setDayDetailOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
   // Fetch calendar events
@@ -103,7 +105,7 @@ export default function Calendar() {
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
     setSelectedDateString(format(date, "yyyy-MM-dd"));
-    setCreateEventOpen(true);
+    setDayDetailOpen(true);
   };
 
   const handleDayUnavailabilityClick = (date: Date) => {
