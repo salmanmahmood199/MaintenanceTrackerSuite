@@ -43,11 +43,6 @@ export function QuickEventModal({ isOpen, onOpenChange, selectedDate, selectedTi
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Don't render if we don't have valid data
-  if (!selectedDate || !selectedTimeSlot) {
-    return null;
-  }
-
   const form = useForm<QuickEventFormData>({
     resolver: zodResolver(quickEventSchema),
     defaultValues: {
@@ -137,6 +132,20 @@ export function QuickEventModal({ isOpen, onOpenChange, selectedDate, selectedTi
     const endTime = format(new Date(2000, 0, 1, hourNum + 1), "h:mm a");
     return `${startTime} - ${endTime}`;
   };
+
+  // Don't render content if we don't have valid data
+  if (!selectedDate || !selectedTimeSlot) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Error</DialogTitle>
+          </DialogHeader>
+          <p>Invalid date or time slot selected.</p>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
