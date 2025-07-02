@@ -73,7 +73,7 @@ export default function AvailabilityConfigModal({ isOpen, onClose }: Availabilit
 
   // Load existing configuration when data is available
   useEffect(() => {
-    if (existingConfig) {
+    if (existingConfig && existingConfig.timezone && existingConfig.weeklySchedule) {
       setTimezone(existingConfig.timezone);
       try {
         const schedule = JSON.parse(existingConfig.weeklySchedule);
@@ -86,13 +86,7 @@ export default function AvailabilityConfigModal({ isOpen, onClose }: Availabilit
 
   const saveAvailabilityMutation = useMutation({
     mutationFn: async (config: { weeklySchedule: WeeklySchedule; timezone: string }) => {
-      return await apiRequest("/api/availability/config", {
-        method: "POST",
-        body: JSON.stringify(config),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      return await apiRequest("POST", "/api/availability/config", config);
     },
     onSuccess: () => {
       toast({
