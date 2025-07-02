@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
@@ -31,11 +32,28 @@ interface CalendarDayDetailProps {
 
 export function CalendarDayDetail({ isOpen, onOpenChange, selectedDate }: CalendarDayDetailProps) {
   const [showUnavailabilityModal, setShowUnavailabilityModal] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: events = [] } = useQuery<CalendarEvent[]>({
     queryKey: ["/api/calendar/events"],
     enabled: isOpen && !!selectedDate,
   });
+
+  // Delete event mutation
+  const deleteEventMutation = useMutation({
+    mutationFn: async (eventId: number) => {
+      await apiRequest("DELETE", `/api/calendar/events/${eventId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/calendar/events"] });
+    },
+  });
+
+  const handleDeleteBlockedPeriod = async (eventId: number) => {
+    if (confirm("Are you sure you want to remove this blocked period?")) {
+      await deleteEventMutation.mutateAsync(eventId);
+    }
+  };
 
   if (!selectedDate) return null;
 
@@ -44,6 +62,10 @@ export function CalendarDayDetail({ isOpen, onOpenChange, selectedDate }: Calend
     const eventStartDate = event.startDate.split('T')[0];
     return eventStartDate === dateString;
   });
+
+  // Get blocked periods for this day
+  const blockedPeriods = dayEvents.filter((event: any) => event.eventType === 'unavailability');
+  const regularEvents = dayEvents.filter((event: any) => event.eventType !== 'unavailability');
 
   // Generate hourly slots from 6 AM to 10 PM
   const hours = [];
@@ -104,6 +126,42 @@ export function CalendarDayDetail({ isOpen, onOpenChange, selectedDate }: Calend
                 Block Time
               </Button>
             </div>
+
+            {/* Blocked Periods Section */}
+            {blockedPeriods.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-red-600">Blocked Periods</h4>
+                {blockedPeriods.map((period: any) => (
+                  <div
+                    key={period.id}
+                    className="flex items-center justify-between p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                      <div>
+                        <div className="text-sm font-medium text-red-800 dark:text-red-200">
+                          {period.title}
+                        </div>
+                        <div className="text-xs text-red-600 dark:text-red-300">
+                          {period.isAllDay 
+                            ? "All day" 
+                            : `${period.startTime?.substring(0, 5)} - ${period.endTime?.substring(0, 5)}`
+                          }
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteBlockedPeriod(period.id)}
+                      className="h-6 w-6 p-1 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/40"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Hourly Breakdown */}
             <div className="space-y-1">
