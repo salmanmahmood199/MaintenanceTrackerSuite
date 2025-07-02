@@ -1708,6 +1708,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = req.user!;
       const eventData = { ...req.body, userId: user.id };
       
+      // Check for conflicts with existing unavailability events (unless this is an unavailability event)
+      if (eventData.eventType !== 'unavailability') {
+        const conflicts = await storage.checkEventConflicts(
+          user.id,
+          eventData.startDate,
+          eventData.endDate,
+          eventData.startTime,
+          eventData.endTime,
+          eventData.isAllDay
+        );
+        
+        if (conflicts.length > 0) {
+          return res.status(409).json({ 
+            message: "Cannot book during blocked time periods",
+            conflicts: conflicts.map(c => ({
+              title: c.title,
+              date: c.startDate,
+              time: c.isAllDay ? "All day" : `${c.startTime} - ${c.endTime}`
+            }))
+          });
+        }
+      }
+      
       const event = await storage.createCalendarEvent(eventData);
       res.status(201).json(event);
     } catch (error) {

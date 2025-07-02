@@ -44,7 +44,7 @@ import {
   type InsertCalendarEvent,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, inArray, desc, or, isNull } from "drizzle-orm";
+import { eq, and, inArray, desc, or, isNull, gte, lte, ne, asc, ilike } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
 export interface IStorage {
@@ -169,6 +169,7 @@ export interface IStorage {
   createAvailabilityBlock(userId: number, title: string, startDate: string, endDate: string, startTime?: string, endTime?: string): Promise<CalendarEvent>;
   getWorkAssignments(userId: number, startDate?: string, endDate?: string): Promise<CalendarEvent[]>;
   createEventException(eventId: number, exceptionDate: string): Promise<{ id: number; eventId: number; exceptionDate: string }>;
+  checkEventConflicts(userId: number, startDate: string, endDate: string, startTime?: string, endTime?: string, isAllDay?: boolean): Promise<CalendarEvent[]>;
   
   // Initialize root user
   initializeRootUser(): Promise<void>;
@@ -1296,6 +1297,62 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return exception;
+  }
+
+  async checkEventConflicts(
+    userId: number,
+    startDate: string,
+    endDate: string,
+    startTime?: string,
+    endTime?: string,
+    isAllDay?: boolean
+  ): Promise<CalendarEvent[]> {
+    // Get all unavailability events for the user that overlap with the requested time
+    const unavailabilityEvents = await db
+      .select()
+      .from(calendarEvents)
+      .where(
+        and(
+          eq(calendarEvents.userId, userId),
+          eq(calendarEvents.eventType, "unavailability"),
+          eq(calendarEvents.status, "confirmed"),
+          // Date overlap check
+          or(
+            and(
+              lte(calendarEvents.startDate, endDate),
+              gte(calendarEvents.endDate, startDate)
+            )
+          )
+        )
+      );
+
+    // Filter for time conflicts
+    const conflicts = unavailabilityEvents.filter(event => {
+      // If the unavailability event is all-day, it blocks the entire day
+      if (event.isAllDay) {
+        return true;
+      }
+
+      // If the new event is all-day, it conflicts with any unavailability on that date
+      if (isAllDay) {
+        return true;
+      }
+
+      // Both events have specific times - check for time overlap
+      if (startTime && endTime && event.startTime && event.endTime) {
+        const newStart = startTime;
+        const newEnd = endTime;
+        const existingStart = event.startTime;
+        const existingEnd = event.endTime;
+
+        // Check if times overlap
+        return (newStart < existingEnd && newEnd > existingStart);
+      }
+
+      return false;
+    });
+
+    return conflicts;
   }
 }
 
