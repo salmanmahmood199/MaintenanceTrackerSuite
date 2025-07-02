@@ -507,6 +507,13 @@ export default function Calendar() {
           event={selectedEvent}
           selectedDate={selectedDateString}
         />
+
+        {/* Day Detail Modal */}
+        <CalendarDayDetail
+          isOpen={dayDetailOpen}
+          onOpenChange={setDayDetailOpen}
+          selectedDate={selectedDate}
+        />
       </div>
     </div>
   );

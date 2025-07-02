@@ -9,12 +9,18 @@ import { UnavailabilityModal } from "./unavailability-modal";
 interface CalendarEvent {
   id: number;
   title: string;
-  description: string;
-  startTime: string;
-  endTime: string;
-  eventType: string;
+  description?: string;
+  eventType: "availability" | "work_assignment" | "meeting" | "maintenance" | "personal" | "unavailability";
+  startDate: string;
+  startTime?: string;
+  endDate: string;
+  endTime?: string;
   isAllDay: boolean;
+  priority: "low" | "medium" | "high";
+  status: "confirmed" | "tentative" | "cancelled";
   color: string;
+  location?: string;
+  isAvailability: boolean;
 }
 
 interface CalendarDayDetailProps {
@@ -34,9 +40,10 @@ export function CalendarDayDetail({ isOpen, onOpenChange, selectedDate }: Calend
   if (!selectedDate) return null;
 
   const dateString = format(selectedDate, 'yyyy-MM-dd');
-  const dayEvents = events.filter((event: CalendarEvent) => 
-    event.startTime >= dateString && event.startTime <= dateString + "T23:59:59"
-  );
+  const dayEvents = events.filter((event: any) => {
+    const eventStartDate = event.startDate.split('T')[0];
+    return eventStartDate === dateString;
+  });
 
   // Generate hourly slots from 6 AM to 10 PM
   const hours = [];
@@ -45,21 +52,23 @@ export function CalendarDayDetail({ isOpen, onOpenChange, selectedDate }: Calend
     const nextHour = `${(hour + 1).toString().padStart(2, '0')}:00`;
     
     // Check if this hour is blocked by any unavailability events
-    const isBlocked = dayEvents.some((event: CalendarEvent) => {
+    const isBlocked = dayEvents.some((event: any) => {
       if (event.eventType !== 'unavailability') return false;
       if (event.isAllDay) return true;
       
-      const eventStart = event.startTime.split('T')[1]?.substring(0, 5) || event.startTime;
-      const eventEnd = event.endTime.split('T')[1]?.substring(0, 5) || event.endTime;
+      if (!event.startTime || !event.endTime) return false;
+      const eventStart = event.startTime.includes('T') ? event.startTime.split('T')[1]?.substring(0, 5) : event.startTime;
+      const eventEnd = event.endTime.includes('T') ? event.endTime.split('T')[1]?.substring(0, 5) : event.endTime;
       
-      return timeSlot >= eventStart && timeSlot < eventEnd;
+      return !!(eventStart && eventEnd && timeSlot >= eventStart && timeSlot < eventEnd);
     });
 
     // Get events that start in this hour
-    const hourEvents = dayEvents.filter((event: CalendarEvent) => {
+    const hourEvents = dayEvents.filter((event: any) => {
       if (event.isAllDay) return false;
-      const eventStart = event.startTime.split('T')[1]?.substring(0, 5) || event.startTime;
-      return eventStart >= timeSlot && eventStart < nextHour;
+      if (!event.startTime) return false;
+      const eventStart = event.startTime.includes('T') ? event.startTime.split('T')[1]?.substring(0, 5) : event.startTime;
+      return !!(eventStart && eventStart >= timeSlot && eventStart < nextHour);
     });
 
     hours.push({
