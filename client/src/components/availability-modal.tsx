@@ -114,13 +114,23 @@ export function AvailabilityModal({ isOpen, onClose }: AvailabilityModalProps) {
       onClose();
       form.reset();
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error("Error setting availability:", error);
-      toast({
-        title: "Error",
-        description: "Failed to set availability. Please try again.",
-        variant: "destructive",
-      });
+      
+      // Check if it's a conflict error (409)
+      if (error.message.includes('409') || error.message.includes('blocked time')) {
+        toast({
+          title: "Booking Conflict",
+          description: "Cannot set availability during blocked time periods. Please choose a different time or remove the conflicting blocked period first.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to set availability. Please try again.",
+          variant: "destructive",
+        });
+      }
     },
   });
 

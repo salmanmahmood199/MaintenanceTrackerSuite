@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { Clock, X, Plus } from "lucide-react";
 import { UnavailabilityModal } from "./unavailability-modal";
+import { QuickEventModal } from "./quick-event-modal";
+import { EventDetailsModal } from "./event-details-modal";
 
 interface CalendarEvent {
   id: number;
@@ -32,6 +34,10 @@ interface CalendarDayDetailProps {
 
 export function CalendarDayDetail({ isOpen, onOpenChange, selectedDate }: CalendarDayDetailProps) {
   const [showUnavailabilityModal, setShowUnavailabilityModal] = useState(false);
+  const [showQuickEventModal, setShowQuickEventModal] = useState(false);
+  const [showEventDetailsModal, setShowEventDetailsModal] = useState(false);
+  const [selectedEventDetails, setSelectedEventDetails] = useState<CalendarEvent | null>(null);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
   const queryClient = useQueryClient();
 
   const { data: events = [] } = useQuery<CalendarEvent[]>({
@@ -65,6 +71,16 @@ export function CalendarDayDetail({ isOpen, onOpenChange, selectedDate }: Calend
         // Error is already handled in the mutation onError
       }
     }
+  };
+
+  const handleTimeSlotClick = (hour: number) => {
+    setSelectedTimeSlot(hour.toString().padStart(2, '0'));
+    setShowQuickEventModal(true);
+  };
+
+  const handleEventClick = (event: CalendarEvent) => {
+    setSelectedEventDetails(event);
+    setShowEventDetailsModal(true);
   };
 
   if (!selectedDate) return null;
