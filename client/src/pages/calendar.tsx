@@ -99,6 +99,10 @@ export default function Calendar() {
 
   const getEventsForDate = (date: Date) => {
     return events.filter((event: CalendarEvent) => {
+      // Filter out availability events - only show scheduled events and blocked periods
+      if (event.eventType === 'availability') {
+        return false;
+      }
       const eventStart = new Date(event.startDate);
       const eventEnd = new Date(event.endDate);
       return date >= eventStart && date <= eventEnd;

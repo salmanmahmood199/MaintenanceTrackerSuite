@@ -20,6 +20,7 @@ const quickEventSchema = z.object({
   eventType: z.enum(["availability", "work_assignment", "meeting", "maintenance", "personal"]),
   priority: z.enum(["low", "medium", "high"]).default("medium"),
   location: z.string().optional(),
+  duration: z.enum(["15", "30", "45", "60", "120", "180"]).default("60"),
 });
 
 type QuickEventFormData = z.infer<typeof quickEventSchema>;
@@ -39,6 +40,15 @@ const eventTypeOptions = [
   { value: "personal", label: "Personal", color: "#6B7280" },
 ];
 
+const durationOptions = [
+  { value: "15", label: "15 minutes" },
+  { value: "30", label: "30 minutes" },
+  { value: "45", label: "45 minutes" },
+  { value: "60", label: "1 hour" },
+  { value: "120", label: "2 hours" },
+  { value: "180", label: "3 hours" },
+];
+
 export function QuickEventModal({ isOpen, onOpenChange, selectedDate, selectedTimeSlot }: QuickEventModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -51,13 +61,18 @@ export function QuickEventModal({ isOpen, onOpenChange, selectedDate, selectedTi
       eventType: "work_assignment",
       priority: "medium",
       location: "",
+      duration: "60",
     },
   });
 
   const createEventMutation = useMutation({
     mutationFn: async (data: QuickEventFormData) => {
-      const endHour = parseInt(selectedTimeSlot) + 1;
-      const endTime = `${endHour.toString().padStart(2, '0')}:00`;
+      const startHour = parseInt(selectedTimeSlot);
+      const durationMinutes = parseInt(data.duration);
+      const endTotalMinutes = startHour * 60 + durationMinutes;
+      const endHour = Math.floor(endTotalMinutes / 60);
+      const endMinute = endTotalMinutes % 60;
+      const endTime = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
       
       const eventData = {
         title: data.title,
@@ -207,6 +222,32 @@ export function QuickEventModal({ isOpen, onOpenChange, selectedDate, selectedTi
                             />
                             {option.label}
                           </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Duration */}
+            <FormField
+              control={form.control}
+              name="duration"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Duration</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {durationOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
