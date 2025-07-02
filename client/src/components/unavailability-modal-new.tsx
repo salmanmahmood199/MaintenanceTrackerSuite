@@ -77,7 +77,7 @@ export function UnavailabilityModal({ isOpen, onOpenChange, selectedDate }: Unav
   const form = useForm<UnavailabilityFormData>({
     resolver: zodResolver(unavailabilityFormSchema),
     defaultValues: {
-      selectedDates: selectedDate ? [new Date(selectedDate)] : [],
+      selectedDates: [],
       isAllDay: false,
       timeBlocks: [{ startTime: "09:00", endTime: "17:00" }],
       timezone: "America/New_York",
@@ -85,6 +85,15 @@ export function UnavailabilityModal({ isOpen, onOpenChange, selectedDate }: Unav
       notes: "",
     },
   });
+
+  // Initialize with selected date if provided
+  useEffect(() => {
+    if (selectedDate && isOpen) {
+      const date = new Date(selectedDate);
+      setSelectedDates([date]);
+      form.setValue("selectedDates", [date]);
+    }
+  }, [selectedDate, isOpen, form]);
 
   const createUnavailabilityMutation = useMutation({
     mutationFn: async (data: UnavailabilityFormData) => {
@@ -231,178 +240,106 @@ export function UnavailabilityModal({ isOpen, onOpenChange, selectedDate }: Unav
               )}
             />
 
-            {!selectedDate && (
-              <>
-                {/* Unavailability Type */}
-                <FormField
-                  control={form.control}
-                  name="unavailabilityType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Unavailability Period</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select unavailability type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="days_of_week">Specific Days of Week</SelectItem>
-                          <SelectItem value="date_range">Date Range</SelectItem>
-                          <SelectItem value="specific_date">Specific Date</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Days of Week Selection */}
-                {unavailabilityType === "days_of_week" && (
-                  <FormField
-                    control={form.control}
-                    name="selectedDays"
-                    render={() => (
-                      <FormItem>
-                        <FormLabel>Select Days</FormLabel>
-                        <div className="grid grid-cols-2 gap-2">
-                          {DAYS_OF_WEEK.map((day) => (
-                            <FormField
-                              key={day.value}
-                              control={form.control}
-                              name="selectedDays"
-                              render={({ field }) => {
-                                return (
-                                  <FormItem
-                                    key={day.value}
-                                    className="flex flex-row items-start space-x-3 space-y-0"
-                                  >
-                                    <FormControl>
-                                      <Checkbox
-                                        checked={field.value?.includes(day.value)}
-                                        onCheckedChange={(checked) => {
-                                          return checked
-                                            ? field.onChange([...(field.value || []), day.value])
-                                            : field.onChange(
-                                                field.value?.filter(
-                                                  (value) => value !== day.value
-                                                )
-                                              );
-                                        }}
-                                      />
-                                    </FormControl>
-                                    <FormLabel className="font-normal">
-                                      {day.label}
-                                    </FormLabel>
-                                  </FormItem>
-                                );
-                              }}
-                            />
-                          ))}
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-
-                {/* Date Range */}
-                {unavailabilityType === "date_range" && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="startDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Start Date</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="endDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>End Date</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                )}
-
-                {/* Specific Date */}
-                {unavailabilityType === "specific_date" && (
-                  <FormField
-                    control={form.control}
-                    name="specificDate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Date</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-              </>
-            )}
-
-            {/* Time Blocks */}
+            {/* Calendar Date Selection */}
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <FormLabel className="text-base">Time Blocks</FormLabel>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addTimeBlock}
-                  className="flex items-center gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Time Block
-                </Button>
+              <FormLabel>Select Dates</FormLabel>
+              <div className="border rounded-md p-4">
+                <Calendar
+                  mode="multiple"
+                  selected={selectedDates}
+                  onSelect={(dates) => {
+                    setSelectedDates(dates || []);
+                    form.setValue("selectedDates", dates || []);
+                  }}
+                  disabled={(date) => date < new Date()}
+                  className="rounded-md"
+                />
               </div>
-              
-              {timeBlocks.map((block, index) => (
-                <div key={index} className="flex items-center gap-2 p-3 border rounded-lg">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="time"
-                    value={block.startTime}
-                    onChange={(e) => updateTimeBlock(index, "startTime", e.target.value)}
-                    className="w-24"
-                  />
-                  <span className="text-muted-foreground">to</span>
-                  <Input
-                    type="time"
-                    value={block.endTime}
-                    onChange={(e) => updateTimeBlock(index, "endTime", e.target.value)}
-                    className="w-24"
-                  />
-                  {timeBlocks.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeTimeBlock(index)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
+              {selectedDates.length > 0 && (
+                <div className="text-sm text-muted-foreground">
+                  Selected: {selectedDates.length} day{selectedDates.length > 1 ? 's' : ''}
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {selectedDates.map((date, index) => (
+                      <span key={index} className="px-2 py-1 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded text-xs">
+                        {format(date, 'MMM d')}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              ))}
+              )}
             </div>
+
+            {/* All Day Checkbox */}
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="allDay"
+                checked={isAllDay}
+                onCheckedChange={(checked) => {
+                  setIsAllDay(checked === true);
+                  form.setValue("isAllDay", checked === true);
+                }}
+              />
+              <label htmlFor="allDay" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                Block all day
+              </label>
+            </div>
+
+            {/* Time Blocks (only show if not all day) */}
+            {!isAllDay && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <FormLabel className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Time Blocks
+                  </FormLabel>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addTimeBlock}
+                    className="flex items-center gap-1"
+                  >
+                    <Plus className="h-3 w-3" />
+                    Add Block
+                  </Button>
+                </div>
+                <div className="space-y-3">
+                  {timeBlocks.map((block, index) => (
+                    <div key={index} className="flex items-center gap-2 p-3 border rounded-lg">
+                      <div className="flex-1 grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-xs text-muted-foreground">Start Time</label>
+                          <Input
+                            type="time"
+                            value={block.startTime}
+                            onChange={(e) => updateTimeBlock(index, "startTime", e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-muted-foreground">End Time</label>
+                          <Input
+                            type="time"
+                            value={block.endTime}
+                            onChange={(e) => updateTimeBlock(index, "endTime", e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      {timeBlocks.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeTimeBlock(index)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Timezone */}
             <FormField
@@ -430,30 +367,6 @@ export function UnavailabilityModal({ isOpen, onOpenChange, selectedDate }: Unav
               )}
             />
 
-            {/* Recurring Option */}
-            {!selectedDate && unavailabilityType === "days_of_week" && (
-              <FormField
-                control={form.control}
-                name="isRecurring"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Recurring Weekly</FormLabel>
-                      <p className="text-sm text-muted-foreground">
-                        This unavailability will repeat every week for the selected days
-                      </p>
-                    </div>
-                  </FormItem>
-                )}
-              />
-            )}
-
             {/* Notes */}
             <FormField
               control={form.control}
@@ -462,29 +375,21 @@ export function UnavailabilityModal({ isOpen, onOpenChange, selectedDate }: Unav
                 <FormItem>
                   <FormLabel>Notes (Optional)</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      placeholder="Add any additional details about your unavailability..."
-                      rows={3}
-                      {...field} 
-                    />
+                    <Textarea placeholder="Additional details about this unavailability..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            {/* Submit */}
+            {/* Form Actions */}
             <div className="flex justify-end gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
               <Button
                 type="submit"
-                disabled={createUnavailabilityMutation.isPending}
+                disabled={createUnavailabilityMutation.isPending || selectedDates.length === 0}
                 className="bg-red-600 hover:bg-red-700"
               >
                 {createUnavailabilityMutation.isPending ? "Setting..." : "Set Unavailability"}
