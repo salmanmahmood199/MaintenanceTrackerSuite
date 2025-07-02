@@ -170,6 +170,11 @@ export interface IStorage {
   getWorkAssignments(userId: number, startDate?: string, endDate?: string): Promise<CalendarEvent[]>;
   createEventException(eventId: number, exceptionDate: string): Promise<{ id: number; eventId: number; exceptionDate: string }>;
   checkEventConflicts(userId: number, startDate: string, endDate: string, startTime?: string, endTime?: string, isAllDay?: boolean): Promise<CalendarEvent[]>;
+
+  // Availability configuration methods
+  getAvailabilityConfig(userId: number): Promise<AvailabilityConfig | null>;
+  createAvailabilityConfig(config: InsertAvailabilityConfig): Promise<AvailabilityConfig>;
+  updateAvailabilityConfig(userId: number, config: Partial<InsertAvailabilityConfig>): Promise<AvailabilityConfig | null>;
   
   // Initialize root user
   initializeRootUser(): Promise<void>;

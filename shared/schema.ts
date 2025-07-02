@@ -401,6 +401,18 @@ export const eventExceptions = pgTable("event_exceptions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Availability configuration table - persistent user availability parameters
+export const availabilityConfigs = pgTable("availability_configs", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  timezone: varchar("timezone", { length: 50 }).notNull().default("America/New_York"),
+  // JSON object storing availability for each day: {"monday": [{"start": "08:00", "end": "12:00"}, {"start": "13:00", "end": "17:00"}], "tuesday": [...]}
+  weeklySchedule: text("weekly_schedule").notNull(), 
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const calendarEventsRelations = relations(calendarEvents, ({ one, many }) => ({
   user: one(users, {
     fields: [calendarEvents.userId],
@@ -413,6 +425,13 @@ export const eventExceptionsRelations = relations(eventExceptions, ({ one }) => 
   event: one(calendarEvents, {
     fields: [eventExceptions.eventId],
     references: [calendarEvents.id],
+  }),
+}));
+
+export const availabilityConfigsRelations = relations(availabilityConfigs, ({ one }) => ({
+  user: one(users, {
+    fields: [availabilityConfigs.userId],
+    references: [users.id],
   }),
 }));
 
@@ -595,6 +614,9 @@ export type InsertPartPriceHistory = typeof partPriceHistory.$inferInsert;
 export type CalendarEvent = typeof calendarEvents.$inferSelect;
 export type InsertCalendarEvent = typeof calendarEvents.$inferInsert;
 
+export type AvailabilityConfig = typeof availabilityConfigs.$inferSelect;
+export type InsertAvailabilityConfig = typeof availabilityConfigs.$inferInsert;
+
 export const insertMarketplaceBidSchema = createInsertSchema(marketplaceBids).omit({
   id: true,
   createdAt: true,
@@ -605,6 +627,26 @@ export const insertTicketCommentSchema = createInsertSchema(ticketComments).omit
   id: true,
   createdAt: true,
   updatedAt: true,
+});
+
+export const insertAvailabilityConfigSchema = createInsertSchema(availabilityConfigs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  weeklySchedule: z.string().refine((val) => {
+    try {
+      const schedule = JSON.parse(val);
+      return typeof schedule === 'object' && schedule !== null;
+    } catch {
+      return false;
+    }
+  }, "Weekly schedule must be valid JSON"),
+  timezone: z.string().default("America/New_York"),
+});
+
+export const updateAvailabilityConfigSchema = insertAvailabilityConfigSchema.partial().extend({
+  id: z.number(),
 });
 
 export const insertCalendarEventSchema = createInsertSchema(calendarEvents).omit({
