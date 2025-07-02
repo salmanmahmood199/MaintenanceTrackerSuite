@@ -328,17 +328,29 @@ export default function Calendar() {
                         }`}>
                           {format(day, "d")}
                         </div>
-                        {isCurrentMonth && (
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                            <div className="text-xs text-gray-500" title="Right-click to set unavailability">
-                              <Ban className="h-3 w-3" />
+                        
+                        {/* Event indicators */}
+                        <div className="flex items-center gap-1">
+                          {/* Show dots for different event types */}
+                          {dayEvents.some(e => e.title?.toLowerCase().includes('block') || e.title?.toLowerCase().includes('unavailable')) && (
+                            <div className="w-2 h-2 bg-red-500 rounded-full" title="Blocked periods"></div>
+                          )}
+                          {dayEvents.some(e => e.eventType !== 'availability') && (
+                            <div className="w-2 h-2 bg-blue-500 rounded-full" title="Scheduled events"></div>
+                          )}
+                          
+                          {isCurrentMonth && (
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="text-xs text-gray-500" title="Right-click to set unavailability">
+                                <Ban className="h-3 w-3" />
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
                       
                       <div className="space-y-1">
-                        {dayEvents.slice(0, 3).map((event: CalendarEvent) => (
+                        {dayEvents.slice(0, 2).map((event: CalendarEvent) => (
                           <div
                             key={event.id}
                             className={`text-xs p-1 rounded cursor-pointer group/event relative ${
@@ -371,9 +383,36 @@ export default function Calendar() {
                             </div>
                           </div>
                         ))}
-                        {dayEvents.length > 3 && (
-                          <div className="text-xs text-gray-500 font-medium">
-                            +{dayEvents.length - 3} more
+                        
+                        {/* Show summary when there are more events or when day has events but limited space */}
+                        {(dayEvents.length > 2 || (dayEvents.length > 0 && dayEvents.slice(0, 2).length === 0)) && (
+                          <div 
+                            className="text-xs p-1 bg-gray-100 rounded cursor-pointer hover:bg-gray-200 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDateClick(day);
+                            }}
+                          >
+                            <div className="font-medium text-gray-600">
+                              {dayEvents.length > 2 ? `${dayEvents.length} events` : 'View details'}
+                            </div>
+                            <div className="text-xs text-gray-500">Click to see all</div>
+                          </div>
+                        )}
+                        
+                        {/* Show "Click to view" hint when there are events but none displayed */}
+                        {dayEvents.length > 0 && dayEvents.slice(0, 2).length === 0 && (
+                          <div 
+                            className="text-xs p-1 bg-blue-50 rounded cursor-pointer hover:bg-blue-100 transition-colors border border-blue-200"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDateClick(day);
+                            }}
+                          >
+                            <div className="font-medium text-blue-600">
+                              {dayEvents.length} event{dayEvents.length > 1 ? 's' : ''}
+                            </div>
+                            <div className="text-xs text-blue-500">Click to view</div>
                           </div>
                         )}
                       </div>
