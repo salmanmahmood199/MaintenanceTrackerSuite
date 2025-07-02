@@ -15,6 +15,7 @@ import {
   partPriceHistory,
   calendarEvents,
   eventExceptions,
+  availabilityConfigs,
   type User, 
   type InsertUser, 
   type InsertSubAdmin,
@@ -42,6 +43,8 @@ import {
   type InsertPartPriceHistory,
   type CalendarEvent,
   type InsertCalendarEvent,
+  type AvailabilityConfig,
+  type InsertAvailabilityConfig,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, inArray, desc, or, isNull, gte, lte, ne, asc, ilike } from "drizzle-orm";
@@ -1358,6 +1361,32 @@ export class DatabaseStorage implements IStorage {
     });
 
     return conflicts;
+  }
+
+  // Availability configuration methods
+  async getAvailabilityConfig(userId: number): Promise<AvailabilityConfig | null> {
+    const [config] = await db
+      .select()
+      .from(availabilityConfigs)
+      .where(and(eq(availabilityConfigs.userId, userId), eq(availabilityConfigs.isActive, true)));
+    return config || null;
+  }
+
+  async createAvailabilityConfig(config: InsertAvailabilityConfig): Promise<AvailabilityConfig> {
+    const [newConfig] = await db
+      .insert(availabilityConfigs)
+      .values(config)
+      .returning();
+    return newConfig;
+  }
+
+  async updateAvailabilityConfig(userId: number, config: Partial<InsertAvailabilityConfig>): Promise<AvailabilityConfig | null> {
+    const [updatedConfig] = await db
+      .update(availabilityConfigs)
+      .set({ ...config, updatedAt: new Date() })
+      .where(and(eq(availabilityConfigs.userId, userId), eq(availabilityConfigs.isActive, true)))
+      .returning();
+    return updatedConfig || null;
   }
 }
 

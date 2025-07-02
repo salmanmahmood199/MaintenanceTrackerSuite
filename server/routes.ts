@@ -1867,6 +1867,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Availability configuration routes
+  app.get("/api/availability/config", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const user = req.user!;
+      const config = await storage.getAvailabilityConfig(user.id);
+      res.json(config);
+    } catch (error) {
+      console.error("Error fetching availability config:", error);
+      res.status(500).json({ message: "Failed to fetch availability configuration" });
+    }
+  });
+
+  app.post("/api/availability/config", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const user = req.user!;
+      const { weeklySchedule, timezone } = req.body;
+      
+      // Check if user already has a config
+      const existingConfig = await storage.getAvailabilityConfig(user.id);
+      
+      if (existingConfig) {
+        // Update existing configuration
+        const updatedConfig = await storage.updateAvailabilityConfig(user.id, {
+          weeklySchedule: JSON.stringify(weeklySchedule),
+          timezone: timezone || "America/New_York",
+        });
+        res.json(updatedConfig);
+      } else {
+        // Create new configuration
+        const newConfig = await storage.createAvailabilityConfig({
+          userId: user.id,
+          weeklySchedule: JSON.stringify(weeklySchedule),
+          timezone: timezone || "America/New_York",
+        });
+        res.status(201).json(newConfig);
+      }
+    } catch (error) {
+      console.error("Error saving availability config:", error);
+      res.status(500).json({ message: "Failed to save availability configuration" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
