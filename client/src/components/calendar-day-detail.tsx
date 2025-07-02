@@ -31,46 +31,11 @@ interface CalendarDayDetailProps {
 
 export function CalendarDayDetail({ isOpen, onOpenChange, selectedDate }: CalendarDayDetailProps) {
   const [showUnavailabilityModal, setShowUnavailabilityModal] = useState(false);
-  const queryClient = useQueryClient();
 
   const { data: events = [] } = useQuery<CalendarEvent[]>({
     queryKey: ["/api/calendar/events"],
     enabled: isOpen && !!selectedDate,
   });
-
-  // Delete event mutation
-  const deleteEventMutation = useMutation({
-    mutationFn: async (eventId: number) => {
-      await apiRequest("DELETE", `/api/calendar/events/${eventId}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/calendar/events"] });
-    },
-  });
-
-  const handleDeleteBlockedPeriod = async (timeSlot: string) => {
-    if (!selectedDate) return;
-    
-    const dateString = format(selectedDate, 'yyyy-MM-dd');
-    
-    // Find the unavailability event that blocks this time slot
-    const blockedEvent = events.find((event: any) => {
-      if (event.eventType !== 'unavailability') return false;
-      if (event.startDate.split('T')[0] !== dateString) return false;
-      
-      if (event.isAllDay) return true;
-      
-      if (!event.startTime || !event.endTime) return false;
-      const eventStart = event.startTime.includes('T') ? event.startTime.split('T')[1]?.substring(0, 5) : event.startTime;
-      const eventEnd = event.endTime.includes('T') ? event.endTime.split('T')[1]?.substring(0, 5) : event.endTime;
-      
-      return eventStart && eventEnd && timeSlot >= eventStart && timeSlot < eventEnd;
-    });
-
-    if (blockedEvent) {
-      await deleteEventMutation.mutateAsync(blockedEvent.id);
-    }
-  };
 
   if (!selectedDate) return null;
 
@@ -181,17 +146,10 @@ export function CalendarDayDetail({ isOpen, onOpenChange, selectedDate }: Calend
                       </div>
                     )}
 
-                    {/* Show edit/delete options for blocked periods */}
+                    {/* Placeholder for future edit/delete functionality */}
                     {hour.isBlocked && (
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-1 text-red-600 hover:bg-red-100"
-                          onClick={() => handleDeleteBlockedPeriod(hour.time)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
+                      <div className="text-xs text-red-600">
+                        Blocked
                       </div>
                     )}
                   </div>
