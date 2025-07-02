@@ -13,6 +13,7 @@ import { CreateEventModal } from "@/components/create-event-modal";
 import { AvailabilityModal } from "@/components/availability-modal";
 import { UnavailabilityModal } from "@/components/unavailability-modal";
 import { DeleteEventModal } from "@/components/delete-event-modal";
+import AvailabilityConfigModal from "@/components/availability-config-modal";
 import { CalendarDayDetail } from "@/components/calendar-day-detail";
 import { EventDetailsModal } from "@/components/event-details-modal";
 import { Link } from "wouter";
@@ -64,6 +65,7 @@ export default function Calendar() {
   const [dayDetailOpen, setDayDetailOpen] = useState(false);
   const [eventDetailsModalOpen, setEventDetailsModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [availabilityConfigOpen, setAvailabilityConfigOpen] = useState(false);
 
   // Fetch calendar events
   const { data: events = [], isLoading } = useQuery<CalendarEvent[]>({
@@ -449,10 +451,10 @@ export default function Calendar() {
               <Button 
                 variant="outline" 
                 className="w-full justify-start text-green-700 border-green-200 hover:bg-green-50"
-                onClick={() => setAvailabilityModalOpen(true)}
+                onClick={() => setAvailabilityConfigOpen(true)}
               >
                 <Clock className="h-4 w-4 mr-2" />
-                Set Availability
+                Configure Availability
               </Button>
               
               <Button 
@@ -521,6 +523,11 @@ export default function Calendar() {
         <AvailabilityModal
           isOpen={availabilityModalOpen}
           onClose={() => setAvailabilityModalOpen(false)}
+        />
+
+        <AvailabilityConfigModal
+          isOpen={availabilityConfigOpen}
+          onClose={() => setAvailabilityConfigOpen(false)}
         />
 
         {/* Event Detail Modal */}
