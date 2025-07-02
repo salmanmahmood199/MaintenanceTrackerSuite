@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { Calendar as CalendarIcon, Plus, Clock, Users, MapPin, Edit2, Trash2, ArrowLeft, Ban, X } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, Clock, Users, MapPin, Edit2, Trash2, ArrowLeft, Ban, X, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,6 +14,7 @@ import { AvailabilityModal } from "@/components/availability-modal";
 import { UnavailabilityModal } from "@/components/unavailability-modal";
 import { DeleteEventModal } from "@/components/delete-event-modal";
 import { CalendarDayDetail } from "@/components/calendar-day-detail";
+import { EventDetailsModal } from "@/components/event-details-modal";
 import { Link } from "wouter";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isToday } from "date-fns";
 
@@ -60,6 +62,7 @@ export default function Calendar() {
   const [deleteEventModalOpen, setDeleteEventModalOpen] = useState(false);
   const [eventDetailOpen, setEventDetailOpen] = useState(false);
   const [dayDetailOpen, setDayDetailOpen] = useState(false);
+  const [eventDetailsModalOpen, setEventDetailsModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
   // Fetch calendar events
@@ -122,7 +125,7 @@ export default function Calendar() {
 
   const handleEventClick = (event: CalendarEvent) => {
     setSelectedEvent(event);
-    setEventDetailOpen(true);
+    setEventDetailsModalOpen(true);
   };
 
   const handleDeleteEvent = () => {
@@ -212,9 +215,55 @@ export default function Calendar() {
           {/* Calendar Grid */}
           <Card className="col-span-8">
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-xl">
-                {format(currentDate, "MMMM yyyy")}
-              </CardTitle>
+              <div className="flex items-center gap-3">
+                <CardTitle className="text-xl">Calendar</CardTitle>
+                {/* Month and Year Selectors */}
+                <div className="flex items-center gap-2">
+                  <Select 
+                    value={format(currentDate, "M")} 
+                    onValueChange={(month) => {
+                      const newDate = new Date(currentDate);
+                      newDate.setMonth(parseInt(month) - 1);
+                      setCurrentDate(newDate);
+                    }}
+                  >
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 12 }, (_, i) => (
+                        <SelectItem key={i + 1} value={(i + 1).toString()}>
+                          {format(new Date(2000, i), "MMMM")}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select 
+                    value={currentDate.getFullYear().toString()} 
+                    onValueChange={(year) => {
+                      const newDate = new Date(currentDate);
+                      newDate.setFullYear(parseInt(year));
+                      setCurrentDate(newDate);
+                    }}
+                  >
+                    <SelectTrigger className="w-20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 11 }, (_, i) => {
+                        const year = new Date().getFullYear() - 5 + i;
+                        return (
+                          <SelectItem key={year} value={year.toString()}>
+                            {year}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
               <div className="flex gap-2">
                 <Button
                   variant="outline"

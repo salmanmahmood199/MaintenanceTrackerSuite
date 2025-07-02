@@ -197,11 +197,13 @@ export function CalendarDayDetail({ isOpen, onOpenChange, selectedDate }: Calend
               {hours.map((hour) => (
                 <div
                   key={hour.time}
-                  className={`flex items-center justify-between p-2 rounded border ${
+                  className={`flex items-center justify-between p-2 rounded border transition-colors ${
                     hour.isBlocked
                       ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
-                      : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                      : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer"
                   }`}
+                  onClick={() => !hour.isBlocked && hour.events.length === 0 && handleTimeSlotClick(parseInt(hour.time.split(':')[0]))}
+                  title={!hour.isBlocked && hour.events.length === 0 ? "Click to book this time slot" : undefined}
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-mono text-muted-foreground min-w-[60px]">
@@ -215,6 +217,9 @@ export function CalendarDayDetail({ isOpen, onOpenChange, selectedDate }: Calend
                         <span className="text-xs text-red-600 font-medium">Blocked</span>
                       </div>
                     )}
+                    {!hour.isBlocked && hour.events.length === 0 && (
+                      <span className="text-xs text-blue-600 opacity-60">Click to book</span>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -224,8 +229,13 @@ export function CalendarDayDetail({ isOpen, onOpenChange, selectedDate }: Calend
                         {hour.events.map((event: any) => (
                           <div
                             key={event.id}
-                            className="text-xs px-2 py-1 rounded"
+                            className="text-xs px-2 py-1 rounded cursor-pointer hover:opacity-80 transition-opacity"
                             style={{ backgroundColor: event.color + '20', color: event.color }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEventClick(event);
+                            }}
+                            title="Click to view event details"
                           >
                             {event.title}
                           </div>
@@ -293,6 +303,19 @@ export function CalendarDayDetail({ isOpen, onOpenChange, selectedDate }: Calend
         isOpen={showUnavailabilityModal}
         onOpenChange={setShowUnavailabilityModal}
         selectedDate={dateString}
+      />
+
+      <QuickEventModal
+        isOpen={showQuickEventModal}
+        onOpenChange={setShowQuickEventModal}
+        selectedDate={dateString}
+        selectedTimeSlot={selectedTimeSlot}
+      />
+
+      <EventDetailsModal
+        isOpen={showEventDetailsModal}
+        onOpenChange={setShowEventDetailsModal}
+        event={selectedEventDetails}
       />
     </>
   );
