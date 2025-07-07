@@ -430,7 +430,7 @@ export function ProgressTracker({
                               <div className="flex items-center space-x-4 mt-2 text-xs text-slate-500">
                                 <div className="flex items-center space-x-1">
                                   <Calendar className="h-3 w-3" />
-                                  <span>{formatDate(milestone.achievedAt)}</span>
+                                  <span>{milestone.achievedAt ? formatDate(milestone.achievedAt) : 'Date not available'}</span>
                                 </div>
                                 {milestone.achievedByName && (
                                   <div className="flex items-center space-x-1">
@@ -506,7 +506,7 @@ export function ProgressTracker({
                           {workOrder.totalCost && (
                             <p className="text-slate-600">Cost: ${workOrder.totalCost}</p>
                           )}
-                          <p className="text-xs text-slate-500">Created: {format(new Date(workOrder.createdAt), 'MMM dd, yyyy h:mm a')}</p>
+                          <p className="text-xs text-slate-500">Created: {workOrder.createdAt ? format(new Date(workOrder.createdAt), 'MMM dd, yyyy h:mm a') : 'Date not available'}</p>
                         </div>
                       ))}
                     </div>
@@ -523,7 +523,7 @@ export function ProgressTracker({
                         <div key={comment.id} className="mt-2 p-2 bg-white rounded border-l-2 border-purple-300">
                           <p className="text-slate-600">{comment.content}</p>
                           <p className="text-xs text-slate-500 mt-1">
-                            By {comment.user?.firstName} {comment.user?.lastName} - {format(new Date(comment.createdAt), 'MMM dd, yyyy h:mm a')}
+                            By {comment.user?.firstName} {comment.user?.lastName} - {comment.createdAt ? format(new Date(comment.createdAt), 'MMM dd, yyyy h:mm a') : 'Date not available'}
                           </p>
                         </div>
                       ))}
