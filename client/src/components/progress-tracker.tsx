@@ -101,6 +101,44 @@ export function ProgressTracker({
     ) || ticketJourneyStages[0];
   };
 
+  // Get relevant stages for current ticket status
+  const getRelevantStages = (status: string) => {
+    const mainStages = [
+      ticketJourneyStages.find(s => s.key === "submitted"),
+      ticketJourneyStages.find(s => s.key === "accepted"),
+      ticketJourneyStages.find(s => s.key === "in_progress"),
+      ticketJourneyStages.find(s => s.key === "work_completed"),
+      ticketJourneyStages.find(s => s.key === "billed")
+    ].filter(Boolean);
+    return mainStages;
+  };
+
+  // Check if stage is completed
+  const isStageCompleted = (stageKey: string, currentStatus: string) => {
+    const stageOrder = ["submitted", "accepted", "in_progress", "work_completed", "billed"];
+    const currentOrder = ["pending", "accepted", "in-progress", "completed", "billed"];
+    
+    const stageIndex = stageOrder.indexOf(stageKey);
+    const currentIndex = currentOrder.indexOf(currentStatus);
+    
+    if (stageKey === "submitted") return true; // Always completed
+    if (stageKey === "accepted" && ["accepted", "in-progress", "completed", "billed"].includes(currentStatus)) return true;
+    if (stageKey === "in_progress" && ["in-progress", "completed", "billed"].includes(currentStatus)) return true;
+    if (stageKey === "work_completed" && ["completed", "billed"].includes(currentStatus)) return true;
+    if (stageKey === "billed" && currentStatus === "billed") return true;
+    
+    return false;
+  };
+
+  // Check if stage is current
+  const isCurrentStage = (stageKey: string, currentStatus: string) => {
+    if (stageKey === "accepted" && currentStatus === "accepted") return true;
+    if (stageKey === "in_progress" && currentStatus === "in-progress") return true;
+    if (stageKey === "work_completed" && currentStatus === "completed") return true;
+    if (stageKey === "billed" && currentStatus === "billed") return true;
+    return false;
+  };
+
   const currentStage = getCurrentStage(ticket.status);
   const progressPercentage = getProgressPercentage(ticket.status);
 
@@ -163,22 +201,117 @@ export function ProgressTracker({
 
         <ScrollArea className="h-full max-h-[70vh] pr-4">
           <div className="space-y-6">
-            {/* Overall Progress Bar */}
+            {/* Domino's Style Progress Tracker */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${currentStage.color.replace('bg-', 'bg-').replace('text-', 'bg-')}`} />
-                  {currentStage.label}
+                  <CheckCircle className="h-5 w-5 text-blue-600" />
+                  Ticket Journey Progress
                 </CardTitle>
-                <p className="text-sm text-slate-600">{currentStage.description}</p>
+                <p className="text-sm text-slate-600">Track your maintenance ticket from start to finish</p>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Progress</span>
-                    <span className="font-medium">{progressPercentage}%</span>
+                <div className="space-y-8">
+                  {/* Main Progress Line with Circles */}
+                  <div className="relative px-4">
+                    {/* Progress Bar Background */}
+                    <div className="absolute top-6 left-12 right-12 h-1 bg-slate-200 rounded-full"></div>
+                    <div 
+                      className="absolute top-6 left-12 h-1 bg-blue-500 rounded-full transition-all duration-700 ease-out"
+                      style={{ 
+                        width: `${Math.max(0, Math.min(100, (progressPercentage / 100) * 76))}%` 
+                      }}
+                    ></div>
+                    
+                    {/* Stage Circles */}
+                    <div className="relative flex justify-between items-center">
+                      {getRelevantStages(ticket.status).map((stage, index) => {
+                        const isCompleted = isStageCompleted(stage.key, ticket.status);
+                        const isCurrent = isCurrentStage(stage.key, ticket.status);
+                        
+                        return (
+                          <div key={stage.key} className="flex flex-col items-center space-y-3">
+                            {/* Circle */}
+                            <div className={`
+                              relative z-10 w-12 h-12 rounded-full border-3 flex items-center justify-center transition-all duration-500 transform
+                              ${isCompleted 
+                                ? 'bg-blue-500 border-blue-500 text-white shadow-lg scale-110' 
+                                : isCurrent 
+                                  ? 'bg-white border-blue-500 text-blue-500 border-4 shadow-xl animate-pulse scale-105'
+                                  : 'bg-white border-slate-300 text-slate-400'
+                              }
+                            `}>
+                              {isCompleted ? (
+                                <CheckCircle className="h-6 w-6" />
+                              ) : (
+                                <span className="text-sm font-bold">{index + 1}</span>
+                              )}
+                            </div>
+                            
+                            {/* Stage Label */}
+                            <div className="text-center max-w-20">
+                              <div className={`text-xs font-semibold ${
+                                isCompleted || isCurrent ? 'text-slate-900' : 'text-slate-500'
+                              }`}>
+                                {stage.label.split(' ').slice(0, 2).join(' ')}
+                              </div>
+                              {isCurrent && (
+                                <div className="text-xs text-blue-600 font-medium mt-1">
+                                  Current
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <Progress value={progressPercentage} className="h-2" />
+
+                  {/* Circular Progress Indicator */}
+                  <div className="flex items-center justify-center">
+                    <div className="relative">
+                      <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 100 100">
+                        {/* Background circle */}
+                        <circle
+                          cx="50"
+                          cy="50"
+                          r="35"
+                          stroke="currentColor"
+                          strokeWidth="6"
+                          fill="transparent"
+                          className="text-slate-200"
+                        />
+                        {/* Progress circle */}
+                        <circle
+                          cx="50"
+                          cy="50"
+                          r="35"
+                          stroke="currentColor"
+                          strokeWidth="6"
+                          fill="transparent"
+                          strokeDasharray={`${2 * Math.PI * 35}`}
+                          strokeDashoffset={`${2 * Math.PI * 35 * (1 - progressPercentage / 100)}`}
+                          className="text-blue-500 transition-all duration-700 ease-out"
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-lg font-bold text-blue-600">
+                          {progressPercentage}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Current Stage Status */}
+                  <div className="text-center">
+                    <Badge className={`px-4 py-2 text-sm font-medium ${currentStage.color}`}>
+                      {currentStage.icon && (
+                        <currentStage.icon className="h-4 w-4 mr-2" />
+                      )}
+                      {currentStage.label}
+                    </Badge>
+                    <p className="text-xs text-slate-600 mt-2">{currentStage.description}</p>
+                  </div>
                 </div>
                 
                 {/* Ticket Basic Info */}
