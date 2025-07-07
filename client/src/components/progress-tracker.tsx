@@ -140,147 +140,344 @@ export function ProgressTrackerEmbedded({
   const progressPercentage = getProgressPercentage(ticket.status);
   const currentStage = getCurrentStage(ticket.status);
 
+  // Create detailed timeline events from ticket data
+  const createTimelineEvents = () => {
+    const events = [];
+    
+    // 1. Ticket Submitted
+    events.push({
+      id: 'submitted',
+      title: 'Ticket Submitted',
+      timestamp: ticket.createdAt,
+      user: ticketDetails?.reporter,
+      description: 'Initial ticket creation and submission',
+      status: 'completed',
+      icon: FileText,
+      details: {
+        ticketNumber: ticket.ticketNumber,
+        priority: ticket.priority,
+        description: ticket.description?.substring(0, 100) + (ticket.description?.length > 100 ? '...' : '')
+      }
+    });
+
+    // 2. Under Review (if status progressed past pending)
+    if (['accepted', 'in-progress', 'completed', 'confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
+      events.push({
+        id: 'under_review',
+        title: 'Under Review',
+        timestamp: ticket.updatedAt, // Approximate
+        user: null,
+        description: `Organization ${ticketDetails?.organization?.name || 'Unknown'} reviewing ticket details`,
+        status: 'completed',
+        icon: Clock,
+        details: {
+          organization: ticketDetails?.organization?.name,
+          reviewType: 'Initial assessment and prioritization'
+        }
+      });
+    }
+
+    // 3. Ticket Accepted
+    if (['accepted', 'in-progress', 'completed', 'confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
+      events.push({
+        id: 'accepted',
+        title: 'Ticket Accepted',
+        timestamp: ticket.acceptedAt || ticket.updatedAt,
+        user: null,
+        description: `Approved by organization admin and ready for vendor assignment`,
+        status: 'completed',
+        icon: CheckCircle,
+        details: {
+          acceptedBy: 'Organization Admin',
+          nextStep: 'Vendor assignment pending'
+        }
+      });
+    }
+
+    // 4. Vendor Assigned
+    if (ticket.maintenanceVendorId && ['accepted', 'in-progress', 'completed', 'confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
+      events.push({
+        id: 'vendor_assigned',
+        title: 'Vendor Assigned',
+        timestamp: ticket.vendorAssignedAt || ticket.updatedAt,
+        user: null,
+        description: `${ticketDetails?.maintenanceVendor?.name || 'Vendor'} selected for maintenance work`,
+        status: 'completed',
+        icon: Building,
+        details: {
+          vendor: ticketDetails?.maintenanceVendor?.name,
+          specialties: ticketDetails?.maintenanceVendor?.specialties || 'General maintenance',
+          contact: ticketDetails?.maintenanceVendor?.contactInfo
+        }
+      });
+    }
+
+    // 5. Vendor Accepted Work
+    if (ticket.maintenanceVendorId && ['in-progress', 'completed', 'confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
+      events.push({
+        id: 'vendor_accepted',
+        title: 'Vendor Accepted Work',
+        timestamp: ticket.vendorAcceptedAt || ticket.updatedAt,
+        user: null,
+        description: `${ticketDetails?.maintenanceVendor?.name || 'Vendor'} confirmed availability and accepted the work`,
+        status: 'completed',
+        icon: UserCheck,
+        details: {
+          vendor: ticketDetails?.maintenanceVendor?.name,
+          estimatedStartTime: 'Within 24-48 hours',
+          priority: ticket.priority
+        }
+      });
+    }
+
+    // 6. Technician Assigned
+    if (ticket.assigneeId && ['in-progress', 'completed', 'confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
+      events.push({
+        id: 'technician_assigned',
+        title: 'Technician Assigned',
+        timestamp: ticket.technicianAssignedAt || ticket.updatedAt,
+        user: ticketDetails?.assignee,
+        description: `${ticketDetails?.assignee?.firstName || 'Technician'} ${ticketDetails?.assignee?.lastName || ''} assigned to handle the work`,
+        status: 'completed',
+        icon: User,
+        details: {
+          technician: `${ticketDetails?.assignee?.firstName || 'Unknown'} ${ticketDetails?.assignee?.lastName || ''}`,
+          email: ticketDetails?.assignee?.email,
+          phone: ticketDetails?.assignee?.phone || 'Contact through vendor',
+          estimatedArrival: 'Will be scheduled soon'
+        }
+      });
+    }
+
+    // 7. Work Started
+    if (['in-progress', 'completed', 'confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
+      events.push({
+        id: 'work_started',
+        title: 'Work Started',
+        timestamp: ticket.workStartedAt || ticket.updatedAt,
+        user: ticketDetails?.assignee,
+        description: `${ticketDetails?.assignee?.firstName || 'Technician'} arrived on-site and began diagnostic work`,
+        status: ticket.status === 'in-progress' ? 'current' : 'completed',
+        icon: Wrench,
+        details: {
+          technician: `${ticketDetails?.assignee?.firstName || 'Unknown'} ${ticketDetails?.assignee?.lastName || ''}`,
+          workOrderCount: ticketDetails?.workOrders?.length || 0,
+          currentActivity: ticket.status === 'in-progress' ? 'Active repair work in progress' : 'Work completed'
+        }
+      });
+    }
+
+    // 8. Work Completed
+    if (['completed', 'pending_confirmation', 'confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
+      events.push({
+        id: 'work_completed',
+        title: 'Work Completed',
+        timestamp: ticket.completedAt || ticket.updatedAt,
+        user: ticketDetails?.assignee,
+        description: `All repair work finished. Awaiting customer confirmation and approval`,
+        status: ticket.status === 'completed' || ticket.status === 'pending_confirmation' ? 'current' : 'completed',
+        icon: CheckSquare,
+        details: {
+          completedBy: `${ticketDetails?.assignee?.firstName || 'Unknown'} ${ticketDetails?.assignee?.lastName || ''}`,
+          workOrders: ticketDetails?.workOrders?.length || 0,
+          nextStep: ticket.status === 'pending_confirmation' ? 'Waiting for customer confirmation' : 'Work confirmed'
+        }
+      });
+    }
+
+    // 9. Customer Confirmation
+    if (['confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
+      events.push({
+        id: 'confirmed',
+        title: 'Work Confirmed',
+        timestamp: ticket.confirmedAt || ticket.updatedAt,
+        user: ticketDetails?.reporter,
+        description: `Customer confirmed work completion and quality. Ready for billing process`,
+        status: 'completed',
+        icon: CheckCircle,
+        details: {
+          confirmedBy: `${ticketDetails?.reporter?.firstName || 'Customer'} ${ticketDetails?.reporter?.lastName || ''}`,
+          satisfaction: 'Work approved',
+          nextStep: 'Invoice generation'
+        }
+      });
+    }
+
+    // 10. Invoice Generated & Billed
+    if (ticket.status === 'billed') {
+      events.push({
+        id: 'billed',
+        title: 'Invoiced & Billed',
+        timestamp: ticket.billedAt || ticket.updatedAt,
+        user: null,
+        description: `Invoice generated and sent. Ticket workflow complete`,
+        status: 'completed',
+        icon: ClipboardList,
+        details: {
+          invoiceNumber: `INV-${ticket.id}-${new Date().getFullYear()}`,
+          vendor: ticketDetails?.maintenanceVendor?.name,
+          status: 'Invoice sent to organization'
+        }
+      });
+    }
+
+    return events.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  };
+
+  const timelineEvents = createTimelineEvents();
+
   return (
     <div className="space-y-6">
-      {/* Domino's Style Progress Tracker */}
+      {/* Detailed Timeline */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-blue-600" />
-            Ticket Journey Progress
+        <CardHeader>
+          <CardTitle className="text-xl flex items-center gap-2">
+            <ClipboardList className="h-6 w-6 text-blue-600" />
+            Complete Ticket Journey Timeline
           </CardTitle>
-          <p className="text-sm text-slate-600">Track your maintenance ticket from start to finish</p>
+          <p className="text-sm text-slate-600">
+            Detailed step-by-step progress with timestamps, personnel, and actions
+          </p>
         </CardHeader>
         <CardContent>
-          <div className="space-y-8">
-            {/* Main Progress Line with Circles */}
-            <div className="relative px-4">
-              {/* Progress Bar Background */}
-              <div className="absolute top-6 left-12 right-12 h-1 bg-slate-200 rounded-full"></div>
-              <div 
-                className="absolute top-6 left-12 h-1 bg-blue-500 rounded-full transition-all duration-700 ease-out"
-                style={{ 
-                  width: `${Math.max(0, Math.min(100, (progressPercentage / 100) * 76))}%` 
-                }}
-              ></div>
+          <div className="relative">
+            {/* Vertical Timeline Line */}
+            <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-slate-200"></div>
+            
+            {timelineEvents.map((event, index) => {
+              const IconComponent = event.icon;
+              const isCompleted = event.status === 'completed';
+              const isCurrent = event.status === 'current';
               
-              {/* Stage Circles */}
-              <div className="relative flex justify-between items-center">
-                {getRelevantStages(ticket.status).map((stage, index) => {
-                  const isCompleted = isStageCompleted(stage.key, ticket.status);
-                  const isCurrent = isCurrentStage(stage.key, ticket.status);
+              return (
+                <div key={event.id} className="relative flex items-start space-x-4 pb-8 last:pb-0">
+                  {/* Timeline Circle */}
+                  <div className={`
+                    relative z-10 flex items-center justify-center w-16 h-16 rounded-full border-4 shrink-0
+                    ${isCompleted 
+                      ? 'bg-green-500 border-green-500 text-white shadow-lg' 
+                      : isCurrent 
+                        ? 'bg-blue-500 border-blue-500 text-white shadow-xl animate-pulse'
+                        : 'bg-slate-200 border-slate-300 text-slate-400'
+                    }
+                  `}>
+                    <IconComponent className="h-8 w-8" />
+                  </div>
                   
-                  return (
-                    <div key={stage.key} className="flex flex-col items-center space-y-3">
-                      {/* Circle */}
-                      <div className={`
-                        relative z-10 w-12 h-12 rounded-full border-3 flex items-center justify-center transition-all duration-500 transform
+                  {/* Event Details */}
+                  <div className="flex-1 min-w-0 pt-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className={`text-lg font-semibold ${
+                        isCompleted || isCurrent ? 'text-slate-900' : 'text-slate-500'
+                      }`}>
+                        {event.title}
+                      </h3>
+                      <Badge className={`
                         ${isCompleted 
-                          ? 'bg-blue-500 border-blue-500 text-white shadow-lg scale-110' 
+                          ? 'bg-green-100 text-green-800' 
                           : isCurrent 
-                            ? 'bg-white border-blue-500 text-blue-500 border-4 shadow-xl animate-pulse scale-105'
-                            : 'bg-white border-slate-300 text-slate-400'
+                            ? 'bg-blue-100 text-blue-800 animate-pulse'
+                            : 'bg-slate-100 text-slate-600'
                         }
                       `}>
-                        {isCompleted ? (
-                          <CheckCircle className="h-6 w-6" />
-                        ) : (
-                          <span className="text-sm font-bold">{index + 1}</span>
-                        )}
-                      </div>
-                      
-                      {/* Label */}
-                      <div className="text-center max-w-20">
-                        <p className={`text-xs font-medium leading-tight ${
-                          isCompleted || isCurrent ? 'text-blue-600' : 'text-slate-500'
-                        }`}>
-                          {stage.label}
-                        </p>
-                      </div>
+                        {isCompleted ? 'Completed' : isCurrent ? 'In Progress' : 'Pending'}
+                      </Badge>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Current Status Badge */}
-            <div className="flex items-center justify-center">
-              <Badge className={`px-4 py-2 text-sm font-medium ${currentStage.color}`}>
-                {currentStage.label}
-              </Badge>
-            </div>
-
-            {/* Progress Details */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <h4 className="font-medium text-slate-900">Current Status</h4>
-                <p className="text-sm text-slate-600">{currentStage.description}</p>
-              </div>
-              <div className="space-y-3">
-                <h4 className="font-medium text-slate-900">Progress</h4>
-                <div className="flex items-center space-x-3">
-                  <Progress value={progressPercentage} className="flex-1" />
-                  <span className="text-sm font-medium text-slate-600">{progressPercentage}%</span>
+                    
+                    <p className="text-slate-600 mb-3">{event.description}</p>
+                    
+                    {/* Timestamp */}
+                    <div className="flex items-center gap-2 text-sm text-slate-500 mb-3">
+                      <Calendar className="h-4 w-4" />
+                      <span>{event.timestamp ? format(new Date(event.timestamp), 'MMM dd, yyyy • h:mm a') : 'Timestamp pending'}</span>
+                    </div>
+                    
+                    {/* Person Responsible */}
+                    {event.user && (
+                      <div className="flex items-center gap-2 text-sm text-slate-700 mb-3">
+                        <User className="h-4 w-4" />
+                        <span className="font-medium">
+                          {event.user.firstName} {event.user.lastName}
+                        </span>
+                        <span className="text-slate-500">({event.user.email})</span>
+                      </div>
+                    )}
+                    
+                    {/* Additional Details */}
+                    {event.details && (
+                      <div className="bg-slate-50 rounded-lg p-3 space-y-2">
+                        {Object.entries(event.details).map(([key, value]) => (
+                          <div key={key} className="flex justify-between text-sm">
+                            <span className="font-medium text-slate-600 capitalize">
+                              {key.replace(/([A-Z])/g, ' $1').trim()}:
+                            </span>
+                            <span className="text-slate-700 max-w-xs text-right">{value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quick Status Overview */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Quick Status Overview</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <div className="text-2xl font-bold text-blue-600">{progressPercentage}%</div>
+              <div className="text-sm text-blue-700">Complete</div>
+            </div>
+            <div className="text-center p-4 bg-green-50 rounded-lg">
+              <div className="text-2xl font-bold text-green-600">{timelineEvents.filter(e => e.status === 'completed').length}</div>
+              <div className="text-sm text-green-700">Steps Done</div>
+            </div>
+            <div className="text-center p-4 bg-slate-50 rounded-lg">
+              <div className="text-2xl font-bold text-slate-600">{timelineEvents.length}</div>
+              <div className="text-sm text-slate-700">Total Steps</div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Ticket Details Section */}
-      {ticketDetails && (
+      {/* Work Orders Summary */}
+      {ticketDetails?.workOrders && ticketDetails.workOrders.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Ticket Details</CardTitle>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Wrench className="h-5 w-5" />
+              Work Orders Summary
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <div className="flex items-center space-x-3">
-                  <User className="h-4 w-4 text-slate-500" />
-                  <div>
-                    <p className="text-sm font-medium text-slate-900">Reported By</p>
-                    <p className="text-sm text-slate-600">
-                      {ticketDetails.reporter ? `${ticketDetails.reporter.firstName} ${ticketDetails.reporter.lastName}` : 'Unknown'}
-                    </p>
+            <div className="space-y-3">
+              {ticketDetails.workOrders.map((workOrder: any, index: number) => (
+                <div key={workOrder.id} className="border rounded-lg p-3">
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="font-medium">Work Order #{index + 1}</h4>
+                    <Badge className={`${
+                      workOrder.status === 'completed' ? 'bg-green-100 text-green-800' :
+                      workOrder.status === 'return_needed' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-blue-100 text-blue-800'
+                    }`}>
+                      {workOrder.status?.replace('_', ' ').toUpperCase()}
+                    </Badge>
                   </div>
+                  <p className="text-sm text-slate-600 mb-2">{workOrder.workDescription}</p>
+                  {workOrder.createdAt && (
+                    <div className="text-xs text-slate-500">
+                      Created: {format(new Date(workOrder.createdAt), 'MMM dd, yyyy • h:mm a')}
+                    </div>
+                  )}
                 </div>
-                
-                {ticketDetails.organization && (
-                  <div className="flex items-center space-x-3">
-                    <Building className="h-4 w-4 text-slate-500" />
-                    <div>
-                      <p className="text-sm font-medium text-slate-900">Organization</p>
-                      <p className="text-sm text-slate-600">{ticketDetails.organization.name}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              <div className="space-y-3">
-                {ticketDetails.maintenanceVendor && (
-                  <div className="flex items-center space-x-3">
-                    <Wrench className="h-4 w-4 text-slate-500" />
-                    <div>
-                      <p className="text-sm font-medium text-slate-900">Assigned Vendor</p>
-                      <p className="text-sm text-slate-600">{ticketDetails.maintenanceVendor.name}</p>
-                    </div>
-                  </div>
-                )}
-                
-                {ticketDetails.assignee && (
-                  <div className="flex items-center space-x-3">
-                    <UserCheck className="h-4 w-4 text-slate-500" />
-                    <div>
-                      <p className="text-sm font-medium text-slate-900">Assigned Technician</p>
-                      <p className="text-sm text-slate-600">
-                        {ticketDetails.assignee.firstName} {ticketDetails.assignee.lastName}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
+              ))}
             </div>
           </CardContent>
         </Card>
