@@ -48,7 +48,6 @@ export function TicketTable({
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
-  const [isProgressTrackerOpen, setIsProgressTrackerOpen] = useState(false);
 
   // Check if user can accept tickets based on role or permissions
   const canAcceptTickets = userRole && (
@@ -68,12 +67,6 @@ export function TicketTable({
     setSelectedTicket(ticket);
     setSelectedImageIndex(imageIndex);
     setIsImageViewerOpen(true);
-  };
-
-  const openProgressTracker = (ticket: Ticket) => {
-    console.log("Opening progress tracker for ticket:", ticket.id);
-    setSelectedTicket(ticket);
-    setIsProgressTrackerOpen(true);
   };
 
   const closeImageViewer = () => {
@@ -505,16 +498,6 @@ export function TicketTable({
           )}
         </DialogContent>
       </Dialog>
-
-      {/* Progress Tracker Modal */}
-      {selectedTicket && (
-        <ProgressTracker
-          ticket={selectedTicket}
-          open={isProgressTrackerOpen}
-          onOpenChange={setIsProgressTrackerOpen}
-          canUpdate={!!canAcceptTickets}
-        />
-      )}
     </>
   );
 }
