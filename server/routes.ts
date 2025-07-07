@@ -1205,6 +1205,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get detailed ticket information for progress tracker
+  app.get("/api/tickets/:id/details", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const ticketId = parseInt(req.params.id);
+      const user = req.user!;
+      
+      // Get the ticket first to check permissions
+      const ticket = await storage.getTicket(ticketId);
+      if (!ticket) {
+        return res.status(404).json({ message: "Ticket not found" });
+      }
+      
+      // Check if user has access to this ticket
+      const hasAccess = user.role === "root" || 
+                       ticket.organizationId === user.organizationId ||
+                       ticket.maintenanceVendorId === user.maintenanceVendorId ||
+                       ticket.reporterId === user.id ||
+                       ticket.assigneeId === user.id;
+      
+      if (!hasAccess) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      // Get additional details
+      const details = {
+        ...ticket,
+        reporter: ticket.reporterId ? await storage.getUser(ticket.reporterId) : null,
+        assignee: ticket.assigneeId ? await storage.getUser(ticket.assigneeId) : null,
+        organization: ticket.organizationId ? await storage.getOrganization(ticket.organizationId) : null,
+        maintenanceVendor: ticket.maintenanceVendorId ? await storage.getMaintenanceVendor(ticket.maintenanceVendorId) : null,
+        workOrders: await storage.getTicketWorkOrders(ticketId),
+        comments: await storage.getTicketComments(ticketId),
+      };
+      
+      res.json(details);
+    } catch (error) {
+      console.error("Error fetching ticket details:", error);
+      res.status(500).json({ message: "Failed to fetch ticket details" });
+    }
+  });
+
   // Get work orders for a ticket
   app.get("/api/tickets/:id/work-orders", authenticateUser, async (req, res) => {
     try {

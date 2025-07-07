@@ -3,10 +3,15 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle, Clock, AlertTriangle, Wrench, FileText, User, Calendar, MessageSquare } from "lucide-react";
+import { CheckCircle, Clock, AlertTriangle, Wrench, FileText, User, Calendar, MessageSquare, Building, UserCheck, XCircle, ArrowRight, Info, ClipboardList, CheckSquare } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { format } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Ticket, TicketMilestone } from "@shared/schema";
@@ -18,18 +23,25 @@ interface ProgressTrackerProps {
   canUpdate?: boolean;
 }
 
-const milestoneTypes = [
-  { value: "submitted", label: "Ticket Submitted", icon: FileText },
-  { value: "reviewed", label: "Under Review", icon: Clock },
-  { value: "assigned", label: "Assigned to Vendor", icon: Wrench },
-  { value: "in_progress", label: "Work Started", icon: AlertTriangle },
-  { value: "technician_assigned", label: "Technician Assigned", icon: User },
-  { value: "on_site", label: "Technician On-Site", icon: Wrench },
-  { value: "diagnosis_complete", label: "Diagnosis Complete", icon: CheckCircle },
-  { value: "parts_ordered", label: "Parts Ordered", icon: Clock },
-  { value: "repair_started", label: "Repair Started", icon: Wrench },
-  { value: "testing", label: "Testing & Verification", icon: CheckCircle },
-  { value: "completed", label: "Work Completed", icon: CheckCircle },
+// Define the complete ticket journey with detailed progress stages
+const ticketJourneyStages = [
+  { key: "submitted", label: "Ticket Submitted", description: "Initial ticket creation", icon: FileText, color: "bg-blue-100 text-blue-800" },
+  { key: "under_review", label: "Under Review", description: "Office reviewing ticket details", icon: Clock, color: "bg-yellow-100 text-yellow-800" },
+  { key: "accepted", label: "Accepted by Office", description: "Ticket approved and ready for vendor assignment", icon: CheckCircle, color: "bg-green-100 text-green-800" },
+  { key: "vendor_assigned", label: "Vendor Assigned", description: "Maintenance vendor selected and assigned", icon: Building, color: "bg-purple-100 text-purple-800" },
+  { key: "vendor_accepted", label: "Vendor Accepted", description: "Vendor confirmed and accepted the work", icon: UserCheck, color: "bg-indigo-100 text-indigo-800" },
+  { key: "technician_assigned", label: "Technician Assigned", description: "Specific technician assigned to the job", icon: User, color: "bg-cyan-100 text-cyan-800" },
+  { key: "work_started", label: "Work Started", description: "Technician began working on the issue", icon: Wrench, color: "bg-orange-100 text-orange-800" },
+  { key: "in_progress", label: "Work in Progress", description: "Active repair/maintenance work ongoing", icon: AlertTriangle, color: "bg-amber-100 text-amber-800" },
+  { key: "work_completed", label: "Work Completed", description: "Technician completed the work", icon: CheckSquare, color: "bg-emerald-100 text-emerald-800" },
+  { key: "pending_confirmation", label: "Pending Confirmation", description: "Awaiting requester approval", icon: Clock, color: "bg-slate-100 text-slate-800" },
+  { key: "confirmed", label: "Confirmed", description: "Work confirmed and approved by requester", icon: CheckCircle, color: "bg-green-100 text-green-800" },
+  { key: "billed", label: "Billed", description: "Invoice generated and sent", icon: ClipboardList, color: "bg-gray-100 text-gray-800" },
+];
+
+const rejectionStages = [
+  { key: "rejected_by_office", label: "Rejected by Office", description: "Ticket rejected during initial review", icon: XCircle, color: "bg-red-100 text-red-800" },
+  { key: "rejected_by_vendor", label: "Rejected by Vendor", description: "Vendor declined to accept the work", icon: XCircle, color: "bg-red-100 text-red-800" },
 ];
 
 export function ProgressTracker({ 
@@ -50,6 +62,47 @@ export function ProgressTracker({
     queryKey: ["/api/tickets", ticket.id, "milestones"],
     enabled: open,
   });
+
+  // Fetch ticket details with related data
+  const { data: ticketDetails, isLoading: isLoadingDetails } = useQuery<any>({
+    queryKey: ["/api/tickets", ticket.id, "details"],
+    enabled: open,
+  });
+
+  // Calculate progress percentage based on ticket status
+  const getProgressPercentage = (status: string) => {
+    switch (status) {
+      case "pending": return 10;
+      case "accepted": return 25;
+      case "rejected": return 0;
+      case "in-progress": return 60;
+      case "completed": return 85;
+      case "pending_confirmation": return 90;
+      case "confirmed": return 95;
+      case "ready_for_billing": return 98;
+      case "billed": return 100;
+      default: return 0;
+    }
+  };
+
+  // Get current stage information
+  const getCurrentStage = (status: string) => {
+    return ticketJourneyStages.find(stage => 
+      stage.key === status || 
+      (status === "pending" && stage.key === "submitted") ||
+      (status === "accepted" && stage.key === "accepted") ||
+      (status === "rejected" && stage.key === "rejected_by_office") ||
+      (status === "in-progress" && stage.key === "in_progress") ||
+      (status === "completed" && stage.key === "work_completed") ||
+      (status === "pending_confirmation" && stage.key === "pending_confirmation") ||
+      (status === "confirmed" && stage.key === "confirmed") ||
+      (status === "ready_for_billing" && stage.key === "confirmed") ||
+      (status === "billed" && stage.key === "billed")
+    ) || ticketJourneyStages[0];
+  };
+
+  const currentStage = getCurrentStage(ticket.status);
+  const progressPercentage = getProgressPercentage(ticket.status);
 
   // Add milestone mutation
   const addMilestoneMutation = useMutation({
@@ -100,109 +153,417 @@ export function ProgressTracker({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            Progress Tracker - {ticket.ticketNumber}
+            <ClipboardList className="h-5 w-5" />
+            Ticket Progress Timeline - {ticket.ticketNumber}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Milestone Timeline */}
-          <div className="space-y-4">
-            <h3 className="font-medium text-slate-900">Progress Timeline</h3>
-            
-            {isLoading ? (
-              <div className="text-center py-4 text-slate-500">Loading milestones...</div>
-            ) : !milestones || milestones.length === 0 ? (
-              <div className="text-center py-4 text-slate-500">No milestones yet</div>
-            ) : (
-              <div className="space-y-4">
-                {milestones.map((milestone: any, index: number) => {
-                  const milestoneType = milestoneTypes.find(m => m.value === milestone.milestoneType);
-                  const Icon = milestoneType?.icon || FileText;
+        <ScrollArea className="h-full max-h-[70vh] pr-4">
+          <div className="space-y-6">
+            {/* Overall Progress Bar */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <div className={`w-3 h-3 rounded-full ${currentStage.color.replace('bg-', 'bg-').replace('text-', 'bg-')}`} />
+                  {currentStage.label}
+                </CardTitle>
+                <p className="text-sm text-slate-600">{currentStage.description}</p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Progress</span>
+                    <span className="font-medium">{progressPercentage}%</span>
+                  </div>
+                  <Progress value={progressPercentage} className="h-2" />
+                </div>
+                
+                {/* Ticket Basic Info */}
+                <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-slate-700">Priority:</span>
+                    <Badge className="ml-2" variant={ticket.priority === 'high' ? 'destructive' : ticket.priority === 'medium' ? 'default' : 'secondary'}>
+                      {ticket.priority}
+                    </Badge>
+                  </div>
+                  <div>
+                    <span className="font-medium text-slate-700">Status:</span>
+                    <Badge className="ml-2" variant="outline">{ticket.status}</Badge>
+                  </div>
+                  <div>
+                    <span className="font-medium text-slate-700">Created:</span>
+                    <span className="ml-2 text-slate-600">{format(new Date(ticket.createdAt), 'MMM dd, yyyy h:mm a')}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-slate-700">Updated:</span>
+                    <span className="ml-2 text-slate-600">{format(new Date(ticket.updatedAt), 'MMM dd, yyyy h:mm a')}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-                  return (
-                    <div key={milestone.id} className="flex items-start space-x-3 pb-4 border-b border-slate-100 last:border-b-0">
+            {/* Detailed Timeline */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Detailed Timeline</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Ticket Creation */}
+                  <div className="flex items-start space-x-3 pb-4 border-b border-slate-100">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 mt-1">
+                      <FileText className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-medium text-slate-900">
+                          Ticket Submitted
+                        </h4>
+                        <Badge className="bg-blue-100 text-blue-800">
+                          Initial
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-slate-600 mt-1">
+                        Ticket created and submitted for review
+                      </p>
+                      <div className="flex items-center space-x-4 mt-2 text-xs text-slate-500">
+                        <div className="flex items-center space-x-1">
+                          <Calendar className="h-3 w-3" />
+                          <span>Created {format(new Date(ticket.createdAt), 'MMM dd, yyyy h:mm a')}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <User className="h-3 w-3" />
+                          <span>Reporter: {ticketDetails?.reporter ? `${ticketDetails.reporter.firstName} ${ticketDetails.reporter.lastName} (${ticketDetails.reporter.email})` : `ID: ${ticket.reporterId}`}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Status-based timeline entries */}
+                  {ticket.status !== 'pending' && (
+                    <div className="flex items-start space-x-3 pb-4 border-b border-slate-100">
                       <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-600 mt-1">
-                        <Icon className="h-4 w-4" />
+                        {ticket.status === 'rejected' ? <XCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
                           <h4 className="text-sm font-medium text-slate-900">
-                            {milestone.milestoneTitle}
+                            {ticket.status === 'rejected' ? 'Ticket Rejected' : 'Ticket Accepted'}
                           </h4>
-                          <Badge className={getMilestoneColor(milestone.milestoneType)}>
-                            {milestoneType?.label || milestone.milestoneType}
+                          <Badge className={ticket.status === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}>
+                            Office Decision
                           </Badge>
                         </div>
-                        
-                        {milestone.milestoneDescription && (
-                          <p className="text-sm text-slate-600 mt-1">
-                            {milestone.milestoneDescription}
-                          </p>
-                        )}
-                        
+                        <p className="text-sm text-slate-600 mt-1">
+                          {ticket.status === 'rejected' 
+                            ? `Office rejected the ticket${ticket.rejectionReason ? `: ${ticket.rejectionReason}` : ''}`
+                            : 'Office reviewed and accepted the ticket for processing'
+                          }
+                        </p>
                         <div className="flex items-center space-x-4 mt-2 text-xs text-slate-500">
                           <div className="flex items-center space-x-1">
                             <Calendar className="h-3 w-3" />
-                            <span>{formatDate(milestone.achievedAt)}</span>
+                            <span>Updated {format(new Date(ticket.updatedAt), 'MMM dd, yyyy h:mm a')}</span>
                           </div>
-                          {milestone.achievedByName && (
-                            <div className="flex items-center space-x-1">
-                              <User className="h-3 w-3" />
-                              <span>{milestone.achievedByName}</span>
-                            </div>
-                          )}
                         </div>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                  )}
 
-          {/* Add New Milestone (if user can update) */}
-          {canUpdate && (
-            <div className="space-y-3 pt-4 border-t">
-              <h3 className="font-medium text-slate-900">Add Milestone</h3>
-              <div className="space-y-3">
-                <Select value={selectedMilestone} onValueChange={setSelectedMilestone}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select milestone type..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {milestoneTypes.map((milestone) => (
-                      <SelectItem key={milestone.value} value={milestone.value}>
-                        <div className="flex items-center gap-2">
-                          <milestone.icon className="h-4 w-4" />
-                          <span>{milestone.label}</span>
+                  {/* Vendor Assignment */}
+                  {ticket.maintenanceVendorId && (
+                    <div className="flex items-start space-x-3 pb-4 border-b border-slate-100">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 text-purple-600 mt-1">
+                        <Building className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-medium text-slate-900">
+                            Vendor Assigned
+                          </h4>
+                          <Badge className="bg-purple-100 text-purple-800">
+                            Assignment
+                          </Badge>
                         </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                
-                <Textarea
-                  placeholder="Add a description or note (optional)..."
-                  value={milestoneDescription}
-                  onChange={(e) => setMilestoneDescription(e.target.value)}
-                  className="min-h-[80px]"
-                />
-                
-                <Button 
-                  onClick={handleAddMilestone} 
-                  disabled={!selectedMilestone || addMilestoneMutation.isPending}
-                  className="w-full bg-blue-600 hover:bg-blue-700"
-                >
-                  {addMilestoneMutation.isPending ? "Adding..." : "Add Milestone"}
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
+                        <p className="text-sm text-slate-600 mt-1">
+                          Maintenance vendor assigned to handle this ticket
+                        </p>
+                        <div className="flex items-center space-x-4 mt-2 text-xs text-slate-500">
+                          <div className="flex items-center space-x-1">
+                            <Building className="h-3 w-3" />
+                            <span>Vendor: {ticketDetails?.maintenanceVendor ? `${ticketDetails.maintenanceVendor.name}` : `ID: ${ticket.maintenanceVendorId}`}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Work Progress */}
+                  {ticket.status === 'in-progress' && (
+                    <div className="flex items-start space-x-3 pb-4 border-b border-slate-100">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-100 text-amber-600 mt-1">
+                        <Wrench className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-medium text-slate-900">
+                            Work in Progress
+                          </h4>
+                          <Badge className="bg-amber-100 text-amber-800">
+                            Active
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-slate-600 mt-1">
+                          Maintenance work is currently being performed
+                        </p>
+                        {ticket.assigneeId && (
+                          <div className="flex items-center space-x-4 mt-2 text-xs text-slate-500">
+                            <div className="flex items-center space-x-1">
+                              <User className="h-3 w-3" />
+                              <span>Assignee: {ticketDetails?.assignee ? `${ticketDetails.assignee.firstName} ${ticketDetails.assignee.lastName} (${ticketDetails.assignee.email})` : `ID: ${ticket.assigneeId}`}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Completion Status */}
+                  {(ticket.status === 'completed' || ticket.status === 'pending_confirmation' || ticket.status === 'confirmed') && (
+                    <div className="flex items-start space-x-3 pb-4 border-b border-slate-100">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 mt-1">
+                        <CheckSquare className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-medium text-slate-900">
+                            Work Completed
+                          </h4>
+                          <Badge className="bg-emerald-100 text-emerald-800">
+                            Completed
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-slate-600 mt-1">
+                          Maintenance work has been completed by the technician
+                        </p>
+                        {ticket.completedAt && (
+                          <div className="flex items-center space-x-4 mt-2 text-xs text-slate-500">
+                            <div className="flex items-center space-x-1">
+                              <Calendar className="h-3 w-3" />
+                              <span>Completed {format(new Date(ticket.completedAt), 'MMM dd, yyyy h:mm a')}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Confirmation Status */}
+                  {ticket.status === 'confirmed' && (
+                    <div className="flex items-start space-x-3 pb-4 border-b border-slate-100">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-600 mt-1">
+                        <CheckCircle className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-medium text-slate-900">
+                            Work Confirmed
+                          </h4>
+                          <Badge className="bg-green-100 text-green-800">
+                            Approved
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-slate-600 mt-1">
+                          Requester has confirmed and approved the completed work
+                        </p>
+                        {ticket.confirmedAt && (
+                          <div className="flex items-center space-x-4 mt-2 text-xs text-slate-500">
+                            <div className="flex items-center space-x-1">
+                              <Calendar className="h-3 w-3" />
+                              <span>Confirmed {format(new Date(ticket.confirmedAt), 'MMM dd, yyyy h:mm a')}</span>
+                            </div>
+                            {ticket.confirmationFeedback && (
+                              <div className="flex items-center space-x-1">
+                                <MessageSquare className="h-3 w-3" />
+                                <span>"{ticket.confirmationFeedback}"</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Show custom milestones if any exist */}
+                  {!isLoading && milestones && milestones.length > 0 && (
+                    <>
+                      <Separator className="my-4" />
+                      <h4 className="font-medium text-slate-900 mb-3">Custom Milestones</h4>
+                      {milestones.map((milestone: any, index: number) => {
+                        const milestoneType = ticketJourneyStages.find(m => m.key === milestone.milestoneType) || ticketJourneyStages[0];
+                        const Icon = milestoneType.icon;
+
+                        return (
+                          <div key={milestone.id} className="flex items-start space-x-3 pb-4 border-b border-slate-100 last:border-b-0">
+                            <div className={`flex items-center justify-center w-8 h-8 rounded-full mt-1 ${milestoneType.color.replace('text-', 'text-').replace('bg-', 'bg-')}`}>
+                              <Icon className="h-4 w-4" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-sm font-medium text-slate-900">
+                                  {milestone.milestoneTitle}
+                                </h4>
+                                <Badge className={milestoneType.color}>
+                                  Custom
+                                </Badge>
+                              </div>
+                              
+                              {milestone.milestoneDescription && (
+                                <p className="text-sm text-slate-600 mt-1">
+                                  {milestone.milestoneDescription}
+                                </p>
+                              )}
+                              
+                              <div className="flex items-center space-x-4 mt-2 text-xs text-slate-500">
+                                <div className="flex items-center space-x-1">
+                                  <Calendar className="h-3 w-3" />
+                                  <span>{formatDate(milestone.achievedAt)}</span>
+                                </div>
+                                {milestone.achievedByName && (
+                                  <div className="flex items-center space-x-1">
+                                    <User className="h-3 w-3" />
+                                    <span>{milestone.achievedByName}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Notes Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5" />
+                  Activity Log & Notes
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 text-sm">
+                  <div className="p-3 bg-slate-50 rounded-lg">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Info className="h-4 w-4 text-slate-500" />
+                      <span className="font-medium">Ticket Details</span>
+                    </div>
+                    <p className="text-slate-600">Title: {ticket.title}</p>
+                    <p className="text-slate-600 mt-1">Description: {ticket.description}</p>
+                    
+                    {ticketDetails?.organization && (
+                      <p className="text-slate-600 mt-1">Organization: {ticketDetails.organization.name}</p>
+                    )}
+                    
+                    {ticket.rejectionReason && (
+                      <p className="text-red-600 mt-2">Rejection Reason: {ticket.rejectionReason}</p>
+                    )}
+                    {ticket.rejectionFeedback && (
+                      <p className="text-red-600 mt-1">Rejection Feedback: {ticket.rejectionFeedback}</p>
+                    )}
+                  </div>
+                  
+                  {ticket.images && ticket.images.length > 0 && (
+                    <div className="p-3 bg-blue-50 rounded-lg">
+                      <div className="flex items-center gap-2 mb-1">
+                        <FileText className="h-4 w-4 text-blue-500" />
+                        <span className="font-medium">Attachments</span>
+                      </div>
+                      <p className="text-slate-600">{ticket.images.length} file(s) attached to this ticket</p>
+                    </div>
+                  )}
+
+                  {/* Work Orders Summary */}
+                  {ticketDetails?.workOrders && ticketDetails.workOrders.length > 0 && (
+                    <div className="p-3 bg-green-50 rounded-lg">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Wrench className="h-4 w-4 text-green-500" />
+                        <span className="font-medium">Work Orders ({ticketDetails.workOrders.length})</span>
+                      </div>
+                      {ticketDetails.workOrders.map((workOrder: any, index: number) => (
+                        <div key={workOrder.id} className="mt-2 p-2 bg-white rounded border-l-2 border-green-300">
+                          <p className="font-medium text-slate-700">Work Order #{index + 1}</p>
+                          <p className="text-slate-600">Status: {workOrder.status}</p>
+                          {workOrder.workDescription && (
+                            <p className="text-slate-600">Description: {workOrder.workDescription}</p>
+                          )}
+                          {workOrder.totalCost && (
+                            <p className="text-slate-600">Cost: ${workOrder.totalCost}</p>
+                          )}
+                          <p className="text-xs text-slate-500">Created: {format(new Date(workOrder.createdAt), 'MMM dd, yyyy h:mm a')}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Comments Summary */}
+                  {ticketDetails?.comments && ticketDetails.comments.length > 0 && (
+                    <div className="p-3 bg-purple-50 rounded-lg">
+                      <div className="flex items-center gap-2 mb-1">
+                        <MessageSquare className="h-4 w-4 text-purple-500" />
+                        <span className="font-medium">Comments & Notes ({ticketDetails.comments.length})</span>
+                      </div>
+                      {ticketDetails.comments.slice(0, 3).map((comment: any) => (
+                        <div key={comment.id} className="mt-2 p-2 bg-white rounded border-l-2 border-purple-300">
+                          <p className="text-slate-600">{comment.content}</p>
+                          <p className="text-xs text-slate-500 mt-1">
+                            By {comment.user?.firstName} {comment.user?.lastName} - {format(new Date(comment.createdAt), 'MMM dd, yyyy h:mm a')}
+                          </p>
+                        </div>
+                      ))}
+                      {ticketDetails.comments.length > 3 && (
+                        <p className="text-xs text-slate-500 mt-2">+ {ticketDetails.comments.length - 3} more comments</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Vendor Assignment Changes */}
+                  <div className="p-3 bg-amber-50 rounded-lg">
+                    <div className="flex items-center gap-2 mb-1">
+                      <ArrowRight className="h-4 w-4 text-amber-500" />
+                      <span className="font-medium">Assignment History</span>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-slate-600">
+                        Initial Reporter: {ticketDetails?.reporter ? `${ticketDetails.reporter.firstName} ${ticketDetails.reporter.lastName}` : 'Unknown'}
+                      </p>
+                      {ticket.maintenanceVendorId && (
+                        <p className="text-slate-600">
+                          Assigned Vendor: {ticketDetails?.maintenanceVendor ? ticketDetails.maintenanceVendor.name : `ID: ${ticket.maintenanceVendorId}`}
+                        </p>
+                      )}
+                      {ticket.assigneeId && (
+                        <p className="text-slate-600">
+                          Assigned Technician: {ticketDetails?.assignee ? `${ticketDetails.assignee.firstName} ${ticketDetails.assignee.lastName}` : `ID: ${ticket.assigneeId}`}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {isLoadingDetails && (
+                    <div className="text-center py-4 text-slate-500">Loading detailed information...</div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
