@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, User, Hash, Wrench, CheckCircle, XCircle, Eye, ImageIcon, Clock, Calculator, MessageSquare, ChevronLeft, ChevronRight, X, Video } from "lucide-react";
 import { format } from "date-fns";
 import { formatDate, getPriorityColor, getStatusColor } from "@/lib/utils";
-import { ProgressTracker } from "@/components/progress-tracker";
+import { ProgressTrackerEmbedded } from "@/components/progress-tracker";
 import { TicketComments } from "./ticket-comments";
 import type { Ticket } from "@shared/schema";
 
@@ -311,11 +311,15 @@ export function TicketTable({
           {selectedTicket && (
             <ScrollArea className="h-[70vh]">
               <Tabs defaultValue="details" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="details">Details</TabsTrigger>
                   <TabsTrigger value="comments">
                     <MessageSquare className="h-4 w-4 mr-2" />
                     Comments
+                  </TabsTrigger>
+                  <TabsTrigger value="progress">
+                    <Calculator className="h-4 w-4 mr-2" />
+                    Progress
                   </TabsTrigger>
                   <TabsTrigger value="work-orders">Work Orders</TabsTrigger>
                 </TabsList>
@@ -401,7 +405,6 @@ export function TicketTable({
                     </div>
                   )}
 
-                  <ProgressTracker ticketId={selectedTicket.id} />
                 </TabsContent>
 
                 <TabsContent value="comments" className="mt-6">
@@ -410,6 +413,19 @@ export function TicketTable({
                     userRole={userRole}
                     userId={userId}
                   />
+                </TabsContent>
+
+                <TabsContent value="progress" className="mt-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Calculator className="h-5 w-5 text-blue-600" />
+                      <h3 className="text-lg font-semibold">Ticket Journey Progress</h3>
+                    </div>
+                    <ProgressTrackerEmbedded 
+                      ticket={selectedTicket} 
+                      canUpdate={!!canAcceptTickets}
+                    />
+                  </div>
                 </TabsContent>
 
                 <TabsContent value="work-orders" className="mt-6">

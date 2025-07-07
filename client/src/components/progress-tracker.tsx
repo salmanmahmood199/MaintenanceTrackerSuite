@@ -44,6 +44,251 @@ const rejectionStages = [
   { key: "rejected_by_vendor", label: "Rejected by Vendor", description: "Vendor declined to accept the work", icon: XCircle, color: "bg-red-100 text-red-800" },
 ];
 
+// Embedded version for tab content
+export function ProgressTrackerEmbedded({ 
+  ticket, 
+  canUpdate = false 
+}: { ticket: Ticket; canUpdate?: boolean }) {
+  if (!ticket) return null;
+  
+  const [selectedMilestone, setSelectedMilestone] = useState("");
+  const [milestoneDescription, setMilestoneDescription] = useState("");
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch milestones for this ticket
+  const { data: milestones = [], isLoading } = useQuery<any[]>({
+    queryKey: ["/api/tickets", ticket.id, "milestones"],
+  });
+
+  // Fetch ticket details with related data
+  const { data: ticketDetails, isLoading: isLoadingDetails } = useQuery<any>({
+    queryKey: ["/api/tickets", ticket.id, "details"],
+  });
+
+  // Calculate progress percentage based on ticket status
+  const getProgressPercentage = (status: string) => {
+    switch (status) {
+      case "pending": return 10;
+      case "accepted": return 25;
+      case "rejected": return 0;
+      case "in-progress": return 60;
+      case "completed": return 85;
+      case "pending_confirmation": return 90;
+      case "confirmed": return 95;
+      case "ready_for_billing": return 98;
+      case "billed": return 100;
+      default: return 0;
+    }
+  };
+
+  // Get current stage information
+  const getCurrentStage = (status: string) => {
+    return ticketJourneyStages.find(stage => 
+      stage.key === status || 
+      (status === "pending" && stage.key === "submitted") ||
+      (status === "accepted" && stage.key === "accepted") ||
+      (status === "rejected" && stage.key === "rejected_by_office") ||
+      (status === "in-progress" && stage.key === "in_progress") ||
+      (status === "completed" && stage.key === "work_completed") ||
+      (status === "pending_confirmation" && stage.key === "pending_confirmation") ||
+      (status === "confirmed" && stage.key === "confirmed") ||
+      (status === "ready_for_billing" && stage.key === "confirmed") ||
+      (status === "billed" && stage.key === "billed")
+    ) || ticketJourneyStages[0];
+  };
+
+  // Get relevant stages for current ticket status
+  const getRelevantStages = (status: string) => {
+    const mainStages = [
+      ticketJourneyStages.find(s => s.key === "submitted"),
+      ticketJourneyStages.find(s => s.key === "accepted"),
+      ticketJourneyStages.find(s => s.key === "in_progress"),
+      ticketJourneyStages.find(s => s.key === "work_completed"),
+      ticketJourneyStages.find(s => s.key === "billed")
+    ].filter(Boolean);
+    return mainStages;
+  };
+
+  // Check if stage is completed
+  const isStageCompleted = (stageKey: string, currentStatus: string) => {
+    const stageOrder = ["submitted", "accepted", "in_progress", "work_completed", "billed"];
+    const currentOrder = ["pending", "accepted", "in-progress", "completed", "billed"];
+    
+    const stageIndex = stageOrder.indexOf(stageKey);
+    const currentIndex = currentOrder.indexOf(currentStatus);
+    
+    if (stageKey === "submitted") return true; // Always completed
+    if (stageKey === "accepted" && ["accepted", "in-progress", "completed", "billed"].includes(currentStatus)) return true;
+    if (stageKey === "in_progress" && ["in-progress", "completed", "billed"].includes(currentStatus)) return true;
+    if (stageKey === "work_completed" && ["completed", "billed"].includes(currentStatus)) return true;
+    if (stageKey === "billed" && currentStatus === "billed") return true;
+    
+    return false;
+  };
+
+  // Check if stage is current
+  const isCurrentStage = (stageKey: string, currentStatus: string) => {
+    if (stageKey === "submitted" && currentStatus === "pending") return true;
+    if (stageKey === "accepted" && currentStatus === "accepted") return true;
+    if (stageKey === "in_progress" && currentStatus === "in-progress") return true;
+    if (stageKey === "work_completed" && currentStatus === "completed") return true;
+    if (stageKey === "billed" && currentStatus === "billed") return true;
+    return false;
+  };
+
+  const progressPercentage = getProgressPercentage(ticket.status);
+  const currentStage = getCurrentStage(ticket.status);
+
+  return (
+    <div className="space-y-6">
+      {/* Domino's Style Progress Tracker */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <CheckCircle className="h-5 w-5 text-blue-600" />
+            Ticket Journey Progress
+          </CardTitle>
+          <p className="text-sm text-slate-600">Track your maintenance ticket from start to finish</p>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-8">
+            {/* Main Progress Line with Circles */}
+            <div className="relative px-4">
+              {/* Progress Bar Background */}
+              <div className="absolute top-6 left-12 right-12 h-1 bg-slate-200 rounded-full"></div>
+              <div 
+                className="absolute top-6 left-12 h-1 bg-blue-500 rounded-full transition-all duration-700 ease-out"
+                style={{ 
+                  width: `${Math.max(0, Math.min(100, (progressPercentage / 100) * 76))}%` 
+                }}
+              ></div>
+              
+              {/* Stage Circles */}
+              <div className="relative flex justify-between items-center">
+                {getRelevantStages(ticket.status).map((stage, index) => {
+                  const isCompleted = isStageCompleted(stage.key, ticket.status);
+                  const isCurrent = isCurrentStage(stage.key, ticket.status);
+                  
+                  return (
+                    <div key={stage.key} className="flex flex-col items-center space-y-3">
+                      {/* Circle */}
+                      <div className={`
+                        relative z-10 w-12 h-12 rounded-full border-3 flex items-center justify-center transition-all duration-500 transform
+                        ${isCompleted 
+                          ? 'bg-blue-500 border-blue-500 text-white shadow-lg scale-110' 
+                          : isCurrent 
+                            ? 'bg-white border-blue-500 text-blue-500 border-4 shadow-xl animate-pulse scale-105'
+                            : 'bg-white border-slate-300 text-slate-400'
+                        }
+                      `}>
+                        {isCompleted ? (
+                          <CheckCircle className="h-6 w-6" />
+                        ) : (
+                          <span className="text-sm font-bold">{index + 1}</span>
+                        )}
+                      </div>
+                      
+                      {/* Label */}
+                      <div className="text-center max-w-20">
+                        <p className={`text-xs font-medium leading-tight ${
+                          isCompleted || isCurrent ? 'text-blue-600' : 'text-slate-500'
+                        }`}>
+                          {stage.label}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Current Status Badge */}
+            <div className="flex items-center justify-center">
+              <Badge className={`px-4 py-2 text-sm font-medium ${currentStage.color}`}>
+                {currentStage.label}
+              </Badge>
+            </div>
+
+            {/* Progress Details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <h4 className="font-medium text-slate-900">Current Status</h4>
+                <p className="text-sm text-slate-600">{currentStage.description}</p>
+              </div>
+              <div className="space-y-3">
+                <h4 className="font-medium text-slate-900">Progress</h4>
+                <div className="flex items-center space-x-3">
+                  <Progress value={progressPercentage} className="flex-1" />
+                  <span className="text-sm font-medium text-slate-600">{progressPercentage}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Ticket Details Section */}
+      {ticketDetails && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Ticket Details</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3">
+                  <User className="h-4 w-4 text-slate-500" />
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">Reported By</p>
+                    <p className="text-sm text-slate-600">
+                      {ticketDetails.reporter ? `${ticketDetails.reporter.firstName} ${ticketDetails.reporter.lastName}` : 'Unknown'}
+                    </p>
+                  </div>
+                </div>
+                
+                {ticketDetails.organization && (
+                  <div className="flex items-center space-x-3">
+                    <Building className="h-4 w-4 text-slate-500" />
+                    <div>
+                      <p className="text-sm font-medium text-slate-900">Organization</p>
+                      <p className="text-sm text-slate-600">{ticketDetails.organization.name}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="space-y-3">
+                {ticketDetails.maintenanceVendor && (
+                  <div className="flex items-center space-x-3">
+                    <Wrench className="h-4 w-4 text-slate-500" />
+                    <div>
+                      <p className="text-sm font-medium text-slate-900">Assigned Vendor</p>
+                      <p className="text-sm text-slate-600">{ticketDetails.maintenanceVendor.name}</p>
+                    </div>
+                  </div>
+                )}
+                
+                {ticketDetails.assignee && (
+                  <div className="flex items-center space-x-3">
+                    <UserCheck className="h-4 w-4 text-slate-500" />
+                    <div>
+                      <p className="text-sm font-medium text-slate-900">Assigned Technician</p>
+                      <p className="text-sm text-slate-600">
+                        {ticketDetails.assignee.firstName} {ticketDetails.assignee.lastName}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
 export function ProgressTracker({ 
   ticket, 
   open, 
