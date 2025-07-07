@@ -209,17 +209,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/organizations/:id/reset-admin-password', authenticateUser, requireRole(['root']), async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const { newPassword } = req.body;
-      const result = await storage.resetOrganizationAdminPassword(id, newPassword);
-      res.json(result);
-    } catch (error) {
-      res.status(500).json({ message: 'Failed to reset admin password' });
-    }
-  });
-
   app.get('/api/maintenance-vendors', authenticateUser, requireRole(['root', 'maintenance_admin']), async (req, res) => {
     try {
       // If user is maintenance_admin, only return their vendor
