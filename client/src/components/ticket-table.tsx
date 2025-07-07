@@ -71,6 +71,7 @@ export function TicketTable({
   };
 
   const openProgressTracker = (ticket: Ticket) => {
+    console.log("Opening progress tracker for ticket:", ticket.id);
     setSelectedTicket(ticket);
     setIsProgressTrackerOpen(true);
   };
