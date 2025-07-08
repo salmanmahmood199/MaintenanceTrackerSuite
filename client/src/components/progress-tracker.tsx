@@ -140,191 +140,203 @@ export function ProgressTrackerEmbedded({
   const progressPercentage = getProgressPercentage(ticket.status);
   const currentStage = getCurrentStage(ticket.status);
 
-  // Create detailed timeline events from ticket data
-  const createTimelineEvents = () => {
-    const events = [];
-    
-    // 1. Ticket Submitted
-    events.push({
-      id: 'submitted',
-      title: 'Ticket Submitted',
-      timestamp: ticket.createdAt,
-      user: ticketDetails?.reporter,
-      description: 'Initial ticket creation and submission',
-      status: 'completed',
-      icon: FileText,
-      details: {
-        ticketNumber: ticket.ticketNumber,
-        priority: ticket.priority,
-        description: ticket.description?.substring(0, 100) + (ticket.description?.length > 100 ? '...' : '')
-      }
-    });
-
-    // 2. Under Review (if status progressed past pending)
-    if (['accepted', 'in-progress', 'completed', 'confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
-      events.push({
+  // Create all possible workflow steps
+  const createAllWorkflowSteps = () => {
+    const allSteps = [
+      {
+        id: 'submitted',
+        title: 'Ticket Submitted',
+        icon: FileText,
+        description: 'Initial ticket creation and submission',
+        details: {
+          ticketNumber: ticket.ticketNumber,
+          priority: ticket.priority,
+          description: ticket.description?.substring(0, 100) + (ticket.description?.length > 100 ? '...' : '')
+        }
+      },
+      {
         id: 'under_review',
         title: 'Under Review',
-        timestamp: ticket.updatedAt, // Approximate
-        user: null,
-        description: `Organization ${ticketDetails?.organization?.name || 'Unknown'} reviewing ticket details`,
-        status: 'completed',
         icon: Clock,
+        description: `Organization ${ticketDetails?.organization?.name || 'Unknown'} reviewing ticket details`,
         details: {
           organization: ticketDetails?.organization?.name,
           reviewType: 'Initial assessment and prioritization'
         }
-      });
-    }
-
-    // 3. Ticket Accepted
-    if (['accepted', 'in-progress', 'completed', 'confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
-      events.push({
+      },
+      {
         id: 'accepted',
         title: 'Ticket Accepted',
-        timestamp: ticket.acceptedAt || ticket.updatedAt,
-        user: null,
-        description: `Approved by organization admin and ready for vendor assignment`,
-        status: 'completed',
         icon: CheckCircle,
+        description: `Approved by organization admin and ready for vendor assignment`,
         details: {
           acceptedBy: 'Organization Admin',
           nextStep: 'Vendor assignment pending'
         }
-      });
-    }
-
-    // 4. Vendor Assigned
-    if (ticket.maintenanceVendorId && ['accepted', 'in-progress', 'completed', 'confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
-      events.push({
+      },
+      {
         id: 'vendor_assigned',
         title: 'Vendor Assigned',
-        timestamp: ticket.vendorAssignedAt || ticket.updatedAt,
-        user: null,
-        description: `${ticketDetails?.maintenanceVendor?.name || 'Vendor'} selected for maintenance work`,
-        status: 'completed',
         icon: Building,
+        description: `${ticketDetails?.maintenanceVendor?.name || 'Vendor'} selected for maintenance work`,
         details: {
-          vendor: ticketDetails?.maintenanceVendor?.name,
+          vendor: ticketDetails?.maintenanceVendor?.name || 'Pending vendor selection',
           specialties: ticketDetails?.maintenanceVendor?.specialties || 'General maintenance',
-          contact: ticketDetails?.maintenanceVendor?.contactInfo
+          contact: ticketDetails?.maintenanceVendor?.contactInfo || 'TBD'
         }
-      });
-    }
-
-    // 5. Vendor Accepted Work
-    if (ticket.maintenanceVendorId && ['in-progress', 'completed', 'confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
-      events.push({
+      },
+      {
         id: 'vendor_accepted',
         title: 'Vendor Accepted Work',
-        timestamp: ticket.vendorAcceptedAt || ticket.updatedAt,
-        user: null,
-        description: `${ticketDetails?.maintenanceVendor?.name || 'Vendor'} confirmed availability and accepted the work`,
-        status: 'completed',
         icon: UserCheck,
+        description: `${ticketDetails?.maintenanceVendor?.name || 'Vendor'} confirmed availability and accepted the work`,
         details: {
-          vendor: ticketDetails?.maintenanceVendor?.name,
+          vendor: ticketDetails?.maintenanceVendor?.name || 'Pending vendor confirmation',
           estimatedStartTime: 'Within 24-48 hours',
           priority: ticket.priority
         }
-      });
-    }
-
-    // 6. Technician Assigned
-    if (ticket.assigneeId && ['in-progress', 'completed', 'confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
-      events.push({
+      },
+      {
         id: 'technician_assigned',
         title: 'Technician Assigned',
-        timestamp: ticket.technicianAssignedAt || ticket.updatedAt,
-        user: ticketDetails?.assignee,
-        description: `${ticketDetails?.assignee?.firstName || 'Technician'} ${ticketDetails?.assignee?.lastName || ''} assigned to handle the work`,
-        status: 'completed',
         icon: User,
+        description: `${ticketDetails?.assignee?.firstName || 'Technician'} ${ticketDetails?.assignee?.lastName || ''} assigned to handle the work`,
         details: {
-          technician: `${ticketDetails?.assignee?.firstName || 'Unknown'} ${ticketDetails?.assignee?.lastName || ''}`,
-          email: ticketDetails?.assignee?.email,
+          technician: ticketDetails?.assignee ? `${ticketDetails.assignee.firstName || 'Unknown'} ${ticketDetails.assignee.lastName || ''}` : 'Pending technician assignment',
+          email: ticketDetails?.assignee?.email || 'TBD',
           phone: ticketDetails?.assignee?.phone || 'Contact through vendor',
           estimatedArrival: 'Will be scheduled soon'
         }
-      });
-    }
-
-    // 7. Work Started
-    if (['in-progress', 'completed', 'confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
-      events.push({
+      },
+      {
         id: 'work_started',
         title: 'Work Started',
-        timestamp: ticket.workStartedAt || ticket.updatedAt,
-        user: ticketDetails?.assignee,
-        description: `${ticketDetails?.assignee?.firstName || 'Technician'} arrived on-site and began diagnostic work`,
-        status: ticket.status === 'in-progress' ? 'current' : 'completed',
         icon: Wrench,
+        description: `${ticketDetails?.assignee?.firstName || 'Technician'} arrived on-site and began diagnostic work`,
         details: {
-          technician: `${ticketDetails?.assignee?.firstName || 'Unknown'} ${ticketDetails?.assignee?.lastName || ''}`,
+          technician: ticketDetails?.assignee ? `${ticketDetails.assignee.firstName || 'Unknown'} ${ticketDetails.assignee.lastName || ''}` : 'Pending technician assignment',
           workOrderCount: ticketDetails?.workOrders?.length || 0,
-          currentActivity: ticket.status === 'in-progress' ? 'Active repair work in progress' : 'Work completed'
+          currentActivity: 'Diagnostic and repair work'
         }
-      });
-    }
-
-    // 8. Work Completed
-    if (['completed', 'pending_confirmation', 'confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
-      events.push({
+      },
+      {
         id: 'work_completed',
         title: 'Work Completed',
-        timestamp: ticket.completedAt || ticket.updatedAt,
-        user: ticketDetails?.assignee,
-        description: `All repair work finished. Awaiting customer confirmation and approval`,
-        status: ticket.status === 'completed' || ticket.status === 'pending_confirmation' ? 'current' : 'completed',
         icon: CheckSquare,
+        description: `All repair work finished. Awaiting customer confirmation and approval`,
         details: {
-          completedBy: `${ticketDetails?.assignee?.firstName || 'Unknown'} ${ticketDetails?.assignee?.lastName || ''}`,
+          completedBy: ticketDetails?.assignee ? `${ticketDetails.assignee.firstName || 'Unknown'} ${ticketDetails.assignee.lastName || ''}` : 'Pending completion',
           workOrders: ticketDetails?.workOrders?.length || 0,
-          nextStep: ticket.status === 'pending_confirmation' ? 'Waiting for customer confirmation' : 'Work confirmed'
+          nextStep: 'Customer confirmation required'
         }
-      });
-    }
-
-    // 9. Customer Confirmation
-    if (['confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
-      events.push({
+      },
+      {
         id: 'confirmed',
         title: 'Work Confirmed',
-        timestamp: ticket.confirmedAt || ticket.updatedAt,
-        user: ticketDetails?.reporter,
-        description: `Customer confirmed work completion and quality. Ready for billing process`,
-        status: 'completed',
         icon: CheckCircle,
+        description: `Customer confirmed work completion and quality. Ready for billing process`,
         details: {
-          confirmedBy: `${ticketDetails?.reporter?.firstName || 'Customer'} ${ticketDetails?.reporter?.lastName || ''}`,
-          satisfaction: 'Work approved',
+          confirmedBy: ticketDetails?.reporter ? `${ticketDetails.reporter.firstName || 'Customer'} ${ticketDetails.reporter.lastName || ''}` : 'Pending confirmation',
+          satisfaction: 'Work approval pending',
           nextStep: 'Invoice generation'
         }
-      });
-    }
-
-    // 10. Invoice Generated & Billed
-    if (ticket.status === 'billed') {
-      events.push({
+      },
+      {
         id: 'billed',
         title: 'Invoiced & Billed',
-        timestamp: ticket.billedAt || ticket.updatedAt,
-        user: null,
-        description: `Invoice generated and sent. Ticket workflow complete`,
-        status: 'completed',
         icon: ClipboardList,
+        description: `Invoice generated and sent. Ticket workflow complete`,
         details: {
           invoiceNumber: `INV-${ticket.id}-${new Date().getFullYear()}`,
-          vendor: ticketDetails?.maintenanceVendor?.name,
-          status: 'Invoice sent to organization'
+          vendor: ticketDetails?.maintenanceVendor?.name || 'Pending vendor assignment',
+          status: 'Invoice generation pending'
         }
-      });
-    }
+      }
+    ];
 
-    return events.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    // Determine status and timestamp for each step
+    return allSteps.map(step => {
+      let status = 'pending';
+      let timestamp = null;
+      let user = null;
+
+      // Set status based on current ticket status
+      switch (step.id) {
+        case 'submitted':
+          status = 'completed';
+          timestamp = ticket.createdAt;
+          user = ticketDetails?.reporter;
+          break;
+        case 'under_review':
+          if (['accepted', 'in-progress', 'completed', 'pending_confirmation', 'confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
+            status = 'completed';
+            timestamp = ticket.updatedAt;
+          }
+          break;
+        case 'accepted':
+          if (['accepted', 'in-progress', 'completed', 'pending_confirmation', 'confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
+            status = 'completed';
+            timestamp = ticket.acceptedAt || ticket.updatedAt;
+          }
+          break;
+        case 'vendor_assigned':
+          if (ticket.maintenanceVendorId && ['accepted', 'in-progress', 'completed', 'pending_confirmation', 'confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
+            status = 'completed';
+            timestamp = ticket.vendorAssignedAt || ticket.updatedAt;
+          }
+          break;
+        case 'vendor_accepted':
+          if (ticket.maintenanceVendorId && ['in-progress', 'completed', 'pending_confirmation', 'confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
+            status = 'completed';
+            timestamp = ticket.vendorAcceptedAt || ticket.updatedAt;
+          }
+          break;
+        case 'technician_assigned':
+          if (ticket.assigneeId && ['in-progress', 'completed', 'pending_confirmation', 'confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
+            status = 'completed';
+            timestamp = ticket.technicianAssignedAt || ticket.updatedAt;
+            user = ticketDetails?.assignee;
+          }
+          break;
+        case 'work_started':
+          if (['in-progress', 'completed', 'pending_confirmation', 'confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
+            status = ticket.status === 'in-progress' ? 'current' : 'completed';
+            timestamp = ticket.workStartedAt || ticket.updatedAt;
+            user = ticketDetails?.assignee;
+          }
+          break;
+        case 'work_completed':
+          if (['completed', 'pending_confirmation', 'confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
+            status = ticket.status === 'completed' || ticket.status === 'pending_confirmation' ? 'current' : 'completed';
+            timestamp = ticket.completedAt || ticket.updatedAt;
+            user = ticketDetails?.assignee;
+          }
+          break;
+        case 'confirmed':
+          if (['confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
+            status = 'completed';
+            timestamp = ticket.confirmedAt || ticket.updatedAt;
+            user = ticketDetails?.reporter;
+          }
+          break;
+        case 'billed':
+          if (ticket.status === 'billed') {
+            status = 'completed';
+            timestamp = ticket.billedAt || ticket.updatedAt;
+          }
+          break;
+      }
+
+      return {
+        ...step,
+        status,
+        timestamp,
+        user
+      };
+    });
   };
 
-  const timelineEvents = createTimelineEvents();
+  const timelineEvents = createAllWorkflowSteps();
 
   return (
     <div className="space-y-6">
@@ -358,7 +370,7 @@ export function ProgressTrackerEmbedded({
                       ? 'bg-green-500 border-green-500 text-white shadow-lg' 
                       : isCurrent 
                         ? 'bg-blue-500 border-blue-500 text-white shadow-xl animate-pulse'
-                        : 'bg-slate-200 border-slate-300 text-slate-400'
+                        : 'bg-slate-100 border-slate-300 text-slate-400'
                     }
                   `}>
                     <IconComponent className="h-8 w-8" />
@@ -368,7 +380,7 @@ export function ProgressTrackerEmbedded({
                   <div className="flex-1 min-w-0 pt-2">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className={`text-lg font-semibold ${
-                        isCompleted || isCurrent ? 'text-slate-900' : 'text-slate-500'
+                        isCompleted || isCurrent ? 'text-slate-900' : 'text-slate-400'
                       }`}>
                         {event.title}
                       </h3>
@@ -384,34 +396,34 @@ export function ProgressTrackerEmbedded({
                       </Badge>
                     </div>
                     
-                    <p className="text-slate-600 mb-3">{event.description}</p>
+                    <p className={`mb-3 ${isCompleted || isCurrent ? 'text-slate-600' : 'text-slate-400'}`}>{event.description}</p>
                     
                     {/* Timestamp */}
-                    <div className="flex items-center gap-2 text-sm text-slate-500 mb-3">
+                    <div className={`flex items-center gap-2 text-sm mb-3 ${isCompleted || isCurrent ? 'text-slate-500' : 'text-slate-400'}`}>
                       <Calendar className="h-4 w-4" />
-                      <span>{event.timestamp ? format(new Date(event.timestamp), 'MMM dd, yyyy • h:mm a') : 'Timestamp pending'}</span>
+                      <span>{event.timestamp ? format(new Date(event.timestamp), 'MMM dd, yyyy • h:mm a') : 'Pending completion'}</span>
                     </div>
                     
                     {/* Person Responsible */}
                     {event.user && (
-                      <div className="flex items-center gap-2 text-sm text-slate-700 mb-3">
+                      <div className={`flex items-center gap-2 text-sm mb-3 ${isCompleted || isCurrent ? 'text-slate-700' : 'text-slate-400'}`}>
                         <User className="h-4 w-4" />
                         <span className="font-medium">
                           {event.user.firstName} {event.user.lastName}
                         </span>
-                        <span className="text-slate-500">({event.user.email})</span>
+                        <span className={`${isCompleted || isCurrent ? 'text-slate-500' : 'text-slate-400'}`}>({event.user.email})</span>
                       </div>
                     )}
                     
                     {/* Additional Details */}
                     {event.details && (
-                      <div className="bg-slate-50 rounded-lg p-3 space-y-2">
+                      <div className={`rounded-lg p-3 space-y-2 ${isCompleted || isCurrent ? 'bg-slate-50' : 'bg-slate-50 opacity-50'}`}>
                         {Object.entries(event.details).map(([key, value]) => (
                           <div key={key} className="flex justify-between text-sm">
-                            <span className="font-medium text-slate-600 capitalize">
+                            <span className={`font-medium capitalize ${isCompleted || isCurrent ? 'text-slate-600' : 'text-slate-400'}`}>
                               {key.replace(/([A-Z])/g, ' $1').trim()}:
                             </span>
-                            <span className="text-slate-700 max-w-xs text-right">{value}</span>
+                            <span className={`max-w-xs text-right ${isCompleted || isCurrent ? 'text-slate-700' : 'text-slate-400'}`}>{value}</span>
                           </div>
                         ))}
                       </div>

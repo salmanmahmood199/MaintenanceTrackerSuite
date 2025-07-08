@@ -285,6 +285,8 @@ Changelog:
 - July 7, 2025. Added embedded progress tracker component to ticket details modal as dedicated Progress tab
 - July 7, 2025. Created visual journey tracker with progress circles, completion stages, and delivery-style tracking interface
 - July 7, 2025. Enhanced ticket modal with 4-tab layout: Details, Comments, Progress, Work Orders for comprehensive ticket management
+- July 7, 2025. Improved progress tracker to show all workflow steps upfront in grey, with completed steps highlighted in green/blue and current steps pulsing
+- July 7, 2025. Users can now see the complete workflow journey at a glance, with clear visual indicators of progress and what's coming next
 ```
 
 ## User Preferences
