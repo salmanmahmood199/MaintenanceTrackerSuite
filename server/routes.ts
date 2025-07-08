@@ -1139,7 +1139,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Add a system comment about the force close
-      await storage.createTicketComment(ticketId, {
+      await storage.createTicketComment({
+        ticketId: ticketId,
         content: `Ticket was force closed by ${user.firstName} ${user.lastName}. Reason: ${reason.trim()}`,
         userId: user.id,
         isSystem: true
