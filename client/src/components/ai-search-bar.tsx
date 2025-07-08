@@ -31,6 +31,7 @@ export default function AISearchBar({ className }: AISearchBarProps) {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [showMediaUpload, setShowMediaUpload] = useState(false);
   const [pendingTicketAction, setPendingTicketAction] = useState<any>(null);
+  const [chatUploadedFiles, setChatUploadedFiles] = useState<File[]>([]);
   const { toast } = useToast();
 
   const aiMutation = useMutation({
@@ -97,6 +98,7 @@ export default function AISearchBar({ className }: AISearchBarProps) {
       
       // Clear state
       setUploadedFiles([]);
+      setChatUploadedFiles([]);
       setShowMediaUpload(false);
       setPendingTicketAction(null);
       
@@ -120,15 +122,28 @@ export default function AISearchBar({ className }: AISearchBarProps) {
 
   const handleConfirmTicket = () => {
     if (pendingTicketAction) {
+      // Use chatUploadedFiles if available, otherwise fall back to uploadedFiles
+      const filesToUse = chatUploadedFiles.length > 0 ? chatUploadedFiles : uploadedFiles;
+      
+      if (filesToUse.length === 0) {
+        toast({
+          title: "Files Required",
+          description: "Please upload at least one image or video before creating the ticket.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       createTicketMutation.mutate({
         ticketData: pendingTicketAction.data,
-        files: uploadedFiles
+        files: filesToUse
       });
     }
   };
 
   const handleCancelTicket = () => {
     setUploadedFiles([]);
+    setChatUploadedFiles([]);
     setShowMediaUpload(false);
     setPendingTicketAction(null);
     
@@ -295,7 +310,7 @@ export default function AISearchBar({ className }: AISearchBarProps) {
                     acceptedTypes={['image/*', 'video/*']}
                   />
                   
-                  {uploadedFiles.length === 0 && (
+                  {uploadedFiles.length === 0 && chatUploadedFiles.length === 0 && (
                     <div className="text-sm text-red-600 bg-red-50 p-2 rounded border border-red-200">
                       ⚠️ Please upload at least one image or video before creating the ticket
                     </div>
@@ -304,7 +319,7 @@ export default function AISearchBar({ className }: AISearchBarProps) {
                   <div className="flex gap-2 pt-2">
                     <Button
                       onClick={handleConfirmTicket}
-                      disabled={createTicketMutation.isPending || uploadedFiles.length === 0}
+                      disabled={createTicketMutation.isPending || (uploadedFiles.length === 0 && chatUploadedFiles.length === 0)}
                       className="flex-1 bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-400"
                     >
                       {createTicketMutation.isPending ? (
@@ -315,7 +330,7 @@ export default function AISearchBar({ className }: AISearchBarProps) {
                       ) : (
                         <>
                           <Check className="h-4 w-4 mr-2" />
-                          {uploadedFiles.length === 0 ? "Upload Files to Create Ticket" : "Create Ticket"}
+                          {(uploadedFiles.length === 0 && chatUploadedFiles.length === 0) ? "Upload Files to Create Ticket" : "Create Ticket"}
                         </>
                       )}
                     </Button>
@@ -332,6 +347,27 @@ export default function AISearchBar({ className }: AISearchBarProps) {
                 </div>
               </div>
             )}
+
+            {/* Persistent Media Upload Section */}
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="flex items-center gap-2 mb-3">
+                <Paperclip className="h-4 w-4 text-blue-600" />
+                <h4 className="font-medium text-gray-900">Upload Images/Videos</h4>
+                <span className="text-xs text-gray-500">(For creating tickets)</span>
+              </div>
+              
+              <MediaUpload 
+                onFilesChange={setChatUploadedFiles}
+                maxFiles={5}
+                acceptedTypes={['image/*', 'video/*']}
+              />
+              
+              {chatUploadedFiles.length > 0 && (
+                <div className="mt-2 text-sm text-green-600 bg-green-50 p-2 rounded border border-green-200">
+                  ✅ {chatUploadedFiles.length} file(s) ready for ticket creation
+                </div>
+              )}
+            </div>
 
             {/* Quick Actions */}
             <div className="mt-4 pt-4 border-t border-gray-200">
