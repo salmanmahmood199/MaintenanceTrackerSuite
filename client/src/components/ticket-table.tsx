@@ -271,16 +271,7 @@ export function TicketTable({
                             Create Invoice
                           </Button>
                         )}
-                        {showActions && canAcceptTickets && (ticket.status === "accepted" || ticket.status === "in-progress") && (
-                          <Button
-                            onClick={() => onComplete?.(ticket.id)}
-                            className="bg-blue-600 text-white hover:bg-blue-700"
-                            size="sm"
-                          >
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Complete
-                          </Button>
-                        )}
+
                       </div>
                     </TableCell>
                   </TableRow>
