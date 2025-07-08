@@ -2,16 +2,22 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, Send, Loader2, Bot, User } from "lucide-react";
+import { Search, Send, Loader2, Bot, User, Paperclip, Check, X } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { MediaUpload } from "@/components/media-upload";
 
 interface Message {
   id: string;
   type: 'user' | 'ai';
   content: string;
   timestamp: Date;
+  action?: {
+    type: string;
+    data: any;
+  };
+  showMediaUpload?: boolean;
 }
 
 interface AISearchBarProps {
@@ -22,6 +28,9 @@ export default function AISearchBar({ className }: AISearchBarProps) {
   const [query, setQuery] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [showMediaUpload, setShowMediaUpload] = useState(false);
+  const [pendingTicketAction, setPendingTicketAction] = useState<any>(null);
   const { toast } = useToast();
 
   const aiMutation = useMutation({
@@ -35,9 +44,17 @@ export default function AISearchBar({ className }: AISearchBarProps) {
         id: Date.now().toString() + "-ai",
         type: 'ai',
         content: data.response,
-        timestamp: new Date()
+        timestamp: new Date(),
+        action: data.action,
+        showMediaUpload: data.action?.type === 'create_ticket'
       };
       setMessages(prev => [...prev, aiMessage]);
+      
+      // If AI suggests creating a ticket, store the action for later
+      if (data.action?.type === 'create_ticket') {
+        setPendingTicketAction(data.action);
+        setShowMediaUpload(true);
+      }
     },
     onError: (error: any) => {
       console.error("AI query error:", error);
@@ -48,6 +65,81 @@ export default function AISearchBar({ className }: AISearchBarProps) {
       });
     }
   });
+
+  const createTicketMutation = useMutation({
+    mutationFn: async ({ ticketData, files }: { ticketData: any; files: File[] }) => {
+      const formData = new FormData();
+      formData.append('title', ticketData.title);
+      formData.append('description', ticketData.description);
+      formData.append('priority', ticketData.priority);
+      
+      files.forEach((file) => {
+        formData.append('images', file);
+      });
+
+      const response = await fetch('/api/tickets', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create ticket');
+      }
+
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Success",
+        description: `Ticket created successfully: ${data.ticketNumber}`,
+      });
+      
+      // Clear state
+      setUploadedFiles([]);
+      setShowMediaUpload(false);
+      setPendingTicketAction(null);
+      
+      // Add success message
+      const successMessage: Message = {
+        id: Date.now().toString() + "-success",
+        type: 'ai',
+        content: `✅ Ticket created successfully! Ticket number: ${data.ticketNumber}`,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, successMessage]);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create ticket",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleConfirmTicket = () => {
+    if (pendingTicketAction) {
+      createTicketMutation.mutate({
+        ticketData: pendingTicketAction.data,
+        files: uploadedFiles
+      });
+    }
+  };
+
+  const handleCancelTicket = () => {
+    setUploadedFiles([]);
+    setShowMediaUpload(false);
+    setPendingTicketAction(null);
+    
+    const cancelMessage: Message = {
+      id: Date.now().toString() + "-cancel",
+      type: 'ai',
+      content: "Ticket creation cancelled. How else can I help you?",
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, cancelMessage]);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -186,6 +278,53 @@ export default function AISearchBar({ className }: AISearchBarProps) {
                 </div>
               )}
             </div>
+
+            {/* Media Upload and Confirmation Interface */}
+            {showMediaUpload && pendingTicketAction && (
+              <div className="mt-4 p-4 border-t border-gray-200 bg-blue-50 rounded-lg">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Paperclip className="h-4 w-4 text-blue-600" />
+                    <h4 className="font-medium text-gray-900">Add Images or Videos (Optional)</h4>
+                  </div>
+                  
+                  <MediaUpload 
+                    onFilesChange={setUploadedFiles}
+                    maxFiles={5}
+                    acceptedTypes={['image/*', 'video/*']}
+                  />
+                  
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      onClick={handleConfirmTicket}
+                      disabled={createTicketMutation.isPending}
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      {createTicketMutation.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Creating...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="h-4 w-4 mr-2" />
+                          Create Ticket
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      onClick={handleCancelTicket}
+                      variant="outline"
+                      disabled={createTicketMutation.isPending}
+                      className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Quick Actions */}
             <div className="mt-4 pt-4 border-t border-gray-200">
