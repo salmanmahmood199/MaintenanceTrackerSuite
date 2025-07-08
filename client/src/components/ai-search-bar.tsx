@@ -216,9 +216,9 @@ export default function AISearchBar({ className }: AISearchBarProps) {
 
       {/* Expanded Chat Interface */}
       {isExpanded && (
-        <Card className="absolute top-full left-0 right-0 mt-2 max-w-2xl mx-auto shadow-lg border-gray-200 z-50">
-          <CardContent className="p-4">
-            <div className="flex justify-between items-center mb-4">
+        <Card className="absolute top-full left-0 right-0 mt-2 max-w-2xl mx-auto shadow-lg border-gray-200 z-50 max-h-[80vh] flex flex-col">
+          <CardContent className="p-4 flex-1 overflow-hidden flex flex-col">
+            <div className="flex justify-between items-center mb-4 flex-shrink-0">
               <div className="flex items-center gap-2">
                 <Bot className="h-5 w-5 text-blue-600" />
                 <h3 className="font-semibold text-gray-900">AI Assistant</h3>
@@ -233,179 +233,182 @@ export default function AISearchBar({ className }: AISearchBarProps) {
               </Button>
             </div>
 
-            {/* Messages */}
-            <div className="space-y-3 max-h-96 overflow-y-auto">
-              {messages.length === 0 ? (
-                <div className="text-center text-gray-500 py-8">
-                  <Bot className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                  <p>Hi! I can help you with:</p>
-                  <ul className="text-sm mt-2 space-y-1">
-                    <li>• Creating new tickets</li>
-                    <li>• Checking ticket status</li>
-                    <li>• Approving tickets</li>
-                    <li>• Assigning work</li>
-                    <li>• And more within your permissions</li>
-                  </ul>
-                </div>
-              ) : (
-                messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex gap-3 ${
-                      message.type === 'user' ? 'justify-end' : 'justify-start'
-                    }`}
-                  >
-                    {message.type === 'ai' && (
-                      <div className="flex-shrink-0">
-                        <Bot className="h-6 w-6 text-blue-600" />
-                      </div>
-                    )}
+            {/* Scrollable Content Area */}
+            <div className="flex-1 overflow-y-auto">
+              {/* Messages */}
+              <div className="space-y-3 mb-4">
+                {messages.length === 0 ? (
+                  <div className="text-center text-gray-500 py-8">
+                    <Bot className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                    <p>Hi! I can help you with:</p>
+                    <ul className="text-sm mt-2 space-y-1">
+                      <li>• Creating new tickets</li>
+                      <li>• Checking ticket status</li>
+                      <li>• Approving tickets</li>
+                      <li>• Assigning work</li>
+                      <li>• And more within your permissions</li>
+                    </ul>
+                  </div>
+                ) : (
+                  messages.map((message) => (
                     <div
-                      className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                        message.type === 'user'
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 text-gray-900'
+                      key={message.id}
+                      className={`flex gap-3 ${
+                        message.type === 'user' ? 'justify-end' : 'justify-start'
                       }`}
                     >
-                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                      <p className="text-xs opacity-70 mt-1">
-                        {message.timestamp.toLocaleTimeString()}
-                      </p>
+                      {message.type === 'ai' && (
+                        <div className="flex-shrink-0">
+                          <Bot className="h-6 w-6 text-blue-600" />
+                        </div>
+                      )}
+                      <div
+                        className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                          message.type === 'user'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 text-gray-900'
+                        }`}
+                      >
+                        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                        <p className="text-xs opacity-70 mt-1">
+                          {message.timestamp.toLocaleTimeString()}
+                        </p>
+                      </div>
+                      {message.type === 'user' && (
+                        <div className="flex-shrink-0">
+                          <User className="h-6 w-6 text-gray-400" />
+                        </div>
+                      )}
                     </div>
-                    {message.type === 'user' && (
-                      <div className="flex-shrink-0">
-                        <User className="h-6 w-6 text-gray-400" />
+                  ))
+                )}
+                
+                {aiMutation.isPending && (
+                  <div className="flex gap-3">
+                    <Bot className="h-6 w-6 text-blue-600" />
+                    <div className="bg-gray-100 px-4 py-2 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="text-sm text-gray-600">Thinking...</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Media Upload and Confirmation Interface */}
+              {showMediaUpload && pendingTicketAction && (
+                <div className="mt-4 p-4 border-t border-gray-200 bg-blue-50 rounded-lg">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Paperclip className="h-4 w-4 text-red-600" />
+                      <h4 className="font-medium text-gray-900">Add Images or Videos (Required)</h4>
+                      <span className="text-xs text-red-600 font-medium">*Required for all tickets</span>
+                    </div>
+                    
+                    <MediaUpload 
+                      onFilesChange={setUploadedFiles}
+                      maxFiles={5}
+                      acceptedTypes={['image/*', 'video/*']}
+                    />
+                    
+                    {uploadedFiles.length === 0 && chatUploadedFiles.length === 0 && (
+                      <div className="text-sm text-red-600 bg-red-50 p-2 rounded border border-red-200">
+                        ⚠️ Please upload at least one image or video before creating the ticket
                       </div>
                     )}
-                  </div>
-                ))
-              )}
-              
-              {aiMutation.isPending && (
-                <div className="flex gap-3">
-                  <Bot className="h-6 w-6 text-blue-600" />
-                  <div className="bg-gray-100 px-4 py-2 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span className="text-sm text-gray-600">Thinking...</span>
+                    
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        onClick={handleConfirmTicket}
+                        disabled={createTicketMutation.isPending || (uploadedFiles.length === 0 && chatUploadedFiles.length === 0)}
+                        className="flex-1 bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-400"
+                      >
+                        {createTicketMutation.isPending ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            Creating...
+                          </>
+                        ) : (
+                          <>
+                            <Check className="h-4 w-4 mr-2" />
+                            {(uploadedFiles.length === 0 && chatUploadedFiles.length === 0) ? "Upload Files to Create Ticket" : "Create Ticket"}
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        onClick={handleCancelTicket}
+                        variant="outline"
+                        disabled={createTicketMutation.isPending}
+                        className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Cancel
+                      </Button>
                     </div>
                   </div>
                 </div>
               )}
-            </div>
 
-            {/* Media Upload and Confirmation Interface */}
-            {showMediaUpload && pendingTicketAction && (
-              <div className="mt-4 p-4 border-t border-gray-200 bg-blue-50 rounded-lg">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Paperclip className="h-4 w-4 text-red-600" />
-                    <h4 className="font-medium text-gray-900">Add Images or Videos (Required)</h4>
-                    <span className="text-xs text-red-600 font-medium">*Required for all tickets</span>
-                  </div>
-                  
-                  <MediaUpload 
-                    onFilesChange={setUploadedFiles}
-                    maxFiles={5}
-                    acceptedTypes={['image/*', 'video/*']}
-                  />
-                  
-                  {uploadedFiles.length === 0 && chatUploadedFiles.length === 0 && (
-                    <div className="text-sm text-red-600 bg-red-50 p-2 rounded border border-red-200">
-                      ⚠️ Please upload at least one image or video before creating the ticket
-                    </div>
-                  )}
-                  
-                  <div className="flex gap-2 pt-2">
-                    <Button
-                      onClick={handleConfirmTicket}
-                      disabled={createTicketMutation.isPending || (uploadedFiles.length === 0 && chatUploadedFiles.length === 0)}
-                      className="flex-1 bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-400"
-                    >
-                      {createTicketMutation.isPending ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          Creating...
-                        </>
-                      ) : (
-                        <>
-                          <Check className="h-4 w-4 mr-2" />
-                          {(uploadedFiles.length === 0 && chatUploadedFiles.length === 0) ? "Upload Files to Create Ticket" : "Create Ticket"}
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      onClick={handleCancelTicket}
-                      variant="outline"
-                      disabled={createTicketMutation.isPending}
-                      className="border-gray-300 text-gray-700 hover:bg-gray-50"
-                    >
-                      <X className="h-4 w-4 mr-2" />
-                      Cancel
-                    </Button>
-                  </div>
+              {/* Persistent Media Upload Section */}
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <Paperclip className="h-4 w-4 text-blue-600" />
+                  <h4 className="font-medium text-gray-900">Upload Images/Videos</h4>
+                  <span className="text-xs text-gray-500">(For creating tickets)</span>
                 </div>
+                
+                <MediaUpload 
+                  onFilesChange={setChatUploadedFiles}
+                  maxFiles={5}
+                  acceptedTypes={['image/*', 'video/*']}
+                />
+                
+                {chatUploadedFiles.length > 0 && (
+                  <div className="mt-2 text-sm text-green-600 bg-green-50 p-2 rounded border border-green-200">
+                    ✅ {chatUploadedFiles.length} file(s) ready for ticket creation
+                  </div>
+                )}
               </div>
-            )}
 
-            {/* Persistent Media Upload Section */}
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <div className="flex items-center gap-2 mb-3">
-                <Paperclip className="h-4 w-4 text-blue-600" />
-                <h4 className="font-medium text-gray-900">Upload Images/Videos</h4>
-                <span className="text-xs text-gray-500">(For creating tickets)</span>
-              </div>
-              
-              <MediaUpload 
-                onFilesChange={setChatUploadedFiles}
-                maxFiles={5}
-                acceptedTypes={['image/*', 'video/*']}
-              />
-              
-              {chatUploadedFiles.length > 0 && (
-                <div className="mt-2 text-sm text-green-600 bg-green-50 p-2 rounded border border-green-200">
-                  ✅ {chatUploadedFiles.length} file(s) ready for ticket creation
+              {/* Quick Actions */}
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <p className="text-xs text-gray-500 mb-2">Quick actions:</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setQuery("Show me my recent tickets");
+                      handleSubmit(new Event('submit') as any);
+                    }}
+                    className="text-xs"
+                  >
+                    Recent Tickets
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setQuery("Create a new ticket");
+                      handleSubmit(new Event('submit') as any);
+                    }}
+                    className="text-xs"
+                  >
+                    Create Ticket
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setQuery("What tickets need my attention?");
+                      handleSubmit(new Event('submit') as any);
+                    }}
+                    className="text-xs"
+                  >
+                    Pending Actions
+                  </Button>
                 </div>
-              )}
-            </div>
-
-            {/* Quick Actions */}
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <p className="text-xs text-gray-500 mb-2">Quick actions:</p>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setQuery("Show me my recent tickets");
-                    handleSubmit(new Event('submit') as any);
-                  }}
-                  className="text-xs"
-                >
-                  Recent Tickets
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setQuery("Create a new ticket");
-                    handleSubmit(new Event('submit') as any);
-                  }}
-                  className="text-xs"
-                >
-                  Create Ticket
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setQuery("What tickets need my attention?");
-                    handleSubmit(new Event('submit') as any);
-                  }}
-                  className="text-xs"
-                >
-                  Pending Actions
-                </Button>
               </div>
             </div>
           </CardContent>
