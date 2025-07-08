@@ -42,6 +42,7 @@ const ticketJourneyStages = [
 const rejectionStages = [
   { key: "rejected_by_office", label: "Rejected by Office", description: "Ticket rejected during initial review", icon: XCircle, color: "bg-red-100 text-red-800" },
   { key: "rejected_by_vendor", label: "Rejected by Vendor", description: "Vendor declined to accept the work", icon: XCircle, color: "bg-red-100 text-red-800" },
+  { key: "force_closed", label: "Force Closed", description: "Ticket was force closed by an administrator", icon: AlertTriangle, color: "bg-red-100 text-red-800" },
 ];
 
 // Embedded version for tab content

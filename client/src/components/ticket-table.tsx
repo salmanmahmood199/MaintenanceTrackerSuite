@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, User, Hash, Wrench, CheckCircle, XCircle, Eye, ImageIcon, Clock, Calculator, MessageSquare, ChevronLeft, ChevronRight, X, Video } from "lucide-react";
+import { Calendar, User, Hash, Wrench, CheckCircle, XCircle, Eye, ImageIcon, Clock, Calculator, MessageSquare, ChevronLeft, ChevronRight, X, Video, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { formatDate, getPriorityColor, getStatusColor } from "@/lib/utils";
 import { ProgressTrackerEmbedded } from "@/components/progress-tracker";
@@ -22,6 +25,7 @@ interface TicketTableProps {
   onViewWorkOrders?: (id: number) => void;
   onCreateInvoice?: (id: number) => void;
   onViewBids?: (ticket: Ticket) => void;
+  onForceClose?: (id: number, reason: string) => void;
   showActions?: boolean;
   showTechnicianActions?: boolean;
   userRole?: string;
@@ -39,6 +43,7 @@ export function TicketTable({
   onViewWorkOrders,
   onCreateInvoice,
   onViewBids,
+  onForceClose,
   showActions = true,
   showTechnicianActions = false,
   userRole, 
@@ -48,6 +53,10 @@ export function TicketTable({
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+  const [showForceCloseDialog, setShowForceCloseDialog] = useState(false);
+  const [forceCloseReason, setForceCloseReason] = useState("");
+  const [forceCloseConfirmed, setForceCloseConfirmed] = useState(false);
+  const [ticketToForceClose, setTicketToForceClose] = useState<number | null>(null);
 
   // Check if user can accept tickets based on role or permissions
   const canAcceptTickets = userRole && (
@@ -61,6 +70,28 @@ export function TicketTable({
 
   const closeTicketDetails = () => {
     setSelectedTicket(null);
+  };
+
+  const handleForceClose = (ticketId: number) => {
+    setTicketToForceClose(ticketId);
+    setShowForceCloseDialog(true);
+  };
+
+  const confirmForceClose = () => {
+    if (ticketToForceClose && forceCloseConfirmed && forceCloseReason.trim()) {
+      onForceClose?.(ticketToForceClose, forceCloseReason);
+      setShowForceCloseDialog(false);
+      setForceCloseReason("");
+      setForceCloseConfirmed(false);
+      setTicketToForceClose(null);
+    }
+  };
+
+  const cancelForceClose = () => {
+    setShowForceCloseDialog(false);
+    setForceCloseReason("");
+    setForceCloseConfirmed(false);
+    setTicketToForceClose(null);
   };
 
   const openImageViewer = (ticket: Ticket, imageIndex: number = 0) => {
@@ -269,6 +300,19 @@ export function TicketTable({
                           >
                             <Calculator className="h-4 w-4 mr-1" />
                             Create Invoice
+                          </Button>
+                        )}
+
+                        {/* Force Close Button - Available for users with accept ticket permissions */}
+                        {showActions && canAcceptTickets && ticket.status !== "billed" && ticket.status !== "rejected" && (
+                          <Button
+                            onClick={() => handleForceClose(ticket.id)}
+                            variant="outline"
+                            className="border-red-300 text-red-600 hover:bg-red-50"
+                            size="sm"
+                          >
+                            <AlertTriangle className="h-4 w-4 mr-1" />
+                            Force Close
                           </Button>
                         )}
 
@@ -487,6 +531,65 @@ export function TicketTable({
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Force Close Confirmation Dialog */}
+      <Dialog open={showForceCloseDialog} onOpenChange={cancelForceClose}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="h-5 w-5" />
+              Force Close Ticket
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-sm text-red-700">
+                <strong>Warning:</strong> This action will permanently close the ticket and bypass all remaining workflow steps. This cannot be undone.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="forceCloseReason">Reason for Force Close (Required)</Label>
+              <Textarea
+                id="forceCloseReason"
+                placeholder="Please provide a detailed reason for force closing this ticket..."
+                value={forceCloseReason}
+                onChange={(e) => setForceCloseReason(e.target.value)}
+                className="min-h-[80px]"
+              />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="forceCloseConfirmation"
+                checked={forceCloseConfirmed}
+                onCheckedChange={setForceCloseConfirmed}
+              />
+              <Label htmlFor="forceCloseConfirmation" className="text-sm">
+                I understand this action is permanent and will close the ticket immediately
+              </Label>
+            </div>
+          </div>
+
+          <DialogFooter className="flex justify-between">
+            <Button
+              variant="outline"
+              onClick={cancelForceClose}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmForceClose}
+              disabled={!forceCloseConfirmed || !forceCloseReason.trim()}
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              Force Close Ticket
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

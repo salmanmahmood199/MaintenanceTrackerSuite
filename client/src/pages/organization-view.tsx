@@ -219,6 +219,21 @@ export default function OrganizationView() {
     },
   });
 
+  // Force close mutation
+  const forceCloseMutation = useMutation({
+    mutationFn: async ({ id, reason }: { id: number; reason: string }) => {
+      return apiRequest("POST", `/api/tickets/${id}/force-close`, { reason });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets/stats"] });
+      toast({ title: "Success", description: "Ticket force closed successfully" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to force close ticket", variant: "destructive" });
+    },
+  });
+
 
 
   // Create sub-admin mutation
@@ -397,6 +412,10 @@ export default function OrganizationView() {
       setSelectedTicket(ticket);
       setIsConfirmCompletionModalOpen(true);
     }
+  };
+
+  const handleForceClose = (id: number, reason: string) => {
+    forceCloseMutation.mutate({ id, reason });
   };
 
 
@@ -657,6 +676,7 @@ export default function OrganizationView() {
                 onComplete={canAcceptTickets ? handleCompleteTicket : undefined}
                 onConfirm={handleConfirmCompletion}
                 onViewBids={setMarketplaceBidsTicket}
+                onForceClose={canAcceptTickets ? handleForceClose : undefined}
                 showActions={true}
                 userRole={user?.role}
                 userPermissions={user?.permissions || undefined}

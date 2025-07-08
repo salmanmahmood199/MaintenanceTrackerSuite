@@ -113,6 +113,20 @@ export function VendorView() {
     },
   });
 
+  // Force close mutation
+  const forceCloseMutation = useMutation({
+    mutationFn: async ({ id, reason }: { id: number; reason: string }) => {
+      return apiRequest("POST", `/api/tickets/${id}/force-close`, { reason });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+      toast({ title: "Success", description: "Ticket force closed successfully" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to force close ticket", variant: "destructive" });
+    },
+  });
+
   // Accept ticket mutation
   const acceptTicketMutation = useMutation({
     mutationFn: async ({ ticketId, assigneeId }: { ticketId: number; assigneeId?: number }) => {
@@ -200,6 +214,10 @@ export function VendorView() {
       setSelectedTicketForInvoice(ticket);
       setIsCreateInvoiceModalOpen(true);
     }
+  };
+
+  const handleForceClose = (id: number, reason: string) => {
+    forceCloseMutation.mutate({ id, reason });
   };
 
   if (!vendor) {
@@ -363,6 +381,7 @@ export function VendorView() {
                   onAccept={user?.role === "maintenance_admin" ? openAcceptModal : undefined}
                   onReject={user?.role === "maintenance_admin" ? openRejectModal : undefined}
                   onCreateInvoice={handleCreateInvoice}
+                  onForceClose={user?.role === "maintenance_admin" ? handleForceClose : undefined}
                   showActions={true}
                   userRole={user?.role}
                   userPermissions={user?.permissions || []}

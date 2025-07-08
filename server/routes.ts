@@ -1098,6 +1098,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Force close ticket - Available for users with accept ticket permissions
+  app.post("/api/tickets/:id/force-close", authenticateUser, requireRole(["org_admin", "org_subadmin", "maintenance_admin"]), async (req: AuthenticatedRequest, res) => {
+    try {
+      const ticketId = parseInt(req.params.id);
+      const user = req.user!;
+      const { reason } = req.body;
+      
+      if (!reason || !reason.trim()) {
+        return res.status(400).json({ message: "Reason is required for force closing a ticket" });
+      }
+      
+      // Get the ticket first
+      const ticket = await storage.getTicket(ticketId);
+      if (!ticket) {
+        return res.status(404).json({ message: "Ticket not found" });
+      }
+      
+      // Check if ticket is already closed
+      if (ticket.status === "billed" || ticket.status === "rejected" || ticket.status === "force_closed") {
+        return res.status(400).json({ message: "Ticket is already closed" });
+      }
+      
+      // Check permissions based on user role
+      const hasPermission = user.role === "root" || 
+                           (user.role === "org_admin" && ticket.organizationId === user.organizationId) ||
+                           (user.role === "org_subadmin" && ticket.organizationId === user.organizationId) ||
+                           (user.role === "maintenance_admin" && ticket.maintenanceVendorId === user.maintenanceVendorId);
+      
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      // Force close the ticket
+      const forcedClosedTicket = await storage.updateTicket(ticketId, { 
+        status: "force_closed",
+        forceClosedAt: new Date(),
+        forceClosedBy: user.id,
+        forceCloseReason: reason.trim()
+      });
+      
+      // Add a system comment about the force close
+      await storage.createTicketComment(ticketId, {
+        content: `Ticket was force closed by ${user.firstName} ${user.lastName}. Reason: ${reason.trim()}`,
+        userId: user.id,
+        isSystem: true
+      });
+      
+      res.json(forcedClosedTicket);
+    } catch (error) {
+      console.error("Error force closing ticket:", error);
+      res.status(500).json({ message: "Failed to force close ticket" });
+    }
+  });
+
   // Invoice routes
   app.get("/api/invoices", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
