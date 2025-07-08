@@ -26,11 +26,8 @@ export default function AISearchBar({ className }: AISearchBarProps) {
 
   const aiMutation = useMutation({
     mutationFn: async (userQuery: string) => {
-      const response = await apiRequest("/api/ai/query", {
-        method: "POST",
-        body: { query: userQuery }
-      });
-      return response;
+      const response = await apiRequest("POST", "/api/ai/query", { query: userQuery });
+      return response.json();
     },
     onSuccess: (data) => {
       // Add AI response to messages
