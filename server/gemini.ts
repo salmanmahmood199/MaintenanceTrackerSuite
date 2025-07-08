@@ -27,7 +27,6 @@ export async function processUserQuery(req: AIRequest, res: Response) {
     }
 
     // Get user's accessible data for context
-    const storage = getStorage();
     const userContext = await getUserContext(user);
     
     // Create system prompt based on user role and permissions
