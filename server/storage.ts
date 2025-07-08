@@ -1388,6 +1388,60 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updatedConfig || null;
   }
+
+  // Location-related functions for AI context
+  async getUserLocations(userId: number): Promise<Location[]> {
+    const userLocations = await db
+      .select({
+        id: locations.id,
+        name: locations.name,
+        address: locations.address,
+        organizationId: locations.organizationId,
+        createdAt: locations.createdAt,
+        updatedAt: locations.updatedAt,
+      })
+      .from(locations)
+      .innerJoin(userLocationAssignments, eq(locations.id, userLocationAssignments.locationId))
+      .where(eq(userLocationAssignments.userId, userId))
+      .orderBy(locations.name);
+    
+    return userLocations;
+  }
+
+  async getOrganizationById(id: number): Promise<Organization | undefined> {
+    const [organization] = await db
+      .select()
+      .from(organizations)
+      .where(eq(organizations.id, id));
+    return organization;
+  }
+
+  async getVendorTiers(organizationId: number): Promise<{ vendor: MaintenanceVendor; tier: string }[]> {
+    const vendorTiers = await db
+      .select({
+        vendor: {
+          id: maintenanceVendors.id,
+          name: maintenanceVendors.name,
+          email: maintenanceVendors.email,
+          phone: maintenanceVendors.phone,
+          description: maintenanceVendors.description,
+          specialties: maintenanceVendors.specialties,
+          isActive: maintenanceVendors.isActive,
+          createdAt: maintenanceVendors.createdAt,
+          updatedAt: maintenanceVendors.updatedAt,
+        },
+        tier: vendorOrganizationTiers.tier,
+      })
+      .from(vendorOrganizationTiers)
+      .innerJoin(maintenanceVendors, eq(vendorOrganizationTiers.vendorId, maintenanceVendors.id))
+      .where(and(
+        eq(vendorOrganizationTiers.organizationId, organizationId),
+        eq(maintenanceVendors.isActive, true)
+      ))
+      .orderBy(vendorOrganizationTiers.tier);
+    
+    return vendorTiers;
+  }
 }
 
 export const storage = new DatabaseStorage();
