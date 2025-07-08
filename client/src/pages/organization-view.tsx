@@ -222,14 +222,21 @@ export default function OrganizationView() {
   // Force close mutation
   const forceCloseMutation = useMutation({
     mutationFn: async ({ id, reason }: { id: number; reason: string }) => {
-      return apiRequest("POST", `/api/tickets/${id}/force-close`, { reason });
+      try {
+        const response = await apiRequest("POST", `/api/tickets/${id}/force-close`, { reason });
+        return response.json();
+      } catch (error) {
+        console.error("Force close error:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tickets/stats"] });
       toast({ title: "Success", description: "Ticket force closed successfully" });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Force close mutation error:", error);
       toast({ title: "Error", description: "Failed to force close ticket", variant: "destructive" });
     },
   });
