@@ -233,6 +233,8 @@ export default function OrganizationView() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tickets/stats"] });
+      // Also invalidate the specific organization tickets query
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets", { organizationId }] });
       toast({ title: "Success", description: "Ticket force closed successfully" });
     },
     onError: (error) => {

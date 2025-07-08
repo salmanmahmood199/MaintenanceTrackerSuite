@@ -126,6 +126,9 @@ export function VendorView() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets/stats"] });
+      // Also invalidate the specific vendor tickets query
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets", { maintenanceVendorId: vendor?.id }] });
       toast({ title: "Success", description: "Ticket force closed successfully" });
     },
     onError: (error) => {
