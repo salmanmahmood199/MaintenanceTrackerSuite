@@ -38,6 +38,16 @@ export function getStatusColor(status: string) {
       return "bg-red-100 text-red-800";
     case "return_needed":
       return "bg-orange-100 text-orange-800";
+    case "force_closed":
+      return "bg-slate-100 text-slate-800";
+    case "billed":
+      return "bg-green-100 text-green-800";
+    case "pending_confirmation":
+      return "bg-yellow-100 text-yellow-800";
+    case "ready_for_billing":
+      return "bg-teal-100 text-teal-800";
+    case "marketplace":
+      return "bg-indigo-100 text-indigo-800";
     default:
       return "bg-gray-100 text-gray-800";
   }

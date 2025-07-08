@@ -172,6 +172,7 @@ export function TicketTable({
                            ticket.status === "pending_confirmation" ? "Pending Confirmation" :
                            ticket.status === "ready_for_billing" ? "Ready for Billing" :
                            ticket.status === "marketplace" ? "Marketplace" :
+                           ticket.status === "force_closed" ? "Closed" :
                            ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}
                         </Badge>
                         {ticket.status === "marketplace" && onViewBids && (
@@ -379,6 +380,10 @@ export function TicketTable({
                       </Badge>
                       <Badge className={getStatusColor(selectedTicket.status)}>
                         {selectedTicket.status === "in-progress" ? "In Progress" : 
+                         selectedTicket.status === "pending_confirmation" ? "Pending Confirmation" :
+                         selectedTicket.status === "ready_for_billing" ? "Ready for Billing" :
+                         selectedTicket.status === "marketplace" ? "Marketplace" :
+                         selectedTicket.status === "force_closed" ? "Closed" :
                          selectedTicket.status.charAt(0).toUpperCase() + selectedTicket.status.slice(1)}
                       </Badge>
                     </div>
@@ -388,6 +393,19 @@ export function TicketTable({
                         <p className="text-sm text-red-800">
                           <strong>Rejection Reason:</strong> {selectedTicket.rejectionReason}
                         </p>
+                      </div>
+                    )}
+
+                    {selectedTicket.status === "force_closed" && selectedTicket.forceCloseReason && (
+                      <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                        <p className="text-sm text-gray-800">
+                          <strong>Force Close Reason:</strong> {selectedTicket.forceCloseReason}
+                        </p>
+                        {selectedTicket.forceClosedAt && (
+                          <p className="text-xs text-gray-600 mt-1">
+                            Closed on: {format(new Date(selectedTicket.forceClosedAt), 'PPp')}
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>
