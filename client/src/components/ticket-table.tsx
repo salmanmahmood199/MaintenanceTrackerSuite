@@ -305,7 +305,7 @@ export function TicketTable({
                         )}
 
                         {/* Force Close Button - Available for users with accept ticket permissions */}
-                        {showActions && canAcceptTickets && ticket.status !== "billed" && ticket.status !== "rejected" && (
+                        {showActions && canAcceptTickets && ticket.status !== "billed" && ticket.status !== "rejected" && ticket.status !== "force_closed" && (
                           <Button
                             onClick={() => handleForceClose(ticket.id)}
                             variant="outline"
