@@ -20,6 +20,7 @@ import {
   type AuthenticatedRequest,
 } from "@shared/schema";
 import { getSessionConfig, authenticateUser, requireRole, requireOrganization } from "./auth";
+import { processUserQuery } from "./gemini";
 import multer from "multer";
 import bcrypt from "bcrypt";
 import path from "path";
@@ -134,6 +135,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       vendorTiers: req.user!.vendorTiers
     });
   });
+
+  // AI Assistant route
+  app.post('/api/ai/query', authenticateUser, processUserQuery);
 
   // Root admin routes for managing organizations and vendors
   app.get('/api/organizations', authenticateUser, requireRole(['root', 'org_admin', 'org_subadmin']), async (req, res) => {

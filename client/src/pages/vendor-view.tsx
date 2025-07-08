@@ -14,6 +14,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
+import AISearchBar from "@/components/ai-search-bar";
 import type { Ticket, MaintenanceVendor, WorkOrder, User } from "@shared/schema";
 
 export function VendorView() {
@@ -286,6 +287,11 @@ export function VendorView() {
                 Logout
               </Button>
             </div>
+          </div>
+          
+          {/* AI Search Bar */}
+          <div className="pb-4">
+            <AISearchBar className="max-w-2xl mx-auto" />
           </div>
         </div>
       </header>

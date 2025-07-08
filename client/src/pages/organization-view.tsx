@@ -19,6 +19,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
+import AISearchBar from "@/components/ai-search-bar";
 import type { Ticket, InsertTicket, InsertSubAdmin, Organization, User, MaintenanceVendor } from "@shared/schema";
 
 interface TicketStats {
@@ -488,6 +489,11 @@ export default function OrganizationView() {
                 Logout
               </Button>
             </div>
+          </div>
+          
+          {/* AI Search Bar */}
+          <div className="pb-4">
+            <AISearchBar className="max-w-2xl mx-auto" />
           </div>
         </div>
       </header>

@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Building2, Users, LogOut, Settings } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
+import AISearchBar from "@/components/ai-search-bar";
 
 interface Organization {
   id: number;
@@ -89,6 +90,11 @@ export default function Dashboard() {
                 <span>Logout</span>
               </Button>
             </div>
+          </div>
+          
+          {/* AI Search Bar */}
+          <div className="mt-6">
+            <AISearchBar className="max-w-2xl" />
           </div>
         </div>
       </div>
