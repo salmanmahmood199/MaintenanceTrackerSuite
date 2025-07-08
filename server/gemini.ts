@@ -101,13 +101,50 @@ async function getUserContext(user: User) {
   const organizations = user.role === "root" ? await storage.getOrganizations() : [];
   const vendors = user.role === "root" ? await storage.getMaintenanceVendors() : [];
 
+  // Get user's assigned locations (for org_subadmin)
+  let assignedLocations = [];
+  if (user.role === "org_subadmin" && user.organizationId) {
+    try {
+      assignedLocations = await storage.getUserLocations(user.id);
+    } catch (error) {
+      console.log("Error fetching user locations:", error);
+    }
+  }
+
+  // Get organization details if user belongs to one
+  let organizationDetails = null;
+  if (user.organizationId) {
+    try {
+      organizationDetails = await storage.getOrganizationById(user.organizationId);
+    } catch (error) {
+      console.log("Error fetching organization details:", error);
+    }
+  }
+
+  // Get available vendor tiers for organization
+  let vendorTiers = [];
+  if (user.organizationId) {
+    try {
+      vendorTiers = await storage.getVendorTiers(user.organizationId);
+    } catch (error) {
+      console.log("Error fetching vendor tiers:", error);
+    }
+  }
+
   return {
     tickets: tickets.slice(0, 20), // Limit context to recent tickets
     organizations,
     vendors,
+    assignedLocations,
+    organizationDetails,
+    vendorTiers,
     userRole: user.role,
     organizationId: user.organizationId,
-    maintenanceVendorId: user.maintenanceVendorId
+    maintenanceVendorId: user.maintenanceVendorId,
+    totalTickets: tickets.length,
+    pendingTickets: tickets.filter(t => t.status === 'pending').length,
+    inProgressTickets: tickets.filter(t => t.status === 'in_progress').length,
+    completedTickets: tickets.filter(t => t.status === 'completed').length
   };
 }
 
@@ -121,15 +158,26 @@ USER CONTEXT:
 - Name: ${user.firstName} ${user.lastName}
 - Email: ${user.email}
 - Organization ID: ${user.organizationId || "None"}
+- Organization Name: ${context.organizationDetails?.name || "None"}
 - Vendor ID: ${user.maintenanceVendorId || "None"}
 
 PERMISSIONS:
 ${rolePermissions.map(p => `- ${p}`).join('\n')}
 
-AVAILABLE DATA:
-- Recent tickets: ${context.tickets.length} tickets
-- Organizations: ${context.organizations.length} organizations
-- Vendors: ${context.vendors.length} vendors
+ASSIGNED LOCATIONS (for org_subadmin):
+${context.assignedLocations?.length ? context.assignedLocations.map(loc => `- ID: ${loc.id}, Name: ${loc.name}, Address: ${loc.address}`).join('\n') : '- No locations assigned'}
+
+AVAILABLE VENDOR TIERS:
+${context.vendorTiers?.length ? context.vendorTiers.map(tier => `- ${tier.vendor.name} (ID: ${tier.vendor.id})`).join('\n') : '- No vendor tiers available'}
+
+TICKET STATISTICS:
+- Total tickets: ${context.totalTickets}
+- Pending tickets: ${context.pendingTickets}
+- In progress tickets: ${context.inProgressTickets}
+- Completed tickets: ${context.completedTickets}
+
+RECENT TICKETS:
+${context.tickets.slice(0, 5).map(t => `- ${t.ticketNumber}: ${t.title} (${t.status})`).join('\n')}
 
 AUTONOMOUS TICKET CREATION RULES:
 When users mention ANY maintenance issue (leaking roof, broken equipment, electrical problems, etc.), you should:
@@ -144,12 +192,18 @@ DO NOT ask multiple questions. BE SMART and AUTONOMOUS. Think like a maintenance
 
 IMPORTANT: Images or videos are REQUIRED for all ticket creation. Always mention this requirement.
 
-EXAMPLE AUTONOMOUS RESPONSES:
-- User: "there's a leaking roof"
-- You: "I'll create an urgent ticket for roof leak repair. Title: 'Roof Leak Repair - Urgent Water Damage', Description: 'Roof leak reported requiring immediate attention to prevent further water damage and potential safety hazards', Priority: High. Should I create this ticket?"
+EXAMPLE AUTONOMOUS RESPONSES FOR ORG_SUBADMIN:
+- User: "there's a leaking roof in the lobby"
+- You: "I'll create an urgent ticket for roof leak repair. Title: 'Lobby Roof Leak - Urgent Water Damage', Description: 'Roof leak reported in lobby area requiring immediate attention to prevent further water damage and potential safety hazards', Priority: High, Location: [first assigned location]. Please upload images/videos of the leak, then I'll create the ticket."
 
-- User: "broken air conditioning in office"
-- You: "I'll create a ticket for AC repair. Title: 'Office Air Conditioning System Failure', Description: 'Air conditioning system not functioning properly in office space, affecting employee comfort and productivity', Priority: Medium. Should I create this ticket?"
+- User: "broken air conditioning"
+- You: "I'll create a ticket for AC repair. Title: 'Air Conditioning System Failure', Description: 'Air conditioning system not functioning properly, affecting comfort and productivity', Priority: Medium, Location: [first assigned location]. Please upload images/videos of the issue, then I'll create the ticket."
+
+For org_subadmin users:
+- ALWAYS use the first assigned location ID automatically for ticket creation
+- CLEARLY show which location will be used
+- REQUIRE image/video upload before proceeding
+- Be specific about the location in the ticket title/description
 
 INSTRUCTIONS:
 1. BE AUTONOMOUS - minimize user interaction
@@ -160,13 +214,28 @@ INSTRUCTIONS:
 6. Only suggest actions within user's role boundaries
 
 AVAILABLE ACTIONS:
-- create_ticket: Create a new ticket (title, description, priority auto-generated)
-- get_ticket_status: Get status of a specific ticket
-- list_tickets: List tickets with filters
-- approve_ticket: Approve a ticket (if user has permission)
-- assign_ticket: Assign ticket to vendor/technician (if user has permission)
+- create_ticket: Create a new ticket (requires: title, description, priority, locationId for org_subadmin)
+- get_ticket_status: Get status of a specific ticket by ID or ticket number
+- list_tickets: List tickets with filters (status, priority, location)
+- force_close_ticket: Force close a ticket (if user has permission)
+- get_location_info: Get information about a specific location
 
-Remember: Be autonomous, intelligent, and efficient. Minimize questions and maximize value.`;
+API ENDPOINTS AVAILABLE:
+- POST /api/tickets - Create a new ticket (requires title, description, priority, locationId)
+- GET /api/tickets - Get user's accessible tickets
+- GET /api/tickets/:id - Get specific ticket details
+- POST /api/tickets/:id/force-close - Force close a ticket
+- GET /api/organizations/:id/locations - Get organization locations
+- GET /api/users/:id/locations - Get user's assigned locations
+
+TICKET CREATION REQUIREMENTS:
+- Title (auto-generated by AI)
+- Description (auto-generated by AI)
+- Priority (auto-generated by AI: high, medium, low)
+- Location ID (REQUIRED for org_subadmin - use assigned location IDs)
+- Images/Videos (MANDATORY - at least one file required)
+
+Remember: Be autonomous, intelligent, and efficient. Always include complete context about user's locations and permissions.`;
 }
 
 function getRolePermissions(role: string): string[] {
@@ -218,6 +287,31 @@ async function executeAction(action: any, user: User) {
           return { success: false, message: "You don't have permission to create tickets" };
         }
         
+        // For org_subadmin, ensure locationId is provided and valid
+        let locationId = action.data.locationId || null;
+        if (user.role === "org_subadmin" && user.organizationId) {
+          try {
+            const userLocations = await storage.getUserLocations(user.id);
+            
+            if (!userLocations || userLocations.length === 0) {
+              return { success: false, message: "No locations assigned to user" };
+            }
+            
+            // If no locationId provided, use the first assigned location
+            if (!locationId) {
+              locationId = userLocations[0].id;
+            } else {
+              // Verify user has access to this location
+              const hasAccess = userLocations.some(loc => loc.id === locationId);
+              if (!hasAccess) {
+                return { success: false, message: "You don't have access to this location" };
+              }
+            }
+          } catch (error) {
+            return { success: false, message: "Error validating location access" };
+          }
+        }
+
         const ticketData = {
           title: action.data.title,
           description: action.data.description,
@@ -225,7 +319,7 @@ async function executeAction(action: any, user: User) {
           status: "pending",
           organizationId: user.organizationId || action.data.organizationId,
           reporterId: user.id,
-          locationId: action.data.locationId || null,
+          locationId: locationId,
           images: []
         };
         
@@ -260,6 +354,30 @@ async function executeAction(action: any, user: User) {
           success: true, 
           message: `Found ${filteredTickets.length} tickets matching your criteria` 
         };
+
+      case "get_location_info":
+        if (user.role === "org_subadmin" && user.organizationId) {
+          const userLocations = await storage.getUserLocations(user.id);
+          const requestedLocation = userLocations.find(loc => loc.id === action.data.locationId);
+          
+          if (!requestedLocation) {
+            return { success: false, message: "Location not found or you don't have access" };
+          }
+          
+          return {
+            success: true,
+            message: `Location Info - ID: ${requestedLocation.id}, Name: ${requestedLocation.name}, Address: ${requestedLocation.address}`
+          };
+        }
+        return { success: false, message: "Location info only available for org_subadmin users" };
+
+      case "force_close_ticket":
+        if (!["root", "org_admin", "org_subadmin"].includes(user.role)) {
+          return { success: false, message: "You don't have permission to force close tickets" };
+        }
+        
+        // This would require additional implementation in storage
+        return { success: false, message: "Force close functionality not yet implemented" };
         
       default:
         return { success: false, message: "Unknown action type" };
