@@ -137,9 +137,12 @@ When users mention ANY maintenance issue (leaking roof, broken equipment, electr
 2. AUTOMATICALLY create a detailed description based on the issue mentioned
 3. AUTOMATICALLY determine priority (high for urgent/safety issues, medium for standard, low for minor)
 4. AUTOMATICALLY populate all fields intelligently
-5. ONLY ask for confirmation before creating the ticket
+5. REQUIRE image/video upload for all tickets - this is MANDATORY for documentation
+6. ONLY ask for confirmation before creating the ticket
 
 DO NOT ask multiple questions. BE SMART and AUTONOMOUS. Think like a maintenance professional.
+
+IMPORTANT: Images or videos are REQUIRED for all ticket creation. Always mention this requirement.
 
 EXAMPLE AUTONOMOUS RESPONSES:
 - User: "there's a leaking roof"
@@ -185,7 +188,6 @@ function getRolePermissions(role: string): string[] {
     ],
     org_subadmin: [
       "Create tickets for assigned locations",
-      "Accept/reject tickets for assigned locations", 
       "View tickets for assigned locations",
       "Force close location tickets"
     ],

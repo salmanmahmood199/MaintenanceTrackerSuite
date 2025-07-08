@@ -288,6 +288,11 @@ Changelog:
 - July 7, 2025. Improved progress tracker to show all workflow steps upfront in grey, with completed steps highlighted in green/blue and current steps pulsing
 - July 7, 2025. Users can now see the complete workflow journey at a glance, with clear visual indicators of progress and what's coming next
 - July 7, 2025. Removed Complete button from ticket table interface for all users to streamline UI
+- July 8, 2025. Enhanced AI search bar with autonomous ticket creation - AI now generates smart defaults for title, description, and priority automatically
+- July 8, 2025. Added mandatory image/video upload requirement for all ticket creation - users must upload at least one file before creating tickets
+- July 8, 2025. Fixed AI role permissions - org_subadmin users can only create and view tickets, not accept them (only org_admin can accept tickets)
+- July 8, 2025. Implemented comprehensive ticket creation workflow with media upload interface and confirmation system
+- July 8, 2025. AI assistant now works autonomously - minimal user interaction required, generates professional ticket details from simple descriptions
 ```
 
 ## User Preferences
