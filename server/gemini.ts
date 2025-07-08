@@ -45,7 +45,19 @@ export async function processUserQuery(req: AIRequest, res: Response) {
               type: "object",
               properties: {
                 type: { type: "string" },
-                data: { type: "object" }
+                data: { 
+                  type: "object",
+                  properties: {
+                    title: { type: "string" },
+                    description: { type: "string" },
+                    priority: { type: "string" },
+                    ticketNumber: { type: "string" },
+                    ticketId: { type: "number" },
+                    organizationId: { type: "number" },
+                    locationId: { type: "number" },
+                    status: { type: "string" }
+                  }
+                }
               }
             }
           },
