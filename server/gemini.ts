@@ -81,6 +81,7 @@ export async function processUserQuery(req: AIRequest, res: Response) {
     
     // Execute the action if one is suggested
     if (aiResponse.action) {
+      console.log("Action received:", JSON.stringify(aiResponse.action, null, 2));
       const actionResult = await executeAction(aiResponse.action, user);
       if (actionResult.success) {
         aiResponse.response += `\n\n${actionResult.message}`;
@@ -215,7 +216,7 @@ When users mention ANY maintenance issue (leaking roof, broken equipment, electr
 
 CURRENT STATUS: ${hasImages ? 'IMAGES UPLOADED - CREATE TICKET IMMEDIATELY' : 'NO IMAGES UPLOADED - REQUEST IMAGES'}
 
-${hasImages ? 'CRITICAL: Images are uploaded. If user mentioned an issue earlier, CREATE THE TICKET NOW. DO NOT ask for more information.' : 'IMPORTANT: Images or videos are REQUIRED for all ticket creation.'}
+${hasImages ? 'CRITICAL: Images are uploaded. If user mentioned an issue earlier, INCLUDE THE create_ticket ACTION in your JSON response. Example: {"response": "Creating ticket now...", "action": {"type": "create_ticket", "data": {"title": "Roof Leak", "description": "...", "priority": "high"}}}' : 'IMPORTANT: Images or videos are REQUIRED for all ticket creation.'}
 
 EXAMPLE RESPONSES FOR ORG_SUBADMIN:
 
@@ -256,6 +257,30 @@ AVAILABLE ACTIONS:
 - list_tickets: List tickets with filters (status, priority, location)
 - force_close_ticket: Force close a ticket (if user has permission)
 - get_location_info: Get information about a specific location
+
+CRITICAL - WHEN TO SEND create_ticket ACTION:
+${hasImages ? `
+MUST SEND create_ticket ACTION WHEN:
+- User mentioned a maintenance issue (roof leak, broken AC, etc.) in current or previous messages
+- Images/videos have been uploaded (hasImages is true)
+- User is asking to create a ticket or mentions they uploaded files
+
+JSON FORMAT EXAMPLE:
+{
+  "response": "Creating urgent ticket for the roof leak at [location name]. Title: [title], Priority: [priority]. Creating ticket now...",
+  "action": {
+    "type": "create_ticket",
+    "data": {
+      "title": "Lobby Roof Leak - Urgent Water Damage",
+      "description": "Roof leak reported in lobby area requiring immediate attention to prevent water damage and safety hazards",
+      "priority": "high"
+    }
+  }
+}` : `
+SEND create_ticket ACTION ONLY AFTER:
+- User mentions a maintenance issue
+- User uploads images/videos (wait for hasImages to be true)
+`}
 
 API ENDPOINTS AVAILABLE:
 - POST /api/tickets - Create a new ticket (requires title, description, priority, locationId)
