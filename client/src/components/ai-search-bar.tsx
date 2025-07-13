@@ -37,9 +37,12 @@ export default function AISearchBar({ className }: AISearchBarProps) {
   const aiMutation = useMutation({
     mutationFn: async (userQuery: string) => {
       const hasImages = chatUploadedFiles.length > 0 || uploadedFiles.length > 0;
+      // Send last 5 messages for context
+      const conversationHistory = messages.slice(-5);
       const response = await apiRequest("POST", "/api/ai/query", { 
         query: userQuery,
-        hasImages: hasImages
+        hasImages: hasImages,
+        conversationHistory: conversationHistory
       });
       return response.json();
     },
