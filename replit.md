@@ -293,6 +293,9 @@ Changelog:
 - July 8, 2025. Fixed AI role permissions - org_subadmin users can only create and view tickets, not accept them (only org_admin can accept tickets)
 - July 8, 2025. Implemented comprehensive ticket creation workflow with media upload interface and confirmation system
 - July 8, 2025. AI assistant now works autonomously - minimal user interaction required, generates professional ticket details from simple descriptions
+- July 13, 2025. Fixed application startup issue - resolved database schema migration conflicts and unique constraint problems
+- July 13, 2025. Enhanced AI assistant to prevent looping - added hasImages parameter to detect when images are uploaded and automatically proceed with ticket creation
+- July 13, 2025. Improved ticket creation workflow - AI now immediately creates tickets when images are uploaded instead of repeatedly asking for uploads
 ```
 
 ## User Preferences

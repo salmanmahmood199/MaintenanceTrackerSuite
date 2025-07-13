@@ -19,7 +19,7 @@ interface AIResponse {
 
 export async function processUserQuery(req: AIRequest, res: Response) {
   try {
-    const { query } = req.body;
+    const { query, hasImages } = req.body;
     const user = req.user;
     
     if (!user) {
@@ -30,7 +30,7 @@ export async function processUserQuery(req: AIRequest, res: Response) {
     const userContext = await getUserContext(user);
     
     // Create system prompt based on user role and permissions
-    const systemPrompt = createSystemPrompt(user, userContext);
+    const systemPrompt = createSystemPrompt(user, userContext, hasImages || false);
     
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
@@ -148,7 +148,7 @@ async function getUserContext(user: User) {
   };
 }
 
-function createSystemPrompt(user: User, context: any): string {
+function createSystemPrompt(user: User, context: any, hasImages: boolean = false): string {
   const rolePermissions = getRolePermissions(user.role);
   
   return `You are an AUTONOMOUS AI assistant for a maintenance ticketing system. You are SMART and should think independently to help users efficiently.
@@ -185,24 +185,32 @@ When users mention ANY maintenance issue (leaking roof, broken equipment, electr
 2. AUTOMATICALLY create a detailed description based on the issue mentioned
 3. AUTOMATICALLY determine priority (high for urgent/safety issues, medium for standard, low for minor)
 4. AUTOMATICALLY populate all fields intelligently
-5. REQUIRE image/video upload for all tickets - this is MANDATORY for documentation
-6. ONLY ask for confirmation before creating the ticket
+5. ${hasImages ? 'IMMEDIATELY CREATE THE TICKET since images/videos have been uploaded' : 'REQUIRE image/video upload for all tickets - this is MANDATORY for documentation'}
+6. ${hasImages ? 'PROCEED WITH TICKET CREATION' : 'ONLY ask for confirmation before creating the ticket'}
 
 DO NOT ask multiple questions. BE SMART and AUTONOMOUS. Think like a maintenance professional.
 
-IMPORTANT: Images or videos are REQUIRED for all ticket creation. Always mention this requirement.
+CURRENT IMAGE STATUS: ${hasImages ? 'IMAGES UPLOADED - READY TO CREATE TICKET' : 'NO IMAGES UPLOADED - REQUIRE IMAGES BEFORE CREATING TICKET'}
+
+${hasImages ? 'IMPORTANT: Since images have been uploaded, IMMEDIATELY CREATE THE TICKET without asking for more uploads.' : 'IMPORTANT: Images or videos are REQUIRED for all ticket creation. Always mention this requirement.'}
 
 EXAMPLE AUTONOMOUS RESPONSES FOR ORG_SUBADMIN:
-- User: "there's a leaking roof in the lobby"
-- You: "I'll create an urgent ticket for roof leak repair. Title: 'Lobby Roof Leak - Urgent Water Damage', Description: 'Roof leak reported in lobby area requiring immediate attention to prevent further water damage and potential safety hazards', Priority: High, Location: [first assigned location]. Please upload images/videos of the leak, then I'll create the ticket."
+${hasImages ? 
+`- User: "there's a leaking roof in the lobby"
+- You: "Creating urgent ticket for roof leak repair. Title: 'Lobby Roof Leak - Urgent Water Damage', Description: 'Roof leak reported in lobby area requiring immediate attention to prevent further water damage and potential safety hazards', Priority: High, Location: [first assigned location]. Creating ticket now..." (Then create the ticket)` :
+`- User: "there's a leaking roof in the lobby"
+- You: "I'll create an urgent ticket for roof leak repair. Title: 'Lobby Roof Leak - Urgent Water Damage', Description: 'Roof leak reported in lobby area requiring immediate attention to prevent further water damage and potential safety hazards', Priority: High, Location: [first assigned location]. Please upload images/videos of the leak, then I'll create the ticket."`}
 
-- User: "broken air conditioning"
-- You: "I'll create a ticket for AC repair. Title: 'Air Conditioning System Failure', Description: 'Air conditioning system not functioning properly, affecting comfort and productivity', Priority: Medium, Location: [first assigned location]. Please upload images/videos of the issue, then I'll create the ticket."
+${hasImages ? 
+`- User: "broken air conditioning"
+- You: "Creating ticket for AC repair. Title: 'Air Conditioning System Failure', Description: 'Air conditioning system not functioning properly, affecting comfort and productivity', Priority: Medium, Location: [first assigned location]. Creating ticket now..." (Then create the ticket)` :
+`- User: "broken air conditioning"
+- You: "I'll create a ticket for AC repair. Title: 'Air Conditioning System Failure', Description: 'Air conditioning system not functioning properly, affecting comfort and productivity', Priority: Medium, Location: [first assigned location]. Please upload images/videos of the issue, then I'll create the ticket."`}
 
 For org_subadmin users:
 - ALWAYS use the first assigned location ID automatically for ticket creation
 - CLEARLY show which location will be used
-- REQUIRE image/video upload before proceeding
+- ${hasImages ? 'IMMEDIATELY CREATE THE TICKET since images are uploaded' : 'REQUIRE image/video upload before proceeding'}
 - Be specific about the location in the ticket title/description
 
 INSTRUCTIONS:

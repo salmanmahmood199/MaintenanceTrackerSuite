@@ -1,0 +1,116 @@
+1. server/gemini.ts
+a. Externalize & parametrize your system prompts
+Current: You’ve got a huge hard-coded string in createSystemPrompt(...) (lines ~151–212).
+
+Why change: It’s brittle, hard to test, and impossible to tweak per-role or per-deployment without a code edit.
+
+Recommendation:
+
+Move each role’s prompt into separate YAML/JSON files (e.g. prompts/technician.json, prompts/org_admin.json).
+
+Load only the one the user needs.
+
+Use simple template placeholders ({{user.name}}, {{location.id}}) to fill in dynamic bits.
+
+b. Switch from free-form JSON parsing to function-calling or structured outputs
+Current: You do JSON.parse(response.text) (line 70) and then swallow parse errors.
+
+Why change: LLMs can drift, returning non-JSON or slightly mis-formatted text.
+
+Recommendation:
+
+If your Gemini model supports it, switch to its function-calling API—define a createTicket(...), updateTicketStatus(...), etc. interface.
+
+Otherwise, wrap your parse in a strict JSON schema validator (e.g. Ajv) so you fail early and log parsing issues.
+
+c. Guard & validate every suggested action
+Current: You trust whatever aiResponse.action.type comes back and pass it to executeAction(...).
+
+Why change: If the prompt or model drifts, it could suggest unsupported or dangerous operations.
+
+Recommendation:
+
+Maintain an explicit white-list of allowed action types per role (e.g. technician may only call updateStatus).
+
+Validate incoming action.data against a Zod/Joi schema before executing.
+
+2. server/routes.ts
+a. Add rate-limiting & circuit-breaking on /api/ai/query
+Why: A misbehaving UI or malicious client could spam your AI quota.
+
+How: Use a middleware like express-rate-limit and circuit-breaker patterns (e.g. opossum) to back off on repeated failures.
+
+b. Centralize permission checks
+Current: You derive userContext via getUserContext(...), but still rely on user.role in many code paths.
+
+Recommendation:
+
+Introduce a permissions array on your User object (fetched from DB) instead of single role strings.
+
+Create a requirePermission('ticket:create') middleware so both UI and AI-driven actions share the same guard logic.
+
+3. server/storage.ts
+a. Use paginated, field-limited queries for context
+Current: You do getTickets() or getTickets(orgId) and then .slice(0,20).
+
+Why: You’re still fetching every column (attachments, notes, PII) even if you’ll only send id, title, status.
+
+Recommendation:
+
+Add parameters to storage.getTickets(…, { limit, fields }).
+
+Only select the minimal set of columns you actually send to Gemini.
+
+b. Introduce a semantic “summary” field or embedding index
+Why: Even 20 tickets × 250 chars each can blow your prompt size.
+
+Recommendation: Precompute a short “ticket summary” (one-sentence) or build a small vector index (e.g. Pinecone/FAISS) and only retrieve the top 5 most relevant tickets.
+
+4. shared/schema.ts
+a. Strengthen your User & Action type definitions
+Current: User has loose fields (role, organizationId, maintenanceVendorId, maybe a bare permissions object).
+
+Recommendation:
+
+Define a strict TypeScript enum for Role and a literal union for ActionType.
+
+Attach a permissions: Permission[] field to User so you can do user.permissions.includes('ticket:read') instead of role === 'technician'.
+
+5. client/src/hooks/useAuth.ts & UI components
+a. Mirror your server’s permission model in the UI
+Why: You’re already tailoring prompts server-side; your UI should also hide/disable buttons the AI won’t allow to run.
+
+Recommendation:
+
+Return permissions list in your /me endpoint.
+
+In React, guard UI bits with <RequirePermission perm="ticket:create">…</RequirePermission>.
+
+b. Handle streaming & partial updates
+Why: AI calls can take a second or two—streaming gives a smoother UX and makes actions feel instantaneous.
+
+How: Use Gemini’s streaming API (if available) or chunked responses and show a “thinking…” state in your chat UI.
+
+6. Observability & Testing
+Logging: Capture { userId, role, permissions, promptHash, actionType } but never log PII or full ticket text.
+
+Telemetry: Track model latency, error rates, and action success/failures to spot drift.
+
+Unit tests & mocks:
+
+Write tests that mock ai.models.generateContent to return edge-case JSON (malformed, unknown action, etc.), and assert your parsing/validation layers catch them.
+
+Test that each role’s prompt file loads correctly and contains the required placeholders.
+
+Next Steps
+Refactor: extract your massive prompt in createSystemPrompt into external, per-role templates.
+
+Schema: lock down your JSON inputs/outputs with a validator (Zod/Joi).
+
+Retrieval: only fetch and send minimal, pre-filtered ticket data—consider adding a relevance layer.
+
+Security: centralize permission checks and rate-limit your /api/ai/query endpoint.
+
+UX: mirror permissions in your React components and consider streaming responses.
+
+This roadmap will make TaskScout (your “TaskScout” Gemini assistant) more maintainable, secure, and reliable—letting it stay focused on the user’s actual tickets without leaking data or drifting off-prompt.

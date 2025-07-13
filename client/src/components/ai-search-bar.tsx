@@ -36,7 +36,11 @@ export default function AISearchBar({ className }: AISearchBarProps) {
 
   const aiMutation = useMutation({
     mutationFn: async (userQuery: string) => {
-      const response = await apiRequest("POST", "/api/ai/query", { query: userQuery });
+      const hasImages = chatUploadedFiles.length > 0 || uploadedFiles.length > 0;
+      const response = await apiRequest("POST", "/api/ai/query", { 
+        query: userQuery,
+        hasImages: hasImages
+      });
       return response.json();
     },
     onSuccess: (data) => {
@@ -54,7 +58,11 @@ export default function AISearchBar({ className }: AISearchBarProps) {
       // If AI suggests creating a ticket, store the action for later
       if (data.action?.type === 'create_ticket') {
         setPendingTicketAction(data.action);
-        setShowMediaUpload(true);
+        // Only show media upload if no images are already available
+        const hasImages = chatUploadedFiles.length > 0 || uploadedFiles.length > 0;
+        if (!hasImages) {
+          setShowMediaUpload(true);
+        }
       }
     },
     onError: (error: any) => {
