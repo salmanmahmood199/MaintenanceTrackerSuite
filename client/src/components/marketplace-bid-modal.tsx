@@ -91,8 +91,8 @@ export function MarketplaceBidModal({
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <p className="text-sm text-slate-600">{ticket.description}</p>
-                <div className="flex items-center gap-4 text-xs text-slate-500">
+                <p className="text-sm text-muted-foreground">{ticket.description}</p>
+                <div className="flex items-center gap-4 text-xs text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
                     <span>Posted {formatDistanceToNow(new Date(ticket.createdAt), { addSuffix: true })}</span>
@@ -117,7 +117,7 @@ export function MarketplaceBidModal({
                 <div>
                   <Label htmlFor="bid-amount">Bid Amount ($)</Label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="bid-amount"
                       type="number"
@@ -144,7 +144,7 @@ export function MarketplaceBidModal({
               <div>
                 <Label htmlFor="duration">Estimated Duration (hours)</Label>
                 <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="duration"
                     type="number"

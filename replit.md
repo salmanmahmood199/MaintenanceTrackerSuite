@@ -303,6 +303,7 @@ Changelog:
 - July 14, 2025. Enhanced visibility in ticket details modal tabs - replaced hardcoded white backgrounds with dark theme compatible colors
 - July 14, 2025. Fixed text contrast in ticket comments, progress tracker, and all modal tab content for better readability
 - July 14, 2025. Updated rejection/force close reason displays to use dark theme appropriate background colors
+- July 14, 2025. Fixed marketplace section text visibility - updated all marketplace components (ticket listings, bid modals, ticket details) to use proper dark theme colors
 ```
 
 ## User Preferences

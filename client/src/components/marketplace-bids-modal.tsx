@@ -271,15 +271,15 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
                   <CardContent className="space-y-4">
                     {/* Bid Details */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="bg-slate-50 p-3 rounded-md">
+                      <div className="bg-muted p-3 rounded-md">
                         <Label className="text-xs text-muted-foreground">Hourly Rate</Label>
                         <div className="text-lg font-semibold">${bid.hourlyRate}</div>
                       </div>
-                      <div className="bg-slate-50 p-3 rounded-md">
+                      <div className="bg-muted p-3 rounded-md">
                         <Label className="text-xs text-muted-foreground">Estimated Hours</Label>
                         <div className="text-lg font-semibold">{bid.estimatedHours}</div>
                       </div>
-                      <div className="bg-slate-50 p-3 rounded-md">
+                      <div className="bg-muted p-3 rounded-md">
                         <Label className="text-xs text-muted-foreground">Total Amount</Label>
                         <div className="text-lg font-semibold text-green-600">${bid.totalAmount}</div>
                       </div>
@@ -302,7 +302,7 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
                         <Label className="text-sm font-medium">Required Parts</Label>
                         <div className="mt-2 space-y-1">
                           {bid.parts.map((part: any, index: number) => (
-                            <div key={index} className="flex justify-between text-sm bg-slate-50 p-2 rounded">
+                            <div key={index} className="flex justify-between text-sm bg-muted p-2 rounded">
                               <span>{part.name} × {part.quantity}</span>
                               <span>${(part.estimatedCost * part.quantity).toFixed(2)}</span>
                             </div>

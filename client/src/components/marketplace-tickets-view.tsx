@@ -31,8 +31,8 @@ export function MarketplaceTicketsView() {
         {[1, 2, 3].map((i) => (
           <Card key={i} className="animate-pulse">
             <CardContent className="p-6">
-              <div className="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
-              <div className="h-3 bg-slate-200 rounded w-1/2"></div>
+              <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+              <div className="h-3 bg-muted rounded w-1/2"></div>
             </CardContent>
           </Card>
         ))}
@@ -43,8 +43,8 @@ export function MarketplaceTicketsView() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-slate-900 mb-2">Marketplace Tickets</h2>
-        <p className="text-sm text-slate-600">
+        <h2 className="text-xl font-semibold text-foreground mb-2">Marketplace Tickets</h2>
+        <p className="text-sm text-muted-foreground">
           Browse and bid on tickets posted to the marketplace by organizations
         </p>
       </div>
@@ -52,9 +52,9 @@ export function MarketplaceTicketsView() {
       {marketplaceTickets.length === 0 ? (
         <Card>
           <CardContent className="text-center py-12">
-            <DollarSign className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-slate-900 mb-2">No Marketplace Tickets</h3>
-            <p className="text-slate-600">
+            <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">No Marketplace Tickets</h3>
+            <p className="text-muted-foreground">
               There are currently no tickets available for bidding in the marketplace.
             </p>
           </CardContent>
@@ -67,7 +67,7 @@ export function MarketplaceTicketsView() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-semibold text-slate-900">{ticket.title}</h3>
+                      <h3 className="text-lg font-semibold text-foreground">{ticket.title}</h3>
                       <Badge variant="secondary" className="text-xs">#{ticket.ticketNumber}</Badge>
                     </div>
                     <div className="flex items-center gap-3 mb-3">
@@ -78,9 +78,9 @@ export function MarketplaceTicketsView() {
                         Marketplace
                       </Badge>
                     </div>
-                    <p className="text-slate-600 mb-4 line-clamp-2">{ticket.description}</p>
+                    <p className="text-muted-foreground mb-4 line-clamp-2">{ticket.description}</p>
                     
-                    <div className="flex items-center gap-6 text-sm text-slate-500">
+                    <div className="flex items-center gap-6 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
                         <span>Posted {formatDistanceToNow(new Date(ticket.createdAt))} ago</span>

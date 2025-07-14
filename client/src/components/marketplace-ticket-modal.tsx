@@ -397,7 +397,7 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
                         )}
                         
                         {responseTime && (
-                          <div className="text-sm text-muted-foreground bg-slate-50 p-2 rounded">
+                          <div className="text-sm text-muted-foreground bg-muted p-2 rounded">
                             <strong>Response:</strong> {responseTime}
                           </div>
                         )}
