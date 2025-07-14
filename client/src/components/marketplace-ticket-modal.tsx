@@ -186,7 +186,7 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Wrench className="h-5 w-5" />
@@ -199,7 +199,7 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-hidden">
             {/* Left Column - Ticket Details */}
-            <ScrollArea className="h-[600px] pr-4">
+            <ScrollArea className="h-[calc(90vh-12rem)] pr-4">
               <div className="space-y-4">
                 {/* Basic Info */}
                 <Card>
@@ -293,7 +293,7 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
             </ScrollArea>
 
             {/* Right Column - Bidding Form */}
-            <ScrollArea className="h-[600px] pr-4">
+            <ScrollArea className="h-[calc(90vh-12rem)] pr-4">
               <div className="space-y-4">
                 <Card>
                   <CardHeader>

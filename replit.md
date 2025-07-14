@@ -304,6 +304,7 @@ Changelog:
 - July 14, 2025. Fixed text contrast in ticket comments, progress tracker, and all modal tab content for better readability
 - July 14, 2025. Updated rejection/force close reason displays to use dark theme appropriate background colors
 - July 14, 2025. Fixed marketplace section text visibility - updated all marketplace components (ticket listings, bid modals, ticket details) to use proper dark theme colors
+- July 14, 2025. Fixed scrolling issue in marketplace bid modal - users can now scroll to see submit button and all form fields properly
 ```
 
 ## User Preferences
