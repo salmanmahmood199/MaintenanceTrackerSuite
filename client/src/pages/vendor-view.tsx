@@ -233,9 +233,9 @@ export function VendorView() {
 
   if (!vendor) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-slate-900 mb-2">Vendor Not Found</h2>
+          <h2 className="text-xl font-semibold text-foreground mb-2">Vendor Not Found</h2>
           <Link href="/">
             <Button variant="outline">
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -248,9 +248,9 @@ export function VendorView() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
+      <header className="bg-card border-b border-border sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
@@ -263,8 +263,8 @@ export function VendorView() {
                 </Link>
               )}
               <div>
-                <h1 className="text-xl font-bold text-slate-900">{vendor.name}</h1>
-                <p className="text-sm text-slate-500">Maintenance Vendor Dashboard</p>
+                <h1 className="text-xl font-bold text-foreground">{vendor.name}</h1>
+                <p className="text-sm text-muted-foreground">Maintenance Vendor Dashboard</p>
               </div>
             </div>
             

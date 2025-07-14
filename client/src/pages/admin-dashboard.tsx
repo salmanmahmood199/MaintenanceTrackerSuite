@@ -342,70 +342,70 @@ export default function AdminDashboard() {
         <div className="flex-1 p-6">
           {/* Overview Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <Card className="bg-blue-600 text-white">
+            <Card className="bg-blue-500 text-white">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-blue-100 font-medium">Organizations</p>
                     <p className="text-2xl font-bold text-white">{organizations.length}</p>
                   </div>
-                  <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
+                  <div className="w-12 h-12 bg-blue-400 rounded-lg flex items-center justify-center">
                     <Building2 className="h-6 w-6 text-white" />
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card className="bg-pink-600 text-white">
+            <Card className="bg-pink-500 text-white">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-pink-100 font-medium">Vendors</p>
                     <p className="text-2xl font-bold text-white">{vendors.length}</p>
                   </div>
-                  <div className="w-12 h-12 bg-pink-500 rounded-lg flex items-center justify-center">
+                  <div className="w-12 h-12 bg-pink-400 rounded-lg flex items-center justify-center">
                     <Wrench className="h-6 w-6 text-white" />
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card className="bg-cyan-600 text-white">
+            <Card className="bg-teal-500 text-white">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-cyan-100 font-medium">Sub-Admins</p>
+                    <p className="text-sm text-teal-100 font-medium">Sub-Admins</p>
                     <p className="text-2xl font-bold text-white">11</p>
                   </div>
-                  <div className="w-12 h-12 bg-cyan-500 rounded-lg flex items-center justify-center">
+                  <div className="w-12 h-12 bg-teal-400 rounded-lg flex items-center justify-center">
                     <Users className="h-6 w-6 text-white" />
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card className="bg-green-600 text-white">
+            <Card className="bg-emerald-500 text-white">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-green-100 font-medium">Locations</p>
+                    <p className="text-sm text-emerald-100 font-medium">Locations</p>
                     <p className="text-2xl font-bold text-white">4</p>
                   </div>
-                  <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
+                  <div className="w-12 h-12 bg-emerald-400 rounded-lg flex items-center justify-center">
                     <Activity className="h-6 w-6 text-white" />
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card className="bg-orange-600 text-white">
+            <Card className="bg-amber-500 text-white">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-orange-100 font-medium">Tickets</p>
+                    <p className="text-sm text-amber-100 font-medium">Tickets</p>
                     <p className="text-2xl font-bold text-white">13</p>
                   </div>
-                  <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center">
+                  <div className="w-12 h-12 bg-amber-400 rounded-lg flex items-center justify-center">
                     <Activity className="h-6 w-6 text-white" />
                   </div>
                 </div>
@@ -540,7 +540,7 @@ export default function AdminDashboard() {
                           <tr key={org.id} className="border-b border-border hover:bg-muted/50">
                             <td className="p-4">
                               <div className="flex items-center space-x-3">
-                                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                                <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
                                   <Building2 className="h-4 w-4 text-white" />
                                 </div>
                                 <div>
@@ -756,7 +756,7 @@ export default function AdminDashboard() {
                           <tr key={vendor.id} className="border-b border-border hover:bg-muted/50">
                             <td className="p-4">
                               <div className="flex items-center space-x-3">
-                                <div className="w-8 h-8 bg-pink-600 rounded-lg flex items-center justify-center">
+                                <div className="w-8 h-8 bg-pink-500 rounded-lg flex items-center justify-center">
                                   <Wrench className="h-4 w-4 text-white" />
                                 </div>
                                 <div>

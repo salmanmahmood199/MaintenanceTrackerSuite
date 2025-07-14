@@ -175,23 +175,23 @@ export default function RootDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 shadow-sm">
+      <header className="bg-card border-b border-border shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
                 <Settings className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-slate-900">TaskScout Admin</h1>
-                <p className="text-sm text-slate-600">System Management Dashboard</p>
+                <h1 className="text-2xl font-bold text-foreground">TaskScout Admin</h1>
+                <p className="text-sm text-muted-foreground">System Management Dashboard</p>
               </div>
             </div>
             
             <div className="flex items-center space-x-4">
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+              <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800">
                 Root Admin
               </Badge>
               <Button variant="ghost" size="sm" asChild>

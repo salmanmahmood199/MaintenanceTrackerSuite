@@ -53,20 +53,20 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white border-b border-slate-200">
+      <div className="bg-card border-b border-border">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="p-2 bg-blue-600 rounded-lg">
+              <div className="p-2 bg-blue-500 rounded-lg">
                 <Settings className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-slate-900">
+                <h1 className="text-2xl font-bold text-foreground">
                   {user.role === "technician" ? "Technician Dashboard" : "Root Administration"}
                 </h1>
-                <p className="text-slate-600">
+                <p className="text-muted-foreground">
                   {user.role === "technician" 
                     ? "View assigned tickets and maintenance tasks" 
                     : "Manage organizations and maintenance vendors"}
@@ -75,10 +75,10 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center space-x-4">
               <div className="text-right">
-                <div className="text-sm font-medium text-slate-900">
+                <div className="text-sm font-medium text-foreground">
                   {user.firstName} {user.lastName}
                 </div>
-                <div className="text-sm text-slate-500">{user.email}</div>
+                <div className="text-sm text-muted-foreground">{user.email}</div>
               </div>
               <Button
                 variant="outline"
@@ -106,12 +106,12 @@ export default function Dashboard() {
             <Card className="p-6">
               <CardContent className="p-0">
                 <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Settings className="h-8 w-8 text-blue-600" />
+                  <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Settings className="h-8 w-8 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <h2 className="text-xl font-semibold text-slate-900 mb-2">Welcome, {user.firstName}!</h2>
-                  <p className="text-slate-600 mb-4">You're logged in as a maintenance technician.</p>
-                  <p className="text-sm text-slate-500">
+                  <h2 className="text-xl font-semibold text-foreground mb-2">Welcome, {user.firstName}!</h2>
+                  <p className="text-muted-foreground mb-4">You're logged in as a maintenance technician.</p>
+                  <p className="text-sm text-muted-foreground">
                     Your role provides access to assigned maintenance tickets and tasks.
                   </p>
                 </div>
@@ -151,7 +151,7 @@ export default function Dashboard() {
 
         {/* Quick Actions */}
         <div className="mb-8">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">Quick Actions</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h2>
           <div className="flex space-x-4">
             <Link href="/admin">
               <Button className="flex items-center space-x-2">
