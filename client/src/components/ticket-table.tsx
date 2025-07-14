@@ -357,16 +357,16 @@ export function TicketTable({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <div className="flex items-center gap-3 mb-2">
-                        <Hash className="h-5 w-5 text-slate-500" />
-                        <span className="text-sm font-medium text-slate-600">Ticket Number</span>
+                        <Hash className="h-5 w-5 text-muted-foreground" />
+                        <span className="text-sm font-medium text-muted-foreground">Ticket Number</span>
                       </div>
                       <p className="text-lg font-mono">{selectedTicket.ticketNumber}</p>
                     </div>
                     
                     <div>
                       <div className="flex items-center gap-3 mb-2">
-                        <Calendar className="h-5 w-5 text-slate-500" />
-                        <span className="text-sm font-medium text-slate-600">Created</span>
+                        <Calendar className="h-5 w-5 text-muted-foreground" />
+                        <span className="text-sm font-medium text-muted-foreground">Created</span>
                       </div>
                       <p className="text-lg">{format(new Date(selectedTicket.createdAt), 'PPp')}</p>
                     </div>

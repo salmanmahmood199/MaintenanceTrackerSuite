@@ -88,10 +88,10 @@ export function MediaUpload({
         onClick={() => document.getElementById('media-upload')?.click()}
       >
         <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-        <p className="text-sm text-gray-600 mb-2">
+        <p className="text-sm text-foreground mb-2">
           Drag and drop images or videos here, or click to select
         </p>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-muted-foreground">
           Max {maxFiles} files • Images: up to 10MB • Videos: up to 50MB
         </p>
         <input

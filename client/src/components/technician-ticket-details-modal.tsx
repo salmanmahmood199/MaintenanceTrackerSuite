@@ -60,11 +60,11 @@ export function TechnicianTicketDetailsModal({
             {/* Ticket Details */}
             <div className="bg-slate-50 p-4 rounded-lg space-y-3">
               <div>
-                <h4 className="font-medium text-slate-900 mb-2">Description</h4>
-                <p className="text-slate-700">{ticket.description}</p>
+                <h4 className="font-medium text-foreground mb-2">Description</h4>
+                <p className="text-foreground">{ticket.description}</p>
               </div>
               
-              <div className="flex items-center gap-4 text-sm text-slate-500">
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <Hash className="h-4 w-4" />
                   <span>{ticket.ticketNumber}</span>
@@ -75,7 +75,7 @@ export function TechnicianTicketDetailsModal({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-slate-600">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-slate-400" />
                   <div>
@@ -109,7 +109,7 @@ export function TechnicianTicketDetailsModal({
             {/* Images */}
             {ticket.images && ticket.images.length > 0 && (
               <div>
-                <h4 className="font-medium text-slate-900 mb-3">Photos ({ticket.images.length})</h4>
+                <h4 className="font-medium text-foreground mb-3">Photos ({ticket.images.length})</h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                   {ticket.images.map((image, index) => (
                     <div key={index} className="relative group">

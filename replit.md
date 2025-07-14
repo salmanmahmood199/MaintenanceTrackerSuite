@@ -297,6 +297,9 @@ Changelog:
 - July 13, 2025. Enhanced AI assistant to prevent looping - added hasImages parameter to detect when images are uploaded and automatically proceed with ticket creation
 - July 13, 2025. Improved ticket creation workflow - AI now immediately creates tickets when images are uploaded instead of repeatedly asking for uploads
 - July 14, 2025. Temporarily disabled Gemini AI search bar for all users - hidden from dashboard, organization view, and vendor view pages
+- July 14, 2025. Fixed text visibility issues in dark theme - updated all modal components to use proper CSS variables (text-foreground, text-muted-foreground) instead of hardcoded slate colors
+- July 14, 2025. Enhanced text readability in create ticket modal, media upload component, ticket details modal, and vendor/technician ticket detail modals
+- July 14, 2025. Fixed JavaScript initialization error in OrganizationView component - resolved "Cannot access 'organizationVendors' before initialization" issue with proper null checks
 ```
 
 ## User Preferences

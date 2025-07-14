@@ -59,13 +59,13 @@ export function CreateTicketModal({ open, onOpenChange, onSubmit, isLoading, use
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0">
-          <DialogTitle className="text-lg font-semibold text-slate-900">Create New Ticket</DialogTitle>
+          <DialogTitle className="text-lg font-semibold text-foreground">Create New Ticket</DialogTitle>
         </DialogHeader>
         
         <div className="flex-1 overflow-y-auto px-1">
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
               <div>
-                <Label htmlFor="title" className="text-sm font-medium text-slate-700">
+                <Label htmlFor="title" className="text-sm font-medium text-foreground">
                   Title
                 </Label>
                 <Input
@@ -80,7 +80,7 @@ export function CreateTicketModal({ open, onOpenChange, onSubmit, isLoading, use
               </div>
               
               <div>
-                <Label htmlFor="description" className="text-sm font-medium text-slate-700">
+                <Label htmlFor="description" className="text-sm font-medium text-foreground">
                   Description
                 </Label>
                 <Textarea
@@ -96,7 +96,7 @@ export function CreateTicketModal({ open, onOpenChange, onSubmit, isLoading, use
               </div>
               
               <div>
-                <Label htmlFor="priority" className="text-sm font-medium text-slate-700">
+                <Label htmlFor="priority" className="text-sm font-medium text-foreground">
                   Priority Level
                 </Label>
                 <Select onValueChange={(value) => form.setValue("priority", value as "low" | "medium" | "high")}>
@@ -117,7 +117,7 @@ export function CreateTicketModal({ open, onOpenChange, onSubmit, isLoading, use
               {/* Location Selection */}
               {userLocations.length > 0 && (
                 <div>
-                  <Label htmlFor="locationId" className="text-sm font-medium text-slate-700">
+                  <Label htmlFor="locationId" className="text-sm font-medium text-foreground">
                     Location
                   </Label>
                   <Select onValueChange={(value) => form.setValue("locationId", parseInt(value))}>
@@ -140,7 +140,7 @@ export function CreateTicketModal({ open, onOpenChange, onSubmit, isLoading, use
               )}
               
               <div>
-                <Label className="text-sm font-medium text-slate-700">Upload Images & Videos</Label>
+                <Label className="text-sm font-medium text-foreground">Upload Images & Videos</Label>
                 <div className="mt-2">
                   <MediaUpload onFilesChange={setImages} />
                 </div>

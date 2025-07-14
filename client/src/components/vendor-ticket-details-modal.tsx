@@ -63,11 +63,11 @@ export function VendorTicketDetailsModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-3">
                 <div>
-                  <h4 className="font-medium text-slate-900 mb-2">Description</h4>
-                  <p className="text-slate-600 bg-slate-50 p-3 rounded-lg">{ticket.description}</p>
+                  <h4 className="font-medium text-foreground mb-2">Description</h4>
+                  <p className="text-foreground bg-muted p-3 rounded-lg">{ticket.description}</p>
                 </div>
                 
-                <div className="flex items-center gap-4 text-sm text-slate-500">
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <Hash className="h-4 w-4" />
                     <span>{ticket.ticketNumber}</span>
@@ -81,24 +81,24 @@ export function VendorTicketDetailsModal({
 
               <div className="space-y-3">
                 <div>
-                  <h4 className="font-medium text-slate-900 mb-2">Timeline</h4>
+                  <h4 className="font-medium text-foreground mb-2">Timeline</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-slate-400" />
-                      <span className="text-slate-600">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">
                         Created: {formatTz(toZonedTime(new Date(ticket.createdAt), 'America/New_York'), "MMM dd, yyyy 'at' h:mm a zzz", { timeZone: 'America/New_York' })}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-slate-400" />
-                      <span className="text-slate-600">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">
                         Updated: {formatDistanceToNow(new Date(ticket.updatedAt), { addSuffix: true })}
                       </span>
                     </div>
                     {ticket.assigneeId && (
                       <div className="flex items-center gap-2">
-                        <Wrench className="h-4 w-4 text-slate-400" />
-                        <span className="text-slate-600">Assigned to: {ticket.assigneeId}</span>
+                        <Wrench className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Assigned to: {ticket.assigneeId}</span>
                       </div>
                     )}
                   </div>
@@ -118,7 +118,7 @@ export function VendorTicketDetailsModal({
             {/* Images */}
             {ticket.images && ticket.images.length > 0 && (
               <div>
-                <h4 className="font-medium text-slate-900 mb-3">Attachments ({ticket.images.length})</h4>
+                <h4 className="font-medium text-foreground mb-3">Attachments ({ticket.images.length})</h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {ticket.images.map((image, index) => (
                     <div key={index} className="relative group">
