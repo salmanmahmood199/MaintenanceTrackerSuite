@@ -389,20 +389,20 @@ export function TicketTable({
                     </div>
 
                     {selectedTicket.rejectionReason && (
-                      <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                        <p className="text-sm text-red-800">
+                      <div className="mt-3 p-3 bg-red-900/20 border border-red-700 rounded-lg">
+                        <p className="text-sm text-red-300">
                           <strong>Rejection Reason:</strong> {selectedTicket.rejectionReason}
                         </p>
                       </div>
                     )}
 
                     {selectedTicket.status === "force_closed" && selectedTicket.forceCloseReason && (
-                      <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                        <p className="text-sm text-gray-800">
+                      <div className="mt-3 p-3 bg-muted border border-border rounded-lg">
+                        <p className="text-sm text-foreground">
                           <strong>Force Close Reason:</strong> {selectedTicket.forceCloseReason}
                         </p>
                         {selectedTicket.forceClosedAt && (
-                          <p className="text-xs text-gray-600 mt-1">
+                          <p className="text-xs text-muted-foreground mt-1">
                             Closed on: {format(new Date(selectedTicket.forceClosedAt), 'PPp')}
                           </p>
                         )}
@@ -412,8 +412,8 @@ export function TicketTable({
 
                   <div>
                     <h4 className="text-lg font-semibold mb-2">Description</h4>
-                    <div className="bg-slate-50 p-4 rounded-lg">
-                      <p className="text-slate-700 whitespace-pre-wrap">{selectedTicket.description}</p>
+                    <div className="bg-muted p-4 rounded-lg">
+                      <p className="text-foreground whitespace-pre-wrap">{selectedTicket.description}</p>
                     </div>
                   </div>
 
@@ -475,7 +475,7 @@ export function TicketTable({
                 </TabsContent>
 
                 <TabsContent value="work-orders" className="mt-6">
-                  <div className="text-center py-8 text-slate-500">
+                  <div className="text-center py-8 text-muted-foreground">
                     <p>Work Orders functionality will be available soon.</p>
                   </div>
                 </TabsContent>
@@ -541,7 +541,7 @@ export function TicketTable({
                       key={index}
                       onClick={() => setSelectedImageIndex(index)}
                       className={`w-3 h-3 rounded-full ${
-                        index === selectedImageIndex ? 'bg-blue-600' : 'bg-slate-300'
+                        index === selectedImageIndex ? 'bg-blue-600' : 'bg-muted'
                       }`}
                     />
                   ))}

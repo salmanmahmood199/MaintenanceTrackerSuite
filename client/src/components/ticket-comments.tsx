@@ -215,8 +215,8 @@ export function TicketComments({ ticket, userRole, userId }: TicketCommentsProps
           <h3 className="text-lg font-semibold">Comments</h3>
         </div>
         <div className="animate-pulse space-y-4">
-          <div className="h-4 bg-slate-200 rounded w-3/4"></div>
-          <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+          <div className="h-4 bg-muted rounded w-3/4"></div>
+          <div className="h-4 bg-muted rounded w-1/2"></div>
         </div>
       </Card>
     );
@@ -241,10 +241,10 @@ export function TicketComments({ ticket, userRole, userId }: TicketCommentsProps
             </Avatar>
             
             <div className="flex-1 min-w-0">
-              <div className="bg-slate-50 rounded-lg p-3">
+              <div className="bg-muted rounded-lg p-3">
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center space-x-2">
-                    <span className="text-sm font-medium text-slate-900">
+                    <span className="text-sm font-medium text-foreground">
                       {getDisplayName(comment.user.firstName, comment.user.lastName, comment.user.email)}
                     </span>
                     {comment.isSystemGenerated && (
@@ -252,7 +252,7 @@ export function TicketComments({ ticket, userRole, userId }: TicketCommentsProps
                     )}
                   </div>
                   <div className="flex items-center space-x-1">
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
                     </span>
                     {(comment.userId === userId || userRole === "root") && !comment.isSystemGenerated && (
@@ -307,7 +307,7 @@ export function TicketComments({ ticket, userRole, userId }: TicketCommentsProps
                   </div>
                 ) : (
                   <>
-                    <p className="text-sm text-slate-700 whitespace-pre-wrap">{comment.content}</p>
+                    <p className="text-sm text-foreground whitespace-pre-wrap">{comment.content}</p>
                     
                     {comment.images && comment.images.length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-2">
@@ -330,7 +330,7 @@ export function TicketComments({ ticket, userRole, userId }: TicketCommentsProps
         ))}
         
         {comments.length === 0 && (
-          <div className="text-center py-8 text-slate-500">
+          <div className="text-center py-8 text-muted-foreground">
             <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-50" />
             <p>No comments yet. Be the first to add one!</p>
           </div>
@@ -396,7 +396,7 @@ export function TicketComments({ ticket, userRole, userId }: TicketCommentsProps
                   </span>
                 </Button>
               </label>
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-muted-foreground">
                 {selectedImages.length}/5 files
               </span>
             </div>
@@ -436,7 +436,7 @@ export function TicketComments({ ticket, userRole, userId }: TicketCommentsProps
                 >
                   Previous
                 </Button>
-                <span className="text-sm text-slate-600">
+                <span className="text-sm text-muted-foreground">
                   {imagePreviewIndex + 1} of {imagePreviewImages.length}
                 </span>
                 <Button

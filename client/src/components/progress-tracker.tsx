@@ -34,9 +34,9 @@ const ticketJourneyStages = [
   { key: "work_started", label: "Work Started", description: "Technician began working on the issue", icon: Wrench, color: "bg-orange-100 text-orange-800" },
   { key: "in_progress", label: "Work in Progress", description: "Active repair/maintenance work ongoing", icon: AlertTriangle, color: "bg-amber-100 text-amber-800" },
   { key: "work_completed", label: "Work Completed", description: "Technician completed the work", icon: CheckSquare, color: "bg-emerald-100 text-emerald-800" },
-  { key: "pending_confirmation", label: "Pending Confirmation", description: "Awaiting requester approval", icon: Clock, color: "bg-slate-100 text-slate-800" },
+  { key: "pending_confirmation", label: "Pending Confirmation", description: "Awaiting requester approval", icon: Clock, color: "bg-muted text-foreground" },
   { key: "confirmed", label: "Confirmed", description: "Work confirmed and approved by requester", icon: CheckCircle, color: "bg-green-100 text-green-800" },
-  { key: "billed", label: "Billed", description: "Invoice generated and sent", icon: ClipboardList, color: "bg-gray-100 text-gray-800" },
+  { key: "billed", label: "Billed", description: "Invoice generated and sent", icon: ClipboardList, color: "bg-muted text-foreground" },
 ];
 
 const rejectionStages = [
@@ -663,14 +663,14 @@ export function ProgressTracker({
                   <CheckCircle className="h-5 w-5 text-blue-600" />
                   Ticket Journey Progress
                 </CardTitle>
-                <p className="text-sm text-slate-600">Track your maintenance ticket from start to finish</p>
+                <p className="text-sm text-muted-foreground">Track your maintenance ticket from start to finish</p>
               </CardHeader>
               <CardContent>
                 <div className="space-y-8">
                   {/* Main Progress Line with Circles */}
                   <div className="relative px-4">
                     {/* Progress Bar Background */}
-                    <div className="absolute top-6 left-12 right-12 h-1 bg-slate-200 rounded-full"></div>
+                    <div className="absolute top-6 left-12 right-12 h-1 bg-muted rounded-full"></div>
                     <div 
                       className="absolute top-6 left-12 h-1 bg-blue-500 rounded-full transition-all duration-700 ease-out"
                       style={{ 
@@ -692,8 +692,8 @@ export function ProgressTracker({
                               ${isCompleted 
                                 ? 'bg-blue-500 border-blue-500 text-white shadow-lg scale-110' 
                                 : isCurrent 
-                                  ? 'bg-white border-blue-500 text-blue-500 border-4 shadow-xl animate-pulse scale-105'
-                                  : 'bg-white border-slate-300 text-slate-400'
+                                  ? 'bg-background border-blue-500 text-blue-500 border-4 shadow-xl animate-pulse scale-105'
+                                  : 'bg-background border-border text-muted-foreground'
                               }
                             `}>
                               {isCompleted ? (
@@ -706,7 +706,7 @@ export function ProgressTracker({
                             {/* Stage Label */}
                             <div className="text-center max-w-20">
                               <div className={`text-xs font-semibold ${
-                                isCompleted || isCurrent ? 'text-slate-900' : 'text-slate-500'
+                                isCompleted || isCurrent ? 'text-foreground' : 'text-muted-foreground'
                               }`}>
                                 {stage.label.split(' ').slice(0, 2).join(' ')}
                               </div>
@@ -765,29 +765,29 @@ export function ProgressTracker({
                       )}
                       {currentStage.label}
                     </Badge>
-                    <p className="text-xs text-slate-600 mt-2">{currentStage.description}</p>
+                    <p className="text-xs text-muted-foreground mt-2">{currentStage.description}</p>
                   </div>
                 </div>
                 
                 {/* Ticket Basic Info */}
                 <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="font-medium text-slate-700">Priority:</span>
+                    <span className="font-medium text-foreground">Priority:</span>
                     <Badge className="ml-2" variant={ticket.priority === 'high' ? 'destructive' : ticket.priority === 'medium' ? 'default' : 'secondary'}>
                       {ticket.priority}
                     </Badge>
                   </div>
                   <div>
-                    <span className="font-medium text-slate-700">Status:</span>
+                    <span className="font-medium text-foreground">Status:</span>
                     <Badge className="ml-2" variant="outline">{ticket.status}</Badge>
                   </div>
                   <div>
-                    <span className="font-medium text-slate-700">Created:</span>
-                    <span className="ml-2 text-slate-600">{format(new Date(ticket.createdAt), 'MMM dd, yyyy h:mm a')}</span>
+                    <span className="font-medium text-foreground">Created:</span>
+                    <span className="ml-2 text-muted-foreground">{format(new Date(ticket.createdAt), 'MMM dd, yyyy h:mm a')}</span>
                   </div>
                   <div>
-                    <span className="font-medium text-slate-700">Updated:</span>
-                    <span className="ml-2 text-slate-600">{format(new Date(ticket.updatedAt), 'MMM dd, yyyy h:mm a')}</span>
+                    <span className="font-medium text-foreground">Updated:</span>
+                    <span className="ml-2 text-muted-foreground">{format(new Date(ticket.updatedAt), 'MMM dd, yyyy h:mm a')}</span>
                   </div>
                 </div>
               </CardContent>

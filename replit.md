@@ -300,6 +300,9 @@ Changelog:
 - July 14, 2025. Fixed text visibility issues in dark theme - updated all modal components to use proper CSS variables (text-foreground, text-muted-foreground) instead of hardcoded slate colors
 - July 14, 2025. Enhanced text readability in create ticket modal, media upload component, ticket details modal, and vendor/technician ticket detail modals
 - July 14, 2025. Fixed JavaScript initialization error in OrganizationView component - resolved "Cannot access 'organizationVendors' before initialization" issue with proper null checks
+- July 14, 2025. Enhanced visibility in ticket details modal tabs - replaced hardcoded white backgrounds with dark theme compatible colors
+- July 14, 2025. Fixed text contrast in ticket comments, progress tracker, and all modal tab content for better readability
+- July 14, 2025. Updated rejection/force close reason displays to use dark theme appropriate background colors
 ```
 
 ## User Preferences
