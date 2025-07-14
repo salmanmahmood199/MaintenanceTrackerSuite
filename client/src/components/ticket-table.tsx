@@ -124,19 +124,20 @@ export function TicketTable({
   return (
     <>
       <div className="bg-card rounded-lg shadow overflow-hidden border border-border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Ticket #</TableHead>
-              <TableHead>Title</TableHead>
-              <TableHead>Priority</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Timeline</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead>Images</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="min-w-[120px]">Ticket #</TableHead>
+                <TableHead className="min-w-[200px]">Title</TableHead>
+                <TableHead className="min-w-[80px]">Priority</TableHead>
+                <TableHead className="min-w-[100px]">Status</TableHead>
+                <TableHead className="min-w-[120px]">Timeline</TableHead>
+                <TableHead className="min-w-[100px]">Created</TableHead>
+                <TableHead className="min-w-[80px]">Images</TableHead>
+                <TableHead className="min-w-[300px]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
           <TableBody>
             {tickets.length === 0 ? (
               <TableRow>
@@ -192,10 +193,10 @@ export function TicketTable({
                         variant="outline"
                         size="sm"
                         onClick={() => openProgressTracker(ticket)}
-                        className="text-xs"
+                        className="text-xs h-8 px-2"
                       >
                         <Clock className="h-3 w-3 mr-1" />
-                        View Timeline
+                        Timeline
                       </Button>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
@@ -207,9 +208,9 @@ export function TicketTable({
                           variant="outline"
                           size="sm"
                           onClick={() => openImageViewer(ticket, 0)}
-                          className="text-blue-500"
+                          className="text-blue-500 h-8 px-2 text-xs"
                         >
-                          <ImageIcon className="h-4 w-4 mr-1" />
+                          <ImageIcon className="h-3 w-3 mr-1" />
                           {ticket.images.length} file{ticket.images.length > 1 ? 's' : ''}
                         </Button>
                       ) : (
@@ -217,13 +218,14 @@ export function TicketTable({
                       )}
                     </TableCell>
                     <TableCell>
-                      <div className="flex space-x-2">
+                      <div className="flex flex-wrap gap-1">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => openTicketDetails(ticket)}
+                          className="h-8 px-2 text-xs"
                         >
-                          <Eye className="h-4 w-4 mr-1" />
+                          <Eye className="h-3 w-3 mr-1" />
                           View
                         </Button>
                         {/* Organization level: Accept/Reject for pending tickets */}
@@ -231,19 +233,18 @@ export function TicketTable({
                           <>
                             <Button
                               onClick={() => onAccept?.(ticket.id)}
-                              className="bg-green-600 text-white hover:bg-green-700"
+                              className="bg-green-500 text-white hover:bg-green-600 h-8 px-2 text-xs"
                               size="sm"
                             >
-                              <CheckCircle className="h-4 w-4 mr-1" />
+                              <CheckCircle className="h-3 w-3 mr-1" />
                               Accept
                             </Button>
                             <Button
                               onClick={() => onReject?.(ticket.id)}
-                              variant="outline"
-                              className="border-red-300 text-red-600 hover:bg-red-50"
+                              className="bg-red-500 text-white hover:bg-red-600 h-8 px-2 text-xs"
                               size="sm"
                             >
-                              <XCircle className="h-4 w-4 mr-1" />
+                              <XCircle className="h-3 w-3 mr-1" />
                               Reject
                             </Button>
                           </>
@@ -254,19 +255,18 @@ export function TicketTable({
                           <>
                             <Button
                               onClick={() => onAccept?.(ticket.id)}
-                              className="bg-green-600 text-white hover:bg-green-700"
+                              className="bg-green-500 text-white hover:bg-green-600 h-8 px-2 text-xs"
                               size="sm"
                             >
-                              <CheckCircle className="h-4 w-4 mr-1" />
+                              <CheckCircle className="h-3 w-3 mr-1" />
                               Accept
                             </Button>
                             <Button
                               onClick={() => onReject?.(ticket.id)}
-                              variant="outline"
-                              className="border-red-300 text-red-600 hover:bg-red-50"
+                              className="bg-red-500 text-white hover:bg-red-600 h-8 px-2 text-xs"
                               size="sm"
                             >
-                              <XCircle className="h-4 w-4 mr-1" />
+                              <XCircle className="h-3 w-3 mr-1" />
                               Reject
                             </Button>
                           </>
@@ -276,31 +276,31 @@ export function TicketTable({
                         {showActions && userRole === "maintenance_admin" && ticket.status === "accepted" && ticket.assigneeId && onAccept && (
                           <Button
                             onClick={() => onAccept?.(ticket.id)}
-                            className="bg-blue-600 text-white hover:bg-blue-700"
+                            className="bg-blue-500 text-white hover:bg-blue-600 h-8 px-2 text-xs"
                             size="sm"
                           >
-                            <User className="h-4 w-4 mr-1" />
-                            Reassign Technician
+                            <User className="h-3 w-3 mr-1" />
+                            Reassign
                           </Button>
                         )}
                         {ticket.status === "pending_confirmation" && onConfirm && (
                           <Button
                             onClick={() => onConfirm(ticket.id)}
-                            className="bg-blue-600 text-white hover:bg-blue-700"
+                            className="bg-blue-500 text-white hover:bg-blue-600 h-8 px-2 text-xs"
                             size="sm"
                           >
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Confirm Completion
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Confirm
                           </Button>
                         )}
                         {ticket.status === "ready_for_billing" && onCreateInvoice && userRole === "maintenance_admin" && (
                           <Button
                             onClick={() => onCreateInvoice(ticket.id)}
-                            className="bg-purple-600 text-white hover:bg-purple-700"
+                            className="bg-purple-500 text-white hover:bg-purple-600 h-8 px-2 text-xs"
                             size="sm"
                           >
-                            <Calculator className="h-4 w-4 mr-1" />
-                            Create Invoice
+                            <Calculator className="h-3 w-3 mr-1" />
+                            Invoice
                           </Button>
                         )}
 
@@ -308,11 +308,10 @@ export function TicketTable({
                         {showActions && canAcceptTickets && ticket.status !== "billed" && ticket.status !== "rejected" && ticket.status !== "force_closed" && (
                           <Button
                             onClick={() => handleForceClose(ticket.id)}
-                            variant="outline"
-                            className="border-red-300 text-red-600 hover:bg-red-50"
+                            className="bg-red-500 text-white hover:bg-red-600 h-8 px-2 text-xs"
                             size="sm"
                           >
-                            <AlertTriangle className="h-4 w-4 mr-1" />
+                            <AlertTriangle className="h-3 w-3 mr-1" />
                             Force Close
                           </Button>
                         )}
@@ -325,6 +324,7 @@ export function TicketTable({
             )}
           </TableBody>
         </Table>
+        </div>
       </div>
 
       {/* Ticket Details Modal */}
