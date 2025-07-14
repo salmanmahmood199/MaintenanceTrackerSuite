@@ -15,6 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
 import AISearchBar from "@/components/ai-search-bar";
+import { TicketFilters, type FilterState } from "@/components/ticket-filters";
+import { filterTickets } from "@/utils/ticket-filters";
 import type { Ticket, MaintenanceVendor, WorkOrder, User } from "@shared/schema";
 
 export function VendorView() {
@@ -22,6 +24,16 @@ export function VendorView() {
   const routeVendorId = routeParams?.id ? parseInt(routeParams.id) : undefined;
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [activeTab, setActiveTab] = useState<"tickets" | "marketplace" | "invoices" | "parts">("tickets");
+  const [filters, setFilters] = useState<FilterState>({
+    search: "",
+    status: "all",
+    priority: "all",
+    dateFrom: null,
+    dateTo: null,
+    organizationId: "all",
+    vendorId: "all",
+    assigneeId: "all"
+  });
   const [isCreateInvoiceModalOpen, setIsCreateInvoiceModalOpen] = useState(false);
   const [selectedTicketForInvoice, setSelectedTicketForInvoice] = useState<Ticket | null>(null);
   const [isTicketActionModalOpen, setIsTicketActionModalOpen] = useState(false);
@@ -53,20 +65,29 @@ export function VendorView() {
     enabled: !!vendorId,
   });
 
-  // Fetch tickets for this vendor
-  const { data: tickets = [], isLoading: ticketsLoading } = useQuery<Ticket[]>({
-    queryKey: statusFilter === "all" 
-      ? ["/api/tickets", { maintenanceVendorId: vendorId }]
-      : ["/api/tickets", { maintenanceVendorId: vendorId, status: statusFilter }],
+  // Fetch all tickets for this vendor (we'll filter client-side)
+  const { data: allTickets = [], isLoading: ticketsLoading } = useQuery<Ticket[]>({
+    queryKey: ["/api/tickets", { maintenanceVendorId: vendorId }],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (vendorId) params.append("maintenanceVendorId", vendorId.toString());
-      if (statusFilter !== "all") params.append("status", statusFilter);
       
       const response = await apiRequest("GET", `/api/tickets?${params.toString()}`);
       return await response.json() as Ticket[];
     },
     enabled: !!vendorId,
+  });
+
+  // Apply client-side filtering
+  const tickets = filterTickets(allTickets, filters);
+
+  // Fetch organizations for filtering
+  const { data: organizations = [] } = useQuery<Array<{id: number; name: string}>>({
+    queryKey: ["/api/organizations"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/organizations");
+      return await response.json();
+    },
   });
 
   // Fetch technicians for this vendor
@@ -348,41 +369,13 @@ export function VendorView() {
 
         {activeTab === "tickets" && (
           <div>
-            {/* Filter Buttons */}
-            <Card className="p-6 mb-8">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-                <h2 className="text-lg font-semibold text-foreground">Assigned Tickets ({tickets.length})</h2>
-                
-                <div className="flex items-center gap-3">
-                  <div className="flex bg-muted rounded-lg p-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setStatusFilter("all")}
-                      className={statusFilter === "all" ? "bg-background shadow-sm" : ""}
-                    >
-                      All
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setStatusFilter("pending")}
-                      className={statusFilter === "pending" ? "bg-background shadow-sm" : ""}
-                    >
-                      Pending
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setStatusFilter("ready_for_billing")}
-                      className={statusFilter === "ready_for_billing" ? "bg-background shadow-sm" : ""}
-                    >
-                      Ready for Billing
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </Card>
+            {/* Comprehensive Filters */}
+            <TicketFilters
+              onFiltersChange={setFilters}
+              showOrganizationFilter={true}
+              organizations={organizations}
+              userRole={user?.role}
+            />
 
             {/* Tickets Table */}
             <div className="bg-card rounded-lg shadow border border-border">

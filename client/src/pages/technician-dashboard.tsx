@@ -11,6 +11,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
+import { TicketFilters, type FilterState } from "@/components/ticket-filters";
+import { filterTickets } from "@/utils/ticket-filters";
 import type { Ticket } from "@shared/schema";
 
 interface TicketStats {
@@ -25,26 +27,34 @@ export default function TechnicianDashboard() {
   const [isWorkOrderModalOpen, setIsWorkOrderModalOpen] = useState(false);
   const [isTicketDetailsModalOpen, setIsTicketDetailsModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [filters, setFilters] = useState<FilterState>({
+    search: "",
+    status: "all",
+    priority: "all",
+    dateFrom: null,
+    dateTo: null,
+    organizationId: "all",
+    vendorId: "all",
+    assigneeId: "all"
+  });
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Fetch tickets assigned to this technician
-  const { data: tickets = [], isLoading: ticketsLoading } = useQuery<Ticket[]>({
-    queryKey: statusFilter === "all" 
-      ? ["/api/tickets", { assigneeId: user?.id }] 
-      : ["/api/tickets", { status: statusFilter, assigneeId: user?.id }],
+  // Fetch all tickets assigned to this technician (we'll filter client-side)
+  const { data: allTickets = [], isLoading: ticketsLoading } = useQuery<Ticket[]>({
+    queryKey: ["/api/tickets", { assigneeId: user?.id }],
     queryFn: async () => {
-      const url = statusFilter === "all" 
-        ? `/api/tickets?assigneeId=${user?.id}`
-        : `/api/tickets?status=${statusFilter}&assigneeId=${user?.id}`;
-      const response = await apiRequest("GET", url);
+      const response = await apiRequest("GET", `/api/tickets?assigneeId=${user?.id}`);
       return await response.json() as Ticket[];
     },
     enabled: !!user?.id,
     staleTime: 0,
     refetchOnMount: true,
   });
+
+  // Apply client-side filtering
+  const tickets = filterTickets(allTickets, filters);
 
   // Start work mutation
   const startWorkMutation = useMutation({
@@ -240,49 +250,13 @@ export default function TechnicianDashboard() {
           </Card>
         </div>
 
-        {/* Filters */}
-        <Card className="p-6 mb-8">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-            <h2 className="text-lg font-semibold text-slate-900">My Tickets ({tickets.length})</h2>
-            
-            <div className="flex items-center gap-3">
-              <div className="flex bg-slate-100 rounded-lg p-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setStatusFilter("all")}
-                  className={statusFilter === "all" ? "bg-white shadow-sm" : ""}
-                >
-                  All
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setStatusFilter("accepted")}
-                  className={statusFilter === "accepted" ? "bg-white shadow-sm" : ""}
-                >
-                  Assigned
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setStatusFilter("in-progress")}
-                  className={statusFilter === "in-progress" ? "bg-white shadow-sm" : ""}
-                >
-                  In Progress
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setStatusFilter("completed")}
-                  className={statusFilter === "completed" ? "bg-white shadow-sm" : ""}
-                >
-                  Completed
-                </Button>
-              </div>
-            </div>
-          </div>
-        </Card>
+        {/* Comprehensive Filters */}
+        <TicketFilters
+          onFiltersChange={setFilters}
+          showOrganizationFilter={true}
+          organizations={[]}
+          userRole={user?.role}
+        />
 
         {/* Tickets List */}
         <div className="space-y-4">

@@ -20,6 +20,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
 import AISearchBar from "@/components/ai-search-bar";
+import { TicketFilters, type FilterState } from "@/components/ticket-filters";
+import { filterTickets } from "@/utils/ticket-filters";
 import type { Ticket, InsertTicket, InsertSubAdmin, Organization, User, MaintenanceVendor } from "@shared/schema";
 
 interface TicketStats {
@@ -45,6 +47,16 @@ export default function OrganizationView() {
   const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [activeTab, setActiveTab] = useState<"tickets" | "subadmins" | "locations" | "vendors">("tickets");
+  const [filters, setFilters] = useState<FilterState>({
+    search: "",
+    status: "all",
+    priority: "all",
+    dateFrom: null,
+    dateTo: null,
+    organizationId: "all",
+    vendorId: "all",
+    assigneeId: "all"
+  });
   const [marketplaceBidsTicket, setMarketplaceBidsTicket] = useState<Ticket | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -75,19 +87,30 @@ export default function OrganizationView() {
     enabled: !!organizationId,
   });
 
-  // Fetch tickets for this organization
-  const { data: tickets = [], isLoading: ticketsLoading } = useQuery<Ticket[]>({
-    queryKey: statusFilter === "all" 
-      ? ["/api/tickets", { organizationId }] 
-      : ["/api/tickets", { status: statusFilter, organizationId }],
+  // Fetch all tickets for this organization (we'll filter client-side)
+  const { data: allTickets = [], isLoading: ticketsLoading } = useQuery<Ticket[]>({
+    queryKey: ["/api/tickets", { organizationId }],
     queryFn: async () => {
-      const url = statusFilter === "all" 
-        ? `/api/tickets?organizationId=${organizationId}`
-        : `/api/tickets?status=${statusFilter}&organizationId=${organizationId}`;
-      const response = await apiRequest("GET", url);
+      const response = await apiRequest("GET", `/api/tickets?organizationId=${organizationId}`);
       return await response.json() as Ticket[];
     },
   });
+
+  // Fetch organization vendors
+  const { data: organizationVendors = [] } = useQuery<Array<{vendor: any, tier: string, isActive: boolean}>>({
+    queryKey: ["/api/organizations", organizationId, "vendor-tiers"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/organizations/${organizationId}/vendor-tiers`);
+      return await response.json();
+    },
+    enabled: !!organizationId,
+  });
+
+  // Apply client-side filtering
+  const tickets = filterTickets(allTickets, filters);
+  
+  // Extract vendors for filtering
+  const vendors = organizationVendors.map(ov => ov.vendor);
 
   // Fetch stats for this organization
   const { data: stats } = useQuery<TicketStats>({
@@ -104,16 +127,6 @@ export default function OrganizationView() {
     queryFn: async () => {
       const response = await apiRequest("GET", `/api/organizations/${organizationId}/sub-admins`);
       return await response.json() as User[];
-    },
-    enabled: !!organizationId,
-  });
-
-  // Fetch organization vendors
-  const { data: organizationVendors = [] } = useQuery<Array<{vendor: any, tier: string, isActive: boolean}>>({
-    queryKey: ["/api/organizations", organizationId, "vendor-tiers"],
-    queryFn: async () => {
-      const response = await apiRequest("GET", `/api/organizations/${organizationId}/vendor-tiers`);
-      return await response.json();
     },
     enabled: !!organizationId,
   });
@@ -643,37 +656,13 @@ export default function OrganizationView() {
         {/* Tab Content */}
         {activeTab === "tickets" && (
           <>
-            {/* Filter Buttons */}
-            <div className="flex space-x-2 mb-6">
-              <Button
-                variant={statusFilter === "all" ? "default" : "outline"}
-                onClick={() => setStatusFilter("all")}
-                size="sm"
-              >
-                All Tickets
-              </Button>
-              <Button
-                variant={statusFilter === "open" ? "default" : "outline"}
-                onClick={() => setStatusFilter("open")}
-                size="sm"
-              >
-                Open
-              </Button>
-              <Button
-                variant={statusFilter === "in-progress" ? "default" : "outline"}
-                onClick={() => setStatusFilter("in-progress")}
-                size="sm"
-              >
-                In Progress
-              </Button>
-              <Button
-                variant={statusFilter === "completed" ? "default" : "outline"}
-                onClick={() => setStatusFilter("completed")}
-                size="sm"
-              >
-                Completed
-              </Button>
-            </div>
+            {/* Comprehensive Filters */}
+            <TicketFilters
+              onFiltersChange={setFilters}
+              showVendorFilter={true}
+              vendors={vendors}
+              userRole={user?.role}
+            />
           </>
         )}
 

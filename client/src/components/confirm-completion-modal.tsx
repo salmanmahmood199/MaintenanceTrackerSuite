@@ -56,8 +56,8 @@ export function ConfirmCompletionModal({
 
         <div className="space-y-4">
           {/* Ticket Details */}
-          <div className="bg-slate-50 p-4 rounded-lg">
-            <h4 className="font-medium text-slate-900 mb-2">Ticket Details</h4>
+          <div className="bg-muted p-4 rounded-lg">
+            <h4 className="font-medium text-foreground mb-2">Ticket Details</h4>
             <div className="space-y-1 text-sm">
               <div><span className="font-medium">Title:</span> {ticket.title}</div>
               <div><span className="font-medium">Description:</span> {ticket.description}</div>
