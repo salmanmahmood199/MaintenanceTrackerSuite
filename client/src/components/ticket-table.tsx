@@ -124,18 +124,18 @@ export function TicketTable({
   return (
     <>
       <div className="bg-card rounded-lg shadow overflow-hidden border border-border">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="min-w-[120px]">Ticket #</TableHead>
-                <TableHead className="min-w-[200px]">Title</TableHead>
-                <TableHead className="min-w-[80px]">Priority</TableHead>
-                <TableHead className="min-w-[100px]">Status</TableHead>
-                <TableHead className="min-w-[120px]">Timeline</TableHead>
-                <TableHead className="min-w-[100px]">Created</TableHead>
-                <TableHead className="min-w-[80px]">Images</TableHead>
-                <TableHead className="min-w-[300px]">Actions</TableHead>
+                <TableHead className="whitespace-nowrap">Ticket #</TableHead>
+                <TableHead className="whitespace-nowrap">Title</TableHead>
+                <TableHead className="whitespace-nowrap">Priority</TableHead>
+                <TableHead className="whitespace-nowrap">Status</TableHead>
+                <TableHead className="whitespace-nowrap">Timeline</TableHead>
+                <TableHead className="whitespace-nowrap">Created</TableHead>
+                <TableHead className="whitespace-nowrap">Images</TableHead>
+                <TableHead className="whitespace-nowrap">Actions</TableHead>
               </TableRow>
             </TableHeader>
           <TableBody>
@@ -218,7 +218,7 @@ export function TicketTable({
                       )}
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-wrap gap-1">
+                      <div className="flex gap-1 whitespace-nowrap">
                         <Button
                           variant="outline"
                           size="sm"

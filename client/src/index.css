@@ -45,3 +45,41 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 }
+
+/* Custom scrollbar styles for better visibility */
+.scrollbar-thin::-webkit-scrollbar {
+  height: 12px;
+  width: 12px;
+}
+
+.scrollbar-thumb-gray-400::-webkit-scrollbar-thumb {
+  background-color: rgb(156 163 175);
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.scrollbar-thumb-gray-400::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(107 114 128);
+}
+
+.scrollbar-track-gray-200::-webkit-scrollbar-track {
+  background-color: rgb(229 231 235);
+  border-radius: 6px;
+}
+
+.dark .scrollbar-thumb-gray-600::-webkit-scrollbar-thumb {
+  background-color: rgb(75 85 99);
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.dark .scrollbar-thumb-gray-600::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(107 114 128);
+}
+
+.dark .scrollbar-track-gray-800::-webkit-scrollbar-track {
+  background-color: rgb(31 41 55);
+  border-radius: 6px;
+}
