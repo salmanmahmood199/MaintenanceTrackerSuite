@@ -25,6 +25,9 @@ interface AISearchBarProps {
 }
 
 export default function AISearchBar({ className }: AISearchBarProps) {
+  // Hidden for now - will be re-enabled later
+  return null;
+  
   const [query, setQuery] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);

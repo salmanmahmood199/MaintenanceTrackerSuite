@@ -296,6 +296,7 @@ Changelog:
 - July 13, 2025. Fixed application startup issue - resolved database schema migration conflicts and unique constraint problems
 - July 13, 2025. Enhanced AI assistant to prevent looping - added hasImages parameter to detect when images are uploaded and automatically proceed with ticket creation
 - July 13, 2025. Improved ticket creation workflow - AI now immediately creates tickets when images are uploaded instead of repeatedly asking for uploads
+- July 14, 2025. Temporarily disabled Gemini AI search bar for all users - hidden from dashboard, organization view, and vendor view pages
 ```
 
 ## User Preferences
