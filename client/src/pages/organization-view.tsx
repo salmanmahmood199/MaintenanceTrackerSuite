@@ -477,7 +477,7 @@ export default function OrganizationView() {
                   Calendar
                 </Button>
               </Link>
-              <span className="text-sm text-slate-600">
+              <span className="text-sm text-muted-foreground">
                 {user?.firstName} {user?.lastName} ({user?.email})
               </span>
               <Button 
@@ -525,23 +525,23 @@ export default function OrganizationView() {
         </div>
 
         {/* Organization Info */}
-        <div className="bg-white rounded-lg shadow mb-8 p-6">
+        <div className="bg-card rounded-lg shadow mb-8 p-6 border border-border">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <p className="text-sm font-medium text-slate-500">Organization</p>
-              <p className="text-lg font-semibold text-slate-900">{organization.name}</p>
+              <p className="text-sm font-medium text-muted-foreground">Organization</p>
+              <p className="text-lg font-semibold text-foreground">{organization.name}</p>
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500">Address</p>
-              <p className="text-lg font-semibold text-slate-900">{organization.address || 'Not specified'}</p>
+              <p className="text-sm font-medium text-muted-foreground">Address</p>
+              <p className="text-lg font-semibold text-foreground">{organization.address || 'Not specified'}</p>
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500">Phone</p>
-              <p className="text-lg font-semibold text-slate-900">{organization.phone || 'Not specified'}</p>
+              <p className="text-sm font-medium text-muted-foreground">Phone</p>
+              <p className="text-lg font-semibold text-foreground">{organization.phone || 'Not specified'}</p>
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500">Email</p>
-              <p className="text-lg font-semibold text-slate-900">{organization.email || 'Not specified'}</p>
+              <p className="text-sm font-medium text-muted-foreground">Email</p>
+              <p className="text-lg font-semibold text-foreground">{organization.email || 'Not specified'}</p>
             </div>
           </div>
         </div>
@@ -588,14 +588,14 @@ export default function OrganizationView() {
 
         {/* Navigation Tabs */}
         <div className="mb-6">
-          <div className="border-b border-gray-200">
+          <div className="border-b border-border">
             <nav className="-mb-px flex space-x-8">
               <button
                 onClick={() => setActiveTab("tickets")}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === "tickets"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    ? "border-blue-500 text-blue-500"
+                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted"
                 }`}
               >
                 Tickets
@@ -606,8 +606,8 @@ export default function OrganizationView() {
                     onClick={() => setActiveTab("subadmins")}
                     className={`py-2 px-1 border-b-2 font-medium text-sm ${
                       activeTab === "subadmins"
-                        ? "border-blue-500 text-blue-600"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                        ? "border-blue-500 text-blue-500"
+                        : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted"
                     }`}
                   >
                     Sub-Admins
@@ -616,8 +616,8 @@ export default function OrganizationView() {
                     onClick={() => setActiveTab("locations")}
                     className={`py-2 px-1 border-b-2 font-medium text-sm ${
                       activeTab === "locations"
-                        ? "border-blue-500 text-blue-600"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                        ? "border-blue-500 text-blue-500"
+                        : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted"
                     }`}
                   >
                     Locations
@@ -629,8 +629,8 @@ export default function OrganizationView() {
                   onClick={() => setActiveTab("vendors")}
                   className={`py-2 px-1 border-b-2 font-medium text-sm ${
                     activeTab === "vendors"
-                      ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                      ? "border-blue-500 text-blue-500"
+                      : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted"
                   }`}
                 >
                   Vendors
@@ -680,8 +680,8 @@ export default function OrganizationView() {
         {activeTab === "tickets" && (
           <div className="mb-8">
             {ticketsLoading ? (
-              <div className="bg-white rounded-lg shadow p-8 text-center">
-                <p className="text-slate-500">Loading tickets...</p>
+              <div className="bg-card rounded-lg shadow p-8 text-center border border-border">
+                <p className="text-muted-foreground">Loading tickets...</p>
               </div>
             ) : (
               <TicketTable

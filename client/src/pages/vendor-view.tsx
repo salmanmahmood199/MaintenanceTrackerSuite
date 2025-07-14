@@ -275,7 +275,7 @@ export function VendorView() {
                   Calendar
                 </Button>
               </Link>
-              <span className="text-sm text-slate-600">
+              <span className="text-sm text-muted-foreground">
                 {user?.firstName} {user?.lastName} ({user?.email})
               </span>
               <Button 
@@ -300,14 +300,14 @@ export function VendorView() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Navigation Tabs */}
         <div className="mb-6">
-          <div className="border-b border-gray-200">
+          <div className="border-b border-border">
             <nav className="-mb-px flex space-x-8">
               <button
                 onClick={() => setActiveTab("tickets")}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === "tickets"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    ? "border-blue-500 text-blue-500"
+                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted"
                 }`}
               >
                 Assigned Tickets
@@ -316,8 +316,8 @@ export function VendorView() {
                 onClick={() => setActiveTab("marketplace")}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === "marketplace"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    ? "border-blue-500 text-blue-500"
+                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted"
                 }`}
               >
                 Marketplace
@@ -326,8 +326,8 @@ export function VendorView() {
                 onClick={() => setActiveTab("invoices")}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === "invoices"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    ? "border-blue-500 text-blue-500"
+                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted"
                 }`}
               >
                 Invoices
@@ -336,8 +336,8 @@ export function VendorView() {
                 onClick={() => setActiveTab("parts")}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === "parts"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    ? "border-blue-500 text-blue-500"
+                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted"
                 }`}
               >
                 Parts
@@ -351,15 +351,15 @@ export function VendorView() {
             {/* Filter Buttons */}
             <Card className="p-6 mb-8">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-                <h2 className="text-lg font-semibold text-slate-900">Assigned Tickets ({tickets.length})</h2>
+                <h2 className="text-lg font-semibold text-foreground">Assigned Tickets ({tickets.length})</h2>
                 
                 <div className="flex items-center gap-3">
-                  <div className="flex bg-slate-100 rounded-lg p-1">
+                  <div className="flex bg-muted rounded-lg p-1">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setStatusFilter("all")}
-                      className={statusFilter === "all" ? "bg-white shadow-sm" : ""}
+                      className={statusFilter === "all" ? "bg-background shadow-sm" : ""}
                     >
                       All
                     </Button>
@@ -367,7 +367,7 @@ export function VendorView() {
                       variant="ghost"
                       size="sm"
                       onClick={() => setStatusFilter("pending")}
-                      className={statusFilter === "pending" ? "bg-white shadow-sm" : ""}
+                      className={statusFilter === "pending" ? "bg-background shadow-sm" : ""}
                     >
                       Pending
                     </Button>
@@ -375,7 +375,7 @@ export function VendorView() {
                       variant="ghost"
                       size="sm"
                       onClick={() => setStatusFilter("ready_for_billing")}
-                      className={statusFilter === "ready_for_billing" ? "bg-white shadow-sm" : ""}
+                      className={statusFilter === "ready_for_billing" ? "bg-background shadow-sm" : ""}
                     >
                       Ready for Billing
                     </Button>
@@ -385,11 +385,11 @@ export function VendorView() {
             </Card>
 
             {/* Tickets Table */}
-            <div className="bg-white rounded-lg shadow">
+            <div className="bg-card rounded-lg shadow border border-border">
               {ticketsLoading ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                  <p className="text-slate-600 mt-2">Loading tickets...</p>
+                  <p className="text-muted-foreground mt-2">Loading tickets...</p>
                 </div>
               ) : (
                 <TicketTable
