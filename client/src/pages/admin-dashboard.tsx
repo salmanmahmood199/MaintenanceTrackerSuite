@@ -253,118 +253,177 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <Link href="/">
-                <Button variant="ghost" size="sm">
-                  ← Back to Dashboard
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-xl font-bold text-slate-900">System Administration</h1>
-                <p className="text-sm text-slate-500">Manage organizations and vendors</p>
-              </div>
+    <div className="min-h-screen bg-background flex">
+      {/* Sidebar */}
+      <div className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
+        {/* Logo */}
+        <div className="p-6 border-b border-sidebar-border">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <span className="text-primary-foreground text-sm font-bold">D</span>
             </div>
-            
-            <div className="flex items-center space-x-4">
-              <Link href="/calendar">
-                <Button variant="outline" size="sm">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Calendar
-                </Button>
-              </Link>
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">R</span>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Root Admin</p>
-                  <p className="text-xs text-slate-500">{user.email}</p>
-                </div>
-              </div>
-            </div>
+            <span className="text-xl font-bold text-sidebar-foreground">Dashboard</span>
           </div>
         </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Overview Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="p-6">
-            <CardContent className="p-0">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-600 font-medium">Organizations</p>
-                  <p className="text-2xl font-bold text-slate-900">{organizations.length}</p>
-                </div>
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Building2 className="h-6 w-6 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="p-6">
-            <CardContent className="p-0">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-600 font-medium">Vendors</p>
-                  <p className="text-2xl font-bold text-slate-900">{vendors.length}</p>
-                </div>
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                  <Wrench className="h-6 w-6 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="p-6">
-            <CardContent className="p-0">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-600 font-medium">Total Users</p>
-                  <p className="text-2xl font-bold text-slate-900">-</p>
-                </div>
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <Users className="h-6 w-6 text-purple-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="p-6">
-            <CardContent className="p-0">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-600 font-medium">System Status</p>
-                  <p className="text-2xl font-bold text-green-600">Active</p>
-                </div>
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                  <Activity className="h-6 w-6 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        
+        {/* Navigation */}
+        <nav className="flex-1 px-4 py-6 space-y-2">
+          <div className="flex items-center px-3 py-2 text-sm font-medium text-sidebar-primary bg-sidebar-accent rounded-lg">
+            <Building2 className="h-4 w-4 mr-3" />
+            Home
+          </div>
+          <div className="flex items-center px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent rounded-lg cursor-pointer">
+            <Building2 className="h-4 w-4 mr-3" />
+            Organizations
+          </div>
+          <div className="flex items-center px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent rounded-lg cursor-pointer">
+            <Wrench className="h-4 w-4 mr-3" />
+            Vendors
+          </div>
+          <div className="flex items-center px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent rounded-lg cursor-pointer">
+            <Activity className="h-4 w-4 mr-3" />
+            Tickets
+          </div>
+          <Link to="/calendar">
+            <div className="flex items-center px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent rounded-lg cursor-pointer">
+              <Calendar className="h-4 w-4 mr-3" />
+              Calendar
+            </div>
+          </Link>
+        </nav>
+        
+        {/* User Profile */}
+        <div className="p-4 border-t border-sidebar-border">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+              <span className="text-primary-foreground text-sm font-medium">R</span>
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-sidebar-foreground">root@mail.com</p>
+              <p className="text-xs text-muted-foreground">Logout</p>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => window.location.href = '/api/logout'}
+              className="text-sidebar-foreground hover:bg-sidebar-accent"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
+      </div>
+      
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+        {/* Header */}
+        <header className="bg-card border-b border-border px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Home</h1>
+              <p className="text-muted-foreground">System Analytics Dashboard</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="text-right">
+                <div className="text-sm font-medium text-foreground">
+                  Root Admin
+                </div>
+                <div className="text-sm text-muted-foreground">{user.email}</div>
+              </div>
+              <Button variant="outline" onClick={() => window.location.href = '/api/logout'}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
+            </div>
+          </div>
+        </header>
 
-        {/* Organizations Section */}
-        <Card className="mb-8">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="flex items-center">
-              <Building2 className="h-5 w-5 mr-2" />
-              Organizations
-            </CardTitle>
-            <Dialog open={isOrgModalOpen} onOpenChange={setIsOrgModalOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Organization
-                </Button>
-              </DialogTrigger>
+        {/* Main Content Area */}
+        <div className="flex-1 p-6">
+          {/* Overview Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <Card className="bg-blue-600 text-white">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-blue-100 font-medium">Organizations</p>
+                    <p className="text-2xl font-bold text-white">{organizations.length}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
+                    <Building2 className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-pink-600 text-white">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-pink-100 font-medium">Vendors</p>
+                    <p className="text-2xl font-bold text-white">{vendors.length}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-pink-500 rounded-lg flex items-center justify-center">
+                    <Wrench className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-cyan-600 text-white">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-cyan-100 font-medium">Sub-Admins</p>
+                    <p className="text-2xl font-bold text-white">11</p>
+                  </div>
+                  <div className="w-12 h-12 bg-cyan-500 rounded-lg flex items-center justify-center">
+                    <Users className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-green-600 text-white">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-green-100 font-medium">Locations</p>
+                    <p className="text-2xl font-bold text-white">4</p>
+                  </div>
+                  <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
+                    <Activity className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-orange-600 text-white">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-orange-100 font-medium">Tickets</p>
+                    <p className="text-2xl font-bold text-white">13</p>
+                  </div>
+                  <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center">
+                    <Activity className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Organizations Overview */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-foreground">Organizations Overview</h2>
+              <Dialog open={isOrgModalOpen} onOpenChange={setIsOrgModalOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Organization
+                  </Button>
+                </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Create New Organization</DialogTitle>
@@ -447,67 +506,112 @@ export default function AdminDashboard() {
                 </Form>
               </DialogContent>
             </Dialog>
-          </CardHeader>
-          <CardContent>
-            {orgsLoading ? (
-              <div className="text-center py-4">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
-              </div>
-            ) : organizations.length === 0 ? (
-              <p className="text-slate-600 text-center py-4">No organizations created yet.</p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {organizations.map((org) => (
-                  <Card key={org.id} className="p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-slate-900">{org.name}</h3>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary">Active</Badge>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openEditOrgModal(org);
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    {org.description && (
-                      <p className="text-sm text-slate-600 mb-2">{org.description}</p>
-                    )}
-                    <div className="text-xs text-slate-500 space-y-1">
-                      {org.email && <p>Email: {org.email}</p>}
-                      {org.phone && <p>Phone: {org.phone}</p>}
-                    </div>
-                    <div className="mt-3 pt-2 border-t border-slate-100 flex justify-between items-center">
-                      <Link href={`/admin/organizations/${org.id}`}>
-                        <p className="text-xs text-primary font-medium hover:underline cursor-pointer">View dashboard →</p>
-                      </Link>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          </div>
+          
+            <Card>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left p-4 font-medium text-muted-foreground">Organization</th>
+                        <th className="text-left p-4 font-medium text-muted-foreground">Sub-Admins</th>
+                        <th className="text-left p-4 font-medium text-muted-foreground">Locations</th>
+                        <th className="text-left p-4 font-medium text-muted-foreground">Vendors</th>
+                        <th className="text-left p-4 font-medium text-muted-foreground">Active Tickets</th>
+                        <th className="text-left p-4 font-medium text-muted-foreground">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {orgsLoading ? (
+                        <tr>
+                          <td colSpan={6} className="text-center py-8">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+                          </td>
+                        </tr>
+                      ) : organizations.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="text-center py-8 text-muted-foreground">
+                            No organizations created yet.
+                          </td>
+                        </tr>
+                      ) : (
+                        organizations.map((org) => (
+                          <tr key={org.id} className="border-b border-border hover:bg-muted/50">
+                            <td className="p-4">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                                  <Building2 className="h-4 w-4 text-white" />
+                                </div>
+                                <div>
+                                  <div className="font-medium text-foreground">{org.name}</div>
+                                  {org.description && (
+                                    <div className="text-sm text-muted-foreground">{org.description}</div>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex items-center justify-center w-8 h-8 bg-muted rounded-full">
+                                <span className="text-sm font-medium text-foreground">5</span>
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex items-center justify-center w-8 h-8 bg-muted rounded-full">
+                                <span className="text-sm font-medium text-foreground">2</span>
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex items-center justify-center w-8 h-8 bg-muted rounded-full">
+                                <span className="text-sm font-medium text-foreground">7</span>
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex items-center justify-center w-8 h-8 bg-muted rounded-full">
+                                <span className="text-sm font-medium text-foreground">0</span>
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex items-center space-x-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openEditOrgModal(org)}
+                                  className="text-muted-foreground hover:text-foreground"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => navigate(`/organization/${org.id}`)}
+                                  className="text-primary hover:text-primary-foreground hover:bg-primary"
+                                >
+                                  →
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-        {/* Maintenance Vendors Section */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="flex items-center">
-              <Wrench className="h-5 w-5 mr-2" />
-              Maintenance Vendors
-            </CardTitle>
-            <Dialog open={isVendorModalOpen} onOpenChange={setIsVendorModalOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Vendor
-                </Button>
-              </DialogTrigger>
+          {/* Maintenance Vendors Section */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-foreground">Maintenance Vendors</h2>
+              <Dialog open={isVendorModalOpen} onOpenChange={setIsVendorModalOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Vendor
+                  </Button>
+                </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Create New Maintenance Vendor</DialogTitle>
@@ -618,89 +722,128 @@ export default function AdminDashboard() {
                 </Form>
               </DialogContent>
             </Dialog>
-          </CardHeader>
-          <CardContent>
-            {vendorsLoading ? (
-              <div className="text-center py-4">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
-              </div>
-            ) : vendors.length === 0 ? (
-              <p className="text-slate-600 text-center py-4">No maintenance vendors created yet.</p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {vendors.map((vendor) => (
-                  <Card key={vendor.id} className="p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-slate-900">{vendor.name}</h3>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary">Active</Badge>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openEditVendorModal(vendor);
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    {vendor.description && (
-                      <p className="text-sm text-slate-600 mb-2">{vendor.description}</p>
-                    )}
-                    {vendor.specialties && vendor.specialties.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mb-2">
-                        {vendor.specialties.map((specialty, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs">
-                            {specialty}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                    <div className="text-xs text-slate-500 space-y-1">
-                      {vendor.email && <p>Email: {vendor.email}</p>}
-                      {vendor.phone && <p>Phone: {vendor.phone}</p>}
-                    </div>
-                    <div className="mt-3 pt-2 border-t border-slate-100 flex justify-between items-center">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          console.log("Navigating to vendor:", vendor.id);
-                          navigate(`/vendor/${vendor.id}`);
-                        }}
-                        className="border-green-200 text-green-700 hover:bg-green-50"
-                      >
-                        View Dashboard
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          </div>
+            
+            <Card>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left p-4 font-medium text-muted-foreground">Vendor</th>
+                        <th className="text-left p-4 font-medium text-muted-foreground">Specialties</th>
+                        <th className="text-left p-4 font-medium text-muted-foreground">Technicians</th>
+                        <th className="text-left p-4 font-medium text-muted-foreground">Active Jobs</th>
+                        <th className="text-left p-4 font-medium text-muted-foreground">Revenue</th>
+                        <th className="text-left p-4 font-medium text-muted-foreground">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {vendorsLoading ? (
+                        <tr>
+                          <td colSpan={6} className="text-center py-8">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+                          </td>
+                        </tr>
+                      ) : vendors.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="text-center py-8 text-muted-foreground">
+                            No maintenance vendors created yet.
+                          </td>
+                        </tr>
+                      ) : (
+                        vendors.map((vendor) => (
+                          <tr key={vendor.id} className="border-b border-border hover:bg-muted/50">
+                            <td className="p-4">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-8 h-8 bg-pink-600 rounded-lg flex items-center justify-center">
+                                  <Wrench className="h-4 w-4 text-white" />
+                                </div>
+                                <div>
+                                  <div className="font-medium text-foreground">{vendor.name}</div>
+                                  {vendor.description && (
+                                    <div className="text-sm text-muted-foreground">{vendor.description}</div>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex flex-wrap gap-1">
+                                {vendor.specialties?.slice(0, 2).map((specialty, idx) => (
+                                  <Badge key={idx} variant="outline" className="text-xs">
+                                    {specialty}
+                                  </Badge>
+                                ))}
+                                {vendor.specialties && vendor.specialties.length > 2 && (
+                                  <Badge variant="outline" className="text-xs">
+                                    +{vendor.specialties.length - 2}
+                                  </Badge>
+                                )}
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex items-center justify-center w-8 h-8 bg-muted rounded-full">
+                                <span className="text-sm font-medium text-foreground">3</span>
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex items-center justify-center w-8 h-8 bg-muted rounded-full">
+                                <span className="text-sm font-medium text-foreground">2</span>
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <div className="text-sm font-medium text-foreground">$2,400</div>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex items-center space-x-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openEditVendorModal(vendor)}
+                                  className="text-muted-foreground hover:text-foreground"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => navigate(`/vendor/${vendor.id}`)}
+                                  className="text-primary hover:text-primary-foreground hover:bg-primary"
+                                >
+                                  →
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-        {/* Edit Organization Modal */}
-        <EditOrganizationModal
-          open={isEditOrgModalOpen}
-          onOpenChange={setIsEditOrgModalOpen}
-          onSubmit={handleEditOrganization}
-          onResetPassword={handleResetOrgPassword}
-          isLoading={editOrgMutation.isPending || resetOrgPasswordMutation.isPending}
-          organization={selectedOrganization}
-        />
+          {/* Edit Organization Modal */}
+          <EditOrganizationModal
+            open={isEditOrgModalOpen}
+            onOpenChange={setIsEditOrgModalOpen}
+            onSubmit={handleEditOrganization}
+            onResetPassword={handleResetOrgPassword}
+            isLoading={editOrgMutation.isPending || resetOrgPasswordMutation.isPending}
+            organization={selectedOrganization}
+          />
 
-        {/* Edit Vendor Modal */}
-        <EditVendorModal
-          open={isEditVendorModalOpen}
-          onOpenChange={setIsEditVendorModalOpen}
-          onSubmit={handleEditVendor}
-          onResetPassword={handleResetVendorPassword}
-          isLoading={editVendorMutation.isPending || resetVendorPasswordMutation.isPending}
-          vendor={selectedVendor}
-        />
+          {/* Edit Vendor Modal */}
+          <EditVendorModal
+            open={isEditVendorModalOpen}
+            onOpenChange={setIsEditVendorModalOpen}
+            onSubmit={handleEditVendor}
+            onResetPassword={handleResetVendorPassword}
+            isLoading={editVendorMutation.isPending || resetVendorPasswordMutation.isPending}
+            vendor={selectedVendor}
+          />
+        </div>
       </div>
     </div>
   );
