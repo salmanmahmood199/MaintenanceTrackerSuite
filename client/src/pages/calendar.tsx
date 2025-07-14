@@ -302,7 +302,7 @@ export default function Calendar() {
               {/* Calendar Grid */}
               <div className="grid grid-cols-7 gap-1 mb-4">
                 {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-                  <div key={day} className="p-3 text-center font-medium text-slate-600 border-b">
+                  <div key={day} className="p-3 text-center font-medium text-muted-foreground border-b border-border">
                     {day}
                   </div>
                 ))}
@@ -317,11 +317,11 @@ export default function Calendar() {
                   return (
                     <div
                       key={day.toString()}
-                      className={`min-h-[120px] p-2 border rounded cursor-pointer transition-colors relative group ${
+                      className={`min-h-[120px] p-2 border border-border rounded cursor-pointer transition-colors relative group ${
                         isCurrentMonth 
-                          ? "bg-white hover:bg-blue-50" 
-                          : "bg-gray-50 text-gray-400"
-                      } ${isDayToday ? "ring-2 ring-blue-500" : ""}`}
+                          ? "bg-card hover:bg-accent/50 text-card-foreground" 
+                          : "bg-muted/50 text-muted-foreground"
+                      } ${isDayToday ? "ring-2 ring-primary" : ""}`}
                       onClick={() => handleDateClick(day)}
                       onContextMenu={(e) => {
                         e.preventDefault();
@@ -330,7 +330,7 @@ export default function Calendar() {
                     >
                       <div className="flex items-center justify-between mb-1">
                         <div className={`text-sm font-medium ${
-                          isDayToday ? "text-blue-600" : ""
+                          isDayToday ? "text-primary" : ""
                         }`}>
                           {format(day, "d")}
                         </div>
@@ -342,12 +342,12 @@ export default function Calendar() {
                             <div className="w-2 h-2 bg-red-500 rounded-full" title="Blocked periods"></div>
                           )}
                           {dayEvents.some(e => e.eventType !== 'availability') && (
-                            <div className="w-2 h-2 bg-blue-500 rounded-full" title="Scheduled events"></div>
+                            <div className="w-2 h-2 bg-primary rounded-full" title="Scheduled events"></div>
                           )}
                           
                           {isCurrentMonth && (
                             <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                              <div className="text-xs text-gray-500" title="Right-click to set unavailability">
+                              <div className="text-xs text-muted-foreground" title="Right-click to set unavailability">
                                 <Ban className="h-3 w-3" />
                               </div>
                             </div>
@@ -361,7 +361,7 @@ export default function Calendar() {
                           <div
                             key={event.id}
                             className={`text-xs p-1 rounded cursor-pointer group/event relative ${
-                              eventTypeColors[event.eventType] || 'bg-gray-100 text-gray-800 border-gray-200'
+                              eventTypeColors[event.eventType] || 'bg-muted text-muted-foreground border-border'
                             } ${priorityColors[event.priority] || ''}`}
                             onClick={(e) => {
                               e.stopPropagation();
@@ -378,14 +378,14 @@ export default function Calendar() {
                                 )}
                               </div>
                               <button
-                                className="opacity-0 group-hover/event:opacity-100 transition-opacity p-0.5 hover:bg-red-100 rounded"
+                                className="opacity-0 group-hover/event:opacity-100 transition-opacity p-0.5 hover:bg-red-500/20 rounded"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleEventDelete(event, format(day, "yyyy-MM-dd"));
                                 }}
                                 title="Delete event"
                               >
-                                <X className="h-3 w-3 text-red-600" />
+                                <X className="h-3 w-3 text-red-500" />
                               </button>
                             </div>
                           </div>
@@ -394,32 +394,32 @@ export default function Calendar() {
                         {/* Show summary when there are more events */}
                         {dayEvents.length > 2 && (
                           <div 
-                            className="text-xs p-1 bg-gray-100 rounded cursor-pointer hover:bg-gray-200 transition-colors"
+                            className="text-xs p-1 bg-muted rounded cursor-pointer hover:bg-muted/80 transition-colors"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDateClick(day);
                             }}
                           >
-                            <div className="font-medium text-gray-600">
+                            <div className="font-medium text-muted-foreground">
                               +{dayEvents.length - 2} more
                             </div>
-                            <div className="text-xs text-gray-500">Click to see all</div>
+                            <div className="text-xs text-muted-foreground/80">Click to see all</div>
                           </div>
                         )}
                         
                         {/* Show event count when there are events but none displayed (fallback) */}
                         {dayEvents.length > 0 && dayEvents.slice(0, 2).every(e => !e.title) && (
                           <div 
-                            className="text-xs p-1 bg-blue-50 rounded cursor-pointer hover:bg-blue-100 transition-colors border border-blue-200"
+                            className="text-xs p-1 bg-primary/10 rounded cursor-pointer hover:bg-primary/20 transition-colors border border-primary/30"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDateClick(day);
                             }}
                           >
-                            <div className="font-medium text-blue-600">
+                            <div className="font-medium text-primary">
                               {dayEvents.length} event{dayEvents.length > 1 ? 's' : ''}
                             </div>
-                            <div className="text-xs text-blue-500">Click to view</div>
+                            <div className="text-xs text-primary/80">Click to view</div>
                           </div>
                         )}
                         
