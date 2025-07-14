@@ -109,8 +109,8 @@ export default function OrganizationView() {
   // Apply client-side filtering
   const tickets = filterTickets(allTickets, filters);
   
-  // Extract vendors for filtering
-  const vendors = organizationVendors.map(ov => ov.vendor);
+  // Extract vendors for filtering (only when data is available)
+  const vendors = organizationVendors?.map(ov => ov.vendor) || [];
 
   // Fetch stats for this organization
   const { data: stats } = useQuery<TicketStats>({
@@ -804,7 +804,7 @@ export default function OrganizationView() {
         open={isVendorManagementOpen}
         onOpenChange={setIsVendorManagementOpen}
         organizationId={organizationId!}
-        vendors={organizationVendors}
+        vendors={organizationVendors || []}
         onUpdateVendor={handleUpdateVendor}
         isLoading={updateVendorMutation.isPending}
       />
@@ -814,7 +814,7 @@ export default function OrganizationView() {
         onOpenChange={setIsTicketActionOpen}
         ticket={selectedTicket}
         action={ticketAction}
-        vendors={organizationVendors}
+        vendors={organizationVendors || []}
         onAccept={handleTicketAccept}
         onReject={handleTicketReject}
         isLoading={acceptTicketMutation.isPending || rejectTicketMutation.isPending}
