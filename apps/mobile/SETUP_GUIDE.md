@@ -10,7 +10,7 @@
    ```typescript
    return 'https://your-replit-url.replit.app';
    ```
-   With your actual Replit URL (e.g., `https://abc123-def456.replit.app`)
+   With your actual Replit URL: `https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev`
 
 ## Step 3: Install Prerequisites
 ```bash

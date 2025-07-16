@@ -5,7 +5,7 @@
 ### 1. Update Server URL
 Edit `src/contexts/AuthContext.tsx` line 33:
 ```typescript
-return 'https://YOUR_REPLIT_URL.replit.app';
+return 'https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev';
 ```
 
 ### 2. Install & Run

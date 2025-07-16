@@ -26,10 +26,10 @@ export const useAuth = () => {
 const getApiUrl = () => {
   if (__DEV__) {
     // Development - use local server (change this to your actual server URL)
-    // Replace with your actual Replit URL
-    return 'https://your-replit-url.replit.app';
+    // Your actual Replit URL
+    return 'https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev';
   }
-  return 'https://your-replit-url.replit.app';
+  return 'https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev';
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
