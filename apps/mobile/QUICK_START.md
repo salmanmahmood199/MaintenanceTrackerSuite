@@ -12,7 +12,7 @@ return 'https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.rep
 ```bash
 npm install -g @expo/cli
 npm install --legacy-peer-deps
-npm start
+npx expo start
 ```
 
 ### 3. Scan QR Code

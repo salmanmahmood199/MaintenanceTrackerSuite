@@ -27,14 +27,14 @@ npm install -g @expo/cli
 # Navigate to mobile app folder
 cd path/to/your/mobile/app
 
-# Install dependencies
+# Install dependencies (IMPORTANT: Use --legacy-peer-deps)
 npm install --legacy-peer-deps
 ```
 
 ## Step 5: Start Development Server
 ```bash
-# Start the mobile app
-npm start
+# Start the mobile app (use npx expo, not npm start)
+npx expo start
 ```
 
 ## Step 6: Run on Your Phone
@@ -63,6 +63,14 @@ npm start
 ### If dependencies fail to install:
 ```bash
 npm install --legacy-peer-deps --force
+```
+
+### If you get "unable to find expo" error:
+```bash
+# Use the new Expo CLI (recommended)
+npx expo start
+
+# NOT: npm start
 ```
 
 ## Features Available
