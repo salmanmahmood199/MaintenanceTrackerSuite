@@ -26,7 +26,8 @@ export const useAuth = () => {
 const getApiUrl = () => {
   if (__DEV__) {
     // Development - use local server (change this to your actual server URL)
-    return 'http://localhost:5000';
+    // For development, use your actual Replit URL
+    return 'https://your-replit-url.replit.app';
   }
   return 'https://your-production-url.com';
 };

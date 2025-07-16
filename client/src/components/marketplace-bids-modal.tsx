@@ -1,0 +1,451 @@
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { CheckCircle, XCircle, Clock, DollarSign, User, Calendar } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import type { Ticket } from "@shared/schema";
+
+interface MarketplaceBidsModalProps {
+  ticket: Ticket | null;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+interface MarketplaceBid {
+  id: number;
+  vendorId: number;
+  hourlyRate: number;
+  estimatedHours: number;
+  responseTime: string;
+  parts: any[];
+  totalAmount: number;
+  additionalNotes: string;
+  status: string;
+  approved?: boolean;
+  rejectionReason?: string;
+  counterOffer?: number;
+  counterNotes?: string;
+  createdAt: string;
+  vendor: {
+    id: number;
+    name: string;
+    email: string;
+  };
+}
+
+export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBidsModalProps) {
+  const [selectedBidId, setSelectedBidId] = useState<number | null>(null);
+  const [actionType, setActionType] = useState<"accept" | "reject" | "counter" | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [counterAmount, setCounterAmount] = useState("");
+  const [counterNotes, setCounterNotes] = useState("");
+
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch bids for this ticket
+  const { data: bids = [], isLoading } = useQuery<MarketplaceBid[]>({
+    queryKey: ["/api/tickets", ticket?.id, "bids"],
+    queryFn: async () => {
+      if (!ticket?.id) return [];
+      const response = await apiRequest("GET", `/api/tickets/${ticket.id}/bids`);
+      return await response.json();
+    },
+    enabled: !!ticket?.id && isOpen,
+  });
+
+  // Accept bid mutation
+  const acceptBidMutation = useMutation({
+    mutationFn: async (bidId: number) => {
+      await apiRequest("POST", `/api/marketplace/bids/${bidId}/accept`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Bid Accepted",
+        description: "The bid has been accepted and the vendor has been notified.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets", ticket?.id, "bids"] });
+      resetForm();
+      onClose();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to accept bid. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Reject bid mutation
+  const rejectBidMutation = useMutation({
+    mutationFn: async ({ bidId, reason }: { bidId: number; reason: string }) => {
+      await apiRequest("POST", `/api/marketplace/bids/${bidId}/reject`, { rejectionReason: reason });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Bid Rejected",
+        description: "The bid has been rejected and the vendor has been notified.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets", ticket?.id, "bids"] });
+      resetForm();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to reject bid. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Counter bid mutation
+  const counterBidMutation = useMutation({
+    mutationFn: async ({ bidId, counterOffer, notes }: { bidId: number; counterOffer: number; notes: string }) => {
+      await apiRequest("POST", `/api/marketplace/bids/${bidId}/counter`, { 
+        counterOffer, 
+        counterNotes: notes 
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Counter Offer Sent",
+        description: "Your counter offer has been sent to the vendor.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets", ticket?.id, "bids"] });
+      resetForm();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to send counter offer. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Approve bid mutation
+  const approveBidMutation = useMutation({
+    mutationFn: async (bidId: number) => {
+      await apiRequest("POST", `/api/marketplace/bids/${bidId}/approve`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Bid Approved",
+        description: "The bid has been approved and the ticket has been assigned to the vendor.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets", ticket?.id, "bids"] });
+      onClose();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: `Failed to approve bid: ${error.message || "Please try again."}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const resetForm = () => {
+    setSelectedBidId(null);
+    setActionType(null);
+    setRejectionReason("");
+    setCounterAmount("");
+    setCounterNotes("");
+  };
+
+  const handleAction = (bidId: number, action: "accept" | "reject" | "counter") => {
+    setSelectedBidId(bidId);
+    setActionType(action);
+
+    if (action === "accept") {
+      acceptBidMutation.mutate(bidId);
+    }
+  };
+
+  const handleReject = () => {
+    if (!selectedBidId || !rejectionReason.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide a reason for rejection.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    rejectBidMutation.mutate({ bidId: selectedBidId, reason: rejectionReason });
+  };
+
+  const handleCounter = () => {
+    if (!selectedBidId || !counterAmount || !counterNotes.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide counter amount and notes.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    counterBidMutation.mutate({ 
+      bidId: selectedBidId, 
+      counterOffer: parseFloat(counterAmount), 
+      notes: counterNotes 
+    });
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "accepted":
+        return <Badge className="bg-green-100 text-green-800">Accepted</Badge>;
+      case "rejected":
+        return <Badge className="bg-red-100 text-red-800">Rejected</Badge>;
+      case "counter":
+        return <Badge className="bg-yellow-100 text-yellow-800">Counter Offered</Badge>;
+      default:
+        return <Badge className="bg-blue-100 text-blue-800">Pending</Badge>;
+    }
+  };
+
+  if (!ticket) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5" />
+            Marketplace Bids - {ticket.ticketNumber}
+          </DialogTitle>
+          <DialogDescription>
+            Review and manage bids from vendors for this marketplace ticket.
+          </DialogDescription>
+        </DialogHeader>
+
+        <ScrollArea className="h-[600px] pr-4">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-muted-foreground">Loading bids...</div>
+            </div>
+          ) : bids.length === 0 ? (
+            <div className="text-center py-8">
+              <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">No Bids Yet</h3>
+              <p className="text-muted-foreground">
+                No vendors have submitted bids for this ticket yet.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {bids.map((bid) => (
+                <Card key={bid.id} className="border">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <User className="h-5 w-5" />
+                          {bid.vendor.name}
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">{bid.vendor.email}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(bid.status)}
+                        <div className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          {formatDistanceToNow(new Date(bid.createdAt))} ago
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Bid Details */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-muted p-3 rounded-md">
+                        <Label className="text-xs text-muted-foreground">Hourly Rate</Label>
+                        <div className="text-lg font-semibold">${bid.hourlyRate}</div>
+                      </div>
+                      <div className="bg-muted p-3 rounded-md">
+                        <Label className="text-xs text-muted-foreground">Estimated Hours</Label>
+                        <div className="text-lg font-semibold">{bid.estimatedHours}</div>
+                      </div>
+                      <div className="bg-muted p-3 rounded-md">
+                        <Label className="text-xs text-muted-foreground">Total Amount</Label>
+                        <div className="text-lg font-semibold text-green-600">${bid.totalAmount}</div>
+                      </div>
+                    </div>
+
+                    {/* Response Time */}
+                    {bid.responseTime && (
+                      <div>
+                        <Label className="text-sm font-medium">Response Time</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span>{bid.responseTime}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Parts */}
+                    {bid.parts && bid.parts.length > 0 && (
+                      <div>
+                        <Label className="text-sm font-medium">Required Parts</Label>
+                        <div className="mt-2 space-y-1">
+                          {bid.parts.map((part: any, index: number) => (
+                            <div key={index} className="flex justify-between text-sm bg-muted p-2 rounded">
+                              <span>{part.name} × {part.quantity}</span>
+                              <span>${(part.estimatedCost * part.quantity).toFixed(2)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Additional Notes */}
+                    {bid.additionalNotes && (
+                      <div>
+                        <Label className="text-sm font-medium">Additional Notes</Label>
+                        <p className="text-sm text-muted-foreground mt-1">{bid.additionalNotes}</p>
+                      </div>
+                    )}
+
+                    {/* Counter Offer or Rejection Details */}
+                    {bid.status === "rejected" && bid.rejectionReason && (
+                      <div className="bg-red-50 border border-red-200 p-3 rounded-md">
+                        <Label className="text-sm font-medium text-red-800">Rejection Reason</Label>
+                        <p className="text-sm text-red-700 mt-1">{bid.rejectionReason}</p>
+                      </div>
+                    )}
+
+                    {bid.status === "counter" && bid.counterOffer && (
+                      <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-md">
+                        <Label className="text-sm font-medium text-yellow-800">Counter Offer</Label>
+                        <div className="flex justify-between items-center mt-1">
+                          <span className="text-lg font-semibold text-yellow-700">${bid.counterOffer}</span>
+                        </div>
+                        {bid.counterNotes && (
+                          <p className="text-sm text-yellow-700 mt-2">{bid.counterNotes}</p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    {bid.status === "pending" && (
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          onClick={() => handleAction(bid.id, "accept")}
+                          disabled={acceptBidMutation.isPending}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Accept
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleAction(bid.id, "reject")}
+                        >
+                          <XCircle className="h-4 w-4 mr-1" />
+                          Reject
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleAction(bid.id, "counter")}
+                        >
+                          <DollarSign className="h-4 w-4 mr-1" />
+                          Counter
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
+
+        {/* Action Forms */}
+        {actionType === "reject" && selectedBidId && (
+          <div className="border-t pt-4">
+            <h4 className="font-medium mb-2">Reject Bid</h4>
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="rejectionReason">Reason for Rejection</Label>
+                <Textarea
+                  id="rejectionReason"
+                  placeholder="Please provide a reason for rejecting this bid..."
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  rows={3}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleReject}
+                  disabled={rejectBidMutation.isPending || !rejectionReason.trim()}
+                  variant="destructive"
+                >
+                  {rejectBidMutation.isPending ? "Rejecting..." : "Reject Bid"}
+                </Button>
+                <Button variant="outline" onClick={resetForm}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {actionType === "counter" && selectedBidId && (
+          <div className="border-t pt-4">
+            <h4 className="font-medium mb-2">Counter Offer</h4>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="counterAmount">Counter Amount ($)</Label>
+                  <Input
+                    id="counterAmount"
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={counterAmount}
+                    onChange={(e) => setCounterAmount(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="counterNotes">Counter Offer Notes</Label>
+                <Textarea
+                  id="counterNotes"
+                  placeholder="Explain your counter offer..."
+                  value={counterNotes}
+                  onChange={(e) => setCounterNotes(e.target.value)}
+                  rows={3}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleCounter}
+                  disabled={counterBidMutation.isPending || !counterAmount || !counterNotes.trim()}
+                >
+                  {counterBidMutation.isPending ? "Sending..." : "Send Counter Offer"}
+                </Button>
+                <Button variant="outline" onClick={resetForm}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
