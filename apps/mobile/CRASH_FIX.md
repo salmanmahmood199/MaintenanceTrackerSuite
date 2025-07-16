@@ -20,6 +20,10 @@ Reverted to Expo SDK 52 for better stability.
    npm install --legacy-peer-deps
    ```
 
+2. **Missing Dependencies Fixed**:
+   - Added `react-native-reanimated` (required for animations)
+   - Added proper `babel.config.js` configuration
+
 2. **Start fresh**:
    ```bash
    ulimit -n 65536
