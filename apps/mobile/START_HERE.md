@@ -27,13 +27,19 @@ npm install -g @expo/cli
 npm install --legacy-peer-deps
 ```
 
-## Step 5: Start the App
+## Step 5: Fix File Limit (macOS/Linux)
+```bash
+# Fix the "too many open files" error
+ulimit -n 65536
+```
+
+## Step 6: Start the App
 ```bash
 # Use npx expo start (NOT npm start)
 npx expo start
 ```
 
-## Step 6: You Should See This
+## Step 7: You Should See This
 ```
 Starting Metro Bundler
 › Metro waiting on exp://192.168.1.100:8081
@@ -48,11 +54,11 @@ Starting Metro Bundler
 › Press m │ toggle menu
 ```
 
-## Step 7: Scan QR Code
+## Step 8: Scan QR Code
 - **iPhone**: Open Camera app → Point at QR code → Tap notification
 - **Android**: Download Expo Go app → Tap "Scan QR Code" → Point at QR code
 
-## Step 8: Login
+## Step 9: Login
 - **Email**: root@mail.com
 - **Password**: admin
 
@@ -67,6 +73,12 @@ npm install --legacy-peer-deps --force
 ```bash
 npx expo start
 # NOT: npm start
+```
+
+### Issue: "EMFILE: too many open files"
+```bash
+ulimit -n 65536
+npx expo start
 ```
 
 ### Issue: QR code doesn't appear
@@ -95,6 +107,7 @@ If it doesn't work, edit `src/contexts/AuthContext.tsx` and update the URL.
 cd /path/to/your/project/apps/mobile
 npm install -g @expo/cli
 npm install --legacy-peer-deps
+ulimit -n 65536
 npx expo start
 ```
 
