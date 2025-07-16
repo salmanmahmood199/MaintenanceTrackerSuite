@@ -25,9 +25,8 @@ export const useAuth = () => {
 // Get API URL based on environment
 const getApiUrl = () => {
   if (__DEV__) {
-    // Development - use local server (change this to your actual server URL)
-    // Your actual Replit URL
-    return 'https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev';
+    // Development - use local IP (your computer's IP from the QR code)
+    return 'http://192.168.1.153:5000';
   }
   return 'https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev';
 };
