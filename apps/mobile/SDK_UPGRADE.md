@@ -1,11 +1,12 @@
 # Expo SDK 53 Upgrade Guide
 
-## What's New in SDK 53
-- React Native 0.76.3 (latest stable)
+## What's New in SDK 52
+- React Native 0.75.4 (stable)
 - React 18.3.1 with improved performance
 - Enhanced camera and image picker APIs
 - Better TypeScript support
 - Improved debugging tools
+- **More stable than SDK 53**
 
 ## Upgrade Steps
 1. **Remove existing node_modules**:
@@ -26,12 +27,12 @@
    ```
 
 ## Key Changes
-- **Expo SDK**: 51.0.0 → 53.0.0
-- **React Native**: 0.74.5 → 0.76.3
+- **Expo SDK**: 51.0.0 → 52.0.0
+- **React Native**: 0.74.5 → 0.75.4
 - **React**: 18.2.0 → 18.3.1
-- **Camera**: 15.0.14 → 16.0.0
-- **Image Picker**: 15.0.7 → 16.0.0
-- **Secure Store**: 13.0.2 → 14.0.0
+- **Camera**: 15.0.14 → 15.0.16
+- **Image Picker**: 15.0.7 → 15.0.7
+- **Secure Store**: 13.0.2 → 13.0.2
 
 ## Benefits
 - Better performance
@@ -45,4 +46,4 @@
 2. Reset Metro: `npx expo start --reset-cache`
 3. Reinstall: `rm -rf node_modules && npm install --legacy-peer-deps`
 
-Your mobile app is now using the latest Expo SDK 53!
+Your mobile app is now using the stable Expo SDK 52!
