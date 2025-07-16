@@ -4,6 +4,7 @@
 ✅ All dependencies fixed
 ✅ IP address configured: 96.241.167.161
 ✅ Connects to your server on port 5000
+✅ Watchman recommended for macOS (fixes file watcher limits)
 
 ## Run Commands
 ```bash
@@ -42,8 +43,9 @@ Starting Metro Bundler
 - Both devices should be on the same network
 
 ## If It Doesn't Work
+- **File watcher errors**: Install Watchman: `brew install watchman`
+- **Alternative**: Use tunnel mode: `npx expo start --tunnel`
 - Check server is running: `http://96.241.167.161:5000` in browser
-- Try tunnel mode: `npx expo start --tunnel`
 - Clear cache: `npx expo start --clear`
 
 Your mobile maintenance app is ready to run!
