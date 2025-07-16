@@ -19,17 +19,17 @@ Updated mobile app to use your Replit server URL for reliable connection.
    ```
 
 3. **Server connection**:
-   - Your web app runs on Replit: `https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev`
-   - Mobile app connects to the same URL
-   - Works from anywhere with internet connection
+   - Mobile app connects to: `http://96.241.167.161:5000`
+   - Your server should be accessible at this IP
+   - Same network required for local IP connection
 
 4. **Scan QR code and test**:
    - Login: root@mail.com / admin
 
 ## How it works:
-- Mobile app connects to your Replit server
-- No local network dependency
-- Works from any location
+- Mobile app connects to `http://96.241.167.161:5000`
+- Local network connection to your server
+- Same network required for both devices
 
 ## If it still doesn't work:
 1. Check your computer's IP: `ifconfig | grep "inet "`

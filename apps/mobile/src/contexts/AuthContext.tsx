@@ -25,8 +25,8 @@ export const useAuth = () => {
 // Get API URL based on environment
 const getApiUrl = () => {
   if (__DEV__) {
-    // Development - use Replit URL since server runs on Replit
-    return 'https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev';
+    // Development - use your local IP address
+    return 'http://96.241.167.161:5000';
   }
   return 'https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev';
 };
