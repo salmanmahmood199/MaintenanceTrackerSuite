@@ -26,10 +26,10 @@ export const useAuth = () => {
 const getApiUrl = () => {
   if (__DEV__) {
     // Development - use local server (change this to your actual server URL)
-    // For development, use 0.0.0.0 to accept connections from mobile devices
-    return 'http://0.0.0.0:5000';
+    // Replace with your actual Replit URL
+    return 'https://your-replit-url.replit.app';
   }
-  return 'https://your-production-url.com';
+  return 'https://your-replit-url.replit.app';
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
