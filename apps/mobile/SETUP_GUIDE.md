@@ -27,7 +27,7 @@ npm install -g @expo/cli
 # Navigate to mobile app folder
 cd path/to/your/mobile/app
 
-# Install dependencies (IMPORTANT: Use --legacy-peer-deps)
+# Install dependencies (Updated for SDK 53)
 npm install --legacy-peer-deps
 ```
 
@@ -81,6 +81,7 @@ npx expo start
 - Material Design 3 UI
 - Dark/light theme support
 - Real-time updates
+- **NEW**: Expo SDK 53 with improved performance and latest features
 
 ## File Structure
 ```

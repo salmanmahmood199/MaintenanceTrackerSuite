@@ -9,25 +9,19 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#3B82F6"
+      "backgroundColor": "#ffffff"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.maintenancetracker.app"
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#3B82F6"
-      },
-      "package": "com.maintenancetracker.app",
-      "permissions": [
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
-      ]
+        "backgroundColor": "#ffffff"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -35,6 +29,7 @@
     "plugins": [
       "expo-camera",
       "expo-image-picker"
-    ]
+    ],
+    "sdkVersion": "53.0.0"
   }
 }
