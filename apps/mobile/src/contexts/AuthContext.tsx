@@ -26,8 +26,8 @@ export const useAuth = () => {
 const getApiUrl = () => {
   if (__DEV__) {
     // Development - use local server (change this to your actual server URL)
-    // For development, use your local IP address (replace with your actual IP)
-    return 'http://192.168.1.153:5000';
+    // For development, use 0.0.0.0 to accept connections from mobile devices
+    return 'http://0.0.0.0:5000';
   }
   return 'https://your-production-url.com';
 };

@@ -22,19 +22,10 @@ Or run:
 
 **Problem:** Mobile app shows network errors or login fails.
 
-**Solution:** Update the API URL in `src/contexts/AuthContext.tsx`:
+**Solution:** The API URL is already set to use `0.0.0.0:5000` which should work automatically. If you still have connection issues, you can try:
 ```typescript
-// Replace with your computer's IP address
+// Alternative: Use your specific IP address
 return 'http://192.168.1.153:5000';
-```
-
-To find your IP address:
-```bash
-# On macOS/Linux
-ifconfig | grep "inet " | grep -v 127.0.0.1
-
-# On Windows
-ipconfig | findstr "IPv4"
 ```
 
 ### 3. Dependencies Issues
