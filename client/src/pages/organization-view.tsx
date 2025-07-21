@@ -75,6 +75,13 @@ export default function OrganizationView() {
   const canManageSubAdmins = user?.role === "root" || user?.role === "org_admin";
   
   const canManageVendors = user?.role === "root" || user?.role === "org_admin";
+  
+  // Check if user has marketplace access (ability to view bids)
+  // Extract vendor tiers that the organization has access to
+  const organizationVendorTiers = organizationVendors?.map(ov => ov.tier) || [];
+  const hasMarketplaceAccess = user?.role === "root" || user?.role === "org_admin" || 
+    (user?.role === "org_subadmin" && user?.vendorTiers?.includes("marketplace")) ||
+    (user?.role === "org_subadmin" && organizationVendorTiers.includes("marketplace"));
 
   // Fetch organization details
   const { data: organization } = useQuery<Organization | undefined>({
@@ -679,7 +686,7 @@ export default function OrganizationView() {
                 onReject={canAcceptTickets ? handleRejectTicket : undefined}
                 onComplete={canAcceptTickets ? handleCompleteTicket : undefined}
                 onConfirm={handleConfirmCompletion}
-                onViewBids={setMarketplaceBidsTicket}
+                onViewBids={hasMarketplaceAccess ? setMarketplaceBidsTicket : undefined}
                 onForceClose={canAcceptTickets ? handleForceClose : undefined}
                 showActions={true}
                 userRole={user?.role}

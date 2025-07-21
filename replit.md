@@ -310,6 +310,9 @@ Changelog:
 - July 16, 2025. Set up monorepo structure with apps/mobile, packages/shared for code sharing
 - July 16, 2025. Added mobile-specific features: camera integration, image picker, and Material Design 3 UI
 - July 16, 2025. Configured mobile authentication context to connect to existing backend API
+- July 21, 2025. Fixed marketplace bid visibility permissions - only users with marketplace access can now view bids
+- July 21, 2025. Enhanced permission system to properly check vendorTiers for marketplace access in organization admin dashboard
+- July 21, 2025. Updated dark theme styling for Sub-Admins and Vendors tabs with proper CSS variables for better readability
 ```
 
 ## User Preferences
