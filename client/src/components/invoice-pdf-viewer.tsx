@@ -45,7 +45,7 @@ export function InvoicePDFViewer({
       </div>
 
       {/* Professional Invoice Display */}
-      <Card className="bg-white text-black print:shadow-none print:border-0 max-w-4xl mx-auto">
+      <Card className="bg-white text-black print:shadow-none print:border-0 max-w-4xl mx-auto" style={{ color: 'black' }}>
         {/* Invoice Header with Gradient */}
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-8 print:p-6">
           <div className="flex justify-between items-start">
@@ -66,7 +66,7 @@ export function InvoicePDFViewer({
           </div>
         </div>
 
-        <div className="p-8 print:p-6 space-y-8">
+        <div className="p-8 print:p-6 space-y-8" style={{ color: 'black' }}>
           {/* Company & Client Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 print:gap-6">
             <div>
@@ -167,7 +167,7 @@ export function InvoicePDFViewer({
                 )}
                 <div className="flex justify-between text-2xl print:text-xl font-bold border-t pt-3 text-black">
                   <span>TOTAL:</span>
-                  <span className="text-green-600 print:text-black">${parseFloat(invoice.total || "0").toFixed(2)}</span>
+                  <span className="text-black">${parseFloat(invoice.total || "0").toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -195,14 +195,14 @@ export function InvoicePDFViewer({
             
             {invoice.notes && (
               <div className="mt-4">
-                <h4 className="font-semibold text-gray-800 mb-2">Additional Notes</h4>
-                <p className="text-gray-700 bg-white p-4 rounded-lg border">{invoice.notes}</p>
+                <h4 className="font-semibold text-black mb-2">Additional Notes</h4>
+                <p className="text-black bg-white p-4 rounded-lg border">{invoice.notes}</p>
               </div>
             )}
           </div>
 
           {/* Footer */}
-          <div className="text-center text-sm text-gray-500 border-t pt-6 print:pt-4">
+          <div className="text-center text-sm text-black border-t pt-6 print:pt-4">
             <p>Thank you for your business!</p>
             <p className="mt-1">For questions about this invoice, please contact {vendor?.email || 'vendor@email.com'}</p>
           </div>
@@ -222,6 +222,14 @@ export function InvoicePDFViewer({
           body {
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
+          }
+          * {
+            color: black !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          .text-green-600 {
+            color: black !important;
           }
         }
       `}</style>
