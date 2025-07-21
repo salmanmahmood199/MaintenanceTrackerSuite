@@ -314,6 +314,13 @@ Changelog:
 - July 21, 2025. Enhanced permission system to properly check vendorTiers for marketplace access in organization admin dashboard
 - July 21, 2025. Updated dark theme styling for Sub-Admins and Vendors tabs with proper CSS variables for better readability
 - July 21, 2025. Fixed JavaScript initialization error in OrganizationView component - resolved "Cannot access 'organizationVendors' before initialization" issue
+- July 21, 2025. Fixed marketplace assignment access issue - users with marketplace vendor tier permissions can now assign tickets to marketplace
+- July 21, 2025. Enhanced marketplace counter offer system with accept/reject/recounter options replacing basic "submit response"
+- July 21, 2025. Added bid history tracking table for complete negotiation records between organizations and vendors
+- July 21, 2025. Enhanced VendorBidsView component with sophisticated response options and visual improvements for dark theme
+- July 21, 2025. Implemented automatic ticket removal from marketplace when accepted by any vendor during negotiation
+- July 21, 2025. Added comprehensive bid history display with negotiation timeline in vendor response modal
+- July 21, 2025. Fixed dark theme visibility issues in counter offer sections with improved CSS variables and border styling
 ```
 
 ## User Preferences
