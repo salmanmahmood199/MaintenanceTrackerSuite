@@ -766,35 +766,35 @@ export function EnhancedInvoiceCreator({
                 {/* Company & Client Info */}
                 <div className="grid grid-cols-2 gap-8">
                   <div>
-                    <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <h3 className="font-semibold text-lg mb-3 flex items-center gap-2" style={{color: 'black'}}>
                       <Building2 className="h-5 w-5" />
                       From:
                     </h3>
                     <div className="bg-gray-50 p-4 rounded-lg">
-                      <p className="font-semibold text-xl">{vendor?.name || 'Maintenance Vendor'}</p>
-                      <p className="text-gray-600">{vendor?.address || 'Vendor Address'}</p>
-                      <p className="text-gray-600">{vendor?.email || 'vendor@email.com'}</p>
-                      <p className="text-gray-600">{vendor?.phone || 'Phone Number'}</p>
+                      <p className="font-semibold text-xl" style={{color: 'black'}}>{vendor?.name || 'Maintenance Vendor'}</p>
+                      <p style={{color: 'black'}}>{vendor?.address || 'Vendor Address'}</p>
+                      <p style={{color: 'black'}}>{vendor?.email || 'vendor@email.com'}</p>
+                      <p style={{color: 'black'}}>{vendor?.phone || 'Phone Number'}</p>
                     </div>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <h3 className="font-semibold text-lg mb-3 flex items-center gap-2" style={{color: 'black'}}>
                       <Building2 className="h-5 w-5" />
                       Bill To:
                     </h3>
                     <div className="bg-gray-50 p-4 rounded-lg">
-                      <p className="font-semibold text-xl">{organization?.name || 'Organization'}</p>
-                      <p className="text-gray-600">{organization?.address || 'Organization Address'}</p>
-                      <p className="text-gray-600">{organization?.email || 'org@email.com'}</p>
-                      <p className="text-gray-600">{organization?.phone || 'Phone Number'}</p>
+                      <p className="font-semibold text-xl" style={{color: 'black'}}>{organization?.name || 'Organization'}</p>
+                      <p style={{color: 'black'}}>{organization?.address || 'Organization Address'}</p>
+                      <p style={{color: 'black'}}>{organization?.email || 'org@email.com'}</p>
+                      <p style={{color: 'black'}}>{organization?.phone || 'Phone Number'}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Ticket Information */}
                 <div className="bg-blue-50 p-4 rounded-lg">
-                  <h3 className="font-semibold text-lg mb-2">Service Details</h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <h3 className="font-semibold text-lg mb-2" style={{color: 'black'}}>Service Details</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm" style={{color: 'black'}}>
                     <div><span className="font-medium">Ticket Number:</span> {ticket.ticketNumber}</div>
                     <div><span className="font-medium">Priority:</span> <Badge variant="outline">{ticket.priority}</Badge></div>
                     <div className="col-span-2"><span className="font-medium">Description:</span> {ticket.description}</div>
@@ -803,7 +803,7 @@ export function EnhancedInvoiceCreator({
 
                 {/* Work Orders Table */}
                 <div>
-                  <h3 className="font-semibold text-lg mb-4">Work Orders Completed</h3>
+                  <h3 className="font-semibold text-lg mb-4" style={{color: 'black'}}>Work Orders Completed</h3>
                   <div className="overflow-hidden rounded-lg border">
                     <table className="w-full">
                       <thead className="bg-gray-100">
