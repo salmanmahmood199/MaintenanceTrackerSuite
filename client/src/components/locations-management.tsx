@@ -80,8 +80,8 @@ export function LocationsManagement({ organizationId }: LocationsManagementProps
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Locations</h2>
-          <p className="text-sm text-gray-600">Manage your organization's locations</p>
+          <h2 className="text-xl font-semibold text-foreground">Locations</h2>
+          <p className="text-sm text-muted-foreground">Manage your organization's locations</p>
         </div>
         <Button onClick={() => setIsCreateModalOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
@@ -93,13 +93,13 @@ export function LocationsManagement({ organizationId }: LocationsManagementProps
       {isLoading ? (
         <div className="text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="text-gray-600 mt-2">Loading locations...</p>
+          <p className="text-muted-foreground mt-2">Loading locations...</p>
         </div>
       ) : locations.length === 0 ? (
         <Card className="p-8 text-center">
-          <MapPin className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No locations yet</h3>
-          <p className="text-gray-600 mb-4">
+          <MapPin className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          <h3 className="text-lg font-medium text-foreground mb-2">No locations yet</h3>
+          <p className="text-muted-foreground mb-4">
             Create your first location to start organizing your sub-admins by location.
           </p>
           <Button onClick={() => setIsCreateModalOpen(true)}>
@@ -113,7 +113,7 @@ export function LocationsManagement({ organizationId }: LocationsManagementProps
             <Card key={location.id} className="relative">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg text-gray-900">{location.name}</CardTitle>
+                  <CardTitle className="text-lg text-foreground">{location.name}</CardTitle>
                   <div className="flex space-x-1">
                     <Button
                       variant="ghost"
@@ -128,18 +128,18 @@ export function LocationsManagement({ organizationId }: LocationsManagementProps
               </CardHeader>
               <CardContent className="pt-0">
                 {location.address && (
-                  <p className="text-sm text-gray-600 mb-2">{location.address}</p>
+                  <p className="text-sm text-muted-foreground mb-2">{location.address}</p>
                 )}
                 {location.description && (
-                  <p className="text-sm text-gray-500 mb-3">{location.description}</p>
+                  <p className="text-sm text-muted-foreground mb-3">{location.description}</p>
                 )}
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center text-xs text-gray-500">
+                  <div className="flex items-center text-xs text-muted-foreground">
                     <MapPin className="h-3 w-3 mr-1" />
                     {location.isActive ? "Active" : "Inactive"}
                   </div>
-                  <div className="text-xs text-gray-500">
-                    Created {new Date(location.createdAt).toLocaleDateString()}
+                  <div className="text-xs text-muted-foreground">
+                    Created {location.createdAt ? new Date(location.createdAt).toLocaleDateString() : 'Unknown'}
                   </div>
                 </div>
               </CardContent>

@@ -394,7 +394,7 @@ export default function OrganizationView() {
       // Assign to marketplace instead of a specific vendor
       assignToMarketplaceMutation.mutate(ticketId);
     } else {
-      acceptTicketMutation.mutate({ ticketId, ...data });
+      acceptTicketMutation.mutate({ ticketId, data });
     }
   };
 
@@ -691,9 +691,9 @@ export default function OrganizationView() {
         )}
 
         {activeTab === "subadmins" && canManageSubAdmins && (
-          <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-4 border-b border-slate-200">
-              <h2 className="text-lg font-semibold text-slate-900 flex items-center">
+          <div className="bg-card rounded-lg shadow border border-border">
+            <div className="px-6 py-4 border-b border-border">
+              <h2 className="text-lg font-semibold text-foreground flex items-center">
                 <Users className="h-5 w-5 mr-2" />
                 Sub-Administrators
               </h2>
@@ -701,8 +701,8 @@ export default function OrganizationView() {
             <div className="p-6">
               {subAdmins.length === 0 ? (
                 <div className="text-center py-8">
-                  <Users className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <p className="text-slate-500 text-center py-4">No sub-administrators yet</p>
+                  <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-muted-foreground text-center py-4">No sub-administrators yet</p>
                   <Button
                     onClick={() => setIsCreateSubAdminOpen(true)}
                     className="mt-4"
@@ -714,13 +714,13 @@ export default function OrganizationView() {
               ) : (
                 <div className="space-y-4">
                   {subAdmins.map((subAdmin) => (
-                    <div key={subAdmin.id} className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
+                    <div key={subAdmin.id} className="flex items-center justify-between p-4 border border-border rounded-lg bg-background">
                       <div className="flex items-center space-x-4">
                         <div>
-                          <p className="font-medium text-slate-900">
+                          <p className="font-medium text-foreground">
                             {subAdmin.firstName} {subAdmin.lastName}
                           </p>
-                          <p className="text-sm text-slate-500">{subAdmin.email}</p>
+                          <p className="text-sm text-muted-foreground">{subAdmin.email}</p>
                         </div>
                         <div className="flex space-x-2">
                           {subAdmin.permissions?.map((permission) => (
@@ -760,10 +760,10 @@ export default function OrganizationView() {
         )}
 
         {activeTab === "vendors" && canManageVendors && (
-          <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-4 border-b border-slate-200">
-              <h3 className="text-lg font-medium text-gray-900">Vendor Management</h3>
-              <p className="text-sm text-gray-500">Configure vendor assignments and tiers for your organization</p>
+          <div className="bg-card rounded-lg shadow border border-border">
+            <div className="px-6 py-4 border-b border-border">
+              <h3 className="text-lg font-medium text-foreground">Vendor Management</h3>
+              <p className="text-sm text-muted-foreground">Configure vendor assignments and tiers for your organization</p>
             </div>
             <div className="p-6">
               <Button onClick={() => setIsVendorManagementOpen(true)}>
@@ -782,7 +782,7 @@ export default function OrganizationView() {
         onSubmit={handleCreateTicket}
         isLoading={createTicketMutation.isPending}
         userId={user?.id}
-        organizationId={organizationId}
+        organizationId={organizationId || undefined}
       />
 
       <CreateSubAdminModal
@@ -820,7 +820,7 @@ export default function OrganizationView() {
         isLoading={acceptTicketMutation.isPending || rejectTicketMutation.isPending}
         userRole={user?.role}
         userPermissions={user?.permissions || undefined}
-        userVendorTiers={user?.vendorTiers || undefined}
+        userVendorTiers={undefined}
       />
 
       <ConfirmCompletionModal
