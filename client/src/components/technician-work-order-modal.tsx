@@ -95,32 +95,46 @@ export function TechnicianWorkOrderModal({
   const calculateHours = (timeIn: string, timeOut: string) => {
     if (!timeIn || !timeOut) return 0;
     
-    const [inHour, inMin] = timeIn.split(':').map(Number);
-    const [outHour, outMin] = timeOut.split(':').map(Number);
-    
-    const inMinutes = inHour * 60 + inMin;
-    const outMinutes = outHour * 60 + outMin;
-    
-    // Handle next day scenarios
-    let totalMinutes = outMinutes - inMinutes;
-    if (totalMinutes < 0) {
-      totalMinutes += 24 * 60; // Add 24 hours
+    try {
+      const [inHour, inMin] = timeIn.split(':').map(Number);
+      const [outHour, outMin] = timeOut.split(':').map(Number);
+      
+      // Validate time format
+      if (isNaN(inHour) || isNaN(inMin) || isNaN(outHour) || isNaN(outMin)) return 0;
+      
+      const inMinutes = inHour * 60 + inMin;
+      const outMinutes = outHour * 60 + outMin;
+      
+      // Only calculate for same day (no next day support for now)
+      if (outMinutes <= inMinutes) return 0;
+      
+      const totalMinutes = outMinutes - inMinutes;
+      return Math.round((totalMinutes / 60) * 100) / 100; // Round to 2 decimal places
+    } catch (error) {
+      return 0;
     }
-    
-    return Math.round((totalMinutes / 60) * 100) / 100; // Round to 2 decimal places
   };
 
   // Validate time out is after time in
   const validateTimeOrder = (timeIn: string, timeOut: string) => {
     if (!timeIn || !timeOut) return true; // Allow empty values
     
-    const [inHour, inMin] = timeIn.split(':').map(Number);
-    const [outHour, outMin] = timeOut.split(':').map(Number);
-    
-    const inMinutes = inHour * 60 + inMin;
-    const outMinutes = outHour * 60 + outMin;
-    
-    return outMinutes > inMinutes; // Must be same day and time out after time in
+    try {
+      const [inHour, inMin] = timeIn.split(':').map(Number);
+      const [outHour, outMin] = timeOut.split(':').map(Number);
+      
+      // Validate time format
+      if (isNaN(inHour) || isNaN(inMin) || isNaN(outHour) || isNaN(outMin)) return false;
+      if (inHour < 0 || inHour > 23 || inMin < 0 || inMin > 59) return false;
+      if (outHour < 0 || outHour > 23 || outMin < 0 || outMin > 59) return false;
+      
+      const inMinutes = inHour * 60 + inMin;
+      const outMinutes = outHour * 60 + outMin;
+      
+      return outMinutes > inMinutes; // Must be same day and time out after time in
+    } catch (error) {
+      return false;
+    }
   };
 
   // Signature canvas state and functions
@@ -381,11 +395,11 @@ export function TechnicianWorkOrderModal({
             {/* Left Column - Ticket Details */}
             <div className="space-y-4">
               <div>
-                <h4 className="font-medium text-slate-900 mb-2">Original Request</h4>
-                <div className="bg-slate-50 p-4 rounded-lg space-y-3">
-                  <p className="text-slate-700">{ticket.description}</p>
+                <h4 className="font-medium text-foreground mb-2">Original Request</h4>
+                <div className="bg-muted p-4 rounded-lg space-y-3">
+                  <p className="text-foreground">{ticket.description}</p>
                   
-                  <div className="flex items-center gap-4 text-sm text-slate-500">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Hash className="h-4 w-4" />
                       <span>{ticket.ticketNumber}</span>
@@ -396,9 +410,9 @@ export function TechnicianWorkOrderModal({
                     </div>
                   </div>
 
-                  <div className="text-sm text-slate-600">
+                  <div className="text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-slate-400" />
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
                       <span>
                         Created: {formatTz(toZonedTime(new Date(ticket.createdAt), 'America/New_York'), "MMM dd, yyyy 'at' h:mm a zzz", { timeZone: 'America/New_York' })}
                       </span>
@@ -410,14 +424,14 @@ export function TechnicianWorkOrderModal({
               {/* Original Images */}
               {ticket.images && ticket.images.length > 0 && (
                 <div>
-                  <h4 className="font-medium text-slate-900 mb-3">Original Photos ({ticket.images.length})</h4>
+                  <h4 className="font-medium text-foreground mb-3">Original Photos ({ticket.images.length})</h4>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {ticket.images.map((image, index) => (
                       <div key={index} className="relative group">
                         <img
                           src={image}
                           alt={`Original photo ${index + 1}`}
-                          className="w-full h-24 object-cover rounded-lg border-2 border-slate-200 cursor-pointer hover:border-blue-400 transition-colors"
+                          className="w-full h-24 object-cover rounded-lg border-2 border-border cursor-pointer hover:border-blue-400 transition-colors"
                           onClick={() => showImageViewer(index)}
                         />
                         <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-opacity rounded-lg flex items-center justify-center">
@@ -508,19 +522,19 @@ export function TechnicianWorkOrderModal({
                                   <div className="flex flex-col">
                                     <span className="font-medium">{availablePart.name}</span>
                                     {availablePart.description && (
-                                      <span className="text-xs text-gray-500">{availablePart.description}</span>
+                                      <span className="text-xs text-muted-foreground">{availablePart.description}</span>
                                     )}
                                   </div>
                                 </SelectItem>
                               ))}
                               <SelectItem value="custom">
-                                <span className="italic text-gray-600">Custom part...</span>
+                                <span className="italic text-muted-foreground">Custom part...</span>
                               </SelectItem>
                             </SelectContent>
                           </Select>
                           {part.name === "custom" && (
                             <div className="mt-2">
-                              <Label className="text-xs text-gray-600">Custom Part Name</Label>
+                              <Label className="text-xs text-muted-foreground">Custom Part Name</Label>
                               <Input
                                 placeholder="Enter custom part name"
                                 onChange={(e) => updatePart(index, "name", e.target.value)}
@@ -529,7 +543,7 @@ export function TechnicianWorkOrderModal({
                           )}
                         </div>
                         <div className="col-span-2">
-                          <Label className="text-xs text-gray-600">Quantity</Label>
+                          <Label className="text-xs text-muted-foreground">Quantity</Label>
                           <Input
                             type="number"
                             placeholder="Qty"
@@ -539,7 +553,7 @@ export function TechnicianWorkOrderModal({
                           />
                         </div>
                         <div className="col-span-3">
-                          <Label className="text-xs text-gray-600">
+                          <Label className="text-xs text-muted-foreground">
                             {part.name === "custom" ? "Selling Price ($)" : "Selling Price (Auto-filled)"}
                           </Label>
                           <Input
@@ -549,7 +563,7 @@ export function TechnicianWorkOrderModal({
                             step="0.01"
                             value={part.cost}
                             disabled={part.name !== "custom"}
-                            className={part.name !== "custom" ? "bg-gray-50" : ""}
+                            className={part.name !== "custom" ? "bg-muted" : ""}
                             onChange={(e) => updatePart(index, "cost", parseFloat(e.target.value) || 0)}
                           />
                         </div>
@@ -568,7 +582,7 @@ export function TechnicianWorkOrderModal({
                     ))}
                   </div>
                   {parts.length > 0 && (
-                    <div className="text-sm text-slate-600 mt-2">
+                    <div className="text-sm text-muted-foreground mt-2">
                       Parts Total (Selling Price): ${totalPartsCost.toFixed(2)}
                     </div>
                   )}
@@ -577,8 +591,8 @@ export function TechnicianWorkOrderModal({
                 {/* Other Charges - Hidden from technicians */}
 
                 {totalCost > 0 && (
-                  <div className="bg-blue-50 p-3 rounded-lg">
-                    <div className="font-medium text-blue-900">
+                  <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
+                    <div className="font-medium text-blue-900 dark:text-blue-100">
                       Total Selling Price: ${totalCost.toFixed(2)}
                     </div>
                   </div>
@@ -586,7 +600,7 @@ export function TechnicianWorkOrderModal({
 
                 {/* Time Tracking Section */}
                 <div className="border-t pt-4">
-                  <h3 className="text-lg font-medium mb-4">Time Tracking</h3>
+                  <h3 className="text-lg font-medium text-foreground mb-4">Time Tracking</h3>
                   
                   {/* Work Date - Auto-filled and grayed out */}
                   <div className="grid grid-cols-3 gap-4 mb-4">
@@ -596,7 +610,7 @@ export function TechnicianWorkOrderModal({
                         type="date"
                         value={getCurrentDate()}
                         disabled
-                        className="bg-gray-100 text-gray-600"
+                        className="bg-muted text-muted-foreground"
                       />
                     </div>
                     
@@ -604,16 +618,17 @@ export function TechnicianWorkOrderModal({
                     <div>
                       <Label htmlFor="timeIn">Time In</Label>
                       <Input
+                        id="timeIn"
                         type="time"
-                        {...form.register("timeIn")}
-                        onChange={(e) => {
-                          form.setValue("timeIn", e.target.value);
-                          const timeOut = form.getValues("timeOut");
-                          if (timeOut) {
-                            const hours = calculateHours(e.target.value, timeOut);
-                            console.log(`Calculated hours: ${hours}`);
+                        {...form.register("timeIn", {
+                          onChange: (e) => {
+                            const timeOut = form.getValues("timeOut");
+                            if (timeOut && timeOut !== "") {
+                              // Clear any existing timeOut errors when timeIn changes
+                              form.clearErrors("timeOut");
+                            }
                           }
-                        }}
+                        })}
                       />
                       {form.formState.errors.timeIn && (
                         <p className="text-sm text-red-500 mt-1">{form.formState.errors.timeIn.message}</p>
@@ -624,27 +639,24 @@ export function TechnicianWorkOrderModal({
                     <div>
                       <Label htmlFor="timeOut">Time Out</Label>
                       <Input
+                        id="timeOut"
                         type="time"
-                        {...form.register("timeOut")}
-                        onChange={(e) => {
-                          const timeIn = form.getValues("timeIn");
-                          const timeOut = e.target.value;
-                          
-                          // Validate time order
-                          if (timeIn && timeOut && !validateTimeOrder(timeIn, timeOut)) {
-                            form.setError("timeOut", {
-                              type: "manual",
-                              message: "Time Out must be after Time In"
-                            });
-                          } else {
-                            form.clearErrors("timeOut");
-                            form.setValue("timeOut", timeOut);
-                            if (timeIn) {
-                              const hours = calculateHours(timeIn, timeOut);
-                              console.log(`Calculated hours: ${hours}`);
+                        {...form.register("timeOut", {
+                          onChange: (e) => {
+                            const timeIn = form.getValues("timeIn");
+                            const timeOut = e.target.value;
+                            
+                            // Validate time order only if both fields have values
+                            if (timeIn && timeOut && !validateTimeOrder(timeIn, timeOut)) {
+                              form.setError("timeOut", {
+                                type: "manual",
+                                message: "Time Out must be after Time In (same day)"
+                              });
+                            } else if (timeOut) {
+                              form.clearErrors("timeOut");
                             }
                           }
-                        }}
+                        })}
                       />
                       {form.formState.errors.timeOut && (
                         <p className="text-sm text-red-500 mt-1">{form.formState.errors.timeOut.message}</p>
@@ -653,9 +665,9 @@ export function TechnicianWorkOrderModal({
                   </div>
                   
                   {/* Calculated Hours Display */}
-                  {form.watch("timeIn") && form.watch("timeOut") && (
-                    <div className="bg-green-50 p-3 rounded-lg mb-4">
-                      <div className="font-medium text-green-900">
+                  {form.watch("timeIn") && form.watch("timeOut") && validateTimeOrder(form.watch("timeIn"), form.watch("timeOut")) && (
+                    <div className="bg-green-50 dark:bg-green-950 p-3 rounded-lg mb-4">
+                      <div className="font-medium text-green-900 dark:text-green-100">
                         Total Hours: {calculateHours(form.watch("timeIn"), form.watch("timeOut"))} hours
                       </div>
                     </div>
@@ -664,7 +676,7 @@ export function TechnicianWorkOrderModal({
 
                 {/* Manager Signature Section */}
                 <div className="border-t pt-4">
-                  <h3 className="text-lg font-medium mb-4">Manager Verification</h3>
+                  <h3 className="text-lg font-medium text-foreground mb-4">Manager Verification</h3>
                   
                   {/* Manager Name */}
                   <div className="mb-4">
@@ -692,7 +704,7 @@ export function TechnicianWorkOrderModal({
                         Clear
                       </Button>
                     </div>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg bg-white">
+                    <div className="border-2 border-dashed border-border rounded-lg bg-background">
                       <canvas
                         ref={canvasRef}
                         width={400}
