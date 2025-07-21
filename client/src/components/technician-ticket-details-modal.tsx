@@ -1,10 +1,13 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Hash, User, Wrench, CheckCircle, ImageIcon, X, History } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Calendar, Hash, Wrench, CheckCircle, MessageSquare, Calculator } from "lucide-react";
 import { WorkOrdersHistory } from "@/components/work-orders-history";
-import { format as formatTz, toZonedTime } from "date-fns-tz";
-import { formatDistanceToNow } from "date-fns";
+import { TicketComments } from "@/components/ticket-comments";
+import { ProgressTracker } from "@/components/progress-tracker";
+import { format } from "date-fns";
 import { getPriorityColor, getStatusColor } from "@/lib/utils";
 import type { Ticket } from "@shared/schema";
 import { useState } from "react";
@@ -24,134 +27,130 @@ export function TechnicianTicketDetailsModal({
   onStart,
   onCreateWorkOrder,
 }: TechnicianTicketDetailsModalProps) {
-  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
-  const [showWorkOrdersHistory, setShowWorkOrdersHistory] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   if (!ticket) return null;
 
-  const priorityColor = getPriorityColor(ticket.priority);
-  const statusColor = getStatusColor(ticket.status);
-
-  const showImageViewer = (index: number) => {
+  const openImageViewer = (images: string[], index: number) => {
+    setSelectedImages(images);
     setSelectedImageIndex(index);
   };
 
-  const closeImageViewer = () => {
-    setSelectedImageIndex(null);
-  };
-
   return (
-    <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              <span>{ticket.title}</span>
-              <Badge variant="outline" className={`${priorityColor} border-current`}>
-                {ticket.priority}
-              </Badge>
-              <Badge variant="outline" className={`${statusColor} border-current`}>
-                {ticket.status}
-              </Badge>
-            </DialogTitle>
-          </DialogHeader>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Hash className="h-5 w-5" />
+            {ticket.ticketNumber || `TKT-${ticket.id.toString().padStart(3, '0')}`}
+          </DialogTitle>
+        </DialogHeader>
+        
+        <ScrollArea className="h-[70vh]">
+          <Tabs defaultValue="details" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="details">Details</TabsTrigger>
+              <TabsTrigger value="comments">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Comments
+              </TabsTrigger>
+              <TabsTrigger value="progress">
+                <Calculator className="h-4 w-4 mr-2" />
+                Progress
+              </TabsTrigger>
+              <TabsTrigger value="work-orders">Work Orders</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="details" className="space-y-6 mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <Hash className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-sm font-medium text-muted-foreground">Ticket Number</span>
+                  </div>
+                  <p className="text-lg font-mono">{ticket.ticketNumber}</p>
+                </div>
+                
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <Calendar className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-sm font-medium text-muted-foreground">Created</span>
+                  </div>
+                  <p className="text-lg">{format(new Date(ticket.createdAt), 'PPp')}</p>
+                </div>
+              </div>
 
-          <div className="space-y-6">
-            {/* Ticket Details */}
-            <div className="bg-slate-50 p-4 rounded-lg space-y-3">
               <div>
-                <h4 className="font-medium text-foreground mb-2">Description</h4>
-                <p className="text-foreground">{ticket.description}</p>
-              </div>
-              
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <Hash className="h-4 w-4" />
-                  <span>{ticket.ticketNumber}</span>
+                <h3 className="text-xl font-semibold mb-2">{ticket.title}</h3>
+                <div className="flex items-center space-x-3 mb-4">
+                  <Badge className={getPriorityColor(ticket.priority)}>
+                    {ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1)} Priority
+                  </Badge>
+                  <Badge className={getStatusColor(ticket.status)}>
+                    {ticket.status === "in-progress" ? "In Progress" : 
+                     ticket.status === "pending_confirmation" ? "Pending Confirmation" :
+                     ticket.status === "return_needed" ? "Return Needed" :
+                     ticket.status === "force_closed" ? "Force Closed" :
+                     ticket.status === "ready_for_billing" ? "Ready for Billing" :
+                     ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}
+                  </Badge>
                 </div>
-                <div className="flex items-center gap-1">
-                  <User className="h-4 w-4" />
-                  <span>Reporter: {ticket.reporterId}</span>
+
+                <div className="bg-muted/50 p-4 rounded-lg">
+                  <p className="text-foreground">{ticket.description}</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-slate-400" />
-                  <div>
-                    <div className="font-medium">Created</div>
-                    <div>
-                      {formatTz(toZonedTime(new Date(ticket.createdAt), 'America/New_York'), "MMM dd, yyyy 'at' h:mm a zzz", { timeZone: 'America/New_York' })}
-                    </div>
-                    <div className="text-xs text-slate-500">
-                      {formatDistanceToNow(new Date(ticket.createdAt), { addSuffix: true })}
-                    </div>
+              {ticket.images && ticket.images.length > 0 && (
+                <div>
+                  <h4 className="font-semibold mb-3">Attached Images</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {ticket.images.map((image, index) => (
+                      <div 
+                        key={index} 
+                        className="relative aspect-square bg-muted rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => openImageViewer(ticket.images!, index)}
+                      >
+                        {image.toLowerCase().endsWith('.mp4') || image.toLowerCase().endsWith('.mov') || image.toLowerCase().endsWith('.avi') ? (
+                          <video 
+                            src={image} 
+                            className="w-full h-full object-cover"
+                            muted
+                          />
+                        ) : (
+                          <img 
+                            src={image} 
+                            alt={`Attachment ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
+              )}
 
-                {ticket.updatedAt !== ticket.createdAt && (
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-slate-400" />
-                    <div>
-                      <div className="font-medium">Last Updated</div>
-                      <div>
-                        {formatTz(toZonedTime(new Date(ticket.updatedAt), 'America/New_York'), "MMM dd, yyyy 'at' h:mm a zzz", { timeZone: 'America/New_York' })}
-                      </div>
-                      <div className="text-xs text-slate-500">
-                        {formatDistanceToNow(new Date(ticket.updatedAt), { addSuffix: true })}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Images */}
-            {ticket.images && ticket.images.length > 0 && (
-              <div>
-                <h4 className="font-medium text-foreground mb-3">Photos ({ticket.images.length})</h4>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {ticket.images.map((image, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={image}
-                        alt={`Photo ${index + 1}`}
-                        className="w-full h-32 object-cover rounded-lg border-2 border-slate-200 cursor-pointer hover:border-blue-400 transition-colors"
-                        onClick={() => showImageViewer(index)}
-                      />
-                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-opacity rounded-lg flex items-center justify-center">
-                        <ImageIcon className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="flex justify-between items-center pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={() => setShowWorkOrdersHistory(true)}
-                className="flex items-center gap-2"
-              >
-                <History className="h-4 w-4" />
-                View Work Orders History
-              </Button>
-              
-              <div className="flex gap-3">
+              {/* Action Buttons for Technician */}
+              <div className="flex gap-3 pt-4">
                 {ticket.status === 'accepted' && onStart && (
                   <Button
-                    onClick={() => onStart(ticket.id)}
+                    onClick={() => {
+                      onStart(ticket.id);
+                      onOpenChange(false);
+                    }}
                     className="bg-blue-600 hover:bg-blue-700"
                   >
                     <Wrench className="h-4 w-4 mr-2" />
-                    Start Work
+                    Start & Create Work Order
                   </Button>
                 )}
                 {(ticket.status === 'in-progress' || ticket.status === 'return_needed') && onCreateWorkOrder && (
                   <Button
-                    onClick={() => onCreateWorkOrder(ticket.id)}
+                    onClick={() => {
+                      onCreateWorkOrder(ticket.id);
+                      onOpenChange(false);
+                    }}
                     className="bg-emerald-600 hover:bg-emerald-700"
                   >
                     <CheckCircle className="h-4 w-4 mr-2" />
@@ -159,43 +158,30 @@ export function TechnicianTicketDetailsModal({
                   </Button>
                 )}
               </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+            </TabsContent>
 
-      {/* Image Viewer Modal */}
-      {selectedImageIndex !== null && ticket.images && (
-        <Dialog open={true} onOpenChange={closeImageViewer}>
-          <DialogContent className="max-w-6xl max-h-[95vh] p-0">
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute top-4 right-4 z-10 bg-black bg-opacity-50 hover:bg-opacity-70 text-white"
-                onClick={closeImageViewer}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-              <img
-                src={ticket.images[selectedImageIndex]}
-                alt={`Photo ${selectedImageIndex + 1}`}
-                className="w-full h-auto max-h-[90vh] object-contain"
+            <TabsContent value="comments" className="mt-6">
+              <TicketComments ticket={ticket} />
+            </TabsContent>
+
+            <TabsContent value="progress" className="mt-6">
+              <ProgressTracker 
+                open={true}
+                onOpenChange={() => {}}
+                ticket={ticket}
               />
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-70 text-white px-3 py-1 rounded-lg text-sm">
-                {selectedImageIndex + 1} of {ticket.images.length}
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
+            </TabsContent>
 
-      {/* Work Orders History Modal */}
-      <WorkOrdersHistory
-        open={showWorkOrdersHistory}
-        onOpenChange={setShowWorkOrdersHistory}
-        ticketId={ticket?.id || null}
-      />
-    </>
+            <TabsContent value="work-orders" className="mt-6">
+              <WorkOrdersHistory 
+                open={true} 
+                onOpenChange={() => {}} 
+                ticketId={ticket.id} 
+              />
+            </TabsContent>
+          </Tabs>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
   );
 }
