@@ -140,12 +140,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/ai/query', authenticateUser, processUserQuery);
 
   // Root admin routes for managing organizations and vendors
-  app.get('/api/organizations', authenticateUser, requireRole(['root', 'org_admin', 'org_subadmin']), async (req, res) => {
+  app.get('/api/organizations', authenticateUser, requireRole(['root', 'org_admin', 'org_subadmin', 'maintenance_admin']), async (req, res) => {
     try {
       // If user is org_admin or org_subadmin, only return their organization
       if (req.user!.role === 'org_admin' || req.user!.role === 'org_subadmin') {
         const organization = await storage.getOrganization(req.user!.organizationId!);
         res.json(organization ? [organization] : []);
+      } else if (req.user!.role === 'maintenance_admin') {
+        // Maintenance admin gets all organizations (needed for invoice creation)
+        const organizations = await storage.getOrganizations();
+        res.json(organizations);
       } else {
         // Root user gets all organizations
         const organizations = await storage.getOrganizations();
