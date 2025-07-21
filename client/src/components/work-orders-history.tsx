@@ -210,7 +210,7 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
                           {workOrder.images.slice(0, 4).map((image: string, index: number) => (
                             <button
                               key={index}
-                              onClick={() => openImageGallery(workOrder.images, `Work Order #${workOrder.workOrderNumber} Images`)}
+                              onClick={() => openImageGallery(workOrder.images || [], `Work Order #${workOrder.workOrderNumber} Images`)}
                               className="relative w-20 h-20 rounded-lg overflow-hidden border-2 border-gray-200 hover:border-blue-400 transition-colors group"
                             >
                               <img
@@ -218,9 +218,9 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
                                 alt={`Work order image ${index + 1}`}
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                               />
-                              {index === 3 && workOrder.images.length > 4 && (
+                              {index === 3 && workOrder.images && workOrder.images.length > 4 && (
                                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-sm font-medium">
-                                  +{workOrder.images.length - 4}
+                                  +{(workOrder.images?.length || 0) - 4}
                                 </div>
                               )}
                             </button>
@@ -229,7 +229,7 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => openImageGallery(workOrder.images, `Work Order #${workOrder.workOrderNumber} Images`)}
+                              onClick={() => openImageGallery(workOrder.images || [], `Work Order #${workOrder.workOrderNumber} Images`)}
                               className="h-20 px-3 text-xs"
                             >
                               View All<br />({workOrder.images.length})
