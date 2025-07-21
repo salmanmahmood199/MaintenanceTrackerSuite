@@ -198,7 +198,7 @@ export function TicketCard({ ticket, onAccept, onReject, onComplete, onStart, on
                   Confirm Completion
                 </Button>
               )}
-              {ticket.status === 'ready_for_billing' && onCreateInvoice && userRole === 'maintenance_admin' && (
+              {(ticket.status === 'ready_for_billing' || ticket.status === 'completed') && onCreateInvoice && userRole === 'maintenance_admin' && (
                 <Button
                   onClick={(e) => {
                     e.stopPropagation();

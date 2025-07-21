@@ -1246,8 +1246,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Ticket not found" });
       }
 
-      if (ticket.status !== "ready_for_billing") {
-        return res.status(400).json({ message: "Ticket is not ready for billing" });
+      if (ticket.status !== "ready_for_billing" && ticket.status !== "completed") {
+        return res.status(400).json({ message: "Ticket is not ready for billing. Status must be 'ready_for_billing' or 'completed'." });
       }
 
       // Verify vendor ownership

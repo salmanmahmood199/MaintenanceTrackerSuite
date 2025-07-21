@@ -337,7 +337,7 @@ export function TicketTable({
                               )}
                               
                               {/* Create invoice */}
-                              {ticket.status === "ready_for_billing" && onCreateInvoice && userRole === "maintenance_admin" && (
+                              {(ticket.status === "ready_for_billing" || ticket.status === "completed") && onCreateInvoice && userRole === "maintenance_admin" && (
                                 <DropdownMenuItem 
                                   onClick={(e) => {
                                     e.preventDefault();

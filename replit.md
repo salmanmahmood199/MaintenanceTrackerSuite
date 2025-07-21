@@ -351,6 +351,9 @@ Changelog:
 - July 21, 2025. Enhanced error handling with detailed error messages and console logging for invoice creation debugging
 - July 21, 2025. Improved null safety throughout enhanced invoice creator component with proper fallbacks for all object properties
 - July 21, 2025. Fixed runtime crashes in invoice generation by adding comprehensive null checking for ticket, vendor, and organization objects
+- July 21, 2025. Fixed Create Invoice button visibility - now shows for both "ready_for_billing" and "completed" tickets
+- July 21, 2025. Updated backend validation to accept both "ready_for_billing" and "completed" tickets for invoice creation
+- July 21, 2025. Enhanced invoice creation workflow to work with completed tickets that haven't been explicitly marked as ready for billing
 ```
 
 ## User Preferences
