@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { FileText, Eye, Calendar, DollarSign } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
+import { InvoicePDFViewer } from "./invoice-pdf-viewer";
 import type { Invoice } from "@shared/schema";
 
 interface InvoicesViewProps {
@@ -89,11 +90,11 @@ export function InvoicesView({ vendorId }: InvoicesViewProps) {
                       {invoice.invoiceNumber}
                     </TableCell>
                     <TableCell>
-                      {invoice.ticketNumber}
+                      {invoice.ticketNumber || 'N/A'}
                     </TableCell>
                     <TableCell>
                       <span className="font-semibold text-green-600">
-                        ${parseFloat(invoice.totalAmount).toFixed(2)}
+                        ${parseFloat(invoice.total).toFixed(2)}
                       </span>
                     </TableCell>
                     <TableCell>
@@ -108,14 +109,7 @@ export function InvoicesView({ vendorId }: InvoicesViewProps) {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleViewInvoice(invoice)}
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        View
-                      </Button>
+                      <InvoicePDFViewer invoice={invoice} />
                     </TableCell>
                   </TableRow>
                 ))}
@@ -140,7 +134,7 @@ export function InvoicesView({ vendorId }: InvoicesViewProps) {
                   <h3 className="font-semibold text-lg mb-2">Invoice Information</h3>
                   <div className="space-y-2 text-sm">
                     <div><span className="font-medium">Invoice #:</span> {selectedInvoice.invoiceNumber}</div>
-                    <div><span className="font-medium">Ticket #:</span> {selectedInvoice.ticketNumber}</div>
+                    <div><span className="font-medium">Ticket #:</span> {selectedInvoice.ticketNumber || 'N/A'}</div>
                     <div><span className="font-medium">Status:</span> 
                       <Badge className={`ml-2 ${getStatusColor(selectedInvoice.status)}`}>
                         {selectedInvoice.status}
@@ -156,7 +150,7 @@ export function InvoicesView({ vendorId }: InvoicesViewProps) {
                     <div><span className="font-medium">Subtotal:</span> ${parseFloat(selectedInvoice.subtotal).toFixed(2)}</div>
                     <div><span className="font-medium">Tax:</span> ${parseFloat(selectedInvoice.tax).toFixed(2)}</div>
                     <div className="border-t pt-2">
-                      <span className="font-semibold text-lg">Total: ${parseFloat(selectedInvoice.totalAmount).toFixed(2)}</span>
+                      <span className="font-semibold text-lg">Total: ${parseFloat(selectedInvoice.total).toFixed(2)}</span>
                     </div>
                   </div>
                 </div>

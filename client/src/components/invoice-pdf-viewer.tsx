@@ -1,256 +1,270 @@
-import { Card } from "@/components/ui/card";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Building2, FileText, Download, Print } from "lucide-react";
-import { format as formatTz, toZonedTime } from "date-fns-tz";
-import type { Invoice, Ticket, MaintenanceVendor, Organization, WorkOrder } from "@shared/schema";
+import { Separator } from "@/components/ui/separator";
+import { Card, CardContent } from "@/components/ui/card";
+import { Eye, Printer } from "lucide-react";
+import { formatDate } from "@/lib/utils";
+import { apiRequest } from "@/lib/queryClient";
+import type { Invoice, Ticket, Organization, MaintenanceVendor, WorkOrder } from "@shared/schema";
 
 interface InvoicePDFViewerProps {
   invoice: Invoice;
-  ticket: Ticket | null;
-  vendor: MaintenanceVendor | null;
-  organization: Organization | null;
-  workOrders: WorkOrder[];
 }
 
-export function InvoicePDFViewer({
-  invoice,
-  ticket,
-  vendor,
-  organization,
-  workOrders,
-}: InvoicePDFViewerProps) {
-  
+export function InvoicePDFViewer({ invoice }: InvoicePDFViewerProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Fetch related data for the invoice
+  const { data: ticket } = useQuery<Ticket>({
+    queryKey: ["/api/tickets", invoice.ticketId],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/tickets/${invoice.ticketId}`);
+      return await response.json();
+    },
+    enabled: isOpen && !!invoice.ticketId,
+  });
+
+  const { data: organization } = useQuery<Organization>({
+    queryKey: ["/api/organizations", invoice.organizationId],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/organizations`);
+      const orgs = await response.json();
+      return orgs.find((org: Organization) => org.id === invoice.organizationId);
+    },
+    enabled: isOpen && !!invoice.organizationId,
+  });
+
+  const { data: vendor } = useQuery<MaintenanceVendor>({
+    queryKey: ["/api/maintenance-vendors", invoice.maintenanceVendorId],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/maintenance-vendors`);
+      const vendors = await response.json();
+      return vendors.find((v: MaintenanceVendor) => v.id === invoice.maintenanceVendorId);
+    },
+    enabled: isOpen && !!invoice.maintenanceVendorId,
+  });
+
+  const { data: workOrders = [] } = useQuery<WorkOrder[]>({
+    queryKey: ["/api/tickets", invoice.ticketId, "work-orders"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/tickets/${invoice.ticketId}/work-orders`);
+      return await response.json();
+    },
+    enabled: isOpen && !!invoice.ticketId,
+  });
+
   const handlePrint = () => {
     window.print();
   };
 
-  const handleDownload = () => {
-    // Future enhancement: Generate PDF download
-    alert("PDF download feature coming soon!");
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "draft": return "bg-yellow-100 text-yellow-800";
+      case "sent": return "bg-blue-100 text-blue-800";
+      case "paid": return "bg-green-100 text-green-800";
+      case "overdue": return "bg-red-100 text-red-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
   };
 
-  return (
-    <div className="space-y-6 invoice-pdf-viewer">
-      {/* Print/Download Actions */}
-      <div className="flex justify-end gap-2 no-print">
-        <Button onClick={handlePrint} variant="outline" className="flex items-center gap-2">
-          <Print className="h-4 w-4" />
-          Print Invoice
-        </Button>
-        <Button onClick={handleDownload} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700">
-          <Download className="h-4 w-4" />
-          Download PDF
-        </Button>
-      </div>
+  // Parse additional items
+  const additionalItems = invoice.additionalItems ? (() => {
+    try {
+      return JSON.parse(invoice.additionalItems);
+    } catch {
+      return [];
+    }
+  })() : [];
 
-      {/* Professional Invoice Display */}
-      <Card className="bg-white text-black print:shadow-none print:border-0 max-w-4xl mx-auto" style={{ color: 'black' }}>
-        {/* Invoice Header with Gradient */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-8 print:p-6">
-          <div className="flex justify-between items-start">
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <Eye className="h-4 w-4 mr-1" />
+          View
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center justify-between">
+            <span>Invoice {invoice.invoiceNumber}</span>
+            <div className="flex items-center gap-2">
+              <Badge className={getStatusColor(invoice.status)}>
+                {invoice.status}
+              </Badge>
+              <Button variant="outline" size="sm" onClick={handlePrint}>
+                <Printer className="h-4 w-4 mr-1" />
+                Print
+              </Button>
+            </div>
+          </DialogTitle>
+        </DialogHeader>
+
+        {/* PDF-style Invoice Content */}
+        <div className="bg-white text-black p-8 rounded-lg" style={{ fontFamily: 'Arial, sans-serif' }}>
+          {/* Header */}
+          <div className="flex justify-between items-start mb-8">
             <div>
-              <h1 className="text-4xl font-bold print:text-3xl">INVOICE</h1>
-              <p className="text-blue-100 mt-2 text-lg">Professional Maintenance Services</p>
+              <h1 className="text-3xl font-bold text-black mb-2">INVOICE</h1>
+              <div className="text-sm text-black">
+                <div><strong>Invoice #:</strong> {invoice.invoiceNumber}</div>
+                <div><strong>Date:</strong> {invoice.createdAt ? formatDate(invoice.createdAt) : 'N/A'}</div>
+                {ticket && <div><strong>Ticket #:</strong> {ticket.ticketNumber}</div>}
+              </div>
             </div>
             <div className="text-right">
-              <div className="bg-white/20 p-4 rounded-lg print:bg-gray-100 print:text-black">
-                <p className="text-sm opacity-90 print:opacity-70">Invoice Number:</p>
-                <p className="text-xl font-bold print:text-lg">{invoice.invoiceNumber}</p>
-                <p className="text-sm opacity-90 mt-2 print:opacity-70">Date:</p>
-                <p className="font-semibold">
-                  {invoice.createdAt ? formatTz(toZonedTime(new Date(invoice.createdAt), 'America/New_York'), "MMM dd, yyyy", { timeZone: 'America/New_York' }) : 'N/A'}
-                </p>
+              <h2 className="text-xl font-bold text-black mb-2">
+                {vendor?.name || "Professional Maintenance Services"}
+              </h2>
+              <div className="text-sm text-black">
+                <div>{vendor?.address || "123 Service Drive"}</div>
+                <div>{vendor?.email || "billing@vendor.com"}</div>
+                <div>{vendor?.phone || "(555) 123-4567"}</div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="p-8 print:p-6 space-y-8" style={{ color: 'black' }}>
-          {/* Company & Client Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 print:gap-6">
-            <div>
-              <h3 className="font-bold text-xl mb-4 flex items-center gap-2 text-black">
-                <Building2 className="h-5 w-5" />
-                Service Provider
-              </h3>
-              <div className="bg-gray-50 p-6 print:p-4 rounded-xl print:rounded-lg border">
-                <p className="font-bold text-2xl print:text-xl text-black">{vendor?.name || 'Maintenance Vendor'}</p>
-                <div className="mt-3 space-y-1 text-black">
-                  <p>{vendor?.address || 'Vendor Address'}</p>
-                  <p>Email: {vendor?.email || 'vendor@email.com'}</p>
-                  <p>Phone: {vendor?.phone || 'Phone Number'}</p>
-                </div>
-              </div>
+          <Separator className="my-6" />
+
+          {/* Bill To Section */}
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-black mb-3">Bill To:</h3>
+            <div className="text-black">
+              <div className="font-semibold">{organization?.name || "Loading..."}</div>
+              <div>{organization?.address || "Loading address..."}</div>
+              <div>{organization?.email || "Loading email..."}</div>
+              <div>{organization?.phone || "Loading phone..."}</div>
             </div>
+          </div>
+
+          <Separator className="my-6" />
+
+          {/* Work Orders Section */}
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-black mb-4">Service Details</h3>
             
-            <div>
-              <h3 className="font-bold text-xl mb-4 flex items-center gap-2 text-black">
-                <Building2 className="h-5 w-5" />
-                Bill To
-              </h3>
-              <div className="bg-gray-50 p-6 print:p-4 rounded-xl print:rounded-lg border">
-                <p className="font-bold text-2xl print:text-xl text-black">{organization?.name || 'Organization'}</p>
-                <div className="mt-3 space-y-1 text-black">
-                  <p>{organization?.address || 'Organization Address'}</p>
-                  <p>Email: {organization?.email || 'org@email.com'}</p>
-                  <p>Phone: {organization?.phone || 'Phone Number'}</p>
-                </div>
-              </div>
-            </div>
-          </div>
+            {workOrders.length > 0 ? (
+              <div className="space-y-6">
+                {workOrders.map((workOrder, index) => (
+                  <Card key={workOrder.id} className="border border-gray-300">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start mb-3">
+                        <h4 className="font-semibold text-black">Work Order #{index + 1}</h4>
+                        <div className="text-sm text-black">
+                          {workOrder.workDate && <div>Date: {workOrder.workDate}</div>}
+                          {workOrder.timeIn && workOrder.timeOut && (
+                            <div>Time: {workOrder.timeIn} - {workOrder.timeOut}</div>
+                          )}
+                        </div>
+                      </div>
 
-          {/* Service Details */}
-          <div className="bg-blue-50 print:bg-gray-50 p-6 print:p-4 rounded-xl print:rounded-lg border border-blue-200 print:border-gray-200">
-            <h3 className="font-bold text-xl mb-4 text-black">Service Details</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-black">
-              <div><span className="font-semibold">Ticket Number:</span> {ticket?.ticketNumber || 'N/A'}</div>
-              <div><span className="font-semibold">Priority:</span> <Badge variant="outline" className="ml-2">{ticket?.priority || 'Standard'}</Badge></div>
-              <div className="md:col-span-2"><span className="font-semibold">Description:</span> {ticket?.description || 'Service completed'}</div>
-            </div>
-          </div>
+                      <div className="text-black mb-3">
+                        <div><strong>Description:</strong> {workOrder.workDescription || 'N/A'}</div>
+                        {workOrder.technicianName && (
+                          <div><strong>Technician:</strong> {workOrder.technicianName}</div>
+                        )}
+                        {workOrder.totalHours && (
+                          <div><strong>Total Hours:</strong> {workOrder.totalHours}</div>
+                        )}
+                      </div>
 
-          {/* Work Orders Table */}
-          <div>
-            <h3 className="font-bold text-xl mb-6 text-black">Work Orders Completed</h3>
-            <div className="overflow-hidden rounded-xl print:rounded-lg border border-gray-200 bg-white">
-              <table className="w-full">
-                <thead className="bg-gray-100">
-                  <tr className="border-b border-gray-200">
-                    <th className="px-6 print:px-4 py-4 text-left font-bold text-black">Work Order</th>
-                    <th className="px-6 print:px-4 py-4 text-left font-bold text-black">Technician</th>
-                    <th className="px-6 print:px-4 py-4 text-right font-bold text-black">Hours</th>
-                    <th className="px-6 print:px-4 py-4 text-right font-bold text-black">Labor</th>
-                    <th className="px-6 print:px-4 py-4 text-right font-bold text-black">Parts</th>
-                    <th className="px-6 print:px-4 py-4 text-right font-bold text-black">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {workOrders.map((workOrder, index) => {
-                    let parts = [];
-                    try {
-                      parts = workOrder.parts ? JSON.parse(workOrder.parts as string) : [];
-                    } catch (e) {
-                      parts = [];
-                    }
-                    const partsCost = parts.reduce((sum: number, part: any) => sum + (part.cost * part.quantity), 0);
-                    
-                    return (
-                      <tr key={workOrder.id} className={`border-b border-gray-100 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                        <td className="px-6 print:px-4 py-4 font-semibold text-black">#{workOrder.workOrderNumber}</td>
-                        <td className="px-6 print:px-4 py-4 text-black">{workOrder.technicianName}</td>
-                        <td className="px-6 print:px-4 py-4 text-right text-black">{parseFloat(workOrder.totalHours || "0").toFixed(2)}</td>
-                        <td className="px-6 print:px-4 py-4 text-right text-black">${(parseFloat(workOrder.totalHours || "0") * 75).toFixed(2)}</td>
-                        <td className="px-6 print:px-4 py-4 text-right text-black">${partsCost.toFixed(2)}</td>
-                        <td className="px-6 print:px-4 py-4 text-right font-semibold text-black">${parseFloat(workOrder.totalCost || "0").toFixed(2)}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                      {/* Labor Breakdown */}
+                      {workOrder.totalHours && (
+                        <div className="mb-4 p-3 bg-gray-50 rounded">
+                          <div className="font-semibold text-black mb-2">Labor:</div>
+                          <div className="flex justify-between text-black">
+                            <span>{workOrder.totalHours} hours</span>
+                            <span>${parseFloat(workOrder.totalCost || "0").toFixed(2)}</span>
+                          </div>
+                        </div>
+                      )}
 
-          {/* Invoice Totals */}
-          <div className="bg-gray-50 print:bg-gray-50 p-6 print:p-4 rounded-xl print:rounded-lg border">
-            <div className="flex justify-end">
-              <div className="w-80 print:w-72 space-y-3">
-                <div className="flex justify-between text-lg text-black">
-                  <span>Subtotal:</span>
-                  <span>${parseFloat(invoice.subtotal || "0").toFixed(2)}</span>
-                </div>
-                {parseFloat(invoice.tax || "0") > 0 && (
-                  <div className="flex justify-between text-black">
-                    <span>Tax:</span>
-                    <span>${parseFloat(invoice.tax || "0").toFixed(2)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-2xl print:text-xl font-bold border-t pt-3 text-black">
-                  <span>TOTAL:</span>
-                  <span className="text-black">${parseFloat(invoice.total || "0").toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
-          </div>
+                      {/* Parts Used */}
+                      {workOrder.parts && Array.isArray(workOrder.parts) && workOrder.parts.length > 0 && (
+                        <div className="mb-4">
+                          <div className="font-semibold text-black mb-2">Parts Used:</div>
+                          <div className="space-y-1">
+                            {workOrder.parts.map((part: any, partIndex: number) => (
+                              <div key={partIndex} className="flex justify-between text-black">
+                                <span>{part.name} (Qty: {part.quantity})</span>
+                                <span>${(part.cost * part.quantity).toFixed(2)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
-          {/* Payment Terms & Notes */}
-          <div className="border-t pt-6 print:pt-4 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-black">
-              <div>
-                <h4 className="font-semibold text-black mb-2">Payment Terms</h4>
-                <p>Net 30 - Payment due within 30 days</p>
-                {invoice.dueDate && (
-                  <p className="mt-1">
-                    <span className="font-medium">Due Date:</span> {formatTz(toZonedTime(new Date(invoice.dueDate), 'America/New_York'), "MMM dd, yyyy", { timeZone: 'America/New_York' })}
-                  </p>
-                )}
+                      <div className="border-t pt-2 mt-3">
+                        <div className="flex justify-between font-semibold text-black">
+                          <span>Work Order Total:</span>
+                          <span>${parseFloat(workOrder.totalCost || "0").toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-              <div>
-                <h4 className="font-semibold text-black mb-2">Invoice Status</h4>
-                <Badge variant={invoice.status === 'paid' ? 'default' : 'outline'} className="text-sm">
-                  {invoice.status ? invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1) : 'Draft'}
-                </Badge>
-              </div>
-            </div>
-            
-            {invoice.notes && (
-              <div className="mt-4">
-                <h4 className="font-semibold text-black mb-2">Additional Notes</h4>
-                <p className="text-black bg-white p-4 rounded-lg border">{invoice.notes}</p>
-              </div>
+            ) : (
+              <div className="text-black">No work orders available.</div>
             )}
           </div>
 
-          {/* Footer */}
-          <div className="text-center text-sm text-black border-t pt-6 print:pt-4">
-            <p>Thank you for your business!</p>
-            <p className="mt-1">For questions about this invoice, please contact {vendor?.email || 'vendor@email.com'}</p>
-          </div>
-        </div>
-      </Card>
+          {/* Additional Items */}
+          {additionalItems.length > 0 && (
+            <>
+              <Separator className="my-6" />
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold text-black mb-4">Additional Items</h3>
+                <div className="space-y-2">
+                  {additionalItems.map((item: any, index: number) => (
+                    <div key={index} className="flex justify-between text-black">
+                      <span>{item.description} (Qty: {item.quantity})</span>
+                      <span>${item.amount.toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
 
-      {/* Print-specific styles */}
-      <style jsx global>{`
-        .invoice-pdf-viewer * {
-          color: black !important;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-        }
-        .invoice-pdf-viewer table {
-          color: black !important;
-        }
-        .invoice-pdf-viewer td, .invoice-pdf-viewer th {
-          color: black !important;
-        }
-        .invoice-pdf-viewer .text-gray-700, 
-        .invoice-pdf-viewer .text-gray-600, 
-        .invoice-pdf-viewer .text-gray-500,
-        .invoice-pdf-viewer .text-gray-800,
-        .invoice-pdf-viewer .text-gray-900 {
-          color: black !important;
-        }
-        .invoice-pdf-viewer .text-green-600 {
-          color: black !important;
-        }
-        @media print {
-          .no-print {
-            display: none !important;
-          }
-          @page {
-            margin: 0.5in;
-            size: A4;
-          }
-          body {
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-          * {
-            color: black !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-        }
-      `}</style>
-    </div>
+          <Separator className="my-6" />
+
+          {/* Invoice Summary */}
+          <div className="flex justify-end">
+            <div className="w-64">
+              <div className="space-y-2 text-black">
+                <div className="flex justify-between">
+                  <span>Subtotal:</span>
+                  <span>${parseFloat(invoice.subtotal).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Tax:</span>
+                  <span>${parseFloat(invoice.tax).toFixed(2)}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between font-bold text-lg text-black">
+                  <span>Total:</span>
+                  <span>${parseFloat(invoice.total).toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Notes */}
+          {invoice.notes && (
+            <>
+              <Separator className="my-6" />
+              <div>
+                <h3 className="text-lg font-semibold text-black mb-3">Notes</h3>
+                <div className="text-black whitespace-pre-wrap">{invoice.notes}</div>
+              </div>
+            </>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -27,6 +27,7 @@ import path from "path";
 import fs from "fs";
 import { db } from "./db";
 import { and, eq, desc } from "drizzle-orm";
+import { invoices, tickets } from "@shared/schema";
 
 // Configure multer for image uploads
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -1222,17 +1223,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/invoices", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
       const user = req.user!;
-      let invoices;
+      let result;
       
       if (user.role === "maintenance_admin" && user.maintenanceVendorId) {
-        invoices = await storage.getInvoices(user.maintenanceVendorId);
+        // Get invoices with ticket information
+        result = await db
+          .select({
+            id: invoices.id,
+            invoiceNumber: invoices.invoiceNumber,
+            ticketId: invoices.ticketId,
+            ticketNumber: tickets.ticketNumber,
+            maintenanceVendorId: invoices.maintenanceVendorId,
+            organizationId: invoices.organizationId,
+            subtotal: invoices.subtotal,
+            tax: invoices.tax,
+            total: invoices.total,
+            status: invoices.status,
+            workOrderIds: invoices.workOrderIds,
+            additionalItems: invoices.additionalItems,
+            notes: invoices.notes,
+            createdAt: invoices.createdAt,
+            sentAt: invoices.sentAt,
+            paidAt: invoices.paidAt,
+          })
+          .from(invoices)
+          .leftJoin(tickets, eq(invoices.ticketId, tickets.id))
+          .where(eq(invoices.maintenanceVendorId, user.maintenanceVendorId));
       } else if (user.role === "root") {
-        invoices = await storage.getInvoices();
+        // Get all invoices with ticket information for root
+        result = await db
+          .select({
+            id: invoices.id,
+            invoiceNumber: invoices.invoiceNumber,
+            ticketId: invoices.ticketId,
+            ticketNumber: tickets.ticketNumber,
+            maintenanceVendorId: invoices.maintenanceVendorId,
+            organizationId: invoices.organizationId,
+            subtotal: invoices.subtotal,
+            tax: invoices.tax,
+            total: invoices.total,
+            status: invoices.status,
+            workOrderIds: invoices.workOrderIds,
+            additionalItems: invoices.additionalItems,
+            notes: invoices.notes,
+            createdAt: invoices.createdAt,
+            sentAt: invoices.sentAt,
+            paidAt: invoices.paidAt,
+          })
+          .from(invoices)
+          .leftJoin(tickets, eq(invoices.ticketId, tickets.id));
       } else {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
-      res.json(invoices);
+      res.json(result);
     } catch (error) {
       console.error("Error fetching invoices:", error);
       res.status(500).json({ message: "Failed to fetch invoices" });
