@@ -239,7 +239,7 @@ export function EnhancedInvoiceCreator({
     <div className="max-w-7xl mx-auto p-6 space-y-6 bg-background text-foreground">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Invoice Creation - {ticket.number}</h1>
+          <h1 className="text-3xl font-bold text-foreground">Invoice Creation - {ticket.number || ticket.ticketNumber || `Ticket #${ticket.id}`}</h1>
           <p className="text-muted-foreground mt-1">Create professional invoice for completed work</p>
         </div>
         <Button variant="outline" onClick={onClose}>
@@ -558,7 +558,7 @@ export function EnhancedInvoiceCreator({
           <InvoicePDFViewer
             invoice={{
               id: 0,
-              invoiceNumber: `INV-${ticket.number}`,
+              invoiceNumber: `INV-${ticket.number || ticket.ticketNumber || ticket.id}`,
               ticketId: ticket.id,
               organizationId: organization.id,
               maintenanceVendorId: vendor.id,
