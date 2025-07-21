@@ -624,6 +624,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           accepted: vendorTickets.filter(t => t.status === 'accepted').length,
           inProgress: vendorTickets.filter(t => t.status === 'in-progress').length,
           completed: vendorTickets.filter(t => t.status === 'completed').length,
+          pendingConfirmation: vendorTickets.filter(t => t.status === 'pending_confirmation').length,
+          confirmed: vendorTickets.filter(t => t.status === 'confirmed').length,
           highPriority: vendorTickets.filter(t => t.priority === 'high').length,
         };
       }
@@ -891,9 +893,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Update ticket status based on work order completion status
-      let status: string;
+      let status: "return_needed" | "pending_confirmation" | "completed";
       if (workOrder.completionStatus === "return_needed") {
         status = "return_needed";
+      } else if (workOrder.completionStatus === "completed") {
+        status = "pending_confirmation";
       } else {
         // Set to pending confirmation for original requester
         status = "pending_confirmation";
@@ -1082,7 +1086,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(result);
     } catch (error) {
       console.error('Approve bid error:', error);
-      res.status(500).json({ message: "Failed to approve bid", error: error.message });
+      res.status(500).json({ message: "Failed to approve bid", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
@@ -1101,7 +1105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/marketplace/bids/:id/reject", authenticateUser, requireRole(["org_admin", "org_subadmin"]), async (req: AuthenticatedRequest, res) => {
     try {
       const bidId = parseInt(req.params.id);
-      const bid = await storage.rejectMarketplaceBid(bidId);
+      const bid = await storage.rejectMarketplaceBid(bidId, "");
       res.json(bid);
     } catch (error) {
       res.status(500).json({ message: "Failed to reject marketplace bid" });

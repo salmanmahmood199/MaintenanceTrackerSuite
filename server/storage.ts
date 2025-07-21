@@ -109,6 +109,8 @@ export interface IStorage {
     accepted: number;
     inProgress: number;
     completed: number;
+    pendingConfirmation: number;
+    confirmed: number;
     highPriority: number;
   }>;
   
@@ -876,6 +878,7 @@ export class DatabaseStorage implements IStorage {
         content: ticketComments.content,
         images: ticketComments.images,
         isSystemGenerated: ticketComments.isSystemGenerated,
+        isSystem: ticketComments.isSystem,
         createdAt: ticketComments.createdAt,
         updatedAt: ticketComments.updatedAt,
         user: {

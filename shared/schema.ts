@@ -2,6 +2,7 @@ import { pgTable, text, serial, integer, boolean, timestamp, varchar, uuid, json
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
+import type { Request } from "express";
 
 // Users table with role-based hierarchy
 export const users = pgTable("users", {
@@ -65,7 +66,7 @@ export const tickets = pgTable("tickets", {
   title: text("title").notNull(),
   description: text("description").notNull(),
   priority: text("priority").notNull(),
-  status: text("status").notNull().default("pending"), // pending, accepted, rejected, in-progress, completed, pending_confirmation, confirmed, marketplace
+  status: text("status").notNull().default("pending"), // pending, accepted, rejected, in-progress, completed, return_needed, pending_confirmation, confirmed, marketplace, ready_for_billing, force_closed, billed
   organizationId: integer("organization_id").notNull(),
   reporterId: integer("reporter_id").notNull(),
   assigneeId: integer("assignee_id"),
@@ -177,6 +178,7 @@ export const ticketComments = pgTable("ticket_comments", {
   content: text("content").notNull(),
   images: text("images").array(),
   isSystemGenerated: boolean("is_system_generated").default(false),
+  isSystem: boolean("is_system").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -528,12 +530,12 @@ export const insertTicketSchema = createInsertSchema(tickets).omit({
   updatedAt: true,
 }).extend({
   priority: z.enum(["low", "medium", "high"]),
-  status: z.enum(["pending", "accepted", "rejected", "in-progress", "completed", "return_needed"]).default("pending"),
+  status: z.enum(["pending", "accepted", "rejected", "in-progress", "completed", "return_needed", "pending_confirmation", "confirmed", "marketplace", "ready_for_billing", "force_closed", "billed"]).default("pending"),
 });
 
 export const updateTicketSchema = insertTicketSchema.partial().extend({
   id: z.number(),
-  status: z.enum(["pending", "accepted", "rejected", "in-progress", "completed", "return_needed"]).optional(),
+  status: z.enum(["pending", "accepted", "rejected", "in-progress", "completed", "return_needed", "pending_confirmation", "confirmed", "marketplace", "ready_for_billing", "force_closed", "billed"]).optional(),
 });
 
 export const insertTicketMilestoneSchema = createInsertSchema(ticketMilestones).omit({
@@ -692,3 +694,8 @@ export const insertCalendarEventSchema = createInsertSchema(calendarEvents).omit
 export const updateCalendarEventSchema = insertCalendarEventSchema.partial().extend({
   id: z.number(),
 });
+
+// Express request with authenticated user
+export interface AuthenticatedRequest extends Request {
+  user?: User;
+}
