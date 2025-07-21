@@ -751,7 +751,7 @@ export function EnhancedInvoiceCreator({
                 <div className="flex justify-between items-start">
                   <div>
                     <h1 className="text-3xl font-bold">INVOICE</h1>
-                    <p className="text-blue-100 mt-2">Professional Maintenance Services</p>
+                    <p className="text-blue-100 mt-2">{vendor?.name || 'Maintenance Services'}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-sm opacity-75">Invoice Date:</p>
@@ -809,10 +809,9 @@ export function EnhancedInvoiceCreator({
                       <thead className="bg-gray-100">
                         <tr>
                           <th className="px-4 py-3 text-left font-semibold" style={{color: 'black'}}>Work Order</th>
-                          <th className="px-4 py-3 text-left font-semibold" style={{color: 'black'}}>Technician</th>
-                          <th className="px-4 py-3 text-right font-semibold" style={{color: 'black'}}>Hours</th>
-                          <th className="px-4 py-3 text-right font-semibold" style={{color: 'black'}}>Labor</th>
-                          <th className="px-4 py-3 text-right font-semibold" style={{color: 'black'}}>Parts</th>
+                          <th className="px-4 py-3 text-left font-semibold" style={{color: 'black'}}>Description</th>
+                          <th className="px-4 py-3 text-left font-semibold" style={{color: 'black'}}>Labor Details</th>
+                          <th className="px-4 py-3 text-left font-semibold" style={{color: 'black'}}>Parts Used</th>
                           <th className="px-4 py-3 text-right font-semibold" style={{color: 'black'}}>Total</th>
                         </tr>
                       </thead>
@@ -821,12 +820,50 @@ export function EnhancedInvoiceCreator({
                           const partsCost = (workOrder.editableParts || []).reduce((sum, part) => sum + (part.cost * part.quantity), 0);
                           return (
                             <tr key={workOrder.id} className="border-t">
-                              <td className="px-4 py-3 font-medium" style={{color: 'black'}}>#{workOrder.workOrderNumber}</td>
-                              <td className="px-4 py-3" style={{color: 'black'}}>{workOrder.technicianName}</td>
-                              <td className="px-4 py-3 text-right" style={{color: 'black'}}>{workOrder.editableHours?.toFixed(2)}</td>
-                              <td className="px-4 py-3 text-right" style={{color: 'black'}}>${workOrder.editableLaborCost?.toFixed(2)}</td>
-                              <td className="px-4 py-3 text-right" style={{color: 'black'}}>${partsCost.toFixed(2)}</td>
-                              <td className="px-4 py-3 text-right font-semibold" style={{color: 'black'}}>${workOrder.editableTotalCost?.toFixed(2)}</td>
+                              <td className="px-4 py-3 font-medium align-top" style={{color: 'black'}}>
+                                <div>#{workOrder.workOrderNumber}</div>
+                                <div className="text-sm" style={{color: 'black'}}>by {workOrder.technicianName}</div>
+                                <div className="text-xs" style={{color: 'black'}}>
+                                  {workOrder.dateCompleted ? new Date(workOrder.dateCompleted).toLocaleDateString() : 'In Progress'}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 align-top" style={{color: 'black'}}>
+                                <div className="text-sm">{workOrder.description || 'Work order description'}</div>
+                                {workOrder.notes && (
+                                  <div className="text-xs mt-1 italic" style={{color: 'black'}}>
+                                    Notes: {workOrder.notes}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 align-top" style={{color: 'black'}}>
+                                <div className="text-sm">
+                                  <div>{workOrder.editableHours?.toFixed(2)} hours</div>
+                                  <div>@ ${(workOrder.editableLaborCost! / workOrder.editableHours!).toFixed(2)}/hr</div>
+                                  <div className="font-medium">Labor: ${workOrder.editableLaborCost?.toFixed(2)}</div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 align-top" style={{color: 'black'}}>
+                                {workOrder.editableParts && workOrder.editableParts.length > 0 ? (
+                                  <div className="text-sm space-y-1">
+                                    {workOrder.editableParts.map((part, index) => (
+                                      <div key={index}>
+                                        <div>{part.name}</div>
+                                        <div className="text-xs">
+                                          Qty: {part.quantity} @ ${part.cost.toFixed(2)} = ${(part.quantity * part.cost).toFixed(2)}
+                                        </div>
+                                      </div>
+                                    ))}
+                                    <div className="font-medium border-t pt-1">
+                                      Parts Total: ${partsCost.toFixed(2)}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="text-sm" style={{color: 'black'}}>No parts used</div>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-right font-semibold align-top" style={{color: 'black'}}>
+                                ${workOrder.editableTotalCost?.toFixed(2)}
+                              </td>
                             </tr>
                           );
                         })}

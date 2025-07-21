@@ -345,6 +345,10 @@ Changelog:
 - July 21, 2025. Fixed interface stability issues preventing editing fields from collapsing unexpectedly with comprehensive event handling
 - July 21, 2025. Parts costs now populate from system defaults but allow full customization in invoice creation interface
 - July 21, 2025. Added parts summary display showing individual parts with quantities and costs immediately below labor section
+- July 21, 2025. Fixed PDF text visibility issues completely - all invoice text now displays in black instead of invisible white/gray
+- July 21, 2025. Enhanced PDF preview with detailed work order breakdown showing individual labor details, parts lists with quantities/costs, and real vendor/organization data
+- July 21, 2025. Customized PDF header to display actual vendor name instead of generic "Professional Maintenance Services"
+- July 21, 2025. Implemented comprehensive work order table with description, labor breakdown (hours/rate), detailed parts usage, and completion dates
 ```
 
 ## User Preferences
