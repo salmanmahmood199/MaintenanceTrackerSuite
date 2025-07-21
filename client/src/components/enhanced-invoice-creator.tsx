@@ -94,11 +94,22 @@ export function EnhancedInvoiceCreator({
           otherCharges = [];
         }
 
+        // Debug: Log parts data to console
+        console.log(`Work Order ${wo.id} parts data:`, parts);
+        
         // Ensure parts have editable costs initialized from system defaults
         const editableParts = parts.map((part: any) => ({
           ...part,
-          cost: part.cost || 0 // Use existing cost or default to 0
+          cost: part.cost || 15 // Use existing cost or default to $15 for testing
         }));
+
+        // For testing purposes, if no parts exist, create sample parts
+        if (editableParts.length === 0 && process.env.NODE_ENV === 'development') {
+          editableParts.push(
+            { name: "Sample Part A", quantity: 2, cost: 25 },
+            { name: "Sample Part B", quantity: 1, cost: 50 }
+          );
+        }
 
         const editableHours = parseFloat(wo.totalHours || "0");
         const editableHourlyRate = 75; // Default rate but customizable
@@ -320,6 +331,15 @@ export function EnhancedInvoiceCreator({
                             </div>
                           </div>
                         </div>
+
+                        {/* Debug: Show parts data */}
+                        {process.env.NODE_ENV === 'development' && (
+                          <div className="bg-yellow-100 p-2 text-xs text-black rounded">
+                            <strong>Debug Parts Data:</strong><br/>
+                            editableParts: {JSON.stringify(workOrder.editableParts)}<br/>
+                            original parts: {JSON.stringify(workOrder.parts)}
+                          </div>
+                        )}
 
                         {/* Parts Summary Display (underneath labor) */}
                         {workOrder.editableParts && workOrder.editableParts.length > 0 && (
