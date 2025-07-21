@@ -3,12 +3,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRoute } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, LogOut, FileText, Package, Calendar } from "lucide-react";
+import { ArrowLeft, LogOut, FileText, Package, Calendar, AlertCircle } from "lucide-react";
 import { TicketTable } from "@/components/ticket-table";
 import { CreateInvoiceModal } from "@/components/create-invoice-modal";
 import { InvoicesView } from "@/components/invoices-view";
 import { VendorTicketActionModal } from "@/components/vendor-ticket-action-modal";
 import { MarketplaceTicketsView } from "@/components/marketplace-tickets-view";
+import { VendorBidsView } from "@/components/vendor-bids-view";
 import PartsManagement from "./parts-management";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -64,6 +65,19 @@ export function VendorView() {
     },
     enabled: !!vendorId,
   });
+
+  // Fetch vendor bids to check for counter offers
+  const { data: vendorBids = [] } = useQuery({
+    queryKey: ["/api/marketplace/vendor-bids"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/marketplace/vendor-bids");
+      return await response.json();
+    },
+    enabled: !!vendorId,
+  });
+
+  // Count pending counter offers
+  const counterOffersCount = vendorBids.filter((bid: any) => bid.status === "counter").length;
 
   // Fetch all tickets for this vendor (we'll filter client-side)
   const { data: allTickets = [], isLoading: ticketsLoading } = useQuery<Ticket[]>({
@@ -335,13 +349,18 @@ export function VendorView() {
               </button>
               <button
                 onClick={() => setActiveTab("marketplace")}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                className={`py-2 px-1 border-b-2 font-medium text-sm relative ${
                   activeTab === "marketplace"
                     ? "border-blue-500 text-blue-500"
                     : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted"
                 }`}
               >
                 Marketplace
+                {counterOffersCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {counterOffersCount}
+                  </span>
+                )}
               </button>
               <button
                 onClick={() => setActiveTab("invoices")}
@@ -402,7 +421,31 @@ export function VendorView() {
         )}
 
         {activeTab === "marketplace" && (
-          <MarketplaceTicketsView />
+          <div className="space-y-6">
+            {/* Counter Offers Alert */}
+            {counterOffersCount > 0 && (
+              <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5 text-orange-500" />
+                  <h3 className="font-medium text-orange-800 dark:text-orange-200">
+                    You have {counterOffersCount} pending counter offer{counterOffersCount > 1 ? 's' : ''}
+                  </h3>
+                </div>
+                <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
+                  Organizations have sent counter offers for your bids. Review and respond below.
+                </p>
+              </div>
+            )}
+
+            {/* Vendor Bids Section */}
+            <VendorBidsView />
+
+            {/* Available Marketplace Tickets */}
+            <div className="mt-8">
+              <h2 className="text-xl font-semibold text-foreground mb-4">Available Marketplace Tickets</h2>
+              <MarketplaceTicketsView />
+            </div>
+          </div>
         )}
 
         {activeTab === "invoices" && (

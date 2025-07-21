@@ -939,6 +939,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get vendor's bids (including counter offers)
+  app.get("/api/marketplace/vendor-bids", authenticateUser, requireRole(["maintenance_admin", "technician"]), async (req: AuthenticatedRequest, res) => {
+    try {
+      const user = req.user!;
+      const vendorId = user.maintenanceVendorId;
+      
+      if (!vendorId) {
+        return res.status(400).json({ message: "User is not associated with a maintenance vendor" });
+      }
+
+      const bids = await storage.getVendorBids(vendorId);
+      res.json(bids);
+    } catch (error) {
+      console.error('Get vendor bids error:', error);
+      res.status(500).json({ message: "Failed to fetch vendor bids" });
+    }
+  });
+
   // Get bids for a ticket
   app.get("/api/tickets/:id/bids", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {

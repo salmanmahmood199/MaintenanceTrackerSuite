@@ -913,6 +913,39 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(tickets.createdAt));
   }
 
+  async getVendorBids(vendorId: number): Promise<(MarketplaceBid & { ticket: Pick<Ticket, 'id' | 'ticketNumber' | 'title' | 'priority'> })[]> {
+    const bids = await db.select({
+      id: marketplaceBids.id,
+      ticketId: marketplaceBids.ticketId,
+      vendorId: marketplaceBids.vendorId,
+      hourlyRate: marketplaceBids.hourlyRate,
+      estimatedHours: marketplaceBids.estimatedHours,
+      responseTime: marketplaceBids.responseTime,
+      parts: marketplaceBids.parts,
+      totalAmount: marketplaceBids.totalAmount,
+      additionalNotes: marketplaceBids.additionalNotes,
+      status: marketplaceBids.status,
+      rejectionReason: marketplaceBids.rejectionReason,
+      counterOffer: marketplaceBids.counterOffer,
+      counterNotes: marketplaceBids.counterNotes,
+      approved: marketplaceBids.approved,
+      createdAt: marketplaceBids.createdAt,
+      updatedAt: marketplaceBids.updatedAt,
+      ticket: {
+        id: tickets.id,
+        ticketNumber: tickets.ticketNumber,
+        title: tickets.title,
+        priority: tickets.priority,
+      }
+    })
+    .from(marketplaceBids)
+    .leftJoin(tickets, eq(marketplaceBids.ticketId, tickets.id))
+    .where(eq(marketplaceBids.vendorId, vendorId))
+    .orderBy(desc(marketplaceBids.updatedAt));
+
+    return bids as (MarketplaceBid & { ticket: Pick<Ticket, 'id' | 'ticketNumber' | 'title' | 'priority'> })[];
+  }
+
   async getTicketBids(ticketId: number): Promise<(MarketplaceBid & { vendor: Pick<MaintenanceVendor, 'id' | 'name' | 'email'> })[]> {
     const bids = await db.select({
       id: marketplaceBids.id,
