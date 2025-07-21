@@ -190,9 +190,9 @@ export function EnhancedInvoiceCreator({
   const handleSubmit = async (data: z.infer<typeof invoiceSchema>) => {
     try {
       const invoice = {
-        ticketId: ticket.id,
-        organizationId: organization.id,
-        maintenanceVendorId: vendor.id,
+        ticketId: ticket?.id || 0,
+        organizationId: organization?.id || 0,
+        maintenanceVendorId: vendor?.id || 0,
         subtotal: subtotal.toString(),
         tax: data.tax.toString(),
         discount: data.discount.toString(),
@@ -211,11 +211,7 @@ export function EnhancedInvoiceCreator({
         })),
       };
 
-      await apiRequest("/api/invoices", {
-        method: "POST",
-        body: JSON.stringify(invoice),
-        headers: { "Content-Type": "application/json" },
-      });
+      await apiRequest("/api/invoices", "POST", invoice);
 
       await queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
       
@@ -239,7 +235,7 @@ export function EnhancedInvoiceCreator({
     <div className="max-w-7xl mx-auto p-6 space-y-6 bg-background text-foreground">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Invoice Creation - {ticket.number || ticket.ticketNumber || `Ticket #${ticket.id}`}</h1>
+          <h1 className="text-3xl font-bold text-foreground">Invoice Creation - {ticket?.number || ticket?.ticketNumber || `Ticket #${ticket?.id}`}</h1>
           <p className="text-muted-foreground mt-1">Create professional invoice for completed work</p>
         </div>
         <Button variant="outline" onClick={onClose}>
@@ -558,13 +554,13 @@ export function EnhancedInvoiceCreator({
           <InvoicePDFViewer
             invoice={{
               id: 0,
-              invoiceNumber: `INV-${ticket.number || ticket.ticketNumber || ticket.id}`,
-              ticketId: ticket.id,
-              organizationId: organization.id,
-              maintenanceVendorId: vendor.id,
+              invoiceNumber: `INV-${ticket?.number || ticket?.ticketNumber || ticket?.id}`,
+              ticketId: ticket?.id || 0,
+              organizationId: organization?.id || 0,
+              maintenanceVendorId: vendor?.id || 0,
               subtotal: subtotal.toString(),
               tax: tax.toString(),
-              discount: discount.toString(),
+
               total: total.toString(),
               notes: form.watch("notes"),
               paymentTerms: form.watch("paymentTerms"),
@@ -572,9 +568,9 @@ export function EnhancedInvoiceCreator({
               createdAt: new Date(),
               paidAt: null,
             }}
-            ticket={ticket}
-            vendor={vendor}
-            organization={organization}
+            ticket={ticket || {} as any}
+            vendor={vendor || {} as any}
+            organization={organization || {} as any}
             workOrders={editableWorkOrders}
           />
         </TabsContent>
