@@ -194,7 +194,7 @@ export function EnhancedInvoiceCreator({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto bg-white">
+      <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto bg-background text-foreground">
         <DialogHeader className="border-b pb-4">
           <DialogTitle className="flex items-center gap-3 text-2xl text-foreground">
             <FileText className="h-6 w-6 text-blue-600" />
@@ -203,16 +203,16 @@ export function EnhancedInvoiceCreator({
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="work-orders" className="flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-3 mb-6 bg-muted">
+            <TabsTrigger value="work-orders" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground">
               <Edit3 className="h-4 w-4" />
               Edit Work Orders
             </TabsTrigger>
-            <TabsTrigger value="invoice-details" className="flex items-center gap-2">
+            <TabsTrigger value="invoice-details" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground">
               <Calculator className="h-4 w-4" />
               Invoice Details
             </TabsTrigger>
-            <TabsTrigger value="preview" className="flex items-center gap-2">
+            <TabsTrigger value="preview" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground">
               <FileText className="h-4 w-4" />
               PDF Preview
             </TabsTrigger>
@@ -220,9 +220,9 @@ export function EnhancedInvoiceCreator({
 
           {/* Work Orders Editing Tab */}
           <TabsContent value="work-orders" className="space-y-4">
-            <Card>
+            <Card className="bg-card text-card-foreground border-border">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-foreground">
                   <Edit3 className="h-5 w-5" />
                   Adjust Work Order Costs & Rates
                 </CardTitle>
@@ -231,14 +231,14 @@ export function EnhancedInvoiceCreator({
                 {editableWorkOrders.map((workOrder) => (
                   <Card 
                     key={workOrder.id} 
-                    className={`border-l-4 ${selectedWorkOrderId === workOrder.id ? 'border-l-blue-500 bg-blue-50' : 'border-l-gray-300'} cursor-pointer transition-colors`}
+                    className={`border-l-4 ${selectedWorkOrderId === workOrder.id ? 'border-l-blue-500 bg-muted/50' : 'border-l-border'} cursor-pointer transition-colors bg-card text-card-foreground`}
                     onClick={() => setSelectedWorkOrderId(selectedWorkOrderId === workOrder.id ? null : workOrder.id)}
                   >
                     <CardHeader>
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">Work Order #{workOrder.workOrderNumber}</CardTitle>
+                        <CardTitle className="text-lg text-foreground">Work Order #{workOrder.workOrderNumber}</CardTitle>
                         <div className="flex items-center gap-4">
-                          <div className="text-sm text-gray-600">
+                          <div className="text-sm text-muted-foreground">
                             <Clock className="h-4 w-4 inline mr-1" />
                             {workOrder.editableHours} hours
                           </div>
@@ -250,40 +250,40 @@ export function EnhancedInvoiceCreator({
                     </CardHeader>
 
                     {selectedWorkOrderId === workOrder.id && (
-                      <CardContent className="space-y-4 bg-gray-50">
+                      <CardContent className="space-y-4 bg-muted/30">
                         {/* Labor Section */}
-                        <div className="bg-white p-4 rounded-lg border">
+                        <div className="bg-background p-4 rounded-lg border border-border">
                           <h4 className="font-semibold mb-3 flex items-center gap-2">
                             <User className="h-4 w-4" />
                             Labor Costs
                           </h4>
                           <div className="grid grid-cols-3 gap-4">
                             <div>
-                              <label className="text-sm font-medium">Hourly Rate</label>
+                              <label className="text-sm font-medium text-foreground">Hourly Rate</label>
                               <div className="flex items-center mt-1">
-                                <span className="text-lg mr-1">$</span>
+                                <span className="text-lg mr-1 text-foreground">$</span>
                                 <Input
                                   type="number"
                                   step="0.01"
                                   value={workOrder.editableHourlyRate || 75}
                                   onChange={(e) => updateWorkOrderRate(workOrder.id, parseFloat(e.target.value) || 0)}
-                                  className="w-full"
+                                  className="w-full bg-background text-foreground border-input"
                                 />
                               </div>
                             </div>
                             <div>
-                              <label className="text-sm font-medium">Hours Worked</label>
+                              <label className="text-sm font-medium text-foreground">Hours Worked</label>
                               <Input
                                 type="number"
                                 step="0.25"
                                 value={workOrder.editableHours || 0}
                                 onChange={(e) => updateWorkOrderHours(workOrder.id, parseFloat(e.target.value) || 0)}
-                                className="w-full mt-1"
+                                className="w-full mt-1 bg-background text-foreground border-input"
                               />
                             </div>
                             <div>
-                              <label className="text-sm font-medium">Labor Total</label>
-                              <div className="mt-1 p-2 bg-gray-100 rounded border text-lg font-semibold">
+                              <label className="text-sm font-medium text-foreground">Labor Total</label>
+                              <div className="mt-1 p-2 bg-muted text-foreground rounded border text-lg font-semibold">
                                 ${workOrder.editableLaborCost?.toFixed(2) || '0.00'}
                               </div>
                             </div>
@@ -292,37 +292,37 @@ export function EnhancedInvoiceCreator({
 
                         {/* Parts Section */}
                         {workOrder.editableParts && workOrder.editableParts.length > 0 && (
-                          <div className="bg-white p-4 rounded-lg border">
-                            <h4 className="font-semibold mb-3 flex items-center gap-2">
+                          <div className="bg-background p-4 rounded-lg border border-border">
+                            <h4 className="font-semibold mb-3 flex items-center gap-2 text-foreground">
                               <Package className="h-4 w-4" />
                               Parts & Materials
                             </h4>
                             <div className="space-y-3">
                               {workOrder.editableParts.map((part, index) => (
-                                <div key={index} className="grid grid-cols-4 gap-4 items-center bg-gray-50 p-3 rounded">
+                                <div key={index} className="grid grid-cols-4 gap-4 items-center bg-muted/50 p-3 rounded">
                                   <div>
-                                    <label className="text-sm font-medium">Part Name</label>
-                                    <div className="mt-1 font-medium">{part.name}</div>
+                                    <label className="text-sm font-medium text-foreground">Part Name</label>
+                                    <div className="mt-1 font-medium text-foreground">{part.name}</div>
                                   </div>
                                   <div>
-                                    <label className="text-sm font-medium">Quantity</label>
-                                    <div className="mt-1 text-center font-medium">{part.quantity}</div>
+                                    <label className="text-sm font-medium text-foreground">Quantity</label>
+                                    <div className="mt-1 text-center font-medium text-foreground">{part.quantity}</div>
                                   </div>
                                   <div>
-                                    <label className="text-sm font-medium">Unit Cost</label>
+                                    <label className="text-sm font-medium text-foreground">Unit Cost</label>
                                     <div className="flex items-center mt-1">
-                                      <span className="mr-1">$</span>
+                                      <span className="mr-1 text-foreground">$</span>
                                       <Input
                                         type="number"
                                         step="0.01"
                                         value={part.cost}
                                         onChange={(e) => updatePartCost(workOrder.id, index, parseFloat(e.target.value) || 0)}
-                                        className="w-full"
+                                        className="w-full bg-background text-foreground border-input"
                                       />
                                     </div>
                                   </div>
                                   <div>
-                                    <label className="text-sm font-medium">Total</label>
+                                    <label className="text-sm font-medium text-foreground">Total</label>
                                     <div className="mt-1 text-center font-semibold text-green-600">
                                       ${(part.cost * part.quantity).toFixed(2)}
                                     </div>
@@ -335,15 +335,15 @@ export function EnhancedInvoiceCreator({
 
                         {/* Other Charges */}
                         {workOrder.editableOtherCharges && workOrder.editableOtherCharges.length > 0 && (
-                          <div className="bg-white p-4 rounded-lg border">
-                            <h4 className="font-semibold mb-3 flex items-center gap-2">
+                          <div className="bg-background p-4 rounded-lg border border-border">
+                            <h4 className="font-semibold mb-3 flex items-center gap-2 text-foreground">
                               <DollarSign className="h-4 w-4" />
                               Additional Charges
                             </h4>
                             <div className="space-y-2">
                               {workOrder.editableOtherCharges.map((charge, index) => (
-                                <div key={index} className="flex justify-between items-center bg-gray-50 p-3 rounded">
-                                  <span className="font-medium">{charge.description}</span>
+                                <div key={index} className="flex justify-between items-center bg-muted/50 p-3 rounded">
+                                  <span className="font-medium text-foreground">{charge.description}</span>
                                   <span className="font-semibold text-green-600">${charge.amount.toFixed(2)}</span>
                                 </div>
                               ))}
@@ -362,9 +362,9 @@ export function EnhancedInvoiceCreator({
           <TabsContent value="invoice-details">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-                <Card>
+                <Card className="bg-card text-card-foreground border-border">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 text-foreground">
                       <Calculator className="h-5 w-5" />
                       Invoice Settings
                     </CardTitle>
@@ -376,13 +376,14 @@ export function EnhancedInvoiceCreator({
                         name="tax"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Tax Amount ($)</FormLabel>
+                            <FormLabel className="text-foreground">Tax Amount ($)</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
                                 step="0.01"
                                 {...field}
                                 onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                className="bg-background text-foreground border-input"
                               />
                             </FormControl>
                             <FormMessage />
@@ -395,13 +396,14 @@ export function EnhancedInvoiceCreator({
                         name="discount"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Discount ($)</FormLabel>
+                            <FormLabel className="text-foreground">Discount ($)</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
                                 step="0.01"
                                 {...field}
                                 onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                className="bg-background text-foreground border-input"
                               />
                             </FormControl>
                             <FormMessage />
