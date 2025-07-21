@@ -167,8 +167,10 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
   };
 
   const handleAction = (bidId: number, action: "accept" | "reject" | "counter") => {
+    console.log('handleAction called:', { bidId, action });
     setSelectedBidId(bidId);
     setActionType(action);
+    console.log('State set:', { selectedBidId: bidId, actionType: action });
 
     if (action === "accept") {
       acceptBidMutation.mutate(bidId);
@@ -189,6 +191,8 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
   };
 
   const handleCounter = () => {
+    console.log('handleCounter called:', { selectedBidId, counterAmount, counterNotes });
+    
     if (!selectedBidId || !counterAmount || !counterNotes.trim()) {
       toast({
         title: "Missing Information",
@@ -197,6 +201,12 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
       });
       return;
     }
+
+    console.log('Submitting counter offer:', { 
+      bidId: selectedBidId, 
+      counterOffer: parseFloat(counterAmount), 
+      notes: counterNotes 
+    });
 
     counterBidMutation.mutate({ 
       bidId: selectedBidId, 
@@ -404,6 +414,9 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
           </div>
         )}
 
+        {/* Debug info */}
+        {console.log('Rendering debug info:', { actionType, selectedBidId, showCounterForm: actionType === "counter" && selectedBidId })}
+        
         {actionType === "counter" && selectedBidId && (
           <div className="border-t pt-4">
             <h4 className="font-medium mb-2">Counter Offer</h4>
