@@ -341,6 +341,10 @@ Changelog:
 - July 21, 2025. Added real-time cost adjustments: admins can modify hourly rates, hours worked, and part costs per work order
 - July 21, 2025. Implemented professional PDF-style invoice viewer with white background, company logos, service details, and print functionality
 - July 21, 2025. Enhanced invoice workflow: click work orders → adjust rates/costs → set payment terms → preview PDF → create invoice
+- July 21, 2025. Enhanced work order editing interface with parts and rates display underneath labor costs for complete cost breakdown
+- July 21, 2025. Fixed interface stability issues preventing editing fields from collapsing unexpectedly with comprehensive event handling
+- July 21, 2025. Parts costs now populate from system defaults but allow full customization in invoice creation interface
+- July 21, 2025. Added parts summary display showing individual parts with quantities and costs immediately below labor section
 ```
 
 ## User Preferences
