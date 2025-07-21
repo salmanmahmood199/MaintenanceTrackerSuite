@@ -157,14 +157,14 @@ export default function TechnicianDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200">
+      <header className="bg-card border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div>
-              <h1 className="text-xl font-bold text-slate-900">Technician Dashboard</h1>
-              <p className="text-sm text-slate-500">My Assigned Tickets</p>
+              <h1 className="text-xl font-bold text-foreground">Technician Dashboard</h1>
+              <p className="text-sm text-muted-foreground">My Assigned Tickets</p>
             </div>
             
             <div className="flex items-center space-x-4">
@@ -174,7 +174,7 @@ export default function TechnicianDashboard() {
                   Calendar
                 </Button>
               </Link>
-              <span className="text-sm text-slate-600">
+              <span className="text-sm text-muted-foreground">
                 {user?.firstName} {user?.lastName} ({user?.email})
               </span>
               <Button 
@@ -197,25 +197,11 @@ export default function TechnicianDashboard() {
             <CardContent className="p-0">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-600 font-medium">Assigned</p>
-                  <p className="text-2xl font-bold text-slate-900">{stats.assigned}</p>
+                  <p className="text-sm text-muted-foreground font-medium">Assigned</p>
+                  <p className="text-2xl font-bold text-foreground">{stats.assigned}</p>
                 </div>
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Wrench className="h-6 w-6 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="p-6">
-            <CardContent className="p-0">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-600 font-medium">In Progress</p>
-                  <p className="text-2xl font-bold text-slate-900">{stats.inProgress}</p>
-                </div>
-                <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                  <Clock className="h-6 w-6 text-yellow-600" />
+                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
+                  <Wrench className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 </div>
               </div>
             </CardContent>
@@ -225,11 +211,11 @@ export default function TechnicianDashboard() {
             <CardContent className="p-0">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-600 font-medium">Completed</p>
-                  <p className="text-2xl font-bold text-slate-900">{stats.completed}</p>
+                  <p className="text-sm text-muted-foreground font-medium">In Progress</p>
+                  <p className="text-2xl font-bold text-foreground">{stats.inProgress}</p>
                 </div>
-                <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
-                  <Check className="h-6 w-6 text-emerald-600" />
+                <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg flex items-center justify-center">
+                  <Clock className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
                 </div>
               </div>
             </CardContent>
@@ -239,11 +225,25 @@ export default function TechnicianDashboard() {
             <CardContent className="p-0">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-600 font-medium">High Priority</p>
-                  <p className="text-2xl font-bold text-slate-900">{stats.highPriority}</p>
+                  <p className="text-sm text-muted-foreground font-medium">Completed</p>
+                  <p className="text-2xl font-bold text-foreground">{stats.completed}</p>
                 </div>
-                <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                  <AlertTriangle className="h-6 w-6 text-red-600" />
+                <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/20 rounded-lg flex items-center justify-center">
+                  <Check className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="p-6">
+            <CardContent className="p-0">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground font-medium">High Priority</p>
+                  <p className="text-2xl font-bold text-foreground">{stats.highPriority}</p>
+                </div>
+                <div className="w-12 h-12 bg-red-100 dark:bg-red-900/20 rounded-lg flex items-center justify-center">
+                  <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
                 </div>
               </div>
             </CardContent>
@@ -263,11 +263,11 @@ export default function TechnicianDashboard() {
           {ticketsLoading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="text-slate-600 mt-2">Loading tickets...</p>
+              <p className="text-muted-foreground mt-2">Loading tickets...</p>
             </div>
           ) : tickets.length === 0 ? (
             <Card className="p-8 text-center">
-              <p className="text-slate-600">No tickets {statusFilter === "all" ? "assigned to you" : `with status "${statusFilter}"`} yet.</p>
+              <p className="text-muted-foreground">No tickets {statusFilter === "all" ? "assigned to you" : `with status "${statusFilter}"`} yet.</p>
               {statusFilter !== "all" && (
                 <Button 
                   variant="outline" 

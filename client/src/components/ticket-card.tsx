@@ -41,7 +41,7 @@ export function TicketCard({ ticket, onAccept, onReject, onComplete, onStart, on
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-3">
-            <h3 className="text-lg font-semibold text-slate-900">{ticket.title}</h3>
+            <h3 className="text-lg font-semibold text-foreground">{ticket.title}</h3>
             <Badge variant="outline" className={`${priorityColor} border-current`}>
               {ticket.priority}
             </Badge>
@@ -50,9 +50,9 @@ export function TicketCard({ ticket, onAccept, onReject, onComplete, onStart, on
             </Badge>
           </div>
           
-          <p className="text-slate-600 mb-4">{ticket.description}</p>
+          <p className="text-muted-foreground mb-4">{ticket.description}</p>
           
-          <div className="flex items-center gap-4 text-sm text-slate-500">
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <Hash className="h-4 w-4" />
               <span>{ticket.ticketNumber}</span>
