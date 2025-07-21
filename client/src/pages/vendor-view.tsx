@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, LogOut, FileText, Package, Calendar, AlertCircle } from "lucide-react";
 import { TicketTable } from "@/components/ticket-table";
-import { CreateInvoiceModal } from "@/components/create-invoice-modal";
+import { EnhancedInvoiceCreator } from "@/components/enhanced-invoice-creator";
 import { InvoicesView } from "@/components/invoices-view";
 import { VendorTicketActionModal } from "@/components/vendor-ticket-action-modal";
 import { MarketplaceTicketsView } from "@/components/marketplace-tickets-view";
@@ -18,7 +18,7 @@ import { Link } from "wouter";
 import AISearchBar from "@/components/ai-search-bar";
 import { TicketFilters, type FilterState } from "@/components/ticket-filters";
 import { filterTickets } from "@/utils/ticket-filters";
-import type { Ticket, MaintenanceVendor, WorkOrder, User } from "@shared/schema";
+import type { Ticket, MaintenanceVendor, WorkOrder, User, Organization } from "@shared/schema";
 
 export function VendorView() {
   const [, routeParams] = useRoute("/vendor/:id");
@@ -37,6 +37,7 @@ export function VendorView() {
   });
   const [isCreateInvoiceModalOpen, setIsCreateInvoiceModalOpen] = useState(false);
   const [selectedTicketForInvoice, setSelectedTicketForInvoice] = useState<Ticket | null>(null);
+  const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
   const [isTicketActionModalOpen, setIsTicketActionModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(null);
@@ -254,10 +255,22 @@ export function VendorView() {
     }
   };
 
-  const handleCreateInvoice = (ticketId: number) => {
+  // Fetch organizations for invoice creation
+  const { data: allOrganizations = [] } = useQuery<Organization[]>({
+    queryKey: ["/api/organizations"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/organizations");
+      return await response.json();
+    },
+  });
+
+  const handleCreateInvoice = async (ticketId: number) => {
     const ticket = tickets?.find(t => t.id === ticketId);
     if (ticket) {
+      // Find the organization for this ticket
+      const org = allOrganizations.find(o => o.id === ticket.organizationId);
       setSelectedTicketForInvoice(ticket);
+      setSelectedOrganization(org || null);
       setIsCreateInvoiceModalOpen(true);
     }
   };
@@ -449,7 +462,7 @@ export function VendorView() {
         )}
 
         {activeTab === "invoices" && (
-          <InvoicesView vendorId={vendorId} />
+          <InvoicesView vendorId={vendorId!} />
         )}
 
         {activeTab === "parts" && vendorId && (
@@ -457,13 +470,15 @@ export function VendorView() {
         )}
 
         {/* Modals */}
-        <CreateInvoiceModal
+        <EnhancedInvoiceCreator
           open={isCreateInvoiceModalOpen}
           onOpenChange={setIsCreateInvoiceModalOpen}
           onSubmit={createInvoiceMutation.mutate}
           isLoading={createInvoiceMutation.isPending}
           ticket={selectedTicketForInvoice}
           workOrders={invoiceWorkOrders}
+          vendor={vendor}
+          organization={selectedOrganization}
         />
 
         <VendorTicketActionModal

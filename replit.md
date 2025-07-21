@@ -336,6 +336,11 @@ Changelog:
 - July 21, 2025. Restored work orders functionality - technicians can now view and create multiple work orders per ticket (sequential numbering working)
 - July 21, 2025. Fixed comments system completely - all users can view, create, and edit comments with proper user attribution and image attachments
 - July 21, 2025. Database migration successful - added missing is_system column to ticket_comments table for system-generated comments
+- July 21, 2025. Enhanced invoice creation system with professional PDF-style interface and comprehensive cost management capabilities
+- July 21, 2025. Created EnhancedInvoiceCreator component with tabbed interface: Work Orders editing, Invoice Details, and PDF Preview
+- July 21, 2025. Added real-time cost adjustments: admins can modify hourly rates, hours worked, and part costs per work order
+- July 21, 2025. Implemented professional PDF-style invoice viewer with white background, company logos, service details, and print functionality
+- July 21, 2025. Enhanced invoice workflow: click work orders → adjust rates/costs → set payment terms → preview PDF → create invoice
 ```
 
 ## User Preferences
