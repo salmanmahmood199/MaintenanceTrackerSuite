@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, User, Hash, Wrench, CheckCircle, XCircle, Clock, Calculator } from "lucide-react";
+import { Calendar, User, Hash, Wrench, CheckCircle, XCircle, Clock, Calculator, Eye } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { toZonedTime, format as formatTz } from "date-fns-tz";
 import { formatDate, getPriorityColor, getStatusColor } from "@/lib/utils";
@@ -17,13 +17,14 @@ interface TicketCardProps {
   onViewWorkOrders?: (id: number) => void;
   onCreateInvoice?: (id: number) => void;
   onClick?: (ticket: Ticket) => void;
+  onView?: (ticket: Ticket) => void;
   showActions?: boolean;
   showTechnicianActions?: boolean;
   userRole?: string;
   userPermissions?: string[];
 }
 
-export function TicketCard({ ticket, onAccept, onReject, onComplete, onStart, onConfirm, onViewWorkOrders, onCreateInvoice, showActions = true, showTechnicianActions = false, userRole, userPermissions, onClick }: TicketCardProps) {
+export function TicketCard({ ticket, onAccept, onReject, onComplete, onStart, onConfirm, onViewWorkOrders, onCreateInvoice, showActions = true, showTechnicianActions = false, userRole, userPermissions, onClick, onView }: TicketCardProps) {
   const priorityColor = getPriorityColor(ticket.priority);
   const statusColor = getStatusColor(ticket.status);
   
@@ -84,6 +85,20 @@ export function TicketCard({ ticket, onAccept, onReject, onComplete, onStart, on
         <div className="ml-6 flex flex-col gap-2">
           {showTechnicianActions && (
             <>
+              {/* Always show View button for technicians */}
+              {onView && (
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onView(ticket);
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  View Details
+                </Button>
+              )}
               {ticket.status === 'accepted' && onStart && (
                 <Button
                   onClick={(e) => {

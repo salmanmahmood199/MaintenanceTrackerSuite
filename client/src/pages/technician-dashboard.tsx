@@ -289,6 +289,7 @@ export default function TechnicianDashboard() {
                   ticket={ticket}
                   onStart={ticket.status === 'accepted' ? handleStartWork : undefined}
                   onComplete={(ticket.status === 'in-progress' || ticket.status === 'return_needed') ? handleCompleteWork : undefined}
+                  onView={handleTicketClick}
                   showTechnicianActions={true}
                 />
               </div>
