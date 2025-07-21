@@ -83,21 +83,41 @@ export function EnhancedInvoiceCreator({
         let otherCharges = [];
         
         try {
-          parts = wo.parts ? JSON.parse(wo.parts as string) : [];
+          // Handle both JSON objects and JSON strings from database
+          if (typeof wo.parts === 'string') {
+            parts = JSON.parse(wo.parts);
+          } else if (Array.isArray(wo.parts)) {
+            parts = wo.parts;
+          } else {
+            parts = [];
+          }
         } catch (e) {
+          console.error('Error parsing parts:', e);
           parts = [];
         }
         
         try {
-          otherCharges = wo.otherCharges ? JSON.parse(wo.otherCharges as string) : [];
+          // Handle both JSON objects and JSON strings from database
+          if (typeof wo.otherCharges === 'string') {
+            otherCharges = JSON.parse(wo.otherCharges);
+          } else if (Array.isArray(wo.otherCharges)) {
+            otherCharges = wo.otherCharges;
+          } else {
+            otherCharges = [];
+          }
         } catch (e) {
+          console.error('Error parsing other charges:', e);
           otherCharges = [];
         }
 
+        // Debug logging to see actual parts data
+        console.log(`Work Order ${wo.id} - Raw parts:`, wo.parts);
+        console.log(`Work Order ${wo.id} - Parsed parts:`, parts);
+        
         // Ensure parts have editable costs initialized from system defaults
         const editableParts = parts.map((part: any) => ({
           ...part,
-          cost: part.cost || 0 // Use existing cost or default to 0
+          cost: parseFloat(part.cost) || 0 // Ensure cost is a number
         }));
 
         const editableHours = parseFloat(wo.totalHours || "0");
