@@ -75,8 +75,8 @@ export function InvoicePDFViewer({
                 Service Provider
               </h3>
               <div className="bg-gray-50 p-6 print:p-4 rounded-xl print:rounded-lg border">
-                <p className="font-bold text-2xl print:text-xl text-gray-900">{vendor?.name || 'Maintenance Vendor'}</p>
-                <div className="mt-3 space-y-1 text-gray-700">
+                <p className="font-bold text-2xl print:text-xl text-black">{vendor?.name || 'Maintenance Vendor'}</p>
+                <div className="mt-3 space-y-1 text-black">
                   <p>{vendor?.address || 'Vendor Address'}</p>
                   <p>Email: {vendor?.email || 'vendor@email.com'}</p>
                   <p>Phone: {vendor?.phone || 'Phone Number'}</p>
@@ -90,8 +90,8 @@ export function InvoicePDFViewer({
                 Bill To
               </h3>
               <div className="bg-gray-50 p-6 print:p-4 rounded-xl print:rounded-lg border">
-                <p className="font-bold text-2xl print:text-xl text-gray-900">{organization?.name || 'Organization'}</p>
-                <div className="mt-3 space-y-1 text-gray-700">
+                <p className="font-bold text-2xl print:text-xl text-black">{organization?.name || 'Organization'}</p>
+                <div className="mt-3 space-y-1 text-black">
                   <p>{organization?.address || 'Organization Address'}</p>
                   <p>Email: {organization?.email || 'org@email.com'}</p>
                   <p>Phone: {organization?.phone || 'Phone Number'}</p>
