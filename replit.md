@@ -332,6 +332,10 @@ Changelog:
 - July 21, 2025. Fixed time input functionality in work order creation - improved time validation, error handling, and hours calculation with proper form integration
 - July 21, 2025. Enhanced time input clock icon visibility - added CSS styling and Tailwind classes to make clock icons clearly visible in both light and dark themes
 - July 21, 2025. Made time picker interface white - forced time input fields and picker dropdown to use white background with black text for optimal visibility
+- July 21, 2025. Fixed critical storage layer issues - resolved duplicate function implementations causing work orders and comments to fail
+- July 21, 2025. Restored work orders functionality - technicians can now view and create multiple work orders per ticket (sequential numbering working)
+- July 21, 2025. Fixed comments system completely - all users can view, create, and edit comments with proper user attribution and image attachments
+- July 21, 2025. Database migration successful - added missing is_system column to ticket_comments table for system-generated comments
 ```
 
 ## User Preferences

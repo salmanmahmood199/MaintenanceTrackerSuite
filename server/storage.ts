@@ -1186,40 +1186,6 @@ export class DatabaseStorage implements IStorage {
     return bid;
   }
 
-  async getVendorBids(vendorId: number): Promise<MarketplaceBid[]> {
-    const bids = await db
-      .select({
-        id: marketplaceBids.id,
-        ticketId: marketplaceBids.ticketId,
-        vendorId: marketplaceBids.vendorId,
-        hourlyRate: marketplaceBids.hourlyRate,
-        estimatedHours: marketplaceBids.estimatedHours,
-        responseTime: marketplaceBids.responseTime,
-        parts: marketplaceBids.parts,
-        totalAmount: marketplaceBids.totalAmount,
-        additionalNotes: marketplaceBids.additionalNotes,
-        status: marketplaceBids.status,
-        rejectionReason: marketplaceBids.rejectionReason,
-        counterOffer: marketplaceBids.counterOffer,
-        counterNotes: marketplaceBids.counterNotes,
-        approved: marketplaceBids.approved,
-        createdAt: marketplaceBids.createdAt,
-        updatedAt: marketplaceBids.updatedAt,
-        ticket: {
-          id: tickets.id,
-          ticketNumber: tickets.ticketNumber,
-          title: tickets.title,
-          priority: tickets.priority,
-        }
-      })
-      .from(marketplaceBids)
-      .leftJoin(tickets, eq(marketplaceBids.ticketId, tickets.id))
-      .where(eq(marketplaceBids.vendorId, vendorId))
-      .orderBy(desc(marketplaceBids.updatedAt));
-    
-    return bids as any[];
-  }
-
   async createBidHistory(history: InsertBidHistory): Promise<BidHistory> {
     const [newHistory] = await db
       .insert(bidHistory)
@@ -1383,24 +1349,7 @@ export class DatabaseStorage implements IStorage {
     return history;
   }
 
-  // Initialize root user
-  async initializeRootUser(): Promise<void> {
-    try {
-      const rootExists = await this.getUserByEmail("root@mail.com");
-      if (!rootExists) {
-        await this.createUser({
-          email: "root@mail.com",
-          password: "admin",
-          firstName: "Root",
-          lastName: "Admin",
-          role: "root",
-        });
-        console.log("Root user created successfully");
-      }
-    } catch (error) {
-      console.error("Error initializing root user:", error);
-    }
-  }
+
 
   // Calendar operations
   async getCalendarEvents(userId: number, startDate?: string, endDate?: string): Promise<CalendarEvent[]> {
