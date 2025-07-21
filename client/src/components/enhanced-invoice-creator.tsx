@@ -40,6 +40,9 @@ interface EditableWorkOrder extends WorkOrder {
     amount: number;
   }>;
   editableTotalCost?: number;
+  dateCompleted?: string | null;
+  description?: string;
+  notes?: string;
 }
 
 const invoiceFormSchema = z.object({
