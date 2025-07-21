@@ -2,6 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Enhanced time input visibility for dark mode */
+input[type="time"] {
+  color-scheme: light dark;
+}
+
+/* Dark theme time input clock icon enhancement */
+.dark input[type="time"] {
+  color-scheme: dark;
+  filter: brightness(1.2) contrast(1.1);
+}
+
+/* Ensure time input icons are visible */
+input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(0) brightness(1);
+}
+
+.dark input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(1.5) contrast(1.2);
+  opacity: 0.9;
+}
+
 :root {
   /* Dark theme by default to match the design */
   --background: hsl(210, 13%, 9%);

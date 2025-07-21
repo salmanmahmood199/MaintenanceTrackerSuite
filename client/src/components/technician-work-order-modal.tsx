@@ -622,7 +622,7 @@ export function TechnicianWorkOrderModal({
                       <Input
                         id="timeIn"
                         type="time"
-                        className="bg-background text-foreground border-border"
+                        className="bg-background text-foreground border-border [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:brightness-150 dark:[&::-webkit-calendar-picker-indicator]:invert dark:[&::-webkit-calendar-picker-indicator]:brightness-200"
                         {...form.register("timeIn", {
                           onChange: (e) => {
                             const timeOut = form.getValues("timeOut");
@@ -644,7 +644,7 @@ export function TechnicianWorkOrderModal({
                       <Input
                         id="timeOut"
                         type="time"
-                        className="bg-background text-foreground border-border"
+                        className="bg-background text-foreground border-border [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:brightness-150 dark:[&::-webkit-calendar-picker-indicator]:invert dark:[&::-webkit-calendar-picker-indicator]:brightness-200"
                         {...form.register("timeOut", {
                           onChange: (e) => {
                             const timeIn = form.getValues("timeIn");

@@ -330,6 +330,7 @@ Changelog:
 - July 21, 2025. Fixed dropdown menu Windows compatibility issues - enhanced three-dots menu with proper event handling, z-index stacking, and cursor styling for better cross-platform functionality
 - July 21, 2025. Enhanced work order modal dark theme visibility - replaced hardcoded colors with CSS variables for better dark mode compatibility
 - July 21, 2025. Fixed time input functionality in work order creation - improved time validation, error handling, and hours calculation with proper form integration
+- July 21, 2025. Enhanced time input clock icon visibility - added CSS styling and Tailwind classes to make clock icons clearly visible in both light and dark themes
 ```
 
 ## User Preferences
