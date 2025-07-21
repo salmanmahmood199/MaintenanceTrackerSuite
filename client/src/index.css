@@ -4,23 +4,51 @@
 
 /* Enhanced time input visibility for dark mode */
 input[type="time"] {
-  color-scheme: light dark;
+  color-scheme: light;
+  background-color: white;
+  color: black;
 }
 
-/* Dark theme time input clock icon enhancement */
+/* Force time picker to use light theme */
 .dark input[type="time"] {
-  color-scheme: dark;
-  filter: brightness(1.2) contrast(1.1);
+  color-scheme: light;
+  background-color: white !important;
+  color: black !important;
+  border: 1px solid #d1d5db;
 }
 
 /* Ensure time input icons are visible */
 input[type="time"]::-webkit-calendar-picker-indicator {
   filter: invert(0) brightness(1);
+  background-color: transparent;
+  cursor: pointer;
 }
 
 .dark input[type="time"]::-webkit-calendar-picker-indicator {
-  filter: invert(1) brightness(1.5) contrast(1.2);
-  opacity: 0.9;
+  filter: invert(0) brightness(1);
+  opacity: 1;
+  background-color: transparent;
+}
+
+/* Time picker dropdown styling */
+input[type="time"]::-webkit-datetime-edit {
+  background-color: white;
+  color: black;
+}
+
+.dark input[type="time"]::-webkit-datetime-edit {
+  background-color: white !important;
+  color: black !important;
+}
+
+input[type="time"]::-webkit-datetime-edit-fields-wrapper {
+  background-color: white;
+  color: black;
+}
+
+.dark input[type="time"]::-webkit-datetime-edit-fields-wrapper {
+  background-color: white !important;
+  color: black !important;
 }
 
 :root {
