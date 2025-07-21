@@ -321,12 +321,39 @@ export function EnhancedInvoiceCreator({
                           </div>
                         </div>
 
-                        {/* Parts Section */}
+                        {/* Parts Summary Display (underneath labor) */}
+                        {workOrder.editableParts && workOrder.editableParts.length > 0 && (
+                          <div className="bg-muted/20 p-3 rounded-lg border border-muted">
+                            <h5 className="text-sm font-medium text-muted-foreground mb-2">Parts & Materials Summary</h5>
+                            <div className="space-y-1">
+                              {workOrder.editableParts.map((part, index) => (
+                                <div key={index} className="flex justify-between items-center text-sm">
+                                  <span className="text-foreground">
+                                    {part.name} (x{part.quantity})
+                                  </span>
+                                  <span className="font-medium text-green-600">
+                                    ${(part.cost * part.quantity).toFixed(2)}
+                                  </span>
+                                </div>
+                              ))}
+                              <div className="border-t border-muted pt-1 mt-2">
+                                <div className="flex justify-between items-center text-sm font-semibold">
+                                  <span className="text-foreground">Parts Total:</span>
+                                  <span className="text-green-600">
+                                    ${workOrder.editableParts.reduce((sum, p) => sum + (p.cost * p.quantity), 0).toFixed(2)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Detailed Parts Section (for editing) */}
                         {workOrder.editableParts && workOrder.editableParts.length > 0 && (
                           <div className="bg-background p-4 rounded-lg border border-border">
                             <h4 className="font-semibold mb-3 flex items-center gap-2 text-foreground">
                               <Package className="h-4 w-4" />
-                              Parts & Materials
+                              Edit Parts & Materials Costs
                             </h4>
                             <div className="space-y-3">
                               {workOrder.editableParts.map((part, index) => (
