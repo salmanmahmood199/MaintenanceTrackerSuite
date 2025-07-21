@@ -31,7 +31,7 @@ export function InvoicePDFViewer({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 invoice-pdf-viewer">
       {/* Print/Download Actions */}
       <div className="flex justify-end gap-2 no-print">
         <Button onClick={handlePrint} variant="outline" className="flex items-center gap-2">
@@ -210,7 +210,28 @@ export function InvoicePDFViewer({
       </Card>
 
       {/* Print-specific styles */}
-      <style jsx>{`
+      <style jsx global>{`
+        .invoice-pdf-viewer * {
+          color: black !important;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .invoice-pdf-viewer table {
+          color: black !important;
+        }
+        .invoice-pdf-viewer td, .invoice-pdf-viewer th {
+          color: black !important;
+        }
+        .invoice-pdf-viewer .text-gray-700, 
+        .invoice-pdf-viewer .text-gray-600, 
+        .invoice-pdf-viewer .text-gray-500,
+        .invoice-pdf-viewer .text-gray-800,
+        .invoice-pdf-viewer .text-gray-900 {
+          color: black !important;
+        }
+        .invoice-pdf-viewer .text-green-600 {
+          color: black !important;
+        }
         @media print {
           .no-print {
             display: none !important;
@@ -227,9 +248,6 @@ export function InvoicePDFViewer({
             color: black !important;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
-          }
-          .text-green-600 {
-            color: black !important;
           }
         }
       `}</style>

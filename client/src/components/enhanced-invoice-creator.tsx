@@ -808,12 +808,12 @@ export function EnhancedInvoiceCreator({
                     <table className="w-full">
                       <thead className="bg-gray-100">
                         <tr>
-                          <th className="px-4 py-3 text-left font-semibold">Work Order</th>
-                          <th className="px-4 py-3 text-left font-semibold">Technician</th>
-                          <th className="px-4 py-3 text-right font-semibold">Hours</th>
-                          <th className="px-4 py-3 text-right font-semibold">Labor</th>
-                          <th className="px-4 py-3 text-right font-semibold">Parts</th>
-                          <th className="px-4 py-3 text-right font-semibold">Total</th>
+                          <th className="px-4 py-3 text-left font-semibold" style={{color: 'black'}}>Work Order</th>
+                          <th className="px-4 py-3 text-left font-semibold" style={{color: 'black'}}>Technician</th>
+                          <th className="px-4 py-3 text-right font-semibold" style={{color: 'black'}}>Hours</th>
+                          <th className="px-4 py-3 text-right font-semibold" style={{color: 'black'}}>Labor</th>
+                          <th className="px-4 py-3 text-right font-semibold" style={{color: 'black'}}>Parts</th>
+                          <th className="px-4 py-3 text-right font-semibold" style={{color: 'black'}}>Total</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -821,12 +821,12 @@ export function EnhancedInvoiceCreator({
                           const partsCost = (workOrder.editableParts || []).reduce((sum, part) => sum + (part.cost * part.quantity), 0);
                           return (
                             <tr key={workOrder.id} className="border-t">
-                              <td className="px-4 py-3 font-medium">#{workOrder.workOrderNumber}</td>
-                              <td className="px-4 py-3">{workOrder.technicianName}</td>
-                              <td className="px-4 py-3 text-right">{workOrder.editableHours?.toFixed(2)}</td>
-                              <td className="px-4 py-3 text-right">${workOrder.editableLaborCost?.toFixed(2)}</td>
-                              <td className="px-4 py-3 text-right">${partsCost.toFixed(2)}</td>
-                              <td className="px-4 py-3 text-right font-semibold">${workOrder.editableTotalCost?.toFixed(2)}</td>
+                              <td className="px-4 py-3 font-medium" style={{color: 'black'}}>#{workOrder.workOrderNumber}</td>
+                              <td className="px-4 py-3" style={{color: 'black'}}>{workOrder.technicianName}</td>
+                              <td className="px-4 py-3 text-right" style={{color: 'black'}}>{workOrder.editableHours?.toFixed(2)}</td>
+                              <td className="px-4 py-3 text-right" style={{color: 'black'}}>${workOrder.editableLaborCost?.toFixed(2)}</td>
+                              <td className="px-4 py-3 text-right" style={{color: 'black'}}>${partsCost.toFixed(2)}</td>
+                              <td className="px-4 py-3 text-right font-semibold" style={{color: 'black'}}>${workOrder.editableTotalCost?.toFixed(2)}</td>
                             </tr>
                           );
                         })}
@@ -839,32 +839,32 @@ export function EnhancedInvoiceCreator({
                 <div className="bg-gray-50 p-6 rounded-lg">
                   <div className="flex justify-end">
                     <div className="w-64 space-y-2">
-                      <div className="flex justify-between text-lg">
+                      <div className="flex justify-between text-lg" style={{color: 'black'}}>
                         <span>Subtotal:</span>
                         <span>${workOrdersSubtotal.toFixed(2)}</span>
                       </div>
                       {tax > 0 && (
-                        <div className="flex justify-between">
+                        <div className="flex justify-between" style={{color: 'black'}}>
                           <span>Tax:</span>
                           <span>${tax.toFixed(2)}</span>
                         </div>
                       )}
                       {discount > 0 && (
-                        <div className="flex justify-between">
+                        <div className="flex justify-between" style={{color: 'black'}}>
                           <span>Discount:</span>
                           <span>-${discount.toFixed(2)}</span>
                         </div>
                       )}
-                      <div className="flex justify-between text-2xl font-bold border-t pt-2">
+                      <div className="flex justify-between text-2xl font-bold border-t pt-2" style={{color: 'black'}}>
                         <span>TOTAL:</span>
-                        <span className="text-green-600">${total.toFixed(2)}</span>
+                        <span style={{color: 'black'}}>${total.toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Payment Terms & Notes */}
-                <div className="text-sm text-gray-600">
+                <div className="text-sm" style={{color: 'black'}}>
                   <p><span className="font-medium">Payment Terms:</span> {form.watch("paymentTerms") || "Net 30"}</p>
                   {form.watch("notes") && (
                     <div className="mt-2">
