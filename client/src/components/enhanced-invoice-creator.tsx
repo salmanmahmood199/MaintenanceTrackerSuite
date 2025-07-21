@@ -10,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, Calculator, Edit3, FileText, DollarSign, Clock, Package, User, Building2 } from "lucide-react";
+import { Plus, Trash2, Calculator, Edit3, FileText, DollarSign, Clock, Package, User, Building2, ChevronDown } from "lucide-react";
 import type { Ticket, WorkOrder, MaintenanceVendor, Organization } from "@shared/schema";
 import { format as formatTz, toZonedTime } from "date-fns-tz";
 
@@ -94,14 +94,32 @@ export function EnhancedInvoiceCreator({
           otherCharges = [];
         }
 
+        // Ensure parts have editable costs initialized from system defaults
+        const editableParts = parts.map((part: any) => ({
+          ...part,
+          cost: part.cost || 0 // Use existing cost or default to 0
+        }));
+
+        const editableHours = parseFloat(wo.totalHours || "0");
+        const editableHourlyRate = 75; // Default rate but customizable
+        const laborCost = editableHours * editableHourlyRate;
+        
+        // Calculate total parts cost
+        const partsCost = editableParts.reduce((sum: number, p: any) => 
+          sum + (p.cost * p.quantity), 0);
+        
+        // Calculate total other charges
+        const otherChargesCost = otherCharges.reduce((sum: number, c: any) => 
+          sum + c.amount, 0);
+
         return {
           ...wo,
-          editableHourlyRate: 75, // Default hourly rate
-          editableHours: parseFloat(wo.totalHours || "0"),
-          editableLaborCost: 75 * parseFloat(wo.totalHours || "0"),
-          editableParts: parts,
+          editableHourlyRate,
+          editableHours,
+          editableLaborCost: laborCost,
+          editableParts,
           editableOtherCharges: otherCharges,
-          editableTotalCost: parseFloat(wo.totalCost || "0"),
+          editableTotalCost: laborCost + partsCost + otherChargesCost,
         };
       });
       
@@ -231,10 +249,12 @@ export function EnhancedInvoiceCreator({
                 {editableWorkOrders.map((workOrder) => (
                   <Card 
                     key={workOrder.id} 
-                    className={`border-l-4 ${selectedWorkOrderId === workOrder.id ? 'border-l-blue-500 bg-muted/50' : 'border-l-border'} cursor-pointer transition-colors bg-card text-card-foreground`}
-                    onClick={() => setSelectedWorkOrderId(selectedWorkOrderId === workOrder.id ? null : workOrder.id)}
+                    className={`border-l-4 ${selectedWorkOrderId === workOrder.id ? 'border-l-blue-500 bg-muted/50' : 'border-l-border'} transition-colors bg-card text-card-foreground`}
                   >
-                    <CardHeader>
+                    <CardHeader 
+                      className="cursor-pointer"
+                      onClick={() => setSelectedWorkOrderId(selectedWorkOrderId === workOrder.id ? null : workOrder.id)}
+                    >
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-lg text-foreground">Work Order #{workOrder.workOrderNumber}</CardTitle>
                         <div className="flex items-center gap-4">
@@ -245,15 +265,16 @@ export function EnhancedInvoiceCreator({
                           <div className="text-lg font-semibold text-green-600">
                             ${workOrder.editableTotalCost?.toFixed(2) || '0.00'}
                           </div>
+                          <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${selectedWorkOrderId === workOrder.id ? 'rotate-180' : ''}`} />
                         </div>
                       </div>
                     </CardHeader>
 
                     {selectedWorkOrderId === workOrder.id && (
-                      <CardContent className="space-y-4 bg-muted/30">
+                      <CardContent className="space-y-4 bg-muted/30" onClick={(e) => e.stopPropagation()}>
                         {/* Labor Section */}
                         <div className="bg-background p-4 rounded-lg border border-border">
-                          <h4 className="font-semibold mb-3 flex items-center gap-2">
+                          <h4 className="font-semibold mb-3 flex items-center gap-2 text-foreground">
                             <User className="h-4 w-4" />
                             Labor Costs
                           </h4>
@@ -266,7 +287,12 @@ export function EnhancedInvoiceCreator({
                                   type="number"
                                   step="0.01"
                                   value={workOrder.editableHourlyRate || 75}
-                                  onChange={(e) => updateWorkOrderRate(workOrder.id, parseFloat(e.target.value) || 0)}
+                                  onChange={(e) => {
+                                    e.stopPropagation();
+                                    updateWorkOrderRate(workOrder.id, parseFloat(e.target.value) || 0);
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  onFocus={(e) => e.stopPropagation()}
                                   className="w-full bg-background text-foreground border-input"
                                 />
                               </div>
@@ -277,7 +303,12 @@ export function EnhancedInvoiceCreator({
                                 type="number"
                                 step="0.25"
                                 value={workOrder.editableHours || 0}
-                                onChange={(e) => updateWorkOrderHours(workOrder.id, parseFloat(e.target.value) || 0)}
+                                onChange={(e) => {
+                                  e.stopPropagation();
+                                  updateWorkOrderHours(workOrder.id, parseFloat(e.target.value) || 0);
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                onFocus={(e) => e.stopPropagation()}
                                 className="w-full mt-1 bg-background text-foreground border-input"
                               />
                             </div>
@@ -316,7 +347,12 @@ export function EnhancedInvoiceCreator({
                                         type="number"
                                         step="0.01"
                                         value={part.cost}
-                                        onChange={(e) => updatePartCost(workOrder.id, index, parseFloat(e.target.value) || 0)}
+                                        onChange={(e) => {
+                                          e.stopPropagation();
+                                          updatePartCost(workOrder.id, index, parseFloat(e.target.value) || 0);
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
+                                        onFocus={(e) => e.stopPropagation()}
                                         className="w-full bg-background text-foreground border-input"
                                       />
                                     </div>
@@ -418,9 +454,9 @@ export function EnhancedInvoiceCreator({
                         name="paymentTerms"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Payment Terms</FormLabel>
+                            <FormLabel className="text-foreground">Payment Terms</FormLabel>
                             <FormControl>
-                              <Input {...field} placeholder="Net 30" />
+                              <Input {...field} placeholder="Net 30" className="bg-background text-foreground border-input" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -432,9 +468,9 @@ export function EnhancedInvoiceCreator({
                         name="dueDate"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Due Date</FormLabel>
+                            <FormLabel className="text-foreground">Due Date</FormLabel>
                             <FormControl>
-                              <Input type="date" {...field} />
+                              <Input type="date" {...field} className="bg-background text-foreground border-input" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -447,9 +483,9 @@ export function EnhancedInvoiceCreator({
                       name="notes"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Notes</FormLabel>
+                          <FormLabel className="text-foreground">Notes</FormLabel>
                           <FormControl>
-                            <Textarea {...field} rows={3} placeholder="Additional notes or terms..." />
+                            <Textarea {...field} rows={3} placeholder="Additional notes or terms..." className="bg-background text-foreground border-input" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -459,9 +495,9 @@ export function EnhancedInvoiceCreator({
                 </Card>
 
                 {/* Invoice Summary */}
-                <Card>
+                <Card className="bg-card text-card-foreground border-border">
                   <CardHeader>
-                    <CardTitle>Invoice Summary</CardTitle>
+                    <CardTitle className="text-foreground">Invoice Summary</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
