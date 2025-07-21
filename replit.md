@@ -313,6 +313,7 @@ Changelog:
 - July 21, 2025. Fixed marketplace bid visibility permissions - only users with marketplace access can now view bids
 - July 21, 2025. Enhanced permission system to properly check vendorTiers for marketplace access in organization admin dashboard
 - July 21, 2025. Updated dark theme styling for Sub-Admins and Vendors tabs with proper CSS variables for better readability
+- July 21, 2025. Fixed JavaScript initialization error in OrganizationView component - resolved "Cannot access 'organizationVendors' before initialization" issue
 ```
 
 ## User Preferences
