@@ -378,9 +378,9 @@ export function TechnicianWorkOrderModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto bg-background text-foreground">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
+            <DialogTitle className="flex items-center gap-3 text-foreground">
               <span>Work Order - {ticket.title}</span>
               <Badge variant="outline" className={`${priorityColor} border-current`}>
                 {ticket.priority}
@@ -448,11 +448,11 @@ export function TechnicianWorkOrderModal({
             <div className="space-y-4">
               <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
                 <div>
-                  <Label htmlFor="workDescription">Work Performed</Label>
+                  <Label htmlFor="workDescription" className="text-foreground font-medium">Work Performed</Label>
                   <Textarea
                     id="workDescription"
                     placeholder="Describe the work performed, steps taken, findings..."
-                    className="min-h-[100px]"
+                    className="min-h-[100px] bg-background text-foreground border-border"
                     {...form.register("workDescription")}
                   />
                   {form.formState.errors.workDescription && (
@@ -462,14 +462,14 @@ export function TechnicianWorkOrderModal({
 
                 {/* Work Photos */}
                 <div>
-                  <Label>Work Photos</Label>
+                  <Label className="text-foreground font-medium">Work Photos</Label>
                   <div className="space-y-3">
                     <Input
                       type="file"
                       accept="image/*"
                       multiple
                       onChange={handleImageUpload}
-                      className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 dark:file:bg-blue-900 dark:file:text-blue-200 dark:hover:file:bg-blue-800 bg-background text-foreground border-border"
                     />
                     {workImages.length > 0 && (
                       <div className="grid grid-cols-3 gap-2">
@@ -499,7 +499,7 @@ export function TechnicianWorkOrderModal({
                 {/* Parts Used */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <Label>Parts & Equipment Used</Label>
+                    <Label className="text-foreground font-medium">Parts & Equipment Used</Label>
                     <Button type="button" size="sm" variant="outline" onClick={addPart}>
                       <Plus className="h-4 w-4 mr-1" />
                       Add Part
@@ -513,7 +513,7 @@ export function TechnicianWorkOrderModal({
                             value={part.name && part.name !== "custom" ? part.name : ""}
                             onValueChange={(value) => selectPart(index, value)}
                           >
-                            <SelectTrigger>
+                            <SelectTrigger className="bg-background text-foreground border-border">
                               <SelectValue placeholder="Select a part" />
                             </SelectTrigger>
                             <SelectContent>
@@ -534,26 +534,28 @@ export function TechnicianWorkOrderModal({
                           </Select>
                           {part.name === "custom" && (
                             <div className="mt-2">
-                              <Label className="text-xs text-muted-foreground">Custom Part Name</Label>
+                              <Label className="text-xs text-foreground">Custom Part Name</Label>
                               <Input
                                 placeholder="Enter custom part name"
+                                className="bg-background text-foreground border-border"
                                 onChange={(e) => updatePart(index, "name", e.target.value)}
                               />
                             </div>
                           )}
                         </div>
                         <div className="col-span-2">
-                          <Label className="text-xs text-muted-foreground">Quantity</Label>
+                          <Label className="text-xs text-foreground">Quantity</Label>
                           <Input
                             type="number"
                             placeholder="Qty"
                             min="1"
                             value={part.quantity}
+                            className="bg-background text-foreground border-border"
                             onChange={(e) => updatePart(index, "quantity", parseInt(e.target.value) || 1)}
                           />
                         </div>
                         <div className="col-span-3">
-                          <Label className="text-xs text-muted-foreground">
+                          <Label className="text-xs text-foreground">
                             {part.name === "custom" ? "Selling Price ($)" : "Selling Price (Auto-filled)"}
                           </Label>
                           <Input
@@ -563,7 +565,7 @@ export function TechnicianWorkOrderModal({
                             step="0.01"
                             value={part.cost}
                             disabled={part.name !== "custom"}
-                            className={part.name !== "custom" ? "bg-muted" : ""}
+                            className={part.name !== "custom" ? "bg-muted text-muted-foreground" : "bg-background text-foreground border-border"}
                             onChange={(e) => updatePart(index, "cost", parseFloat(e.target.value) || 0)}
                           />
                         </div>
@@ -582,7 +584,7 @@ export function TechnicianWorkOrderModal({
                     ))}
                   </div>
                   {parts.length > 0 && (
-                    <div className="text-sm text-muted-foreground mt-2">
+                    <div className="text-sm text-foreground font-medium mt-2">
                       Parts Total (Selling Price): ${totalPartsCost.toFixed(2)}
                     </div>
                   )}
@@ -605,21 +607,22 @@ export function TechnicianWorkOrderModal({
                   {/* Work Date - Auto-filled and grayed out */}
                   <div className="grid grid-cols-3 gap-4 mb-4">
                     <div>
-                      <Label>Work Date</Label>
+                      <Label className="text-foreground font-medium">Work Date</Label>
                       <Input
                         type="date"
                         value={getCurrentDate()}
                         disabled
-                        className="bg-muted text-muted-foreground"
+                        className="bg-muted text-foreground border-border"
                       />
                     </div>
                     
                     {/* Time In */}
                     <div>
-                      <Label htmlFor="timeIn">Time In</Label>
+                      <Label htmlFor="timeIn" className="text-foreground font-medium">Time In</Label>
                       <Input
                         id="timeIn"
                         type="time"
+                        className="bg-background text-foreground border-border"
                         {...form.register("timeIn", {
                           onChange: (e) => {
                             const timeOut = form.getValues("timeOut");
@@ -637,10 +640,11 @@ export function TechnicianWorkOrderModal({
                     
                     {/* Time Out */}
                     <div>
-                      <Label htmlFor="timeOut">Time Out</Label>
+                      <Label htmlFor="timeOut" className="text-foreground font-medium">Time Out</Label>
                       <Input
                         id="timeOut"
                         type="time"
+                        className="bg-background text-foreground border-border"
                         {...form.register("timeOut", {
                           onChange: (e) => {
                             const timeIn = form.getValues("timeIn");
@@ -680,9 +684,10 @@ export function TechnicianWorkOrderModal({
                   
                   {/* Manager Name */}
                   <div className="mb-4">
-                    <Label htmlFor="managerName">Manager Name</Label>
+                    <Label htmlFor="managerName" className="text-foreground font-medium">Manager Name</Label>
                     <Input
                       placeholder="Enter manager's full name"
+                      className="bg-background text-foreground border-border"
                       {...form.register("managerName")}
                     />
                     {form.formState.errors.managerName && (
@@ -693,7 +698,7 @@ export function TechnicianWorkOrderModal({
                   {/* Manager Signature */}
                   <div className="mb-4">
                     <div className="flex justify-between items-center mb-2">
-                      <Label htmlFor="managerSignature">Manager Signature</Label>
+                      <Label htmlFor="managerSignature" className="text-foreground font-medium">Manager Signature</Label>
                       <Button
                         type="button"
                         variant="outline"
@@ -704,7 +709,7 @@ export function TechnicianWorkOrderModal({
                         Clear
                       </Button>
                     </div>
-                    <div className="border-2 border-dashed border-border rounded-lg bg-background">
+                    <div className="border-2 border-dashed border-border rounded-lg bg-white dark:bg-gray-800">
                       <canvas
                         ref={canvasRef}
                         width={400}
@@ -720,7 +725,7 @@ export function TechnicianWorkOrderModal({
                         style={{ touchAction: 'none' }}
                       />
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       Click and drag to draw manager's signature for work verification
                     </p>
                     {form.formState.errors.managerSignature && (
@@ -731,9 +736,9 @@ export function TechnicianWorkOrderModal({
 
                 {/* Completion Status */}
                 <div className="border-t pt-4">
-                  <Label htmlFor="completionStatus">Job Status</Label>
+                  <Label htmlFor="completionStatus" className="text-foreground font-medium">Job Status</Label>
                   <Select onValueChange={(value) => form.setValue("completionStatus", value as "completed" | "return_needed")}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-background text-foreground border-border">
                       <SelectValue placeholder="Select job completion status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -748,11 +753,12 @@ export function TechnicianWorkOrderModal({
 
                 {/* Completion Notes */}
                 <div>
-                  <Label htmlFor="completionNotes">
+                  <Label htmlFor="completionNotes" className="text-foreground font-medium">
                     {form.watch("completionStatus") === "return_needed" ? "Return Details" : "Completion Notes"}
                   </Label>
                   <Textarea
                     id="completionNotes"
+                    className="bg-background text-foreground border-border"
                     placeholder={
                       form.watch("completionStatus") === "return_needed" 
                         ? "Explain why return is needed (e.g., waiting for parts, need special equipment...)"
