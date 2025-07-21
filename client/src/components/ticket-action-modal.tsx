@@ -68,6 +68,8 @@ export function TicketActionModal({
 
   // Filter vendors based on user role and tier access
   const availableVendors = vendors.filter(v => {
+    console.log(`Filtering vendor ${v.vendor.name} (tier: ${v.tier}) for user role: ${userRole}, userVendorTiers:`, userVendorTiers);
+    
     if (!v.isActive) return false;
     
     // Root and org admins can see all active vendors
@@ -78,9 +80,12 @@ export function TicketActionModal({
       // Check if user has access to this vendor tier
       // If userVendorTiers is null/undefined, allow all basic tiers for backwards compatibility
       if (!userVendorTiers || userVendorTiers.length === 0) {
+        console.log(`No vendorTiers for user, allowing basic tiers for vendor ${v.vendor.name}`);
         return ["tier_1", "tier_2", "tier_3"].includes(v.tier);
       }
-      return userVendorTiers.includes(v.tier);
+      const hasAccess = userVendorTiers.includes(v.tier);
+      console.log(`User has access to vendor ${v.vendor.name} (tier ${v.tier}):`, hasAccess);
+      return hasAccess;
     }
     
     // Maintenance admins can see all vendors assigned to their organization
@@ -89,7 +94,7 @@ export function TicketActionModal({
     return false;
   });
 
-  // Check if user has marketplace access
+  // Check if user has marketplace access - only based on user's assigned vendor tiers
   const hasMarketplaceAccess = userRole === "root" || userRole === "org_admin" || 
     (userRole === "org_subadmin" && userVendorTiers?.includes("marketplace"));
 
