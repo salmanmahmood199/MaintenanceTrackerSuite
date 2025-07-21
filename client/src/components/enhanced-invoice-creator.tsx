@@ -201,7 +201,28 @@ export function EnhancedInvoiceCreator({
     setEditableWorkOrders(prev => prev.map(wo => {
       if (wo.id === workOrderId) {
         const updatedParts = [...(wo.editableParts || [])];
-        updatedParts[partIndex] = { ...updatedParts[partIndex], cost: newCost };
+        updatedParts[partIndex] = { ...updatedParts[partIndex], cost: Math.max(0, newCost) };
+        
+        const laborCost = wo.editableLaborCost || 0;
+        const partsCost = updatedParts.reduce((sum, part) => sum + (part.cost * part.quantity), 0);
+        const otherCost = (wo.editableOtherCharges || []).reduce((sum, charge) => sum + charge.amount, 0);
+        const totalCost = laborCost + partsCost + otherCost;
+        
+        return {
+          ...wo,
+          editableParts: updatedParts,
+          editableTotalCost: totalCost,
+        };
+      }
+      return wo;
+    }));
+  };
+
+  const updatePartQuantity = (workOrderId: number, partIndex: number, newQuantity: number) => {
+    setEditableWorkOrders(prev => prev.map(wo => {
+      if (wo.id === workOrderId) {
+        const updatedParts = [...(wo.editableParts || [])];
+        updatedParts[partIndex] = { ...updatedParts[partIndex], quantity: Math.max(0, newQuantity) };
         
         const laborCost = wo.editableLaborCost || 0;
         const partsCost = updatedParts.reduce((sum, part) => sum + (part.cost * part.quantity), 0);
@@ -386,7 +407,19 @@ export function EnhancedInvoiceCreator({
                                   </div>
                                   <div>
                                     <label className="text-sm font-medium text-foreground">Quantity</label>
-                                    <div className="mt-1 text-center font-medium text-foreground">{part.quantity}</div>
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      step="1"
+                                      value={part.quantity}
+                                      onChange={(e) => {
+                                        e.stopPropagation();
+                                        updatePartQuantity(workOrder.id, index, parseInt(e.target.value) || 0);
+                                      }}
+                                      onClick={(e) => e.stopPropagation()}
+                                      onFocus={(e) => e.stopPropagation()}
+                                      className="w-full mt-1 bg-background text-foreground border-input text-center"
+                                    />
                                   </div>
                                   <div>
                                     <label className="text-sm font-medium text-foreground">Unit Cost</label>
