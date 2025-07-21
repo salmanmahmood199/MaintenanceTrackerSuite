@@ -43,6 +43,9 @@ interface EditableWorkOrder extends WorkOrder {
 }
 
 const invoiceFormSchema = z.object({
+  applyTax: z.boolean().default(false),
+  taxPercentage: z.number().min(0, "Tax percentage must be positive").max(100, "Tax percentage cannot exceed 100%").default(0),
+  taxAppliesTo: z.enum(["total", "parts", "labor"]).default("total"),
   tax: z.number().min(0, "Tax must be positive").default(0),
   discount: z.number().min(0, "Discount must be positive").default(0),
   notes: z.string().optional(),
@@ -70,6 +73,9 @@ export function EnhancedInvoiceCreator({
   const form = useForm<InvoiceFormData>({
     resolver: zodResolver(invoiceFormSchema),
     defaultValues: {
+      applyTax: false,
+      taxPercentage: 0,
+      taxAppliesTo: "total",
       tax: 0,
       discount: 0,
       notes: "",
@@ -241,6 +247,30 @@ export function EnhancedInvoiceCreator({
       }
       return wo;
     }));
+  };
+
+  const calculateTax = (percentage: number) => {
+    const taxAppliesTo = form.watch('taxAppliesTo');
+    const laborTotal = editableWorkOrders.reduce((sum, wo) => sum + (wo.editableLaborCost || 0), 0);
+    const partsTotal = editableWorkOrders.reduce((sum, wo) => 
+      sum + ((wo.editableParts || []).reduce((partSum, part) => partSum + (part.cost * part.quantity), 0)), 0);
+    const totalSubtotal = laborTotal + partsTotal;
+    
+    let taxableAmount = 0;
+    switch (taxAppliesTo) {
+      case 'total':
+        taxableAmount = totalSubtotal;
+        break;
+      case 'parts':
+        taxableAmount = partsTotal;
+        break;
+      case 'labor':
+        taxableAmount = laborTotal;
+        break;
+    }
+    
+    const taxAmount = (taxableAmount * percentage) / 100;
+    form.setValue('tax', taxAmount);
   };
 
   const handleSubmit = (data: InvoiceFormData) => {
@@ -492,47 +522,122 @@ export function EnhancedInvoiceCreator({
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    {/* Tax Configuration */}
+                    <div className="bg-muted/20 p-4 rounded-lg border border-muted">
+                      <h4 className="font-semibold mb-3 text-foreground">Tax Settings</h4>
+                      
                       <FormField
                         control={form.control}
-                        name="tax"
+                        name="applyTax"
                         render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-foreground">Tax Amount ($)</FormLabel>
+                          <FormItem className="flex flex-row items-center space-x-3 space-y-0">
                             <FormControl>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                {...field}
-                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                                className="bg-background text-foreground border-input"
+                              <input
+                                type="checkbox"
+                                checked={field.value}
+                                onChange={(e) => {
+                                  field.onChange(e.target.checked);
+                                  if (!e.target.checked) {
+                                    form.setValue('tax', 0);
+                                    form.setValue('taxPercentage', 0);
+                                  }
+                                }}
+                                className="w-4 h-4 rounded border"
                               />
                             </FormControl>
-                            <FormMessage />
+                            <FormLabel className="text-foreground font-medium">Apply Tax</FormLabel>
                           </FormItem>
                         )}
                       />
 
-                      <FormField
-                        control={form.control}
-                        name="discount"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-foreground">Discount ($)</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                {...field}
-                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                                className="bg-background text-foreground border-input"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      {form.watch('applyTax') && (
+                        <div className="mt-4 space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                              control={form.control}
+                              name="taxPercentage"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-foreground">Tax Percentage (%)</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      type="number"
+                                      step="0.1"
+                                      min="0"
+                                      max="100"
+                                      {...field}
+                                      onChange={(e) => {
+                                        const percentage = parseFloat(e.target.value) || 0;
+                                        field.onChange(percentage);
+                                        calculateTax(percentage);
+                                      }}
+                                      placeholder="8.5"
+                                      className="bg-background text-foreground border-input"
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={form.control}
+                              name="taxAppliesTo"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-foreground">Apply Tax To</FormLabel>
+                                  <FormControl>
+                                    <select
+                                      {...field}
+                                      onChange={(e) => {
+                                        field.onChange(e.target.value);
+                                        calculateTax(form.watch('taxPercentage'));
+                                      }}
+                                      className="w-full p-2 border rounded bg-background text-foreground border-input"
+                                    >
+                                      <option value="total">Total Invoice</option>
+                                      <option value="parts">Parts Only</option>
+                                      <option value="labor">Labor Only</option>
+                                    </select>
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+
+                          <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
+                            <div className="text-sm text-green-800 dark:text-green-200">
+                              <strong>Tax Calculation:</strong> {form.watch('taxPercentage')}% of {
+                                form.watch('taxAppliesTo') === 'total' ? 'Total Invoice' :
+                                form.watch('taxAppliesTo') === 'parts' ? 'Parts Only' :
+                                'Labor Only'
+                              } = <strong>${form.watch('tax').toFixed(2)}</strong>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
+
+                    <FormField
+                      control={form.control}
+                      name="discount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-foreground">Discount ($)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              {...field}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                              className="bg-background text-foreground border-input"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
                     {/* Payment Terms with Auto Due Date */}
                     <div className="bg-muted/20 p-4 rounded-lg border border-muted">
