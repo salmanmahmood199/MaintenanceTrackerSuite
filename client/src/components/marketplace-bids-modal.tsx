@@ -232,7 +232,7 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5" />
@@ -243,7 +243,7 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="h-[600px] pr-4">
+        <ScrollArea className="flex-1 pr-4">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <div className="text-muted-foreground">Loading bids...</div>
@@ -414,40 +414,47 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
           </div>
         )}
 
-        {/* Debug info */}
-        {console.log('Rendering debug info:', { actionType, selectedBidId, showCounterForm: actionType === "counter" && selectedBidId })}
+
         
         {actionType === "counter" && selectedBidId && (
-          <div className="border-t pt-4">
-            <h4 className="font-medium mb-2">Counter Offer</h4>
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-4">
+          <div className="border-t bg-blue-50 dark:bg-blue-950/20 p-4 rounded-md mt-4">
+            <h4 className="font-semibold text-lg mb-4 text-blue-900 dark:text-blue-100">Counter Offer</h4>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="counterAmount">Counter Amount ($)</Label>
+                  <Label htmlFor="counterAmount" className="text-sm font-medium">Counter Amount ($)</Label>
                   <Input
                     id="counterAmount"
                     type="number"
                     step="0.01"
-                    placeholder="0.00"
+                    placeholder="Enter your counter amount"
                     value={counterAmount}
                     onChange={(e) => setCounterAmount(e.target.value)}
+                    className="mt-1"
                   />
+                </div>
+                <div className="flex items-end">
+                  <div className="text-sm text-muted-foreground">
+                    Original: ${bids.find(b => b.id === selectedBidId)?.totalAmount || '0'}
+                  </div>
                 </div>
               </div>
               <div>
-                <Label htmlFor="counterNotes">Counter Offer Notes</Label>
+                <Label htmlFor="counterNotes" className="text-sm font-medium">Counter Offer Notes</Label>
                 <Textarea
                   id="counterNotes"
-                  placeholder="Explain your counter offer..."
+                  placeholder="Explain your counter offer and any conditions..."
                   value={counterNotes}
                   onChange={(e) => setCounterNotes(e.target.value)}
-                  rows={3}
+                  rows={4}
+                  className="mt-1 resize-none"
                 />
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-3 pt-2">
                 <Button
                   onClick={handleCounter}
                   disabled={counterBidMutation.isPending || !counterAmount || !counterNotes.trim()}
+                  className="bg-blue-600 hover:bg-blue-700"
                 >
                   {counterBidMutation.isPending ? "Sending..." : "Send Counter Offer"}
                 </Button>
