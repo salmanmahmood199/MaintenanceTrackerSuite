@@ -70,13 +70,13 @@ export function InvoicePDFViewer({
           {/* Company & Client Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 print:gap-6">
             <div>
-              <h3 className="font-bold text-xl mb-4 flex items-center gap-2 text-gray-800">
+              <h3 className="font-bold text-xl mb-4 flex items-center gap-2 text-black">
                 <Building2 className="h-5 w-5" />
                 Service Provider
               </h3>
               <div className="bg-gray-50 p-6 print:p-4 rounded-xl print:rounded-lg border">
-                <p className="font-bold text-2xl print:text-xl text-gray-900">{vendor?.name || 'Maintenance Vendor'}</p>
-                <div className="mt-3 space-y-1 text-gray-700">
+                <p className="font-bold text-2xl print:text-xl text-black">{vendor?.name || 'Maintenance Vendor'}</p>
+                <div className="mt-3 space-y-1 text-black">
                   <p>{vendor?.address || 'Vendor Address'}</p>
                   <p>Email: {vendor?.email || 'vendor@email.com'}</p>
                   <p>Phone: {vendor?.phone || 'Phone Number'}</p>
@@ -85,13 +85,13 @@ export function InvoicePDFViewer({
             </div>
             
             <div>
-              <h3 className="font-bold text-xl mb-4 flex items-center gap-2 text-gray-800">
+              <h3 className="font-bold text-xl mb-4 flex items-center gap-2 text-black">
                 <Building2 className="h-5 w-5" />
                 Bill To
               </h3>
               <div className="bg-gray-50 p-6 print:p-4 rounded-xl print:rounded-lg border">
-                <p className="font-bold text-2xl print:text-xl text-gray-900">{organization?.name || 'Organization'}</p>
-                <div className="mt-3 space-y-1 text-gray-700">
+                <p className="font-bold text-2xl print:text-xl text-black">{organization?.name || 'Organization'}</p>
+                <div className="mt-3 space-y-1 text-black">
                   <p>{organization?.address || 'Organization Address'}</p>
                   <p>Email: {organization?.email || 'org@email.com'}</p>
                   <p>Phone: {organization?.phone || 'Phone Number'}</p>
@@ -102,9 +102,9 @@ export function InvoicePDFViewer({
 
           {/* Service Details */}
           <div className="bg-blue-50 print:bg-gray-50 p-6 print:p-4 rounded-xl print:rounded-lg border border-blue-200 print:border-gray-200">
-            <h3 className="font-bold text-xl mb-4 text-gray-800">Service Details</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
-              <div><span className="font-semibold">Ticket Number:</span> {ticket?.ticketNumber || invoice.ticketNumber}</div>
+            <h3 className="font-bold text-xl mb-4 text-black">Service Details</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-black">
+              <div><span className="font-semibold">Ticket Number:</span> {ticket?.ticketNumber || 'N/A'}</div>
               <div><span className="font-semibold">Priority:</span> <Badge variant="outline" className="ml-2">{ticket?.priority || 'Standard'}</Badge></div>
               <div className="md:col-span-2"><span className="font-semibold">Description:</span> {ticket?.description || 'Service completed'}</div>
             </div>
@@ -112,17 +112,17 @@ export function InvoicePDFViewer({
 
           {/* Work Orders Table */}
           <div>
-            <h3 className="font-bold text-xl mb-6 text-gray-800">Work Orders Completed</h3>
+            <h3 className="font-bold text-xl mb-6 text-black">Work Orders Completed</h3>
             <div className="overflow-hidden rounded-xl print:rounded-lg border border-gray-200 bg-white">
               <table className="w-full">
                 <thead className="bg-gray-100">
                   <tr className="border-b border-gray-200">
-                    <th className="px-6 print:px-4 py-4 text-left font-bold text-gray-800">Work Order</th>
-                    <th className="px-6 print:px-4 py-4 text-left font-bold text-gray-800">Technician</th>
-                    <th className="px-6 print:px-4 py-4 text-right font-bold text-gray-800">Hours</th>
-                    <th className="px-6 print:px-4 py-4 text-right font-bold text-gray-800">Labor</th>
-                    <th className="px-6 print:px-4 py-4 text-right font-bold text-gray-800">Parts</th>
-                    <th className="px-6 print:px-4 py-4 text-right font-bold text-gray-800">Total</th>
+                    <th className="px-6 print:px-4 py-4 text-left font-bold text-black">Work Order</th>
+                    <th className="px-6 print:px-4 py-4 text-left font-bold text-black">Technician</th>
+                    <th className="px-6 print:px-4 py-4 text-right font-bold text-black">Hours</th>
+                    <th className="px-6 print:px-4 py-4 text-right font-bold text-black">Labor</th>
+                    <th className="px-6 print:px-4 py-4 text-right font-bold text-black">Parts</th>
+                    <th className="px-6 print:px-4 py-4 text-right font-bold text-black">Total</th>
                   </tr>
                 </thead>
                 <tbody>

@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Trash2, Calculator, Edit3, FileText, DollarSign, Clock, Package, User, Building2, ChevronDown } from "lucide-react";
 import type { Ticket, WorkOrder, MaintenanceVendor, Organization } from "@shared/schema";
 import { format as formatTz, toZonedTime } from "date-fns-tz";
+import { format } from "date-fns";
 
 interface EnhancedInvoiceCreatorProps {
   open: boolean;
@@ -46,6 +47,7 @@ const invoiceFormSchema = z.object({
   discount: z.number().min(0, "Discount must be positive").default(0),
   notes: z.string().optional(),
   paymentTerms: z.string().default("Net 30"),
+  netDays: z.number().min(1, "Net days must be at least 1").default(30),
   dueDate: z.string().optional(),
 });
 
@@ -72,6 +74,8 @@ export function EnhancedInvoiceCreator({
       discount: 0,
       notes: "",
       paymentTerms: "Net 30",
+      netDays: 30,
+      dueDate: format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
     },
   });
 
@@ -530,34 +534,53 @@ export function EnhancedInvoiceCreator({
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="paymentTerms"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-foreground">Payment Terms</FormLabel>
-                            <FormControl>
-                              <Input {...field} placeholder="Net 30" className="bg-background text-foreground border-input" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="dueDate"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-foreground">Due Date</FormLabel>
-                            <FormControl>
-                              <Input type="date" {...field} className="bg-background text-foreground border-input" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                    {/* Payment Terms with Auto Due Date */}
+                    <div className="bg-muted/20 p-4 rounded-lg border border-muted">
+                      <h4 className="font-semibold mb-3 text-foreground">Payment Terms</h4>
+                      <div className="grid grid-cols-3 gap-4 items-end">
+                        <div>
+                          <label className="text-sm font-medium text-foreground">Today's Date</label>
+                          <div className="mt-1 p-2 bg-muted text-foreground rounded border">
+                            {format(new Date(), 'MM/dd/yyyy')}
+                          </div>
+                        </div>
+                        <div>
+                          <FormField
+                            control={form.control}
+                            name="netDays"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-foreground">Net Days</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    min="1"
+                                    max="365"
+                                    {...field}
+                                    onChange={(e) => {
+                                      const days = parseInt(e.target.value) || 30;
+                                      field.onChange(days);
+                                      const dueDate = new Date();
+                                      dueDate.setDate(dueDate.getDate() + days);
+                                      form.setValue('dueDate', format(dueDate, 'yyyy-MM-dd'));
+                                      form.setValue('paymentTerms', `Net ${days}`);
+                                    }}
+                                    placeholder="30"
+                                    className="bg-background text-foreground border-input"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-foreground">Due Date</label>
+                          <div className="mt-1 p-2 bg-green-50 text-green-800 rounded border border-green-200 font-medium">
+                            {form.watch('dueDate') ? format(new Date(form.watch('dueDate')!), 'MM/dd/yyyy') : format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'MM/dd/yyyy')}
+                          </div>
+                        </div>
+                      </div>
                     </div>
 
                     <FormField
