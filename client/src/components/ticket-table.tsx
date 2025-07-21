@@ -14,7 +14,7 @@ import { format } from "date-fns";
 import { formatDate, getPriorityColor, getStatusColor } from "@/lib/utils";
 import { ProgressTrackerEmbedded } from "@/components/progress-tracker";
 import { TicketComments } from "./ticket-comments";
-import { WorkOrdersHistory } from "@/components/work-orders-history";
+import { WorkOrdersHistoryEmbedded } from "@/components/work-orders-history-embedded";
 import type { Ticket } from "@shared/schema";
 
 interface TicketTableProps {
@@ -575,9 +575,7 @@ export function TicketTable({
                 </TabsContent>
 
                 <TabsContent value="work-orders" className="mt-6">
-                  <WorkOrdersHistory 
-                    open={true} 
-                    onOpenChange={() => {}} 
+                  <WorkOrdersHistoryEmbedded 
                     ticketId={selectedTicket.id} 
                   />
                 </TabsContent>

@@ -1161,7 +1161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Force close ticket - Available for users with accept ticket permissions
-  app.post("/api/tickets/:id/force-close", authenticateUser, requireRole(["org_admin", "org_subadmin", "maintenance_admin"]), async (req: AuthenticatedRequest, res) => {
+  app.post("/api/tickets/:id/force-close", authenticateUser, requireRole(["org_admin", "org_subadmin"]), async (req: AuthenticatedRequest, res) => {
     try {
       const ticketId = parseInt(req.params.id);
       const user = req.user!;
@@ -1182,11 +1182,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Ticket is already closed" });
       }
       
-      // Check permissions based on user role
+      // Check permissions based on user role - vendor admins cannot force close
       const hasPermission = user.role === "root" || 
                            (user.role === "org_admin" && ticket.organizationId === user.organizationId) ||
-                           (user.role === "org_subadmin" && ticket.organizationId === user.organizationId) ||
-                           (user.role === "maintenance_admin" && ticket.maintenanceVendorId === user.maintenanceVendorId);
+                           (user.role === "org_subadmin" && ticket.organizationId === user.organizationId);
       
       if (!hasPermission) {
         return res.status(403).json({ message: "Access denied" });
