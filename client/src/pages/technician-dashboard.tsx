@@ -4,9 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Wrench, AlertTriangle, Check, LogOut, Calendar } from "lucide-react";
-import { TicketCard } from "@/components/ticket-card";
+import { TicketTable } from "@/components/ticket-table";
 import { TechnicianWorkOrderModal } from "@/components/technician-work-order-modal";
-import { TechnicianTicketDetailsModal } from "@/components/technician-ticket-details-modal";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -25,7 +24,6 @@ interface TicketStats {
 export default function TechnicianDashboard() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isWorkOrderModalOpen, setIsWorkOrderModalOpen] = useState(false);
-  const [isTicketDetailsModalOpen, setIsTicketDetailsModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [filters, setFilters] = useState<FilterState>({
     search: "",
@@ -97,15 +95,11 @@ export default function TechnicianDashboard() {
     const ticket = tickets.find(t => t.id === id);
     if (ticket) {
       setSelectedTicket(ticket);
-      setIsTicketDetailsModalOpen(false); // Close details modal if open
       setIsWorkOrderModalOpen(true);
     }
   };
 
-  const handleTicketClick = (ticket: Ticket) => {
-    setSelectedTicket(ticket);
-    setIsTicketDetailsModalOpen(true);
-  };
+
 
   // Work order submission mutation
   const submitWorkOrderMutation = useMutation({
@@ -258,52 +252,23 @@ export default function TechnicianDashboard() {
           userRole={user?.role}
         />
 
-        {/* Tickets List */}
-        <div className="space-y-4">
-          {ticketsLoading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="text-muted-foreground mt-2">Loading tickets...</p>
-            </div>
-          ) : tickets.length === 0 ? (
-            <Card className="p-8 text-center">
-              <p className="text-muted-foreground">No tickets {statusFilter === "all" ? "assigned to you" : `with status "${statusFilter}"`} yet.</p>
-              {statusFilter !== "all" && (
-                <Button 
-                  variant="outline" 
-                  onClick={() => setStatusFilter("all")}
-                  className="mt-2"
-                >
-                  Show All Tickets
-                </Button>
-              )}
-            </Card>
-          ) : (
-            tickets.map((ticket) => (
-              <div
-                key={ticket.id}
-                onClick={() => handleTicketClick(ticket)}
-                className="cursor-pointer"
-              >
-                <TicketCard
-                  ticket={ticket}
-                  onStart={ticket.status === 'accepted' ? handleStartWork : undefined}
-                  onComplete={(ticket.status === 'in-progress' || ticket.status === 'return_needed') ? handleCompleteWork : undefined}
-                  onView={handleTicketClick}
-                  showTechnicianActions={true}
-                />
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* Ticket Details Modal */}
-        <TechnicianTicketDetailsModal
-          open={isTicketDetailsModalOpen}
-          onOpenChange={setIsTicketDetailsModalOpen}
-          ticket={selectedTicket}
-          onStart={selectedTicket?.status === 'accepted' ? handleStartWork : undefined}
-          onCreateWorkOrder={(selectedTicket?.status === 'in-progress' || selectedTicket?.status === 'return_needed') ? handleCompleteWork : undefined}
+        {/* Tickets Table */}
+        <TicketTable
+          tickets={tickets}
+          userRole={user?.role || 'technician'}
+          userPermissions={[]}
+          showActions={true}
+          onStart={(ticketId) => {
+            if (tickets.find(t => t.id === ticketId)?.status === 'accepted') {
+              handleStartWork(ticketId);
+            }
+          }}
+          onComplete={(ticketId) => {
+            const ticket = tickets.find(t => t.id === ticketId);
+            if (ticket && (ticket.status === 'in-progress' || ticket.status === 'return_needed')) {
+              handleCompleteWork(ticketId);
+            }
+          }}
         />
 
         {/* Work Order Modal */}

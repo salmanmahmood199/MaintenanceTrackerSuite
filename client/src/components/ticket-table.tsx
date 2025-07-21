@@ -193,7 +193,7 @@ export function TicketTable({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => openProgressTracker(ticket)}
+                        onClick={() => openTicketDetails(ticket)}
                         className="text-xs h-8 px-2"
                       >
                         <Clock className="h-3 w-3 mr-1" />
@@ -578,7 +578,7 @@ export function TicketTable({
               <Checkbox
                 id="forceCloseConfirmation"
                 checked={forceCloseConfirmed}
-                onCheckedChange={setForceCloseConfirmed}
+                onCheckedChange={(checked) => setForceCloseConfirmed(!!checked)}
               />
               <Label htmlFor="forceCloseConfirmation" className="text-sm">
                 I understand this action is permanent and will close the ticket immediately
