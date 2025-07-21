@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Building2, FileText, Download, Printer } from "lucide-react";
+import { Building2, FileText, Download, Print } from "lucide-react";
 import { format as formatTz, toZonedTime } from "date-fns-tz";
 import type { Invoice, Ticket, MaintenanceVendor, Organization, WorkOrder } from "@shared/schema";
 
@@ -35,7 +35,7 @@ export function InvoicePDFViewer({
       {/* Print/Download Actions */}
       <div className="flex justify-end gap-2 no-print">
         <Button onClick={handlePrint} variant="outline" className="flex items-center gap-2">
-          <Printer className="h-4 w-4" />
+          <Print className="h-4 w-4" />
           Print Invoice
         </Button>
         <Button onClick={handleDownload} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700">
@@ -45,7 +45,7 @@ export function InvoicePDFViewer({
       </div>
 
       {/* Professional Invoice Display */}
-      <div className="bg-white text-black print:shadow-none print:border-0 max-w-4xl mx-auto border border-gray-300 shadow-lg">
+      <Card className="bg-white text-black print:shadow-none print:border-0 max-w-4xl mx-auto">
         {/* Invoice Header with Gradient */}
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-8 print:p-6">
           <div className="flex justify-between items-start">
@@ -75,8 +75,8 @@ export function InvoicePDFViewer({
                 Service Provider
               </h3>
               <div className="bg-gray-50 p-6 print:p-4 rounded-xl print:rounded-lg border">
-                <p className="font-bold text-2xl print:text-xl text-black">{vendor?.name || 'Maintenance Vendor'}</p>
-                <div className="mt-3 space-y-1 text-black">
+                <p className="font-bold text-2xl print:text-xl text-gray-900">{vendor?.name || 'Maintenance Vendor'}</p>
+                <div className="mt-3 space-y-1 text-gray-700">
                   <p>{vendor?.address || 'Vendor Address'}</p>
                   <p>Email: {vendor?.email || 'vendor@email.com'}</p>
                   <p>Phone: {vendor?.phone || 'Phone Number'}</p>
@@ -90,8 +90,8 @@ export function InvoicePDFViewer({
                 Bill To
               </h3>
               <div className="bg-gray-50 p-6 print:p-4 rounded-xl print:rounded-lg border">
-                <p className="font-bold text-2xl print:text-xl text-black">{organization?.name || 'Organization'}</p>
-                <div className="mt-3 space-y-1 text-black">
+                <p className="font-bold text-2xl print:text-xl text-gray-900">{organization?.name || 'Organization'}</p>
+                <div className="mt-3 space-y-1 text-gray-700">
                   <p>{organization?.address || 'Organization Address'}</p>
                   <p>Email: {organization?.email || 'org@email.com'}</p>
                   <p>Phone: {organization?.phone || 'Phone Number'}</p>
@@ -104,7 +104,7 @@ export function InvoicePDFViewer({
           <div className="bg-blue-50 print:bg-gray-50 p-6 print:p-4 rounded-xl print:rounded-lg border border-blue-200 print:border-gray-200">
             <h3 className="font-bold text-xl mb-4 text-gray-800">Service Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
-              <div><span className="font-semibold">Ticket Number:</span> {ticket?.number || 'N/A'}</div>
+              <div><span className="font-semibold">Ticket Number:</span> {ticket?.ticketNumber || invoice.ticketNumber}</div>
               <div><span className="font-semibold">Priority:</span> <Badge variant="outline" className="ml-2">{ticket?.priority || 'Standard'}</Badge></div>
               <div className="md:col-span-2"><span className="font-semibold">Description:</span> {ticket?.description || 'Service completed'}</div>
             </div>
@@ -117,12 +117,12 @@ export function InvoicePDFViewer({
               <table className="w-full">
                 <thead className="bg-gray-100">
                   <tr className="border-b border-gray-200">
-                    <th className="px-6 print:px-4 py-4 text-left font-bold text-black bg-gray-100">Work Order</th>
-                    <th className="px-6 print:px-4 py-4 text-left font-bold text-black bg-gray-100">Technician</th>
-                    <th className="px-6 print:px-4 py-4 text-right font-bold text-black bg-gray-100">Hours</th>
-                    <th className="px-6 print:px-4 py-4 text-right font-bold text-black bg-gray-100">Labor</th>
-                    <th className="px-6 print:px-4 py-4 text-right font-bold text-black bg-gray-100">Parts</th>
-                    <th className="px-6 print:px-4 py-4 text-right font-bold text-black bg-gray-100">Total</th>
+                    <th className="px-6 print:px-4 py-4 text-left font-bold text-gray-800">Work Order</th>
+                    <th className="px-6 print:px-4 py-4 text-left font-bold text-gray-800">Technician</th>
+                    <th className="px-6 print:px-4 py-4 text-right font-bold text-gray-800">Hours</th>
+                    <th className="px-6 print:px-4 py-4 text-right font-bold text-gray-800">Labor</th>
+                    <th className="px-6 print:px-4 py-4 text-right font-bold text-gray-800">Parts</th>
+                    <th className="px-6 print:px-4 py-4 text-right font-bold text-gray-800">Total</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -137,12 +137,12 @@ export function InvoicePDFViewer({
                     
                     return (
                       <tr key={workOrder.id} className={`border-b border-gray-100 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                        <td className="px-6 print:px-4 py-4 font-bold text-black">#{workOrder.workOrderNumber}</td>
-                        <td className="px-6 print:px-4 py-4 font-medium text-black">{workOrder.technicianName}</td>
-                        <td className="px-6 print:px-4 py-4 text-right font-medium text-black">{parseFloat(workOrder.totalHours || "0").toFixed(2)}</td>
-                        <td className="px-6 print:px-4 py-4 text-right font-medium text-black">${(parseFloat(workOrder.totalHours || "0") * 75).toFixed(2)}</td>
-                        <td className="px-6 print:px-4 py-4 text-right font-medium text-black">${partsCost.toFixed(2)}</td>
-                        <td className="px-6 print:px-4 py-4 text-right font-bold text-black">${parseFloat(workOrder.totalCost || "0").toFixed(2)}</td>
+                        <td className="px-6 print:px-4 py-4 font-semibold text-gray-900">#{workOrder.workOrderNumber}</td>
+                        <td className="px-6 print:px-4 py-4 text-gray-700">{workOrder.technicianName}</td>
+                        <td className="px-6 print:px-4 py-4 text-right text-gray-700">{parseFloat(workOrder.totalHours || "0").toFixed(2)}</td>
+                        <td className="px-6 print:px-4 py-4 text-right text-gray-700">${(parseFloat(workOrder.totalHours || "0") * 75).toFixed(2)}</td>
+                        <td className="px-6 print:px-4 py-4 text-right text-gray-700">${partsCost.toFixed(2)}</td>
+                        <td className="px-6 print:px-4 py-4 text-right font-semibold text-gray-900">${parseFloat(workOrder.totalCost || "0").toFixed(2)}</td>
                       </tr>
                     );
                   })}
@@ -155,19 +155,19 @@ export function InvoicePDFViewer({
           <div className="bg-gray-50 print:bg-gray-50 p-6 print:p-4 rounded-xl print:rounded-lg border">
             <div className="flex justify-end">
               <div className="w-80 print:w-72 space-y-3">
-                <div className="flex justify-between text-lg font-semibold text-black">
+                <div className="flex justify-between text-lg text-gray-700">
                   <span>Subtotal:</span>
                   <span>${parseFloat(invoice.subtotal || "0").toFixed(2)}</span>
                 </div>
                 {parseFloat(invoice.tax || "0") > 0 && (
-                  <div className="flex justify-between font-medium text-black">
+                  <div className="flex justify-between text-gray-700">
                     <span>Tax:</span>
                     <span>${parseFloat(invoice.tax || "0").toFixed(2)}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-2xl print:text-xl font-bold border-t pt-3 text-black">
+                <div className="flex justify-between text-2xl print:text-xl font-bold border-t pt-3 text-gray-900">
                   <span>TOTAL:</span>
-                  <span className="text-green-700">${parseFloat(invoice.total || "0").toFixed(2)}</span>
+                  <span className="text-green-600">${parseFloat(invoice.total || "0").toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -207,7 +207,7 @@ export function InvoicePDFViewer({
             <p className="mt-1">For questions about this invoice, please contact {vendor?.email || 'vendor@email.com'}</p>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Print-specific styles */}
       <style jsx>{`

@@ -341,19 +341,6 @@ Changelog:
 - July 21, 2025. Added real-time cost adjustments: admins can modify hourly rates, hours worked, and part costs per work order
 - July 21, 2025. Implemented professional PDF-style invoice viewer with white background, company logos, service details, and print functionality
 - July 21, 2025. Enhanced invoice workflow: click work orders → adjust rates/costs → set payment terms → preview PDF → create invoice
-- July 21, 2025. Fixed invoice creator stability issues: clicking input fields no longer collapses work order sections
-- July 21, 2025. Added proper event handling with stopPropagation for all form inputs preventing interface glitches
-- July 21, 2025. Enhanced parts cost editing: system defaults populate automatically but allow full customization
-- July 21, 2025. Improved PDF visibility: converted light gray text to black for better contrast and readability
-- July 21, 2025. Added chevron indicators for expandable work order sections with visual feedback
-- July 21, 2025. Completed dark theme compatibility for all invoice creator form fields and components
-- July 21, 2025. Fixed invoice creation API integration - corrected request format to match backend expectations (ticketId, additionalItems, notes, tax)
-- July 21, 2025. Enhanced error handling with detailed error messages and console logging for invoice creation debugging
-- July 21, 2025. Improved null safety throughout enhanced invoice creator component with proper fallbacks for all object properties
-- July 21, 2025. Fixed runtime crashes in invoice generation by adding comprehensive null checking for ticket, vendor, and organization objects
-- July 21, 2025. Fixed Create Invoice button visibility - now shows for both "ready_for_billing" and "completed" tickets
-- July 21, 2025. Updated backend validation to accept both "ready_for_billing" and "completed" tickets for invoice creation
-- July 21, 2025. Enhanced invoice creation workflow to work with completed tickets that haven't been explicitly marked as ready for billing
 ```
 
 ## User Preferences
