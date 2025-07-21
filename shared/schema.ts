@@ -297,6 +297,18 @@ export const marketplaceBidsRelations = relations(marketplaceBids, ({ one }) => 
   }),
 }));
 
+// Bid history for tracking counter offer exchanges
+export const bidHistory = pgTable("bid_history", {
+  id: serial("id").primaryKey(),
+  bidId: integer("bid_id").references(() => marketplaceBids.id).notNull(),
+  fromUserId: integer("from_user_id").references(() => users.id).notNull(),
+  fromUserType: text("from_user_type").notNull(), // "vendor", "organization"
+  action: text("action").notNull(), // "initial_bid", "counter_offer", "accept", "reject", "recounter"
+  amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const workOrdersRelations = relations(workOrders, ({ one }) => ({
   ticket: one(tickets, {
     fields: [workOrders.ticketId],
@@ -609,6 +621,10 @@ export type InsertTicketComment = typeof ticketComments.$inferInsert;
 export type MarketplaceBid = typeof marketplaceBids.$inferSelect;
 export type InsertMarketplaceBid = typeof marketplaceBids.$inferInsert;
 
+// Bid history types
+export type BidHistory = typeof bidHistory.$inferSelect;
+export type InsertBidHistory = typeof bidHistory.$inferInsert;
+
 export type Part = typeof parts.$inferSelect;
 export type InsertPart = typeof parts.$inferInsert;
 export type PartPriceHistory = typeof partPriceHistory.$inferSelect;
@@ -624,6 +640,11 @@ export const insertMarketplaceBidSchema = createInsertSchema(marketplaceBids).om
   id: true,
   createdAt: true,
   updatedAt: true,
+});
+
+export const insertBidHistorySchema = createInsertSchema(bidHistory).omit({
+  id: true,
+  createdAt: true,
 });
 
 export const insertTicketCommentSchema = createInsertSchema(ticketComments).omit({

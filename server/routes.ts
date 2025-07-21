@@ -957,6 +957,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get bid history for a specific bid
+  app.get("/api/marketplace/bids/:bidId/history", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const bidId = parseInt(req.params.bidId);
+      const history = await storage.getBidHistory(bidId);
+      res.json(history);
+    } catch (error) {
+      console.error('Get bid history error:', error);
+      res.status(500).json({ message: "Failed to fetch bid history" });
+    }
+  });
+
+  // Enhanced counter offer response endpoint
+  app.post("/api/marketplace/bids/:bidId/respond", authenticateUser, requireRole(["maintenance_admin", "technician"]), async (req: AuthenticatedRequest, res) => {
+    try {
+      const bidId = parseInt(req.params.bidId);
+      const { action, amount, notes } = req.body;
+      const user = req.user!;
+
+      if (!['accept', 'reject', 'recounter'].includes(action)) {
+        return res.status(400).json({ message: "Invalid action. Must be 'accept', 'reject', or 'recounter'" });
+      }
+
+      if (action === 'recounter' && (!amount || isNaN(parseFloat(amount)))) {
+        return res.status(400).json({ message: "Amount is required for recounter action" });
+      }
+
+      await storage.respondToCounterOffer(bidId, user.id, action, amount ? parseFloat(amount) : undefined, notes);
+      
+      res.json({ message: `Bid ${action} successful`, action, bidId });
+    } catch (error) {
+      console.error('Respond to counter offer error:', error);
+      res.status(500).json({ message: error.message || "Failed to respond to counter offer" });
+    }
+  });
+
   // Get bids for a ticket
   app.get("/api/tickets/:id/bids", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {

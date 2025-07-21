@@ -40,8 +40,10 @@ interface VendorBid {
 export function VendorBidsView() {
   const [selectedBid, setSelectedBid] = useState<VendorBid | null>(null);
   const [isResponseModalOpen, setIsResponseModalOpen] = useState(false);
+  const [responseAction, setResponseAction] = useState<'accept' | 'reject' | 'recounter'>('accept');
   const [responseAmount, setResponseAmount] = useState("");
   const [responseNotes, setResponseNotes] = useState("");
+  const [bidHistory, setBidHistory] = useState<any[]>([]);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -55,29 +57,49 @@ export function VendorBidsView() {
     },
   });
 
-  // Update bid mutation (for responding to counter offers)
-  const updateBidMutation = useMutation({
-    mutationFn: async ({ bidId, updateData }: { bidId: number; updateData: any }) => {
-      await apiRequest("PUT", `/api/marketplace/bids/${bidId}`, updateData);
+  // Enhanced respond to counter offer mutation
+  const respondToCounterMutation = useMutation({
+    mutationFn: async ({ bidId, action, amount, notes }: { bidId: number; action: string; amount?: number; notes?: string }) => {
+      await apiRequest("POST", `/api/marketplace/bids/${bidId}/respond`, { action, amount, notes });
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      const actionMessages = {
+        accept: "Counter offer accepted successfully!",
+        reject: "Counter offer rejected successfully.",
+        recounter: "Your counter offer has been submitted."
+      };
+      
       toast({
-        title: "Bid Updated",
-        description: "Your bid has been updated successfully.",
+        title: "Success",
+        description: actionMessages[variables.action as keyof typeof actionMessages],
       });
+      
       queryClient.invalidateQueries({ queryKey: ["/api/marketplace/vendor-bids"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/marketplace/tickets"] });
       setIsResponseModalOpen(false);
       setSelectedBid(null);
       setResponseAmount("");
       setResponseNotes("");
+      setResponseAction('accept');
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: "Failed to update bid. Please try again.",
+        description: error.message || "Failed to process your response. Please try again.",
         variant: "destructive",
       });
     },
+  });
+
+  // Fetch bid history
+  const { data: historyData = [] } = useQuery({
+    queryKey: ["/api/marketplace/bids", selectedBid?.id, "history"],
+    queryFn: async () => {
+      if (!selectedBid?.id) return [];
+      const response = await apiRequest("GET", `/api/marketplace/bids/${selectedBid.id}/history`);
+      return await response.json();
+    },
+    enabled: !!selectedBid?.id && isResponseModalOpen,
   });
 
   const getStatusBadge = (status: string) => {
@@ -106,28 +128,38 @@ export function VendorBidsView() {
 
   const handleRespondToCounter = (bid: VendorBid) => {
     setSelectedBid(bid);
-    setResponseAmount(bid.counterOffer || "");
-    setResponseNotes(bid.counterNotes || "");
+    setResponseAmount(bid.counterOffer || bid.totalAmount);
+    setResponseNotes("");
+    setResponseAction('accept');
     setIsResponseModalOpen(true);
   };
 
   const handleSubmitResponse = () => {
-    if (!selectedBid || !responseAmount || !responseNotes.trim()) {
+    if (!selectedBid) return;
+
+    if (responseAction === 'recounter' && (!responseAmount || !responseNotes.trim())) {
       toast({
         title: "Missing Information",
-        description: "Please provide both amount and notes for your response.",
+        description: "Please provide both amount and notes for your counter offer.",
         variant: "destructive",
       });
       return;
     }
 
-    updateBidMutation.mutate({
+    if (responseAction === 'reject' && !responseNotes.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide a reason for rejecting the counter offer.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    respondToCounterMutation.mutate({
       bidId: selectedBid.id,
-      updateData: {
-        totalAmount: parseFloat(responseAmount),
-        additionalNotes: responseNotes,
-        status: "pending" // Reset to pending after counter response
-      }
+      action: responseAction,
+      amount: responseAction === 'recounter' ? parseFloat(responseAmount) : undefined,
+      notes: responseNotes.trim() || undefined
     });
   };
 
@@ -297,41 +329,136 @@ export function VendorBidsView() {
         </Card>
       )}
 
-      {/* Response Modal */}
+      {/* Enhanced Response Modal */}
       <Dialog open={isResponseModalOpen} onOpenChange={setIsResponseModalOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Respond to Counter Offer</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 pt-4">
+          <div className="space-y-6 pt-4">
+            {/* Counter Offer Summary */}
+            {selectedBid && (
+              <div className="bg-orange-50 dark:bg-orange-950/20 p-4 rounded-lg">
+                <h4 className="font-medium text-orange-800 dark:text-orange-200 mb-2">Counter Offer Details</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Your Original Bid:</span>
+                    <div className="font-semibold">${selectedBid.totalAmount}</div>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Counter Offer:</span>
+                    <div className="font-semibold text-orange-700 dark:text-orange-300">${selectedBid.counterOffer}</div>
+                  </div>
+                  {selectedBid.counterNotes && (
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground">Counter Notes:</span>
+                      <div className="mt-1">{selectedBid.counterNotes}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Action Selection */}
             <div>
-              <Label htmlFor="responseAmount">Your Response Amount ($)</Label>
-              <Input
-                id="responseAmount"
-                type="number"
-                step="0.01"
-                placeholder="Enter your final amount"
-                value={responseAmount}
-                onChange={(e) => setResponseAmount(e.target.value)}
-              />
+              <Label className="text-base font-medium">Choose Your Response</Label>
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                <Button
+                  variant={responseAction === 'accept' ? 'default' : 'outline'}
+                  onClick={() => setResponseAction('accept')}
+                  className={responseAction === 'accept' ? 'bg-green-600 hover:bg-green-700' : ''}
+                >
+                  Accept
+                </Button>
+                <Button
+                  variant={responseAction === 'reject' ? 'default' : 'outline'}
+                  onClick={() => setResponseAction('reject')}
+                  className={responseAction === 'reject' ? 'bg-red-600 hover:bg-red-700' : ''}
+                >
+                  Reject
+                </Button>
+                <Button
+                  variant={responseAction === 'recounter' ? 'default' : 'outline'}
+                  onClick={() => setResponseAction('recounter')}
+                  className={responseAction === 'recounter' ? 'bg-blue-600 hover:bg-blue-700' : ''}
+                >
+                  Counter
+                </Button>
+              </div>
             </div>
+
+            {/* Amount Input (only for recounter) */}
+            {responseAction === 'recounter' && (
+              <div>
+                <Label htmlFor="responseAmount">Your Counter Offer Amount ($)</Label>
+                <Input
+                  id="responseAmount"
+                  type="number"
+                  step="0.01"
+                  placeholder="Enter your counter offer amount"
+                  value={responseAmount}
+                  onChange={(e) => setResponseAmount(e.target.value)}
+                />
+              </div>
+            )}
+
+            {/* Notes Input */}
             <div>
-              <Label htmlFor="responseNotes">Response Notes</Label>
+              <Label htmlFor="responseNotes">
+                {responseAction === 'accept' && 'Acceptance Notes (Optional)'}
+                {responseAction === 'reject' && 'Rejection Reason (Required)'}
+                {responseAction === 'recounter' && 'Counter Offer Explanation (Required)'}
+              </Label>
               <Textarea
                 id="responseNotes"
-                placeholder="Explain your response to the counter offer..."
+                placeholder={
+                  responseAction === 'accept' ? 'Any additional notes about accepting this offer...' :
+                  responseAction === 'reject' ? 'Please explain why you are rejecting this counter offer...' :
+                  'Explain your counter offer reasoning...'
+                }
                 value={responseNotes}
                 onChange={(e) => setResponseNotes(e.target.value)}
-                rows={4}
+                rows={3}
               />
             </div>
+
+            {/* Bid History */}
+            {historyData.length > 0 && (
+              <div>
+                <h4 className="font-medium text-foreground mb-3">Negotiation History</h4>
+                <div className="space-y-2 max-h-32 overflow-y-auto">
+                  {historyData.map((entry: any, index: number) => (
+                    <div key={entry.id} className="flex justify-between items-center text-sm bg-muted p-2 rounded">
+                      <div>
+                        <span className="font-medium">{entry.action.replace('_', ' ').toUpperCase()}</span>
+                        <span className="text-muted-foreground ml-2">by {entry.fromUserType}</span>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-semibold">${entry.amount}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(entry.createdAt))} ago
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="flex gap-2 pt-4">
               <Button
                 onClick={handleSubmitResponse}
-                disabled={updateBidMutation.isPending || !responseAmount || !responseNotes.trim()}
-                className="flex-1"
+                disabled={respondToCounterMutation.isPending}
+                className={`flex-1 ${
+                  responseAction === 'accept' ? 'bg-green-600 hover:bg-green-700' :
+                  responseAction === 'reject' ? 'bg-red-600 hover:bg-red-700' :
+                  'bg-blue-600 hover:bg-blue-700'
+                }`}
               >
-                {updateBidMutation.isPending ? "Submitting..." : "Submit Response"}
+                {respondToCounterMutation.isPending ? "Processing..." : 
+                 responseAction === 'accept' ? 'Accept Counter Offer' :
+                 responseAction === 'reject' ? 'Reject Counter Offer' :
+                 'Submit Counter Offer'}
               </Button>
               <Button variant="outline" onClick={() => setIsResponseModalOpen(false)}>
                 Cancel

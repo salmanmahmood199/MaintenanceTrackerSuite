@@ -11,6 +11,7 @@ import {
   invoices,
   ticketComments,
   marketplaceBids,
+  bidHistory,
   parts,
   partPriceHistory,
   calendarEvents,
@@ -37,6 +38,8 @@ import {
   type InsertTicketComment,
   type MarketplaceBid,
   type InsertMarketplaceBid,
+  type BidHistory,
+  type InsertBidHistory,
   type Part,
   type InsertPart,
   type PartPriceHistory,
@@ -47,7 +50,7 @@ import {
   type InsertAvailabilityConfig,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, inArray, desc, or, isNull, gte, lte, ne, asc, ilike } from "drizzle-orm";
+import { eq, and, inArray, desc, or, isNull, gte, lte, ne, asc, ilike, not } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
 export interface IStorage {
@@ -153,6 +156,14 @@ export interface IStorage {
   assignTicketToMarketplace(ticketId: number): Promise<Ticket | undefined>;
   approveBid(bidId: number): Promise<{ bid: MarketplaceBid; ticket: Ticket }>;
   getVendorMarketplaceBidForTicket(ticketId: number, vendorId: number): Promise<MarketplaceBid | undefined>;
+  getVendorBids(vendorId: number): Promise<MarketplaceBid[]>;
+  
+  // Bid history operations
+  createBidHistory(history: InsertBidHistory): Promise<BidHistory>;
+  getBidHistory(bidId: number): Promise<BidHistory[]>;
+  
+  // Enhanced marketplace operations
+  respondToCounterOffer(bidId: number, vendorUserId: number, action: 'accept' | 'reject' | 'recounter', amount?: number, notes?: string): Promise<void>;
   
   // Parts management
   getPartsByVendorId(vendorId: number): Promise<Part[]>;
@@ -908,8 +919,25 @@ export class DatabaseStorage implements IStorage {
 
   // Marketplace bid operations
   async getMarketplaceTickets(): Promise<Ticket[]> {
-    return await db.select().from(tickets)
-      .where(eq(tickets.status, "marketplace"))
+    // Only show tickets that are in marketplace status AND don't have accepted bids
+    const ticketsWithAcceptedBids = await db
+      .select({ ticketId: marketplaceBids.ticketId })
+      .from(marketplaceBids)
+      .where(eq(marketplaceBids.status, "accepted"));
+    
+    const acceptedTicketIds = ticketsWithAcceptedBids.map(t => t.ticketId);
+    
+    return await db
+      .select()
+      .from(tickets)
+      .where(
+        acceptedTicketIds.length > 0 
+          ? and(
+              eq(tickets.status, "marketplace"),
+              not(inArray(tickets.id, acceptedTicketIds))
+            )
+          : eq(tickets.status, "marketplace")
+      )
       .orderBy(desc(tickets.createdAt));
   }
 
@@ -1153,6 +1181,128 @@ export class DatabaseStorage implements IStorage {
       .from(marketplaceBids)
       .where(and(eq(marketplaceBids.ticketId, ticketId), eq(marketplaceBids.vendorId, vendorId)));
     return bid;
+  }
+
+  async getVendorBids(vendorId: number): Promise<MarketplaceBid[]> {
+    const bids = await db
+      .select({
+        id: marketplaceBids.id,
+        ticketId: marketplaceBids.ticketId,
+        vendorId: marketplaceBids.vendorId,
+        hourlyRate: marketplaceBids.hourlyRate,
+        estimatedHours: marketplaceBids.estimatedHours,
+        responseTime: marketplaceBids.responseTime,
+        parts: marketplaceBids.parts,
+        totalAmount: marketplaceBids.totalAmount,
+        additionalNotes: marketplaceBids.additionalNotes,
+        status: marketplaceBids.status,
+        rejectionReason: marketplaceBids.rejectionReason,
+        counterOffer: marketplaceBids.counterOffer,
+        counterNotes: marketplaceBids.counterNotes,
+        approved: marketplaceBids.approved,
+        createdAt: marketplaceBids.createdAt,
+        updatedAt: marketplaceBids.updatedAt,
+        ticket: {
+          id: tickets.id,
+          ticketNumber: tickets.ticketNumber,
+          title: tickets.title,
+          priority: tickets.priority,
+        }
+      })
+      .from(marketplaceBids)
+      .leftJoin(tickets, eq(marketplaceBids.ticketId, tickets.id))
+      .where(eq(marketplaceBids.vendorId, vendorId))
+      .orderBy(desc(marketplaceBids.updatedAt));
+    
+    return bids as any[];
+  }
+
+  async createBidHistory(history: InsertBidHistory): Promise<BidHistory> {
+    const [newHistory] = await db
+      .insert(bidHistory)
+      .values(history)
+      .returning();
+    return newHistory;
+  }
+
+  async getBidHistory(bidId: number): Promise<BidHistory[]> {
+    return await db
+      .select()
+      .from(bidHistory)
+      .where(eq(bidHistory.bidId, bidId))
+      .orderBy(desc(bidHistory.createdAt));
+  }
+
+  async respondToCounterOffer(
+    bidId: number, 
+    vendorUserId: number, 
+    action: 'accept' | 'reject' | 'recounter', 
+    amount?: number, 
+    notes?: string
+  ): Promise<void> {
+    const [bid] = await db
+      .select()
+      .from(marketplaceBids)
+      .where(eq(marketplaceBids.id, bidId));
+
+    if (!bid) {
+      throw new Error('Bid not found');
+    }
+
+    // Create bid history entry
+    await this.createBidHistory({
+      bidId,
+      fromUserId: vendorUserId,
+      fromUserType: 'vendor',
+      action,
+      amount: amount ? amount.toString() : bid.totalAmount,
+      notes: notes || ''
+    });
+
+    if (action === 'accept') {
+      // Accept the counter offer - update bid with counter offer amount and mark as accepted
+      await db
+        .update(marketplaceBids)
+        .set({
+          totalAmount: bid.counterOffer || bid.totalAmount,
+          additionalNotes: notes || bid.additionalNotes,
+          status: 'accepted',
+          updatedAt: new Date()
+        })
+        .where(eq(marketplaceBids.id, bidId));
+
+      // Accept the bid and assign ticket
+      await this.approveBid(bidId);
+
+    } else if (action === 'reject') {
+      // Reject the counter offer
+      await db
+        .update(marketplaceBids)
+        .set({
+          status: 'rejected',
+          rejectionReason: notes || 'Vendor rejected counter offer',
+          updatedAt: new Date()
+        })
+        .where(eq(marketplaceBids.id, bidId));
+
+    } else if (action === 'recounter') {
+      // Make a new counter offer
+      if (!amount) {
+        throw new Error('Amount is required for recounter action');
+      }
+      
+      await db
+        .update(marketplaceBids)
+        .set({
+          totalAmount: amount.toString(),
+          additionalNotes: notes || bid.additionalNotes,
+          status: 'pending', // Back to pending for organization to review
+          counterOffer: null, // Clear previous counter offer
+          counterNotes: null,
+          updatedAt: new Date()
+        })
+        .where(eq(marketplaceBids.id, bidId));
+    }
   }
 
   // Parts management implementation
