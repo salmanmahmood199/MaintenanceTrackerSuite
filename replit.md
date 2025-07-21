@@ -341,6 +341,12 @@ Changelog:
 - July 21, 2025. Added real-time cost adjustments: admins can modify hourly rates, hours worked, and part costs per work order
 - July 21, 2025. Implemented professional PDF-style invoice viewer with white background, company logos, service details, and print functionality
 - July 21, 2025. Enhanced invoice workflow: click work orders → adjust rates/costs → set payment terms → preview PDF → create invoice
+- July 21, 2025. Fixed invoice creator stability issues: clicking input fields no longer collapses work order sections
+- July 21, 2025. Added proper event handling with stopPropagation for all form inputs preventing interface glitches
+- July 21, 2025. Enhanced parts cost editing: system defaults populate automatically but allow full customization
+- July 21, 2025. Improved PDF visibility: converted light gray text to black for better contrast and readability
+- July 21, 2025. Added chevron indicators for expandable work order sections with visual feedback
+- July 21, 2025. Completed dark theme compatibility for all invoice creator form fields and components
 ```
 
 ## User Preferences

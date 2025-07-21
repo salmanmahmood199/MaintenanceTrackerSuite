@@ -321,7 +321,7 @@ export function EnhancedInvoiceCreator({
                           </div>
                         </div>
 
-                        {/* Parts Section */}
+                        {/* Parts Section - Always show if work order has parts */}
                         {workOrder.editableParts && workOrder.editableParts.length > 0 && (
                           <div className="bg-background p-4 rounded-lg border border-border">
                             <h4 className="font-semibold mb-3 flex items-center gap-2 text-foreground">
