@@ -232,21 +232,45 @@ export function TicketTable({
                         
                         {/* Actions Dropdown */}
                         {showActions && (
-                          <DropdownMenu>
+                          <DropdownMenu modal={false}>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm" className="h-8 px-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-8 px-2 relative z-10"
+                                aria-label="More actions"
+                              >
                                 <MoreHorizontal className="h-3 w-3" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                            <DropdownMenuContent 
+                              align="end" 
+                              className="min-w-[160px] z-50"
+                              sideOffset={4}
+                              collisionPadding={8}
+                            >
                               {/* Organization level: Accept/Reject for pending tickets */}
                               {ticket.status === "pending" && onAccept && onReject && (userRole === "org_admin" || userRole === "org_subadmin") && (
                                 <>
-                                  <DropdownMenuItem onClick={() => onAccept?.(ticket.id)}>
+                                  <DropdownMenuItem 
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      onAccept?.(ticket.id);
+                                    }}
+                                    className="cursor-pointer"
+                                  >
                                     <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
                                     Accept
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => onReject?.(ticket.id)}>
+                                  <DropdownMenuItem 
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      onReject?.(ticket.id);
+                                    }}
+                                    className="cursor-pointer"
+                                  >
                                     <XCircle className="h-4 w-4 mr-2 text-red-500" />
                                     Reject
                                   </DropdownMenuItem>
@@ -256,11 +280,25 @@ export function TicketTable({
                               {/* Vendor level: Accept/Reject for accepted tickets (assigned to vendor but not yet accepted by vendor) */}
                               {userRole === "maintenance_admin" && ticket.status === "accepted" && !ticket.assigneeId && onAccept && onReject && (
                                 <>
-                                  <DropdownMenuItem onClick={() => onAccept?.(ticket.id)}>
+                                  <DropdownMenuItem 
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      onAccept?.(ticket.id);
+                                    }}
+                                    className="cursor-pointer"
+                                  >
                                     <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
                                     Accept & Assign
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => onReject?.(ticket.id)}>
+                                  <DropdownMenuItem 
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      onReject?.(ticket.id);
+                                    }}
+                                    className="cursor-pointer"
+                                  >
                                     <XCircle className="h-4 w-4 mr-2 text-red-500" />
                                     Reject
                                   </DropdownMenuItem>
@@ -269,7 +307,14 @@ export function TicketTable({
                               
                               {/* Vendor level: Reassign technician for accepted tickets with assignee */}
                               {userRole === "maintenance_admin" && ticket.status === "accepted" && ticket.assigneeId && onAccept && (
-                                <DropdownMenuItem onClick={() => onAccept?.(ticket.id)}>
+                                <DropdownMenuItem 
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    onAccept?.(ticket.id);
+                                  }}
+                                  className="cursor-pointer"
+                                >
                                   <User className="h-4 w-4 mr-2 text-blue-500" />
                                   Reassign Technician
                                 </DropdownMenuItem>
@@ -277,7 +322,14 @@ export function TicketTable({
                               
                               {/* Confirm completion */}
                               {ticket.status === "pending_confirmation" && onConfirm && (
-                                <DropdownMenuItem onClick={() => onConfirm(ticket.id)}>
+                                <DropdownMenuItem 
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    onConfirm(ticket.id);
+                                  }}
+                                  className="cursor-pointer"
+                                >
                                   <CheckCircle className="h-4 w-4 mr-2 text-blue-500" />
                                   Confirm Completion
                                 </DropdownMenuItem>
@@ -285,7 +337,14 @@ export function TicketTable({
                               
                               {/* Create invoice */}
                               {ticket.status === "ready_for_billing" && onCreateInvoice && userRole === "maintenance_admin" && (
-                                <DropdownMenuItem onClick={() => onCreateInvoice(ticket.id)}>
+                                <DropdownMenuItem 
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    onCreateInvoice(ticket.id);
+                                  }}
+                                  className="cursor-pointer"
+                                >
                                   <Calculator className="h-4 w-4 mr-2 text-purple-500" />
                                   Create Invoice
                                 </DropdownMenuItem>
@@ -293,7 +352,14 @@ export function TicketTable({
 
                               {/* Force Close - Available for users with accept ticket permissions */}
                               {canAcceptTickets && ticket.status !== "billed" && ticket.status !== "rejected" && ticket.status !== "force_closed" && (
-                                <DropdownMenuItem onClick={() => handleForceClose(ticket.id)} className="text-red-600">
+                                <DropdownMenuItem 
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleForceClose(ticket.id);
+                                  }} 
+                                  className="text-red-600 cursor-pointer"
+                                >
                                   <AlertTriangle className="h-4 w-4 mr-2" />
                                   Force Close
                                 </DropdownMenuItem>
@@ -301,10 +367,49 @@ export function TicketTable({
                               
                               {/* View bids for marketplace tickets */}
                               {ticket.status === "marketplace" && onViewBids && (
-                                <DropdownMenuItem onClick={() => onViewBids(ticket)}>
+                                <DropdownMenuItem 
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    onViewBids(ticket);
+                                  }}
+                                  className="cursor-pointer"
+                                >
                                   <Eye className="h-4 w-4 mr-2 text-purple-500" />
                                   View Bids
                                 </DropdownMenuItem>
+                              )}
+
+                              {/* Technician actions */}
+                              {userRole === "technician" && (
+                                <>
+                                  {ticket.status === "accepted" && onStart && (
+                                    <DropdownMenuItem 
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        onStart(ticket.id);
+                                      }}
+                                      className="cursor-pointer"
+                                    >
+                                      <Wrench className="h-4 w-4 mr-2 text-blue-500" />
+                                      Start Work
+                                    </DropdownMenuItem>
+                                  )}
+                                  {(ticket.status === "in-progress" || ticket.status === "return_needed") && onComplete && (
+                                    <DropdownMenuItem 
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        onComplete(ticket.id);
+                                      }}
+                                      className="cursor-pointer"
+                                    >
+                                      <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+                                      Create Work Order
+                                    </DropdownMenuItem>
+                                  )}
+                                </>
                               )}
                             </DropdownMenuContent>
                           </DropdownMenu>

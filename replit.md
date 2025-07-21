@@ -327,6 +327,7 @@ Changelog:
 - July 21, 2025. Fixed technician dashboard dark theme visibility issues - updated all text colors, card backgrounds, and icon contrasts to use proper CSS variables for dark mode compatibility
 - July 21, 2025. Added explicit "View Details" button for technicians - technicians now have a dedicated button to view ticket details alongside existing work order action buttons
 - July 21, 2025. Enhanced technician ticket details modal with tabbed interface - technicians now have access to Details, Comments, Progress, and Work Orders tabs matching other user roles for full ticket management
+- July 21, 2025. Fixed dropdown menu Windows compatibility issues - enhanced three-dots menu with proper event handling, z-index stacking, and cursor styling for better cross-platform functionality
 ```
 
 ## User Preferences
