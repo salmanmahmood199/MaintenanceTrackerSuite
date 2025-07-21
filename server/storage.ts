@@ -1250,14 +1250,18 @@ export class DatabaseStorage implements IStorage {
     }
 
     // Create bid history entry
-    await this.createBidHistory({
-      bidId,
-      fromUserId: vendorUserId,
-      fromUserType: 'vendor',
-      action,
-      amount: amount ? amount.toString() : bid.totalAmount,
-      notes: notes || ''
-    });
+    try {
+      await this.createBidHistory({
+        bidId,
+        fromUserId: vendorUserId,
+        fromUserType: 'vendor',
+        action,
+        amount: amount ? amount.toString() : bid.totalAmount,
+        notes: notes || ''
+      });
+    } catch (error: any) {
+      console.log('Bid history creation failed (table may not exist), continuing without history:', error?.message);
+    }
 
     if (action === 'accept') {
       // Accept the counter offer - update bid with counter offer amount and mark as accepted

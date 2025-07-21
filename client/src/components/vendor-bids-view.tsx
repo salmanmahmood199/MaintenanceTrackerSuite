@@ -91,13 +91,18 @@ export function VendorBidsView() {
     },
   });
 
-  // Fetch bid history
+  // Fetch bid history (with error handling)
   const { data: historyData = [] } = useQuery({
     queryKey: ["/api/marketplace/bids", selectedBid?.id, "history"],
     queryFn: async () => {
       if (!selectedBid?.id) return [];
-      const response = await apiRequest("GET", `/api/marketplace/bids/${selectedBid.id}/history`);
-      return await response.json();
+      try {
+        const response = await apiRequest("GET", `/api/marketplace/bids/${selectedBid.id}/history`);
+        return await response.json();
+      } catch (error) {
+        console.log('Failed to fetch bid history:', error);
+        return [];
+      }
     },
     enabled: !!selectedBid?.id && isResponseModalOpen,
   });
@@ -338,12 +343,12 @@ export function VendorBidsView() {
           <div className="space-y-6 pt-4">
             {/* Counter Offer Summary */}
             {selectedBid && (
-              <div className="bg-orange-50 dark:bg-orange-950/20 p-4 rounded-lg">
+              <div className="bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 p-4 rounded-lg">
                 <h4 className="font-medium text-orange-800 dark:text-orange-200 mb-2">Counter Offer Details</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-muted-foreground">Your Original Bid:</span>
-                    <div className="font-semibold">${selectedBid.totalAmount}</div>
+                    <div className="font-semibold text-foreground">${selectedBid.totalAmount}</div>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Counter Offer:</span>
@@ -352,7 +357,7 @@ export function VendorBidsView() {
                   {selectedBid.counterNotes && (
                     <div className="col-span-2">
                       <span className="text-muted-foreground">Counter Notes:</span>
-                      <div className="mt-1">{selectedBid.counterNotes}</div>
+                      <div className="mt-1 text-foreground">{selectedBid.counterNotes}</div>
                     </div>
                   )}
                 </div>
@@ -428,13 +433,13 @@ export function VendorBidsView() {
                 <h4 className="font-medium text-foreground mb-3">Negotiation History</h4>
                 <div className="space-y-2 max-h-32 overflow-y-auto">
                   {historyData.map((entry: any, index: number) => (
-                    <div key={entry.id} className="flex justify-between items-center text-sm bg-muted p-2 rounded">
+                    <div key={entry.id} className="flex justify-between items-center text-sm bg-muted/50 dark:bg-muted/30 border border-border p-2 rounded">
                       <div>
-                        <span className="font-medium">{entry.action.replace('_', ' ').toUpperCase()}</span>
+                        <span className="font-medium text-foreground">{entry.action.replace('_', ' ').toUpperCase()}</span>
                         <span className="text-muted-foreground ml-2">by {entry.fromUserType}</span>
                       </div>
                       <div className="text-right">
-                        <div className="font-semibold">${entry.amount}</div>
+                        <div className="font-semibold text-foreground">${entry.amount}</div>
                         <div className="text-xs text-muted-foreground">
                           {formatDistanceToNow(new Date(entry.createdAt))} ago
                         </div>
