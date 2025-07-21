@@ -52,7 +52,7 @@ export function EnhancedInvoiceCreator({
   const [expandedWorkOrders, setExpandedWorkOrders] = useState<Record<number, boolean>>({});
   const [editableWorkOrders, setEditableWorkOrders] = useState<EditableWorkOrder[]>([]);
 
-  const form = useForm({
+  const form = useForm<z.infer<typeof invoiceSchema>>({
     resolver: zodResolver(invoiceSchema),
     defaultValues: {
       tax: 0,
@@ -189,29 +189,31 @@ export function EnhancedInvoiceCreator({
 
   const handleSubmit = async (data: z.infer<typeof invoiceSchema>) => {
     try {
-      const invoice = {
-        ticketId: ticket?.id || 0,
-        organizationId: organization?.id || 0,
-        maintenanceVendorId: vendor?.id || 0,
-        subtotal: subtotal.toString(),
-        tax: data.tax.toString(),
-        discount: data.discount.toString(),
-        total: total.toString(),
-        notes: data.notes,
-        paymentTerms: data.paymentTerms,
-        status: "draft" as const,
-        workOrdersData: editableWorkOrders.map(wo => ({
-          id: wo.id,
+      // Format additional items from work order editable data
+      const additionalItems = editableWorkOrders.map(wo => ({
+        description: `Work Order #${wo.workOrderNumber} - Labor & Materials`,
+        amount: wo.editableTotalCost || 0,
+        workOrderId: wo.id,
+        details: {
           hourlyRate: wo.editableHourlyRate,
           hours: wo.editableHours,
           laborCost: wo.editableLaborCost,
           parts: wo.editableParts,
           otherCharges: wo.editableOtherCharges,
-          totalCost: wo.editableTotalCost,
-        })),
+        }
+      }));
+
+      const invoiceData = {
+        ticketId: ticket?.id || 0,
+        additionalItems,
+        notes: data.notes,
+        tax: data.tax,
       };
 
-      await apiRequest("/api/invoices", "POST", invoice);
+      console.log('Sending invoice data:', invoiceData);
+
+      const response = await apiRequest("/api/invoices", "POST", invoiceData);
+      console.log('Invoice creation response:', response);
 
       await queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
       
@@ -221,11 +223,12 @@ export function EnhancedInvoiceCreator({
       });
 
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to create invoice:", error);
+      const errorMessage = error?.message || error?.response?.data?.message || "Failed to create invoice. Please try again.";
       toast({
         title: "Error",
-        description: "Failed to create invoice. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -560,10 +563,8 @@ export function EnhancedInvoiceCreator({
               maintenanceVendorId: vendor?.id || 0,
               subtotal: subtotal.toString(),
               tax: tax.toString(),
-
               total: total.toString(),
               notes: form.watch("notes"),
-              paymentTerms: form.watch("paymentTerms"),
               status: "draft",
               createdAt: new Date(),
               paidAt: null,

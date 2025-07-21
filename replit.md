@@ -347,6 +347,10 @@ Changelog:
 - July 21, 2025. Improved PDF visibility: converted light gray text to black for better contrast and readability
 - July 21, 2025. Added chevron indicators for expandable work order sections with visual feedback
 - July 21, 2025. Completed dark theme compatibility for all invoice creator form fields and components
+- July 21, 2025. Fixed invoice creation API integration - corrected request format to match backend expectations (ticketId, additionalItems, notes, tax)
+- July 21, 2025. Enhanced error handling with detailed error messages and console logging for invoice creation debugging
+- July 21, 2025. Improved null safety throughout enhanced invoice creator component with proper fallbacks for all object properties
+- July 21, 2025. Fixed runtime crashes in invoice generation by adding comprehensive null checking for ticket, vendor, and organization objects
 ```
 
 ## User Preferences
