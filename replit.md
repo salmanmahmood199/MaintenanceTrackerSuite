@@ -321,6 +321,9 @@ Changelog:
 - July 21, 2025. Implemented automatic ticket removal from marketplace when accepted by any vendor during negotiation
 - July 21, 2025. Added comprehensive bid history display with negotiation timeline in vendor response modal
 - July 21, 2025. Fixed dark theme visibility issues in counter offer sections with improved CSS variables and border styling
+- July 21, 2025. Converted side-by-side action buttons into clean dropdown menu interface for better space utilization
+- July 21, 2025. Fixed technician dashboard ticket filtering - technicians now properly see tickets assigned to them
+- July 21, 2025. Enhanced ticket actions organization with dropdown menu containing Accept, Reject, Force Close, Confirm, Reassign, Invoice, View Bids
 ```
 
 ## User Preferences
