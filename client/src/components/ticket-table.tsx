@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, User, Hash, Wrench, CheckCircle, XCircle, Eye, ImageIcon, Clock, Calculator, MessageSquare, ChevronLeft, ChevronRight, X, Video, AlertTriangle } from "lucide-react";
+import { Calendar, User, Hash, Wrench, CheckCircle, XCircle, Eye, ImageIcon, Clock, Calculator, MessageSquare, ChevronLeft, ChevronRight, X, Video, AlertTriangle, MoreHorizontal } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
 import { formatDate, getPriorityColor, getStatusColor } from "@/lib/utils";
 import { ProgressTrackerEmbedded } from "@/components/progress-tracker";
@@ -228,92 +229,85 @@ export function TicketTable({
                           <Eye className="h-3 w-3 mr-1" />
                           View
                         </Button>
-                        {/* Organization level: Accept/Reject for pending tickets */}
-                        {showActions && ticket.status === "pending" && onAccept && onReject && (userRole === "org_admin" || userRole === "org_subadmin") && (
-                          <>
-                            <Button
-                              onClick={() => onAccept?.(ticket.id)}
-                              className="bg-green-500 text-white hover:bg-green-600 h-8 px-2 text-xs"
-                              size="sm"
-                            >
-                              <CheckCircle className="h-3 w-3 mr-1" />
-                              Accept
-                            </Button>
-                            <Button
-                              onClick={() => onReject?.(ticket.id)}
-                              className="bg-red-500 text-white hover:bg-red-600 h-8 px-2 text-xs"
-                              size="sm"
-                            >
-                              <XCircle className="h-3 w-3 mr-1" />
-                              Reject
-                            </Button>
-                          </>
-                        )}
                         
-                        {/* Vendor level: Accept/Reject for accepted tickets (assigned to vendor but not yet accepted by vendor) */}
-                        {showActions && userRole === "maintenance_admin" && ticket.status === "accepted" && !ticket.assigneeId && onAccept && onReject && (
-                          <>
-                            <Button
-                              onClick={() => onAccept?.(ticket.id)}
-                              className="bg-green-500 text-white hover:bg-green-600 h-8 px-2 text-xs"
-                              size="sm"
-                            >
-                              <CheckCircle className="h-3 w-3 mr-1" />
-                              Accept
-                            </Button>
-                            <Button
-                              onClick={() => onReject?.(ticket.id)}
-                              className="bg-red-500 text-white hover:bg-red-600 h-8 px-2 text-xs"
-                              size="sm"
-                            >
-                              <XCircle className="h-3 w-3 mr-1" />
-                              Reject
-                            </Button>
-                          </>
-                        )}
-                        
-                        {/* Vendor level: Assign technician for accepted tickets without assignee */}
-                        {showActions && userRole === "maintenance_admin" && ticket.status === "accepted" && ticket.assigneeId && onAccept && (
-                          <Button
-                            onClick={() => onAccept?.(ticket.id)}
-                            className="bg-blue-500 text-white hover:bg-blue-600 h-8 px-2 text-xs"
-                            size="sm"
-                          >
-                            <User className="h-3 w-3 mr-1" />
-                            Reassign
-                          </Button>
-                        )}
-                        {ticket.status === "pending_confirmation" && onConfirm && (
-                          <Button
-                            onClick={() => onConfirm(ticket.id)}
-                            className="bg-blue-500 text-white hover:bg-blue-600 h-8 px-2 text-xs"
-                            size="sm"
-                          >
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Confirm
-                          </Button>
-                        )}
-                        {ticket.status === "ready_for_billing" && onCreateInvoice && userRole === "maintenance_admin" && (
-                          <Button
-                            onClick={() => onCreateInvoice(ticket.id)}
-                            className="bg-purple-500 text-white hover:bg-purple-600 h-8 px-2 text-xs"
-                            size="sm"
-                          >
-                            <Calculator className="h-3 w-3 mr-1" />
-                            Invoice
-                          </Button>
-                        )}
+                        {/* Actions Dropdown */}
+                        {showActions && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm" className="h-8 px-2">
+                                <MoreHorizontal className="h-3 w-3" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {/* Organization level: Accept/Reject for pending tickets */}
+                              {ticket.status === "pending" && onAccept && onReject && (userRole === "org_admin" || userRole === "org_subadmin") && (
+                                <>
+                                  <DropdownMenuItem onClick={() => onAccept?.(ticket.id)}>
+                                    <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+                                    Accept
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => onReject?.(ticket.id)}>
+                                    <XCircle className="h-4 w-4 mr-2 text-red-500" />
+                                    Reject
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                              
+                              {/* Vendor level: Accept/Reject for accepted tickets (assigned to vendor but not yet accepted by vendor) */}
+                              {userRole === "maintenance_admin" && ticket.status === "accepted" && !ticket.assigneeId && onAccept && onReject && (
+                                <>
+                                  <DropdownMenuItem onClick={() => onAccept?.(ticket.id)}>
+                                    <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+                                    Accept & Assign
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => onReject?.(ticket.id)}>
+                                    <XCircle className="h-4 w-4 mr-2 text-red-500" />
+                                    Reject
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                              
+                              {/* Vendor level: Reassign technician for accepted tickets with assignee */}
+                              {userRole === "maintenance_admin" && ticket.status === "accepted" && ticket.assigneeId && onAccept && (
+                                <DropdownMenuItem onClick={() => onAccept?.(ticket.id)}>
+                                  <User className="h-4 w-4 mr-2 text-blue-500" />
+                                  Reassign Technician
+                                </DropdownMenuItem>
+                              )}
+                              
+                              {/* Confirm completion */}
+                              {ticket.status === "pending_confirmation" && onConfirm && (
+                                <DropdownMenuItem onClick={() => onConfirm(ticket.id)}>
+                                  <CheckCircle className="h-4 w-4 mr-2 text-blue-500" />
+                                  Confirm Completion
+                                </DropdownMenuItem>
+                              )}
+                              
+                              {/* Create invoice */}
+                              {ticket.status === "ready_for_billing" && onCreateInvoice && userRole === "maintenance_admin" && (
+                                <DropdownMenuItem onClick={() => onCreateInvoice(ticket.id)}>
+                                  <Calculator className="h-4 w-4 mr-2 text-purple-500" />
+                                  Create Invoice
+                                </DropdownMenuItem>
+                              )}
 
-                        {/* Force Close Button - Available for users with accept ticket permissions */}
-                        {showActions && canAcceptTickets && ticket.status !== "billed" && ticket.status !== "rejected" && ticket.status !== "force_closed" && (
-                          <Button
-                            onClick={() => handleForceClose(ticket.id)}
-                            className="bg-red-500 text-white hover:bg-red-600 h-8 px-2 text-xs"
-                            size="sm"
-                          >
-                            <AlertTriangle className="h-3 w-3 mr-1" />
-                            Force Close
-                          </Button>
+                              {/* Force Close - Available for users with accept ticket permissions */}
+                              {canAcceptTickets && ticket.status !== "billed" && ticket.status !== "rejected" && ticket.status !== "force_closed" && (
+                                <DropdownMenuItem onClick={() => handleForceClose(ticket.id)} className="text-red-600">
+                                  <AlertTriangle className="h-4 w-4 mr-2" />
+                                  Force Close
+                                </DropdownMenuItem>
+                              )}
+                              
+                              {/* View bids for marketplace tickets */}
+                              {ticket.status === "marketplace" && onViewBids && (
+                                <DropdownMenuItem onClick={() => onViewBids(ticket)}>
+                                  <Eye className="h-4 w-4 mr-2 text-purple-500" />
+                                  View Bids
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         )}
 
                       </div>
