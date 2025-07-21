@@ -111,9 +111,9 @@ export function WorkOrdersHistoryEmbedded({ ticketId }: WorkOrdersHistoryEmbedde
 
                   {/* Work Description */}
                   <div>
-                    <h4 className="font-medium text-foreground mb-2">Work Performed</h4>
+                    <h4 className="font-medium text-foreground mb-2">Work Description</h4>
                     <p className="text-foreground bg-muted p-3 rounded-lg">
-                      {workOrder.workPerformed}
+                      {workOrder.workDescription || 'No description provided'}
                     </p>
                   </div>
 
@@ -210,7 +210,7 @@ export function WorkOrdersHistoryEmbedded({ ticketId }: WorkOrdersHistoryEmbedde
                       {workOrder.completionStatus === "return_needed" ? "Return Details" : "Completion Notes"}
                     </h4>
                     <p className="text-foreground bg-muted p-3 rounded-lg">
-                      {workOrder.completionNotes}
+                      {workOrder.completionNotes || 'No notes provided'}
                     </p>
                   </div>
                 </CardContent>
