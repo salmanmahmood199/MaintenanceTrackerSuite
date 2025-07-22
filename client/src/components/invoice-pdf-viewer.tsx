@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Eye, Printer, Building2, User } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
-import type { Invoice, Ticket, Organization, MaintenanceVendor, WorkOrder } from "@shared/schema";
+import type { Invoice, Ticket, Organization, MaintenanceVendor, WorkOrder, Location } from "@shared/schema";
 
 interface InvoicePDFViewerProps {
   invoice: Invoice;
@@ -54,6 +54,16 @@ export function InvoicePDFViewer({ invoice }: InvoicePDFViewerProps) {
       return await response.json();
     },
     enabled: isOpen && !!invoice.ticketId,
+  });
+
+  const { data: location } = useQuery<Location>({
+    queryKey: ["/api/locations", invoice.locationId],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/organizations/${invoice.organizationId}/locations`);
+      const locations = await response.json();
+      return locations.find((loc: Location) => loc.id === invoice.locationId);
+    },
+    enabled: isOpen && !!invoice.locationId,
   });
 
   const handlePrint = () => {
@@ -137,9 +147,21 @@ export function InvoicePDFViewer({ invoice }: InvoicePDFViewerProps) {
                 <p className="font-semibold text-xl" style={{color: 'black'}}>
                   {organization?.name || 'Organization'}
                 </p>
-                <p style={{color: 'black'}}>{organization?.address || 'Organization Address'}</p>
-                <p style={{color: 'black'}}>{organization?.email || 'org@email.com'}</p>
-                <p style={{color: 'black'}}>{organization?.phone || 'Phone Number'}</p>
+                {location && (
+                  <div className="mt-2 p-2 bg-blue-50 rounded border-l-4 border-blue-400">
+                    <p className="font-semibold" style={{color: 'black'}}>
+                      Service Location: {location.name}
+                    </p>
+                    {location.address && (
+                      <p style={{color: 'black'}}>{location.address}</p>
+                    )}
+                  </div>
+                )}
+                <div className="mt-2">
+                  <p style={{color: 'black'}}>{organization?.address || 'Organization Address'}</p>
+                  <p style={{color: 'black'}}>{organization?.email || 'org@email.com'}</p>
+                  <p style={{color: 'black'}}>{organization?.phone || 'Phone Number'}</p>
+                </div>
               </div>
             </div>
           </div>

@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Trash2, Calculator, Edit3, FileText, DollarSign, Clock, Package, User, Building2, ChevronDown } from "lucide-react";
-import type { Ticket, WorkOrder, MaintenanceVendor, Organization } from "@shared/schema";
+import type { Ticket, WorkOrder, MaintenanceVendor, Organization, Location } from "@shared/schema";
 import { format as formatTz, toZonedTime } from "date-fns-tz";
 import { format } from "date-fns";
 
@@ -24,6 +24,7 @@ interface EnhancedInvoiceCreatorProps {
   workOrders: WorkOrder[];
   vendor: MaintenanceVendor | null;
   organization: Organization | null;
+  location?: Location | null;
 }
 
 interface EditableWorkOrder extends WorkOrder {
@@ -68,6 +69,7 @@ export function EnhancedInvoiceCreator({
   workOrders,
   vendor,
   organization,
+  location,
 }: EnhancedInvoiceCreatorProps) {
   const [editableWorkOrders, setEditableWorkOrders] = useState<EditableWorkOrder[]>([]);
   const [selectedWorkOrderId, setSelectedWorkOrderId] = useState<number | null>(null);
@@ -787,9 +789,21 @@ export function EnhancedInvoiceCreator({
                     </h3>
                     <div className="bg-gray-50 p-4 rounded-lg">
                       <p className="font-semibold text-xl" style={{color: 'black'}}>{organization?.name || 'Organization'}</p>
-                      <p style={{color: 'black'}}>{organization?.address || 'Organization Address'}</p>
-                      <p style={{color: 'black'}}>{organization?.email || 'org@email.com'}</p>
-                      <p style={{color: 'black'}}>{organization?.phone || 'Phone Number'}</p>
+                      {location && (
+                        <div className="mt-2 p-2 bg-blue-50 rounded border-l-4 border-blue-400">
+                          <p className="font-semibold" style={{color: 'black'}}>
+                            Service Location: {location.name}
+                          </p>
+                          {location.address && (
+                            <p style={{color: 'black'}}>{location.address}</p>
+                          )}
+                        </div>
+                      )}
+                      <div className="mt-2">
+                        <p style={{color: 'black'}}>{organization?.address || 'Organization Address'}</p>
+                        <p style={{color: 'black'}}>{organization?.email || 'org@email.com'}</p>
+                        <p style={{color: 'black'}}>{organization?.phone || 'Phone Number'}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
