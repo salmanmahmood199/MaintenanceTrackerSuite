@@ -657,6 +657,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         locationId: req.body.locationId ? parseInt(req.body.locationId) : null,
         images: imageUrls,
       };
+      
+      console.log("Received ticket data:", ticketData);
+      console.log("Request body locationId:", req.body.locationId);
+      
       const validatedData = insertTicketSchema.parse(ticketData);
       const ticket = await storage.createTicket(validatedData);
       

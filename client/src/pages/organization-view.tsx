@@ -156,6 +156,11 @@ export default function OrganizationView() {
       formData.append("organizationId", organizationId?.toString() || "0");
       formData.append("reporterId", user?.id.toString() || "1");
       
+      // Add location ID if provided
+      if (data.locationId) {
+        formData.append("locationId", data.locationId.toString());
+      }
+      
       images.forEach((image) => {
         formData.append("images", image);
       });

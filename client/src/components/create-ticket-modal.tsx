@@ -58,6 +58,8 @@ export function CreateTicketModal({ open, onOpenChange, onSubmit, isLoading, use
     }
     
     console.log("Form submitted with data:", data);
+    console.log("LocationId in form data:", data.locationId);
+    console.log("User locations:", userLocations);
     console.log("Form errors:", form.formState.errors);
     onSubmit(data, images);
     form.reset();
