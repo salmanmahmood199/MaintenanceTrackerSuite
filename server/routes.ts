@@ -654,6 +654,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: req.body.status || "open",
         organizationId: parseInt(req.body.organizationId) || 1,
         reporterId: parseInt(req.body.reporterId) || 1,
+        locationId: req.body.locationId ? parseInt(req.body.locationId) : null,
         images: imageUrls,
       };
       const validatedData = insertTicketSchema.parse(ticketData);
