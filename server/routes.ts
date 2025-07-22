@@ -1281,7 +1281,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .where(
               and(
                 eq(invoices.organizationId, user.organizationId),
-                inArray(tickets.locationId, locationIds)
+                tickets.locationId ? inArray(tickets.locationId, locationIds) : eq(1, 0) // No match for tickets without location
               )
             );
         } else {
