@@ -15,7 +15,7 @@ export const users = pgTable("users", {
   role: text("role").notNull(), // 'root', 'org_admin', 'maintenance_admin', 'technician', 'org_subadmin'
   organizationId: integer("organization_id"),
   maintenanceVendorId: integer("maintenance_vendor_id"),
-  permissions: text("permissions").array(), // ["place_ticket", "accept_ticket"]
+  permissions: text("permissions").array(), // ["place_ticket", "accept_ticket", "view_invoices", "pay_invoices"]
   vendorTiers: text("vendor_tiers").array(), // ["tier_1", "tier_2", "tier_3", "marketplace"] - what tiers they can assign
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),

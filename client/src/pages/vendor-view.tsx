@@ -462,7 +462,7 @@ export function VendorView() {
         )}
 
         {activeTab === "invoices" && (
-          <InvoicesView vendorId={vendorId!} />
+          <InvoicesView vendorId={vendorId!} userRole="vendor" />
         )}
 
         {activeTab === "parts" && vendorId && (

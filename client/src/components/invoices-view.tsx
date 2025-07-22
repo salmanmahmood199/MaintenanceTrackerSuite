@@ -12,21 +12,24 @@ import { InvoicePDFViewer } from "./invoice-pdf-viewer";
 import type { Invoice } from "@shared/schema";
 
 interface InvoicesViewProps {
-  vendorId: number | undefined;
+  vendorId?: number;
+  organizationId?: number;
+  userRole: "vendor" | "organization";
+  canPayInvoices?: boolean;
 }
 
-export function InvoicesView({ vendorId }: InvoicesViewProps) {
+export function InvoicesView({ vendorId, organizationId, userRole, canPayInvoices }: InvoicesViewProps) {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isInvoiceViewOpen, setIsInvoiceViewOpen] = useState(false);
 
-  // Fetch invoices for this vendor
+  // Fetch invoices - either for vendor or organization
   const { data: invoices = [], isLoading } = useQuery<Invoice[]>({
-    queryKey: ["/api/invoices", vendorId],
+    queryKey: ["/api/invoices", vendorId || organizationId, userRole],
     queryFn: async () => {
-      const response = await apiRequest("GET", `/api/invoices?vendorId=${vendorId}`);
+      const response = await apiRequest("GET", `/api/invoices`);
       return await response.json() as Invoice[];
     },
-    enabled: !!vendorId,
+    enabled: !!(vendorId || organizationId),
   });
 
   const handleViewInvoice = (invoice: Invoice) => {
@@ -61,15 +64,26 @@ export function InvoicesView({ vendorId }: InvoicesViewProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            Invoices ({invoices.length})
+            {userRole === "organization" ? "Organization Invoices" : "Vendor Invoices"} ({invoices.length})
           </CardTitle>
+          {userRole === "organization" && (
+            <p className="text-sm text-muted-foreground">
+              View all invoices for your organization
+              {canPayInvoices && " • Payment access enabled"}
+            </p>
+          )}
         </CardHeader>
         <CardContent>
           {invoices.length === 0 ? (
             <div className="text-center py-8 text-slate-500">
               <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No invoices created yet</p>
-              <p className="text-sm">Create invoices from ready-for-billing tickets</p>
+              <p>No invoices {userRole === "organization" ? "received" : "created"} yet</p>
+              <p className="text-sm">
+                {userRole === "organization" 
+                  ? "Invoices will appear here once vendors create them for your tickets"
+                  : "Create invoices from ready-for-billing tickets"
+                }
+              </p>
             </div>
           ) : (
             <Table>
@@ -90,7 +104,7 @@ export function InvoicesView({ vendorId }: InvoicesViewProps) {
                       {invoice.invoiceNumber}
                     </TableCell>
                     <TableCell>
-                      {invoice.ticketNumber || 'N/A'}
+                      {'ticketNumber' in invoice ? invoice.ticketNumber || 'N/A' : 'N/A'}
                     </TableCell>
                     <TableCell>
                       <span className="font-semibold text-green-600">
@@ -105,11 +119,19 @@ export function InvoicesView({ vendorId }: InvoicesViewProps) {
                     <TableCell>
                       <div className="flex items-center text-sm text-slate-600">
                         <Calendar className="h-4 w-4 mr-1" />
-                        {formatDate(invoice.createdAt)}
+                        {formatDate(invoice.createdAt || new Date())}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <InvoicePDFViewer invoice={invoice} />
+                      <div className="flex items-center gap-2">
+                        <InvoicePDFViewer invoice={invoice} />
+                        {userRole === "organization" && canPayInvoices && invoice.status !== "paid" && (
+                          <Button size="sm" variant="outline" className="text-green-600 border-green-600 hover:bg-green-50">
+                            <DollarSign className="h-4 w-4 mr-1" />
+                            Pay
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -134,13 +156,13 @@ export function InvoicesView({ vendorId }: InvoicesViewProps) {
                   <h3 className="font-semibold text-lg mb-2">Invoice Information</h3>
                   <div className="space-y-2 text-sm">
                     <div><span className="font-medium">Invoice #:</span> {selectedInvoice.invoiceNumber}</div>
-                    <div><span className="font-medium">Ticket #:</span> {selectedInvoice.ticketNumber || 'N/A'}</div>
+                    <div><span className="font-medium">Ticket #:</span> {'ticketNumber' in selectedInvoice ? selectedInvoice.ticketNumber || 'N/A' : 'N/A'}</div>
                     <div><span className="font-medium">Status:</span> 
                       <Badge className={`ml-2 ${getStatusColor(selectedInvoice.status)}`}>
                         {selectedInvoice.status}
                       </Badge>
                     </div>
-                    <div><span className="font-medium">Created:</span> {formatDate(selectedInvoice.createdAt)}</div>
+                    <div><span className="font-medium">Created:</span> {formatDate(selectedInvoice.createdAt || new Date())}</div>
                   </div>
                 </div>
                 

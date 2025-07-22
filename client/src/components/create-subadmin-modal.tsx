@@ -238,6 +238,42 @@ export function CreateSubAdminModal({ open, onOpenChange, onSubmit, isLoading }:
                         />
                         <Label htmlFor="accept_ticket">Accept Ticket</Label>
                       </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="view_invoices"
+                          checked={field.value?.includes("view_invoices")}
+                          onCheckedChange={(checked) => {
+                            const currentPermissions = field.value || [];
+                            if (checked) {
+                              field.onChange([...currentPermissions, "view_invoices"]);
+                            } else {
+                              field.onChange(currentPermissions.filter(p => !["view_invoices", "pay_invoices"].includes(p)));
+                            }
+                          }}
+                        />
+                        <Label htmlFor="view_invoices">View Invoices</Label>
+                      </div>
+
+                      {field.value?.includes("view_invoices") && (
+                        <div className="flex items-center space-x-2 ml-6">
+                          <Checkbox
+                            id="pay_invoices"
+                            checked={field.value?.includes("pay_invoices")}
+                            onCheckedChange={(checked) => {
+                              const currentPermissions = field.value || [];
+                              if (checked) {
+                                field.onChange([...currentPermissions, "pay_invoices"]);
+                              } else {
+                                field.onChange(currentPermissions.filter(p => p !== "pay_invoices"));
+                              }
+                            }}
+                          />
+                          <Label htmlFor="pay_invoices" className="text-sm text-gray-600">
+                            Can Pay Invoices
+                          </Label>
+                        </div>
+                      )}
                     </div>
                     <FormMessage />
                   </FormItem>

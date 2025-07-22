@@ -1226,7 +1226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let result;
       
       if (user.role === "maintenance_admin" && user.maintenanceVendorId) {
-        // Get invoices with ticket information
+        // Get invoices with ticket information for maintenance vendors
         result = await db
           .select({
             id: invoices.id,
@@ -1249,6 +1249,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .from(invoices)
           .leftJoin(tickets, eq(invoices.ticketId, tickets.id))
           .where(eq(invoices.maintenanceVendorId, user.maintenanceVendorId));
+      } else if ((user.role === "org_admin" || user.role === "org_subadmin") && user.organizationId && user.permissions?.includes("view_invoices")) {
+        // Get invoices for organization users with invoice permissions
+        result = await db
+          .select({
+            id: invoices.id,
+            invoiceNumber: invoices.invoiceNumber,
+            ticketId: invoices.ticketId,
+            ticketNumber: tickets.ticketNumber,
+            maintenanceVendorId: invoices.maintenanceVendorId,
+            organizationId: invoices.organizationId,
+            subtotal: invoices.subtotal,
+            tax: invoices.tax,
+            total: invoices.total,
+            status: invoices.status,
+            workOrderIds: invoices.workOrderIds,
+            additionalItems: invoices.additionalItems,
+            notes: invoices.notes,
+            createdAt: invoices.createdAt,
+            sentAt: invoices.sentAt,
+            paidAt: invoices.paidAt,
+          })
+          .from(invoices)
+          .leftJoin(tickets, eq(invoices.ticketId, tickets.id))
+          .where(eq(invoices.organizationId, user.organizationId));
       } else if (user.role === "root") {
         // Get all invoices with ticket information for root
         result = await db

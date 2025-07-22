@@ -15,6 +15,7 @@ import { TicketTable } from "@/components/ticket-table";
 import { TicketActionModal } from "@/components/ticket-action-modal";
 import { ConfirmCompletionModal } from "@/components/confirm-completion-modal";
 import { MarketplaceBidsModal } from "@/components/marketplace-bids-modal";
+import { InvoicesView } from "@/components/invoices-view";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -46,7 +47,7 @@ export default function OrganizationView() {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [activeTab, setActiveTab] = useState<"tickets" | "subadmins" | "locations" | "vendors">("tickets");
+  const [activeTab, setActiveTab] = useState<"tickets" | "subadmins" | "locations" | "vendors" | "invoices">("tickets");
   const [filters, setFilters] = useState<FilterState>({
     search: "",
     status: "all",
@@ -71,6 +72,12 @@ export default function OrganizationView() {
   
   const canAcceptTickets = user?.role === "root" || user?.role === "org_admin" || 
     (user?.role === "org_subadmin" && user?.permissions?.includes("accept_ticket"));
+  
+  const canViewInvoices = user?.role === "root" || user?.role === "org_admin" || 
+    (user?.role === "org_subadmin" && user?.permissions?.includes("view_invoices"));
+  
+  const canPayInvoices = user?.role === "root" || user?.role === "org_admin" || 
+    (user?.role === "org_subadmin" && user?.permissions?.includes("pay_invoices"));
   
   const canManageSubAdmins = user?.role === "root" || user?.role === "org_admin";
   
@@ -656,6 +663,18 @@ export default function OrganizationView() {
                   Vendors
                 </button>
               )}
+              {canViewInvoices && (
+                <button
+                  onClick={() => setActiveTab("invoices")}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === "invoices"
+                      ? "border-blue-500 text-blue-500"
+                      : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted"
+                  }`}
+                >
+                  Invoices
+                </button>
+              )}
             </nav>
           </div>
         </div>
@@ -779,6 +798,10 @@ export default function OrganizationView() {
               </Button>
             </div>
           </div>
+        )}
+
+        {activeTab === "invoices" && canViewInvoices && (
+          <InvoicesView userRole="organization" organizationId={organizationId!} canPayInvoices={canPayInvoices} />
         )}
       </main>
 
