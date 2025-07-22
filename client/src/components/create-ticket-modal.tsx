@@ -48,6 +48,15 @@ export function CreateTicketModal({ open, onOpenChange, onSubmit, isLoading, use
   });
 
   const handleSubmit = (data: InsertTicket) => {
+    // Validate location selection for users with location assignments
+    if (userLocations.length > 0 && !data.locationId) {
+      form.setError("locationId", { 
+        type: "manual", 
+        message: "Please select a location for this ticket" 
+      });
+      return;
+    }
+    
     console.log("Form submitted with data:", data);
     console.log("Form errors:", form.formState.errors);
     onSubmit(data, images);
@@ -114,12 +123,12 @@ export function CreateTicketModal({ open, onOpenChange, onSubmit, isLoading, use
                 )}
               </div>
 
-              {/* Location Selection */}
-              {userLocations.length > 0 && (
-                <div>
-                  <Label htmlFor="locationId" className="text-sm font-medium text-foreground">
-                    Location
-                  </Label>
+              {/* Location Selection - Always show if user has locations */}
+              <div>
+                <Label htmlFor="locationId" className="text-sm font-medium text-foreground">
+                  Location <span className="text-red-500">*</span>
+                </Label>
+                {userLocations.length > 0 ? (
                   <Select onValueChange={(value) => form.setValue("locationId", parseInt(value))}>
                     <SelectTrigger className="mt-2">
                       <SelectValue placeholder="Select location for this ticket" />
@@ -133,11 +142,17 @@ export function CreateTicketModal({ open, onOpenChange, onSubmit, isLoading, use
                       ))}
                     </SelectContent>
                   </Select>
-                  {form.formState.errors.locationId && (
-                    <p className="text-sm text-red-600 mt-1">{form.formState.errors.locationId.message}</p>
-                  )}
-                </div>
-              )}
+                ) : (
+                  <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                    <p className="text-sm text-yellow-800">
+                      No locations assigned to your account. Please contact your administrator to assign locations before creating tickets.
+                    </p>
+                  </div>
+                )}
+                {form.formState.errors.locationId && (
+                  <p className="text-sm text-red-600 mt-1">{form.formState.errors.locationId.message}</p>
+                )}
+              </div>
               
               <div>
                 <Label className="text-sm font-medium text-foreground">Upload Images & Videos</Label>
@@ -157,7 +172,7 @@ export function CreateTicketModal({ open, onOpenChange, onSubmit, isLoading, use
               </Button>
               <Button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || (userLocations.length === 0)}
                 className="bg-primary text-white hover:bg-blue-700"
               >
                 {isLoading ? (

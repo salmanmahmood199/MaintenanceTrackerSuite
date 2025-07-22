@@ -26,7 +26,7 @@ import bcrypt from "bcrypt";
 import path from "path";
 import fs from "fs";
 import { db } from "./db";
-import { and, eq, desc } from "drizzle-orm";
+import { and, eq, desc, inArray } from "drizzle-orm";
 import { invoices, tickets } from "@shared/schema";
 
 // Configure multer for image uploads
@@ -1251,28 +1251,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .where(eq(invoices.maintenanceVendorId, user.maintenanceVendorId));
       } else if ((user.role === "org_admin" || user.role === "org_subadmin") && user.organizationId && user.permissions?.includes("view_invoices")) {
         // Get invoices for organization users with invoice permissions
-        result = await db
-          .select({
-            id: invoices.id,
-            invoiceNumber: invoices.invoiceNumber,
-            ticketId: invoices.ticketId,
-            ticketNumber: tickets.ticketNumber,
-            maintenanceVendorId: invoices.maintenanceVendorId,
-            organizationId: invoices.organizationId,
-            subtotal: invoices.subtotal,
-            tax: invoices.tax,
-            total: invoices.total,
-            status: invoices.status,
-            workOrderIds: invoices.workOrderIds,
-            additionalItems: invoices.additionalItems,
-            notes: invoices.notes,
-            createdAt: invoices.createdAt,
-            sentAt: invoices.sentAt,
-            paidAt: invoices.paidAt,
-          })
-          .from(invoices)
-          .leftJoin(tickets, eq(invoices.ticketId, tickets.id))
-          .where(eq(invoices.organizationId, user.organizationId));
+        // Filter by user's assigned locations if they have location assignments
+        const userLocations = await storage.getUserLocationAssignments(user.id);
+        
+        if (userLocations.length > 0) {
+          // User has specific location assignments - filter invoices by those locations
+          const locationIds = userLocations.map(loc => loc.id);
+          result = await db
+            .select({
+              id: invoices.id,
+              invoiceNumber: invoices.invoiceNumber,
+              ticketId: invoices.ticketId,
+              ticketNumber: tickets.ticketNumber,
+              maintenanceVendorId: invoices.maintenanceVendorId,
+              organizationId: invoices.organizationId,
+              subtotal: invoices.subtotal,
+              tax: invoices.tax,
+              total: invoices.total,
+              status: invoices.status,
+              workOrderIds: invoices.workOrderIds,
+              additionalItems: invoices.additionalItems,
+              notes: invoices.notes,
+              createdAt: invoices.createdAt,
+              sentAt: invoices.sentAt,
+              paidAt: invoices.paidAt,
+            })
+            .from(invoices)
+            .leftJoin(tickets, eq(invoices.ticketId, tickets.id))
+            .where(
+              and(
+                eq(invoices.organizationId, user.organizationId),
+                inArray(tickets.locationId, locationIds)
+              )
+            );
+        } else {
+          // User has no location assignments - see all organization invoices (for org_admin)
+          result = await db
+            .select({
+              id: invoices.id,
+              invoiceNumber: invoices.invoiceNumber,
+              ticketId: invoices.ticketId,
+              ticketNumber: tickets.ticketNumber,
+              maintenanceVendorId: invoices.maintenanceVendorId,
+              organizationId: invoices.organizationId,
+              subtotal: invoices.subtotal,
+              tax: invoices.tax,
+              total: invoices.total,
+              status: invoices.status,
+              workOrderIds: invoices.workOrderIds,
+              additionalItems: invoices.additionalItems,
+              notes: invoices.notes,
+              createdAt: invoices.createdAt,
+              sentAt: invoices.sentAt,
+              paidAt: invoices.paidAt,
+            })
+            .from(invoices)
+            .leftJoin(tickets, eq(invoices.ticketId, tickets.id))
+            .where(eq(invoices.organizationId, user.organizationId));
+        }
       } else if (user.role === "root") {
         // Get all invoices with ticket information for root
         result = await db
