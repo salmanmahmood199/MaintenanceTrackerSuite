@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
-import { Eye, Printer } from "lucide-react";
+import { Eye, Printer, Building2, User } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
 import type { Invoice, Ticket, Organization, MaintenanceVendor, WorkOrder } from "@shared/schema";
@@ -103,166 +103,172 @@ export function InvoicePDFViewer({ invoice }: InvoicePDFViewerProps) {
           </DialogTitle>
         </DialogHeader>
 
-        {/* PDF-style Invoice Content */}
-        <div className="bg-white text-black p-8 rounded-lg" style={{ fontFamily: 'Arial, sans-serif' }}>
-          {/* Header */}
-          <div className="flex justify-between items-start mb-8">
+        {/* PDF-style Invoice Content - Matching Enhanced Invoice Creator Preview */}
+        <div className="bg-white text-black p-8 rounded-lg space-y-6" style={{ fontFamily: 'Arial, sans-serif' }}>
+          
+          {/* Header Section */}
+          <div className="text-center border-b pb-6">
+            <h1 className="text-4xl font-bold mb-2" style={{color: 'black'}}>INVOICE</h1>
+            <div className="text-lg" style={{color: 'black'}}>
+              Invoice #{invoice.invoiceNumber} | Date: {invoice.createdAt ? formatDate(invoice.createdAt) : 'N/A'}
+            </div>
+          </div>
+
+          {/* From/To Section */}
+          <div className="grid grid-cols-2 gap-8">
             <div>
-              <h1 className="text-3xl font-bold text-black mb-2">INVOICE</h1>
-              <div className="text-sm text-black">
-                <div><strong>Invoice #:</strong> {invoice.invoiceNumber}</div>
-                <div><strong>Date:</strong> {invoice.createdAt ? formatDate(invoice.createdAt) : 'N/A'}</div>
-                {ticket && <div><strong>Ticket #:</strong> {ticket.ticketNumber}</div>}
+              <h3 className="font-semibold text-lg mb-3" style={{color: 'black'}}>
+                From:
+              </h3>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="font-semibold text-xl" style={{color: 'black'}}>
+                  {vendor?.name || 'Maintenance Vendor'}
+                </p>
+                <p style={{color: 'black'}}>{vendor?.address || 'Vendor Address'}</p>
+                <p style={{color: 'black'}}>{vendor?.email || 'vendor@email.com'}</p>
+                <p style={{color: 'black'}}>{vendor?.phone || 'Phone Number'}</p>
               </div>
             </div>
-            <div className="text-right">
-              <h2 className="text-xl font-bold text-black mb-2">
-                {vendor?.name || "Professional Maintenance Services"}
-              </h2>
-              <div className="text-sm text-black">
-                <div>{vendor?.address || "123 Service Drive"}</div>
-                <div>{vendor?.email || "billing@vendor.com"}</div>
-                <div>{vendor?.phone || "(555) 123-4567"}</div>
+            <div>
+              <h3 className="font-semibold text-lg mb-3" style={{color: 'black'}}>
+                Bill To:
+              </h3>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="font-semibold text-xl" style={{color: 'black'}}>
+                  {organization?.name || 'Organization'}
+                </p>
+                <p style={{color: 'black'}}>{organization?.address || 'Organization Address'}</p>
+                <p style={{color: 'black'}}>{organization?.email || 'org@email.com'}</p>
+                <p style={{color: 'black'}}>{organization?.phone || 'Phone Number'}</p>
               </div>
-            </div>
-          </div>
-
-          <Separator className="my-6" />
-
-          {/* Bill To Section */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-black mb-3">Bill To:</h3>
-            <div className="text-black">
-              <div className="font-semibold">{organization?.name || "Loading..."}</div>
-              <div>{organization?.address || "Loading address..."}</div>
-              <div>{organization?.email || "Loading email..."}</div>
-              <div>{organization?.phone || "Loading phone..."}</div>
             </div>
           </div>
 
-          <Separator className="my-6" />
-
-          {/* Work Orders Section */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-black mb-4">Service Details</h3>
-            
-            {workOrders.length > 0 ? (
-              <div className="space-y-6">
-                {workOrders.map((workOrder, index) => (
-                  <Card key={workOrder.id} className="border border-gray-300">
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-start mb-3">
-                        <h4 className="font-semibold text-black">Work Order #{index + 1}</h4>
-                        <div className="text-sm text-black">
-                          {workOrder.workDate && <div>Date: {workOrder.workDate}</div>}
-                          {workOrder.timeIn && workOrder.timeOut && (
-                            <div>Time: {workOrder.timeIn} - {workOrder.timeOut}</div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="text-black mb-3">
-                        <div><strong>Description:</strong> {workOrder.workDescription || 'N/A'}</div>
-                        {workOrder.technicianName && (
-                          <div><strong>Technician:</strong> {workOrder.technicianName}</div>
-                        )}
-                        {workOrder.totalHours && (
-                          <div><strong>Total Hours:</strong> {workOrder.totalHours}</div>
-                        )}
-                      </div>
-
-                      {/* Labor Breakdown */}
-                      {workOrder.totalHours && (
-                        <div className="mb-4 p-3 bg-gray-50 rounded">
-                          <div className="font-semibold text-black mb-2">Labor:</div>
-                          <div className="flex justify-between text-black">
-                            <span>{workOrder.totalHours} hours</span>
-                            <span>${parseFloat(workOrder.totalCost || "0").toFixed(2)}</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Parts Used */}
-                      {workOrder.parts && Array.isArray(workOrder.parts) && workOrder.parts.length > 0 && (
-                        <div className="mb-4">
-                          <div className="font-semibold text-black mb-2">Parts Used:</div>
-                          <div className="space-y-1">
-                            {workOrder.parts.map((part: any, partIndex: number) => (
-                              <div key={partIndex} className="flex justify-between text-black">
-                                <span>{part.name} (Qty: {part.quantity})</span>
-                                <span>${(part.cost * part.quantity).toFixed(2)}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="border-t pt-2 mt-3">
-                        <div className="flex justify-between font-semibold text-black">
-                          <span>Work Order Total:</span>
-                          <span>${parseFloat(workOrder.totalCost || "0").toFixed(2)}</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+          {/* Ticket Information */}
+          {ticket && (
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h3 className="font-semibold text-lg mb-2" style={{color: 'black'}}>Service Details</h3>
+              <div className="grid grid-cols-2 gap-4 text-sm" style={{color: 'black'}}>
+                <div><span className="font-medium">Ticket Number:</span> {ticket.ticketNumber}</div>
+                <div><span className="font-medium">Priority:</span> <Badge variant="outline">{ticket.priority}</Badge></div>
+                <div className="col-span-2"><span className="font-medium">Description:</span> {ticket.description}</div>
               </div>
-            ) : (
-              <div className="text-black">No work orders available.</div>
-            )}
-          </div>
-
-          {/* Additional Items */}
-          {additionalItems.length > 0 && (
-            <>
-              <Separator className="my-6" />
-              <div className="mb-8">
-                <h3 className="text-lg font-semibold text-black mb-4">Additional Items</h3>
-                <div className="space-y-2">
-                  {additionalItems.map((item: any, index: number) => (
-                    <div key={index} className="flex justify-between text-black">
-                      <span>{item.description} (Qty: {item.quantity})</span>
-                      <span>${item.amount.toFixed(2)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
+            </div>
           )}
 
-          <Separator className="my-6" />
+          {/* Work Orders Table */}
+          <div>
+            <h3 className="font-semibold text-lg mb-4" style={{color: 'black'}}>Work Orders Completed</h3>
+            <div className="overflow-hidden rounded-lg border">
+              <table className="w-full">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-semibold" style={{color: 'black'}}>Work Order</th>
+                    <th className="px-4 py-3 text-left font-semibold" style={{color: 'black'}}>Description</th>
+                    <th className="px-4 py-3 text-left font-semibold" style={{color: 'black'}}>Labor Details</th>
+                    <th className="px-4 py-3 text-left font-semibold" style={{color: 'black'}}>Parts Used</th>
+                    <th className="px-4 py-3 text-right font-semibold" style={{color: 'black'}}>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {workOrders.length > 0 ? workOrders.map((workOrder) => {
+                    const parts = workOrder.parts && Array.isArray(workOrder.parts) ? workOrder.parts : [];
+                    const partsCost = parts.reduce((sum: number, part: any) => sum + (part.cost * part.quantity), 0);
+                    const laborCost = parseFloat(workOrder.totalCost || "0") - partsCost;
+                    const hourlyRate = workOrder.totalHours ? (laborCost / parseFloat(workOrder.totalHours)).toFixed(2) : "0.00";
+                    
+                    return (
+                      <tr key={workOrder.id} className="border-t">
+                        <td className="px-4 py-3 font-medium align-top" style={{color: 'black'}}>
+                          <div>#{workOrder.workOrderNumber}</div>
+                          <div className="text-sm" style={{color: 'black'}}>by {workOrder.technicianName}</div>
+                          <div className="text-xs" style={{color: 'black'}}>
+                            {workOrder.dateCompleted ? new Date(workOrder.dateCompleted).toLocaleDateString() : 'In Progress'}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 align-top" style={{color: 'black'}}>
+                          <div className="text-sm">{workOrder.workDescription || 'Work order description'}</div>
+                          {workOrder.notes && (
+                            <div className="text-xs mt-1 italic" style={{color: 'black'}}>
+                              Notes: {workOrder.notes}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 align-top" style={{color: 'black'}}>
+                          <div className="text-sm">
+                            <div>{workOrder.totalHours} hours</div>
+                            <div>@ ${hourlyRate}/hr</div>
+                            <div className="font-medium">Labor: ${laborCost.toFixed(2)}</div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 align-top" style={{color: 'black'}}>
+                          {parts.length > 0 ? (
+                            <div className="text-sm space-y-1">
+                              {parts.map((part: any, index: number) => (
+                                <div key={index}>
+                                  <div>{part.name}</div>
+                                  <div className="text-xs">
+                                    Qty: {part.quantity} @ ${part.cost.toFixed(2)} = ${(part.quantity * part.cost).toFixed(2)}
+                                  </div>
+                                </div>
+                              ))}
+                              <div className="font-medium border-t pt-1">
+                                Parts Total: ${partsCost.toFixed(2)}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-sm" style={{color: 'black'}}>No parts used</div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right font-semibold align-top" style={{color: 'black'}}>
+                          ${parseFloat(workOrder.totalCost || "0").toFixed(2)}
+                        </td>
+                      </tr>
+                    );
+                  }) : (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                        No work orders available.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
 
-          {/* Invoice Summary */}
-          <div className="flex justify-end">
-            <div className="w-64">
-              <div className="space-y-2 text-black">
-                <div className="flex justify-between">
+          {/* Invoice Total */}
+          <div className="bg-gray-50 p-6 rounded-lg">
+            <div className="flex justify-end">
+              <div className="w-64 space-y-2">
+                <div className="flex justify-between text-lg" style={{color: 'black'}}>
                   <span>Subtotal:</span>
                   <span>${parseFloat(invoice.subtotal).toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Tax:</span>
-                  <span>${parseFloat(invoice.tax).toFixed(2)}</span>
-                </div>
-                <Separator />
-                <div className="flex justify-between font-bold text-lg text-black">
-                  <span>Total:</span>
-                  <span>${parseFloat(invoice.total).toFixed(2)}</span>
+                {parseFloat(invoice.tax) > 0 && (
+                  <div className="flex justify-between" style={{color: 'black'}}>
+                    <span>Tax:</span>
+                    <span>${parseFloat(invoice.tax).toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-2xl font-bold border-t pt-2" style={{color: 'black'}}>
+                  <span>TOTAL:</span>
+                  <span style={{color: 'black'}}>${parseFloat(invoice.total).toFixed(2)}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Notes */}
-          {invoice.notes && (
-            <>
-              <Separator className="my-6" />
-              <div>
-                <h3 className="text-lg font-semibold text-black mb-3">Notes</h3>
-                <div className="text-black whitespace-pre-wrap">{invoice.notes}</div>
+          {/* Payment Terms & Notes */}
+          <div className="text-sm" style={{color: 'black'}}>
+            <p><span className="font-medium">Payment Terms:</span> Net 30</p>
+            {invoice.notes && (
+              <div className="mt-2">
+                <p className="font-medium">Notes:</p>
+                <p>{invoice.notes}</p>
               </div>
-            </>
-          )}
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
