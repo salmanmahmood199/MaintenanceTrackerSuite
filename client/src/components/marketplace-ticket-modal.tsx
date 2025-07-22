@@ -29,13 +29,8 @@ function LocationInfo({ locationId }: LocationInfoProps) {
   const { data: location } = useQuery<Location>({
     queryKey: ["/api/location", locationId],
     queryFn: async () => {
-      // Try to get location from user's organization
-      const userResponse = await apiRequest("GET", "/api/auth/user");
-      const user = await userResponse.json();
-      
-      const locResponse = await apiRequest("GET", `/api/organizations/${user.organizationId}/locations`);
-      const locations = await locResponse.json();
-      return locations.find((loc: Location) => loc.id === locationId);
+      const response = await apiRequest("GET", `/api/locations/${locationId}`);
+      return await response.json();
     }
   });
 
@@ -43,7 +38,7 @@ function LocationInfo({ locationId }: LocationInfoProps) {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <MapPin className="h-4 w-4" />
-        Location ID: {locationId}
+        Loading location...
       </div>
     );
   }

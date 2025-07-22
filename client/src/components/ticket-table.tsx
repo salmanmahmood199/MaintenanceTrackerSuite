@@ -104,6 +104,38 @@ export function TicketTable({
       </div>
     );
   }
+
+  // Detailed location display for ticket modal
+  function LocationDetailDisplay({ locationId }: { locationId: number | null }) {
+    const { data: location } = useQuery<Location | null>({
+      queryKey: ["/api/location", locationId],
+      queryFn: () => locationId ? fetchLocationById(locationId) : Promise.resolve(null),
+      enabled: !!locationId,
+    });
+
+    if (!location) {
+      return (
+        <div className="ml-8">
+          <p className="text-lg font-semibold text-blue-900 dark:text-blue-100">
+            Unknown Location
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="ml-8">
+        <p className="text-lg font-semibold text-blue-900 dark:text-blue-100">
+          {location.name}
+        </p>
+        {location.address && (
+          <p className="text-sm text-blue-700 dark:text-blue-300">
+            {location.address}
+          </p>
+        )}
+      </div>
+    );
+  }
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [showForceCloseDialog, setShowForceCloseDialog] = useState(false);
@@ -523,16 +555,7 @@ export function TicketTable({
                         <MapPin className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                         <span className="text-sm font-medium text-blue-900 dark:text-blue-100">Service Location</span>
                       </div>
-                      <div className="ml-8">
-                        <p className="text-lg font-semibold text-blue-900 dark:text-blue-100">
-                          {getLocationName(selectedTicket.locationId)?.name || 'Unknown Location'}
-                        </p>
-                        {getLocationName(selectedTicket.locationId)?.address && (
-                          <p className="text-sm text-blue-700 dark:text-blue-300">
-                            {getLocationName(selectedTicket.locationId)?.address}
-                          </p>
-                        )}
-                      </div>
+                      <LocationDetailDisplay locationId={selectedTicket.locationId} />
                     </div>
                   )}
 

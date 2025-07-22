@@ -349,6 +349,11 @@ Changelog:
 - July 21, 2025. Enhanced PDF preview with detailed work order breakdown showing individual labor details, parts lists with quantities/costs, and real vendor/organization data
 - July 21, 2025. Customized PDF header to display actual vendor name instead of generic "Professional Maintenance Services"
 - July 21, 2025. Implemented comprehensive work order table with description, labor breakdown (hours/rate), detailed parts usage, and completion dates
+- July 22, 2025. Enhanced location display system across all ticket views with comprehensive store name and address information
+- July 22, 2025. Fixed location data persistence issue in ticket creation - backend now properly saves locationId from form submissions
+- July 22, 2025. Created universal location access system allowing vendor users to view location information for assigned tickets
+- July 22, 2025. Removed Timeline column from ticket table for cleaner interface with focused location display
+- July 22, 2025. Added new public location lookup API endpoint (/api/locations/:id) accessible by all authenticated users
 ```
 
 ## User Preferences
