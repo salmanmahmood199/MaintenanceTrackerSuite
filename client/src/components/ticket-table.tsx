@@ -57,34 +57,53 @@ export function TicketTable({
 }: TicketTableProps) {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
 
-  // Fetch locations data for display
-  const { data: locations = [] } = useQuery<Location[]>({
-    queryKey: ["/api/locations"],
-    queryFn: async () => {
-      // Get all locations for all organizations that the user might see
-      const response = await apiRequest("GET", "/api/organizations");
-      const orgs = await response.json();
-      const allLocations: Location[] = [];
-      
-      for (const org of orgs) {
-        try {
-          const locResponse = await apiRequest("GET", `/api/organizations/${org.id}/locations`);
-          const orgLocations = await locResponse.json();
-          allLocations.push(...orgLocations);
-        } catch (e) {
-          // Skip if user doesn't have access to this org's locations
-        }
-      }
-      
-      return allLocations;
+  // Cache for location lookups by ID
+  const locationCache: { [id: number]: Location } = {};
+  
+  // Helper function to fetch location by ID
+  const fetchLocationById = async (locationId: number): Promise<Location | null> => {
+    if (locationCache[locationId]) {
+      return locationCache[locationId];
     }
-  });
-
-  const getLocationName = (locationId: number | null) => {
-    if (!locationId) return null;
-    const location = locations.find(loc => loc.id === locationId);
-    return location;
+    
+    try {
+      const response = await apiRequest("GET", `/api/locations/${locationId}`);
+      const location = await response.json();
+      locationCache[locationId] = location;
+      return location;
+    } catch (e) {
+      return null;
+    }
   };
+
+  // Location display component that works for all users
+  function LocationDisplay({ locationId }: { locationId: number | null }) {
+    const { data: location } = useQuery<Location | null>({
+      queryKey: ["/api/location", locationId],
+      queryFn: () => locationId ? fetchLocationById(locationId) : Promise.resolve(null),
+      enabled: !!locationId,
+    });
+
+    if (!locationId) {
+      return <span className="text-xs text-muted-foreground">No location</span>;
+    }
+
+    if (!location) {
+      return <span className="text-xs text-muted-foreground">Loading...</span>;
+    }
+
+    return (
+      <div className="flex items-center gap-1 text-sm">
+        <MapPin className="h-3 w-3 text-muted-foreground" />
+        <div>
+          <div className="font-medium">{location.name}</div>
+          <div className="text-xs text-muted-foreground truncate max-w-32">
+            {location.address || ''}
+          </div>
+        </div>
+      </div>
+    );
+  }
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [showForceCloseDialog, setShowForceCloseDialog] = useState(false);
@@ -196,19 +215,7 @@ export function TicketTable({
                       </div>
                     </TableCell>
                     <TableCell>
-                      {ticket.locationId ? (
-                        <div className="flex items-center gap-1 text-sm">
-                          <MapPin className="h-3 w-3 text-muted-foreground" />
-                          <div>
-                            <div className="font-medium">{getLocationName(ticket.locationId)?.name || 'Unknown'}</div>
-                            <div className="text-xs text-muted-foreground truncate max-w-32">
-                              {getLocationName(ticket.locationId)?.address || ''}
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">No location</span>
-                      )}
+                      <LocationDisplay locationId={ticket.locationId} />
                     </TableCell>
                     <TableCell>
                       <Badge className={priorityColor}>

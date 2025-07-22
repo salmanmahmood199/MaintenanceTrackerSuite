@@ -1616,6 +1616,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public location lookup endpoint for tickets - accessible by vendors
+  app.get("/api/locations/:id", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const locationId = parseInt(req.params.id);
+      
+      // Get the location from any organization that the system knows about
+      const organizations = await storage.getOrganizations();
+      let foundLocation = null;
+      
+      for (const org of organizations) {
+        const locations = await storage.getLocations(org.id);
+        foundLocation = locations.find(loc => loc.id === locationId);
+        if (foundLocation) break;
+      }
+      
+      if (!foundLocation) {
+        return res.status(404).json({ message: "Location not found" });
+      }
+      
+      res.json(foundLocation);
+    } catch (error) {
+      console.error("Error fetching location:", error);
+      res.status(500).json({ message: "Failed to fetch location" });
+    }
+  });
+
   app.post("/api/organizations/:id/locations", authenticateUser, requireRole(["root", "org_admin"]), async (req: AuthenticatedRequest, res) => {
     try {
       const organizationId = parseInt(req.params.id);
