@@ -1265,6 +1265,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               ticketNumber: tickets.ticketNumber,
               maintenanceVendorId: invoices.maintenanceVendorId,
               organizationId: invoices.organizationId,
+              locationId: invoices.locationId,
               subtotal: invoices.subtotal,
               tax: invoices.tax,
               total: invoices.total,
@@ -1281,7 +1282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .where(
               and(
                 eq(invoices.organizationId, user.organizationId),
-                tickets.locationId ? inArray(tickets.locationId, locationIds) : eq(1, 0) // No match for tickets without location
+                inArray(invoices.locationId, locationIds)
               )
             );
         } else {
@@ -1294,6 +1295,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               ticketNumber: tickets.ticketNumber,
               maintenanceVendorId: invoices.maintenanceVendorId,
               organizationId: invoices.organizationId,
+              locationId: invoices.locationId,
               subtotal: invoices.subtotal,
               tax: invoices.tax,
               total: invoices.total,
@@ -1379,6 +1381,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ticketId,
         maintenanceVendorId: ticket.maintenanceVendorId!,
         organizationId: ticket.organizationId,
+        locationId: ticket.locationId, // Include location from original ticket
         subtotal: subtotal.toString(),
         tax: taxAmount.toString(),
         total: total.toString(),

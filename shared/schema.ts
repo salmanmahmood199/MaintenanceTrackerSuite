@@ -131,6 +131,7 @@ export const invoices = pgTable("invoices", {
   ticketId: integer("ticket_id").notNull().references(() => tickets.id),
   maintenanceVendorId: integer("maintenance_vendor_id").notNull().references(() => maintenanceVendors.id),
   organizationId: integer("organization_id").notNull().references(() => organizations.id),
+  locationId: integer("location_id").references(() => locations.id), // Add location reference from original ticket
   subtotal: text("subtotal").notNull(),
   tax: text("tax").notNull().default("0"),
   total: text("total").notNull(),
