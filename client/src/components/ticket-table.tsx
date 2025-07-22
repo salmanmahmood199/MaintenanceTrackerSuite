@@ -15,7 +15,10 @@ import { formatDate, getPriorityColor, getStatusColor } from "@/lib/utils";
 import { ProgressTrackerEmbedded } from "@/components/progress-tracker";
 import { TicketComments } from "./ticket-comments";
 import { WorkOrdersHistoryEmbedded } from "@/components/work-orders-history-embedded";
-import type { Ticket } from "@shared/schema";
+import type { Ticket, Location } from "@shared/schema";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { MapPin } from "lucide-react";
 
 interface TicketTableProps {
   tickets: Ticket[];
@@ -53,6 +56,35 @@ export function TicketTable({
   userId
 }: TicketTableProps) {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+
+  // Fetch locations data for display
+  const { data: locations = [] } = useQuery<Location[]>({
+    queryKey: ["/api/locations"],
+    queryFn: async () => {
+      // Get all locations for all organizations that the user might see
+      const response = await apiRequest("GET", "/api/organizations");
+      const orgs = await response.json();
+      const allLocations: Location[] = [];
+      
+      for (const org of orgs) {
+        try {
+          const locResponse = await apiRequest("GET", `/api/organizations/${org.id}/locations`);
+          const orgLocations = await locResponse.json();
+          allLocations.push(...orgLocations);
+        } catch (e) {
+          // Skip if user doesn't have access to this org's locations
+        }
+      }
+      
+      return allLocations;
+    }
+  });
+
+  const getLocationName = (locationId: number | null) => {
+    if (!locationId) return null;
+    const location = locations.find(loc => loc.id === locationId);
+    return location;
+  };
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [showForceCloseDialog, setShowForceCloseDialog] = useState(false);
@@ -132,6 +164,7 @@ export function TicketTable({
               <TableRow>
                 <TableHead className="whitespace-nowrap">Ticket #</TableHead>
                 <TableHead className="whitespace-nowrap">Title</TableHead>
+                <TableHead className="whitespace-nowrap">Location</TableHead>
                 <TableHead className="whitespace-nowrap">Priority</TableHead>
                 <TableHead className="whitespace-nowrap">Status</TableHead>
                 <TableHead className="whitespace-nowrap">Timeline</TableHead>
@@ -143,7 +176,7 @@ export function TicketTable({
           <TableBody>
             {tickets.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                   No tickets found
                 </TableCell>
               </TableRow>
@@ -162,6 +195,21 @@ export function TicketTable({
                         <p className="font-medium text-foreground truncate">{ticket.title}</p>
                         <p className="text-sm text-muted-foreground truncate">{ticket.description}</p>
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      {ticket.locationId ? (
+                        <div className="flex items-center gap-1 text-sm">
+                          <MapPin className="h-3 w-3 text-muted-foreground" />
+                          <div>
+                            <div className="font-medium">{getLocationName(ticket.locationId)?.name || 'Unknown'}</div>
+                            <div className="text-xs text-muted-foreground truncate max-w-32">
+                              {getLocationName(ticket.locationId)?.address || ''}
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">No location</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge className={priorityColor}>
@@ -471,6 +519,26 @@ export function TicketTable({
                       <p className="text-lg">{format(new Date(selectedTicket.createdAt), 'PPp')}</p>
                     </div>
                   </div>
+
+                  {/* Location Information */}
+                  {selectedTicket.locationId && (
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <div className="flex items-center gap-3 mb-2">
+                        <MapPin className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                        <span className="text-sm font-medium text-blue-900 dark:text-blue-100">Service Location</span>
+                      </div>
+                      <div className="ml-8">
+                        <p className="text-lg font-semibold text-blue-900 dark:text-blue-100">
+                          {getLocationName(selectedTicket.locationId)?.name || 'Unknown Location'}
+                        </p>
+                        {getLocationName(selectedTicket.locationId)?.address && (
+                          <p className="text-sm text-blue-700 dark:text-blue-300">
+                            {getLocationName(selectedTicket.locationId)?.address}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   <div>
                     <h3 className="text-xl font-semibold mb-2">{selectedTicket.title}</h3>

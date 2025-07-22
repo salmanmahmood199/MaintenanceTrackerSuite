@@ -18,7 +18,51 @@ import { useAuth } from "@/hooks/useAuth";
 import { MapPin, Calendar, Clock, DollarSign, Wrench, Plus, Trash2, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import type { Ticket } from "@shared/schema";
+import type { Ticket, Location } from "@shared/schema";
+
+// Location Info Component
+interface LocationInfoProps {
+  locationId: number;
+}
+
+function LocationInfo({ locationId }: LocationInfoProps) {
+  const { data: location } = useQuery<Location>({
+    queryKey: ["/api/location", locationId],
+    queryFn: async () => {
+      // Try to get location from user's organization
+      const userResponse = await apiRequest("GET", "/api/auth/user");
+      const user = await userResponse.json();
+      
+      const locResponse = await apiRequest("GET", `/api/organizations/${user.organizationId}/locations`);
+      const locations = await locResponse.json();
+      return locations.find((loc: Location) => loc.id === locationId);
+    }
+  });
+
+  if (!location) {
+    return (
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <MapPin className="h-4 w-4" />
+        Location ID: {locationId}
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+      <div className="flex items-center gap-2 mb-1">
+        <MapPin className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+        <span className="text-sm font-medium text-blue-900 dark:text-blue-100">Service Location</span>
+      </div>
+      <div className="ml-6">
+        <p className="font-semibold text-blue-900 dark:text-blue-100">{location.name}</p>
+        {location.address && (
+          <p className="text-sm text-blue-700 dark:text-blue-300">{location.address}</p>
+        )}
+      </div>
+    </div>
+  );
+}
 
 interface MarketplaceTicketModalProps {
   ticket: Ticket | null;
@@ -220,10 +264,7 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
                     </div>
 
                     {ticket.locationId && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <MapPin className="h-4 w-4" />
-                        Location ID: {ticket.locationId}
-                      </div>
+                      <LocationInfo locationId={ticket.locationId} />
                     )}
                   </CardContent>
                 </Card>
