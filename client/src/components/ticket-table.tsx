@@ -167,7 +167,6 @@ export function TicketTable({
                 <TableHead className="whitespace-nowrap">Location</TableHead>
                 <TableHead className="whitespace-nowrap">Priority</TableHead>
                 <TableHead className="whitespace-nowrap">Status</TableHead>
-                <TableHead className="whitespace-nowrap">Timeline</TableHead>
                 <TableHead className="whitespace-nowrap">Created</TableHead>
                 <TableHead className="whitespace-nowrap">Images</TableHead>
                 <TableHead className="whitespace-nowrap">Actions</TableHead>
@@ -176,7 +175,7 @@ export function TicketTable({
           <TableBody>
             {tickets.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   No tickets found
                 </TableCell>
               </TableRow>
@@ -238,17 +237,7 @@ export function TicketTable({
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openTicketDetails(ticket)}
-                        className="text-xs h-8 px-2"
-                      >
-                        <Clock className="h-3 w-3 mr-1" />
-                        Timeline
-                      </Button>
-                    </TableCell>
+
                     <TableCell className="text-sm text-muted-foreground">
                       {formatDate(ticket.createdAt)}
                     </TableCell>
