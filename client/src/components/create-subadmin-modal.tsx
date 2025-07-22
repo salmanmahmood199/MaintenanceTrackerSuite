@@ -57,7 +57,7 @@ export function CreateSubAdminModal({ open, onOpenChange, onSubmit, isLoading }:
   }, [watchedPermissions, form]);
 
   // Handle tier selection with automatic inheritance
-  const handleTierChange = (tier: string, checked: boolean) => {
+  const handleTierChange = (tier: "tier_1" | "tier_2" | "tier_3" | "marketplace", checked: boolean) => {
     const currentTiers = form.getValues("vendorTiers") || [];
     let newTiers = [...currentTiers];
 
@@ -117,7 +117,7 @@ export function CreateSubAdminModal({ open, onOpenChange, onSubmit, isLoading }:
                   <FormItem>
                     <FormLabel>First Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter first name" {...field} />
+                      <Input placeholder="Enter first name" {...field} value={field.value || ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -131,7 +131,7 @@ export function CreateSubAdminModal({ open, onOpenChange, onSubmit, isLoading }:
                   <FormItem>
                     <FormLabel>Last Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter last name" {...field} />
+                      <Input placeholder="Enter last name" {...field} value={field.value || ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -339,13 +339,8 @@ export function CreateSubAdminModal({ open, onOpenChange, onSubmit, isLoading }:
                 Cancel
               </Button>
               <Button 
-                type="button" 
+                type="submit" 
                 disabled={isLoading}
-                onClick={() => {
-                  console.log("Button clicked");
-                  console.log("Form errors:", form.formState.errors);
-                  form.handleSubmit(handleFormSubmit)();
-                }}
               >
                 {isLoading ? "Creating..." : "Create Sub-Admin"}
               </Button>
