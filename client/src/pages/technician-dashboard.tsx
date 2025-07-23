@@ -104,10 +104,22 @@ export default function TechnicianDashboard() {
   // Work order submission mutation
   const submitWorkOrderMutation = useMutation({
     mutationFn: async ({ id, workOrder, images }: { id: number; workOrder: any; images: File[] }) => {
-      // For now, just complete the ticket - in future this would submit full work order data
-      return apiRequest("POST", `/api/tickets/${id}/complete`, {
-        workOrder,
-        // Note: Image upload would need additional handling
+      const formData = new FormData();
+      formData.append('workOrder', JSON.stringify(workOrder));
+      
+      // Add images to form data
+      images.forEach((image, index) => {
+        formData.append('images', image);
+      });
+      
+      return fetch(`/api/tickets/${id}/complete`, {
+        method: 'POST',
+        body: formData,
+      }).then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to submit work order');
+        }
+        return response.json();
       });
     },
     onSuccess: (data, variables) => {

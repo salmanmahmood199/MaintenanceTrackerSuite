@@ -844,15 +844,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Complete ticket with work order (technician)
-  app.post("/api/tickets/:id/complete", authenticateUser, requireRole(["technician"]), async (req: AuthenticatedRequest, res) => {
+  app.post("/api/tickets/:id/complete", authenticateUser, requireRole(["technician"]), upload.array('images'), async (req: AuthenticatedRequest, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { workOrder } = req.body;
+      let workOrder;
       const user = req.user!;
+      
+      // Parse workOrder from FormData
+      try {
+        workOrder = req.body.workOrder ? JSON.parse(req.body.workOrder) : null;
+      } catch (error) {
+        return res.status(400).json({ message: "Invalid work order data" });
+      }
       
       if (!workOrder) {
         return res.status(400).json({ message: "Work order data required" });
       }
+      
+      // Get uploaded image filenames
+      const images = (req.files as Express.Multer.File[] || []).map(file => `/uploads/${file.filename}`);
 
       // Calculate total cost
       const partsCost = (workOrder.parts || []).reduce((sum: number, part: any) => sum + (part.cost * part.quantity), 0);
@@ -889,7 +899,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         parts: JSON.stringify(workOrder.parts || []),
         otherCharges: JSON.stringify(workOrder.otherCharges || []),
         totalCost: totalCost.toString(),
-        images: workOrder.images || [],
+        images: images,
         technicianId: user.id,
         technicianName: `${user.firstName} ${user.lastName}`,
         // Time tracking fields
