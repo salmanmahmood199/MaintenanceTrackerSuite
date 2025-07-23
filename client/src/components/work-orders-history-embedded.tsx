@@ -211,12 +211,30 @@ export function WorkOrdersHistoryEmbedded({ ticketId }: WorkOrdersHistoryEmbedde
                     <div className="text-2xl font-bold text-green-600">
                       {formatCurrency(selectedWorkOrder.totalCost)}
                     </div>
-                    {selectedWorkOrder.hoursWorked && (
+                    {(selectedWorkOrder.totalHours || selectedWorkOrder.hoursWorked) && (
                       <div className="text-sm text-muted-foreground">
-                        {selectedWorkOrder.hoursWorked} hours worked
+                        {selectedWorkOrder.totalHours || selectedWorkOrder.hoursWorked} hours worked
                       </div>
                     )}
                   </div>
+                  
+                  {/* Time Tracking Details */}
+                  {(selectedWorkOrder.workDate || selectedWorkOrder.timeIn || selectedWorkOrder.timeOut) && (
+                    <div>
+                      <h4 className="font-medium text-foreground mb-2">Time Details</h4>
+                      <div className="text-sm space-y-1">
+                        {selectedWorkOrder.workDate && (
+                          <div>Work Date: {selectedWorkOrder.workDate}</div>
+                        )}
+                        {selectedWorkOrder.timeIn && (
+                          <div>Time In: {selectedWorkOrder.timeIn}</div>
+                        )}
+                        {selectedWorkOrder.timeOut && (
+                          <div>Time Out: {selectedWorkOrder.timeOut}</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Work Description */}
@@ -283,6 +301,35 @@ export function WorkOrdersHistoryEmbedded({ ticketId }: WorkOrdersHistoryEmbedde
                     </div>
                   );
                 })()}
+
+                {/* Manager Verification */}
+                {(selectedWorkOrder.managerName || selectedWorkOrder.managerSignature) && (
+                  <div>
+                    <h4 className="font-medium text-foreground mb-3 flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      Manager Verification
+                    </h4>
+                    <div className="bg-muted p-4 rounded-lg space-y-3">
+                      {selectedWorkOrder.managerName && (
+                        <div>
+                          <strong>Manager Name:</strong> {selectedWorkOrder.managerName}
+                        </div>
+                      )}
+                      {selectedWorkOrder.managerSignature && (
+                        <div>
+                          <strong>Manager Signature:</strong>
+                          <div className="mt-2">
+                            <img 
+                              src={selectedWorkOrder.managerSignature} 
+                              alt="Manager Signature"
+                              className="border rounded p-2 bg-white max-w-md h-20 object-contain"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Work Order Images */}
                 {selectedWorkOrder.images && selectedWorkOrder.images.length > 0 && (
