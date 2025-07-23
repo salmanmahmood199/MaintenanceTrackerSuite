@@ -125,8 +125,10 @@ export interface IStorage {
   // Invoice operations
   getInvoices(vendorId?: number): Promise<Invoice[]>;
   getInvoice(id: number): Promise<Invoice | undefined>;
+  getInvoiceById(id: number): Promise<Invoice | undefined>;
   createInvoice(invoice: InsertInvoice): Promise<Invoice>;
   updateInvoice(id: number, updates: Partial<InsertInvoice>): Promise<Invoice | undefined>;
+  updateInvoicePayment(id: number, paymentData: { status: string; paymentMethod: string; paymentType?: string; checkNumber?: string; paidAt: Date }): Promise<Invoice | undefined>;
   deleteInvoice(id: number): Promise<boolean>;
   
   // Location operations
@@ -774,6 +776,26 @@ export class DatabaseStorage implements IStorage {
     const [updatedInvoice] = await db
       .update(invoices)
       .set(updates)
+      .where(eq(invoices.id, id))
+      .returning();
+    return updatedInvoice;
+  }
+
+  async getInvoiceById(id: number): Promise<Invoice | undefined> {
+    const [invoice] = await db.select().from(invoices).where(eq(invoices.id, id));
+    return invoice;
+  }
+
+  async updateInvoicePayment(id: number, paymentData: { status: string; paymentMethod: string; paymentType?: string; checkNumber?: string; paidAt: Date }): Promise<Invoice | undefined> {
+    const [updatedInvoice] = await db
+      .update(invoices)
+      .set({
+        status: paymentData.status,
+        paymentMethod: paymentData.paymentMethod,
+        paymentType: paymentData.paymentType,
+        checkNumber: paymentData.checkNumber,
+        paidAt: paymentData.paidAt
+      })
       .where(eq(invoices.id, id))
       .returning();
     return updatedInvoice;

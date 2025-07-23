@@ -2197,6 +2197,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Payment processing route
+  app.post("/api/invoices/:id/pay", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const invoiceId = parseInt(req.params.id);
+      const { paymentMethod, paymentType, checkNumber } = req.body;
+      
+      // Get the invoice first to verify access
+      const invoice = await storage.getInvoiceById(invoiceId);
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+      
+      // For now, only handle external payments
+      if (paymentMethod !== "external") {
+        return res.status(400).json({ message: "Only external payments are currently supported" });
+      }
+      
+      // Update invoice with payment information
+      const updatedInvoice = await storage.updateInvoicePayment(invoiceId, {
+        status: "paid",
+        paymentMethod,
+        paymentType,
+        checkNumber,
+        paidAt: new Date()
+      });
+      
+      res.json(updatedInvoice);
+    } catch (error) {
+      console.error("Error processing payment:", error);
+      res.status(500).json({ message: "Failed to process payment" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

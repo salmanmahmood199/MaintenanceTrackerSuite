@@ -136,6 +136,10 @@ export const invoices = pgTable("invoices", {
   tax: text("tax").notNull().default("0"),
   total: text("total").notNull(),
   status: text("status").notNull().default("draft"), // draft, sent, paid
+  paymentMethod: text("payment_method"), // credit_card, ach, external
+  paymentType: text("payment_type"), // For external payments: check, other
+  checkNumber: text("check_number"), // For check payments
+  stripePaymentIntentId: text("stripe_payment_intent_id"), // For Stripe payments
   workOrderIds: integer("work_order_ids").array().notNull(),
   additionalItems: text("additional_items"), // JSON string for extra items
   notes: text("notes"),

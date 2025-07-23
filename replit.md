@@ -354,6 +354,14 @@ Changelog:
 - July 22, 2025. Created universal location access system allowing vendor users to view location information for assigned tickets
 - July 22, 2025. Removed Timeline column from ticket table for cleaner interface with focused location display
 - July 22, 2025. Added new public location lookup API endpoint (/api/locations/:id) accessible by all authenticated users
+- July 23, 2025. Implemented comprehensive payment system for invoices with multiple payment methods
+- July 23, 2025. Added payment modal supporting credit card, ACH, and external payments (check/other)
+- July 23, 2025. Enhanced database schema with payment tracking fields (paymentMethod, paymentType, checkNumber, stripePaymentIntentId)
+- July 23, 2025. Created tabbed invoice organization system - all invoices, paid invoices, unpaid invoices sorted by date
+- July 23, 2025. Added payment processing API endpoint /api/invoices/:id/pay with external payment support
+- July 23, 2025. External payments (check/other) fully functional, credit card/ACH showing "Coming Soon" status
+- July 23, 2025. Updated InvoicesView component with payment status badges and payment method display
+- July 23, 2025. Successfully migrated database schema to support new payment fields
 ```
 
 ## User Preferences
