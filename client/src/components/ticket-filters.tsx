@@ -69,7 +69,18 @@ export function TicketFilters({
     return value !== 'all';
   });
 
-  const statusOptions = [
+  const statusOptions = userRole?.startsWith('maintenance') ? [
+    { value: "all", label: "All Tickets" },
+    { value: "accepted", label: "⚠️ Action Required" },
+    { value: "in-progress", label: "🔧 Work Started" },
+    { value: "return_needed", label: "🔄 Return Visit" },
+    { value: "pending_confirmation", label: "👀 Customer Review" },
+    { value: "ready_for_billing", label: "💰 Ready to Bill" },
+    { value: "billed", label: "✅ Invoice Sent" },
+    { value: "completed", label: "✓ Work Approved" },
+    { value: "rejected", label: "❌ Declined" },
+    { value: "force_closed", label: "⛔ Closed" }
+  ] : [
     { value: "all", label: "All Statuses" },
     { value: "open", label: "Open" },
     { value: "pending", label: "Pending" },
@@ -80,7 +91,8 @@ export function TicketFilters({
     { value: "ready_for_billing", label: "Ready for Billing" },
     { value: "billed", label: "Billed" },
     { value: "return_needed", label: "Return Needed" },
-    { value: "force_closed", label: "Force Closed" }
+    { value: "force_closed", label: "Force Closed" },
+    { value: "marketplace", label: "Marketplace" }
   ];
 
   const priorityOptions = [

@@ -373,6 +373,10 @@ Changelog:
 - July 23, 2025. Created color-coded status cards with counts for better vendor workflow visibility
 - July 23, 2025. Implemented vendor-friendly status badges with clear action descriptions (e.g., "Needs Assignment", "Ready to Invoice")
 - July 23, 2025. Added priority indicators with animated alerts for high-priority vendor actions
+- July 23, 2025. Completely redesigned vendor status labels to be action-oriented and clear (e.g., "Assign Technician", "Create Invoice", "Work Approved")
+- July 23, 2025. Updated vendor dashboard categories with intuitive names: "Action Required", "In Progress", "Ready to Bill", "All Done"
+- July 23, 2025. Enhanced filter system with vendor-friendly status options using emojis and clear action descriptions
+- July 23, 2025. Eliminated confusing status terminology - vendors now see exactly what action is needed for each ticket
 ```
 
 ## User Preferences

@@ -410,11 +410,11 @@ export function VendorView() {
                       <AlertCircle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-orange-700 dark:text-orange-300">Need Your Attention</p>
+                      <p className="text-sm font-medium text-orange-700 dark:text-orange-300">Action Required</p>
                       <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                         {tickets.filter((t: Ticket) => t.status === 'accepted' && !t.assigneeId).length}
                       </p>
-                      <p className="text-xs text-orange-600/70 dark:text-orange-400/70">Assign technician</p>
+                      <p className="text-xs text-orange-600/70 dark:text-orange-400/70">Assign technicians</p>
                     </div>
                   </div>
                 </CardContent>
@@ -427,11 +427,11 @@ export function VendorView() {
                       <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Work in Progress</p>
+                      <p className="text-sm font-medium text-blue-700 dark:text-blue-300">In Progress</p>
                       <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                        {tickets.filter((t: Ticket) => ['in-progress', 'return_needed', 'pending_confirmation'].includes(t.status)).length}
+                        {tickets.filter((t: Ticket) => ['in-progress', 'return_needed', 'accepted'].includes(t.status) && t.assigneeId).length}
                       </p>
-                      <p className="text-xs text-blue-600/70 dark:text-blue-400/70">Active jobs</p>
+                      <p className="text-xs text-blue-600/70 dark:text-blue-400/70">Active work</p>
                     </div>
                   </div>
                 </CardContent>
@@ -444,9 +444,9 @@ export function VendorView() {
                       <FileText className="h-5 w-5 text-green-600 dark:text-green-400" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-green-700 dark:text-green-300">Ready to Invoice</p>
+                      <p className="text-sm font-medium text-green-700 dark:text-green-300">Ready to Bill</p>
                       <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                        {tickets.filter((t: Ticket) => t.status === 'ready_for_billing').length}
+                        {tickets.filter((t: Ticket) => ['ready_for_billing', 'pending_confirmation'].includes(t.status)).length}
                       </p>
                       <p className="text-xs text-green-600/70 dark:text-green-400/70">Create invoices</p>
                     </div>
@@ -461,11 +461,11 @@ export function VendorView() {
                       <CheckCircle className="h-5 w-5 text-gray-600 dark:text-gray-400" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Completed</p>
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">All Done</p>
                       <p className="text-2xl font-bold text-gray-600 dark:text-gray-400">
-                        {tickets.filter((t: Ticket) => ['completed', 'billed'].includes(t.status)).length}
+                        {tickets.filter((t: Ticket) => ['completed', 'billed', 'force_closed'].includes(t.status)).length}
                       </p>
-                      <p className="text-xs text-gray-600/70 dark:text-gray-400/70">Finished jobs</p>
+                      <p className="text-xs text-gray-600/70 dark:text-gray-400/70">Closed tickets</p>
                     </div>
                   </div>
                 </CardContent>
