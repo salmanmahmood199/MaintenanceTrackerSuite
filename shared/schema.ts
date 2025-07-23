@@ -70,6 +70,7 @@ export const tickets = pgTable("tickets", {
   organizationId: integer("organization_id").notNull(),
   reporterId: integer("reporter_id").notNull(),
   assigneeId: integer("assignee_id"),
+  assignedAt: timestamp("assigned_at"), // When ticket was assigned to technician
   maintenanceVendorId: integer("maintenance_vendor_id"),
   locationId: integer("location_id"),
   rejectionReason: text("rejection_reason"),

@@ -22,6 +22,8 @@ import { EditOrganizationModal } from "@/components/edit-organization-modal";
 import { CreateVendorModal } from "@/components/create-vendor-modal";
 import { EditVendorModal } from "@/components/edit-vendor-modal";
 import { TicketTable } from "@/components/ticket-table";
+import { TicketFilters, type FilterState } from "@/components/ticket-filters";
+import { filterTickets } from "@/utils/ticket-filters";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -36,6 +38,16 @@ export default function RootDashboard() {
   const [isEditOrgModalOpen, setIsEditOrgModalOpen] = useState(false);
   const [isCreateVendorModalOpen, setIsCreateVendorModalOpen] = useState(false);
   const [isEditVendorModalOpen, setIsEditVendorModalOpen] = useState(false);
+  const [filters, setFilters] = useState<FilterState>({
+    search: "",
+    status: "all",
+    priority: "all",
+    dateFrom: null,
+    dateTo: null,
+    organizationId: "all",
+    vendorId: "all",
+    assigneeId: "all"
+  });
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -50,9 +62,12 @@ export default function RootDashboard() {
     queryKey: ["/api/maintenance-vendors"],
   });
 
-  const { data: tickets = [] } = useQuery<Ticket[]>({
+  const { data: allTickets = [] } = useQuery<Ticket[]>({
     queryKey: ["/api/tickets"],
   });
+
+  // Apply client-side filtering
+  const tickets = filterTickets(allTickets, filters);
 
   const { data: ticketStats } = useQuery<{
     pending: number;
@@ -441,6 +456,16 @@ export default function RootDashboard() {
               <h2 className="text-xl font-semibold text-slate-900">All System Tickets</h2>
               <Badge variant="outline">{tickets.length} Total</Badge>
             </div>
+
+            {/* Ticket Filters */}
+            <TicketFilters
+              onFiltersChange={setFilters}
+              showOrganizationFilter={true}
+              showVendorFilter={true}
+              organizations={organizations}
+              vendors={vendors}
+              userRole={user?.role}
+            />
 
             <TicketTable
               tickets={tickets}

@@ -618,6 +618,7 @@ export class DatabaseStorage implements IStorage {
     
     if (acceptData.assigneeId !== undefined) {
       updateData.assigneeId = acceptData.assigneeId;
+      updateData.assignedAt = new Date(); // Set timestamp when ticket is assigned to technician
     }
     
     console.log(`Updating ticket ${id} with:`, updateData);

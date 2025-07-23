@@ -51,8 +51,22 @@ export default function TechnicianDashboard() {
     refetchOnMount: true,
   });
 
-  // Apply client-side filtering
-  const tickets = filterTickets(allTickets, filters);
+  // Apply client-side filtering and sorting (assigned tickets at top)
+  const filteredTickets = filterTickets(allTickets, filters);
+  
+  // Sort tickets to prioritize assigned ones with most recent assignment first
+  const tickets = filteredTickets.sort((a, b) => {
+    // If both have assignedAt dates, sort by most recent assignment first
+    if (a.assignedAt && b.assignedAt) {
+      return new Date(b.assignedAt).getTime() - new Date(a.assignedAt).getTime();
+    }
+    // If only one has assignedAt, prioritize it
+    if (a.assignedAt && !b.assignedAt) return -1;
+    if (!a.assignedAt && b.assignedAt) return 1;
+    
+    // Fallback to created date (newest first)
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
 
   // Start work mutation
   const startWorkMutation = useMutation({
