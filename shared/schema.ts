@@ -542,6 +542,7 @@ export const insertTicketSchema = createInsertSchema(tickets).omit({
 export const updateTicketSchema = insertTicketSchema.partial().extend({
   id: z.number(),
   status: z.enum(["pending", "accepted", "rejected", "in-progress", "completed", "return_needed", "pending_confirmation", "confirmed", "marketplace", "ready_for_billing", "force_closed", "billed"]).optional(),
+  assignedAt: z.date().optional(),
 });
 
 export const insertTicketMilestoneSchema = createInsertSchema(ticketMilestones).omit({
