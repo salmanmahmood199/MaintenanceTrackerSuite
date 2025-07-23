@@ -286,11 +286,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
         
-        // Handle marketplace access separately
-        if (hasMarketplaceAccess) {
-          // Add marketplace tier for the first organization (or a default one)
-          const firstOrgId = assignedOrganizations.length > 0 ? assignedOrganizations[0] : 1;
-          await storage.assignVendorToOrganization(id, firstOrgId, "marketplace");
+        // Handle marketplace access separately - marketplace needs an organization context
+        if (hasMarketplaceAccess && assignedOrganizations.length > 0) {
+          // Add marketplace tier for each assigned organization
+          for (const orgId of assignedOrganizations) {
+            await storage.assignVendorToOrganization(id, orgId, "marketplace");
+          }
         }
       }
       
