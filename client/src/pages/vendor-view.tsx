@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRoute } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, LogOut, FileText, Package, Calendar, AlertCircle } from "lucide-react";
+import { ArrowLeft, LogOut, FileText, Package, Calendar, AlertCircle, CheckCircle } from "lucide-react";
 import { TicketTable } from "@/components/ticket-table";
 import { EnhancedInvoiceCreator } from "@/components/enhanced-invoice-creator";
 import { InvoicesView } from "@/components/invoices-view";
@@ -401,6 +401,77 @@ export function VendorView() {
 
         {activeTab === "tickets" && (
           <div>
+            {/* Vendor Status Overview Cards */}
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
+              <Card className="border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                      <AlertCircle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-orange-700 dark:text-orange-300">Need Your Attention</p>
+                      <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                        {tickets.filter((t: Ticket) => t.status === 'accepted' && !t.assigneeId).length}
+                      </p>
+                      <p className="text-xs text-orange-600/70 dark:text-orange-400/70">Assign technician</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                      <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Work in Progress</p>
+                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                        {tickets.filter((t: Ticket) => ['in-progress', 'return_needed', 'pending_confirmation'].includes(t.status)).length}
+                      </p>
+                      <p className="text-xs text-blue-600/70 dark:text-blue-400/70">Active jobs</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                      <FileText className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-green-700 dark:text-green-300">Ready to Invoice</p>
+                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                        {tickets.filter((t: Ticket) => t.status === 'ready_for_billing').length}
+                      </p>
+                      <p className="text-xs text-green-600/70 dark:text-green-400/70">Create invoices</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gray-100 dark:bg-gray-900/30 rounded-lg">
+                      <CheckCircle className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Completed</p>
+                      <p className="text-2xl font-bold text-gray-600 dark:text-gray-400">
+                        {tickets.filter((t: Ticket) => ['completed', 'billed'].includes(t.status)).length}
+                      </p>
+                      <p className="text-xs text-gray-600/70 dark:text-gray-400/70">Finished jobs</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
             {/* Comprehensive Filters */}
             <TicketFilters
               onFiltersChange={setFilters}

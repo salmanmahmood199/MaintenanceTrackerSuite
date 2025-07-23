@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, User, Hash, Wrench, CheckCircle, XCircle, Eye, ImageIcon, Clock, Calculator, MessageSquare, ChevronLeft, ChevronRight, X, Video, AlertTriangle, MoreHorizontal } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
-import { formatDate, getPriorityColor, getStatusColor } from "@/lib/utils";
+import { formatDate, getPriorityColor, getStatusColor, getVendorStatusDisplay } from "@/lib/utils";
 import { ProgressTrackerEmbedded } from "@/components/progress-tracker";
 import { TicketComments } from "./ticket-comments";
 import { WorkOrdersHistoryEmbedded } from "@/components/work-orders-history-embedded";
@@ -256,14 +256,30 @@ export function TicketTable({
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Badge className={statusColor}>
-                          {ticket.status === "in-progress" ? "In Progress" : 
-                           ticket.status === "pending_confirmation" ? "Pending Confirmation" :
-                           ticket.status === "ready_for_billing" ? "Ready for Billing" :
-                           ticket.status === "marketplace" ? "Marketplace" :
-                           ticket.status === "force_closed" ? "Closed" :
-                           ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}
-                        </Badge>
+                        {userRole?.startsWith('maintenance') ? (
+                          (() => {
+                            const statusInfo = getVendorStatusDisplay(ticket.status, ticket.assigneeId);
+                            return (
+                              <div className="flex items-center gap-2">
+                                <Badge className={`${statusInfo.color} border font-medium`}>
+                                  {statusInfo.text}
+                                </Badge>
+                                {statusInfo.priority === 'high' && (
+                                  <AlertTriangle className="h-4 w-4 text-orange-500 animate-pulse" />
+                                )}
+                              </div>
+                            );
+                          })()
+                        ) : (
+                          <Badge className={statusColor}>
+                            {ticket.status === "in-progress" ? "In Progress" : 
+                             ticket.status === "pending_confirmation" ? "Pending Confirmation" :
+                             ticket.status === "ready_for_billing" ? "Ready for Billing" :
+                             ticket.status === "marketplace" ? "Marketplace" :
+                             ticket.status === "force_closed" ? "Closed" :
+                             ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}
+                          </Badge>
+                        )}
                         {ticket.status === "marketplace" && onViewBids && (
                           <Button
                             variant="outline"
