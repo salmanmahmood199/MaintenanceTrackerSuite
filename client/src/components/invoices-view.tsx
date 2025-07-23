@@ -6,12 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, Eye, Calendar, DollarSign } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { FileText, Eye, Calendar, DollarSign, Filter, ArrowUpDown, Search } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
 import { InvoicePDFViewer } from "./invoice-pdf-viewer";
 import { PaymentModal } from "./payment-modal";
-import type { Invoice } from "@shared/schema";
+import type { Invoice, Organization } from "@shared/schema";
 
 interface InvoicesViewProps {
   vendorId?: number;
@@ -25,6 +27,9 @@ export function InvoicesView({ vendorId, organizationId, userRole, canPayInvoice
   const [isInvoiceViewOpen, setIsInvoiceViewOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [invoiceToPayFor, setInvoiceToPayFor] = useState<Invoice | null>(null);
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
+  const [organizationFilter, setOrganizationFilter] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
   // Fetch invoices - either for vendor or organization
   const { data: invoices = [], isLoading } = useQuery<Invoice[]>({
@@ -34,6 +39,16 @@ export function InvoicesView({ vendorId, organizationId, userRole, canPayInvoice
       return await response.json() as Invoice[];
     },
     enabled: !!(vendorId || organizationId),
+  });
+
+  // Fetch organizations for filtering (only for vendors)
+  const { data: organizations = [] } = useQuery<Organization[]>({
+    queryKey: ["/api/organizations"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/organizations");
+      return await response.json() as Organization[];
+    },
+    enabled: userRole === "vendor",
   });
 
   const handleViewInvoice = (invoice: Invoice) => {
@@ -46,20 +61,63 @@ export function InvoicesView({ vendorId, organizationId, userRole, canPayInvoice
     setIsPaymentModalOpen(true);
   };
 
-  // Organize invoices by status and sort by date
+  // Get organization name for display
+  const getOrganizationName = (orgId: number) => {
+    const org = organizations.find(o => o.id === orgId);
+    return org ? org.name : `Organization ${orgId}`;
+  };
+
+  // Filter and sort invoices
+  const filterAndSortInvoices = (invoices: Invoice[]) => {
+    let filteredInvoices = [...invoices];
+
+    // Apply search filter
+    if (searchTerm.trim()) {
+      filteredInvoices = filteredInvoices.filter(invoice => 
+        invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        ((invoice as any).ticketNumber && (invoice as any).ticketNumber.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        getOrganizationName(invoice.organizationId).toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Apply organization filter
+    if (organizationFilter !== "all") {
+      filteredInvoices = filteredInvoices.filter(invoice => 
+        invoice.organizationId.toString() === organizationFilter
+      );
+    }
+
+    // Apply date sorting
+    filteredInvoices.sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
+    });
+
+    return filteredInvoices;
+  };
+
+  // Organize invoices by status and apply filters/sorting
   const organizeInvoices = (invoices: Invoice[]) => {
-    const sortedInvoices = [...invoices].sort((a, b) => 
-      new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-    );
+    const filteredAndSorted = filterAndSortInvoices(invoices);
     
     return {
-      all: sortedInvoices,
-      paid: sortedInvoices.filter(inv => inv.status === "paid"),
-      unpaid: sortedInvoices.filter(inv => inv.status !== "paid")
+      all: filteredAndSorted,
+      paid: filteredAndSorted.filter(inv => inv.status === "paid"),
+      unpaid: filteredAndSorted.filter(inv => inv.status !== "paid")
     };
   };
 
   const organizedInvoices = organizeInvoices(invoices);
+
+  // Get unique organizations from invoices
+  const getUniqueOrganizations = () => {
+    const uniqueOrgIds = Array.from(new Set(invoices.map(inv => inv.organizationId)));
+    return uniqueOrgIds.map(id => ({
+      id,
+      name: getOrganizationName(id)
+    }));
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -88,6 +146,7 @@ export function InvoicesView({ vendorId, organizationId, userRole, canPayInvoice
         <TableRow>
           <TableHead>Invoice #</TableHead>
           <TableHead>Ticket #</TableHead>
+          {userRole === "vendor" && <TableHead>Organization</TableHead>}
           <TableHead>Amount</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Created</TableHead>
@@ -102,8 +161,15 @@ export function InvoicesView({ vendorId, organizationId, userRole, canPayInvoice
               {invoice.invoiceNumber}
             </TableCell>
             <TableCell>
-              {'ticketNumber' in invoice ? invoice.ticketNumber || 'N/A' : 'N/A'}
+              {(invoice as any).ticketNumber || 'N/A'}
             </TableCell>
+            {userRole === "vendor" && (
+              <TableCell>
+                <div className="font-medium text-sm">
+                  {getOrganizationName(invoice.organizationId)}
+                </div>
+              </TableCell>
+            )}
             <TableCell>
               <span className="font-semibold text-green-600">
                 ${parseFloat(invoice.total).toFixed(2)}
@@ -177,16 +243,84 @@ export function InvoicesView({ vendorId, organizationId, userRole, canPayInvoice
           )}
         </CardHeader>
         <CardContent>
-          {invoices.length === 0 ? (
+          {/* Filters and Controls */}
+          <div className="mb-6 space-y-4">
+            <div className="flex flex-col lg:flex-row gap-4">
+              {/* Search */}
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="Search invoices..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              {/* Sort Order */}
+              <div className="min-w-[180px]">
+                <Select value={sortOrder} onValueChange={(value: "newest" | "oldest") => setSortOrder(value)}>
+                  <SelectTrigger>
+                    <ArrowUpDown className="h-4 w-4 mr-2" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="newest">Newest First</SelectItem>
+                    <SelectItem value="oldest">Oldest First</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Organization Filter (for vendors) */}
+              {userRole === "vendor" && getUniqueOrganizations().length > 1 && (
+                <div className="min-w-[200px]">
+                  <Select value={organizationFilter} onValueChange={setOrganizationFilter}>
+                    <SelectTrigger>
+                      <Filter className="h-4 w-4 mr-2" />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Organizations</SelectItem>
+                      {getUniqueOrganizations().map((org) => (
+                        <SelectItem key={org.id} value={org.id.toString()}>
+                          {org.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+
+            {/* Results summary */}
+            <div className="text-sm text-muted-foreground">
+              Showing {organizedInvoices.all.length} of {invoices.length} invoices
+              {searchTerm && ` matching "${searchTerm}"`}
+              {organizationFilter !== "all" && ` from ${getOrganizationName(parseInt(organizationFilter))}`}
+            </div>
+          </div>
+
+          {organizedInvoices.all.length === 0 ? (
             <div className="text-center py-8 text-slate-500">
               <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No invoices {userRole === "organization" ? "received" : "created"} yet</p>
-              <p className="text-sm">
-                {userRole === "organization" 
-                  ? "Invoices will appear here once vendors create them for your tickets"
-                  : "Create invoices from ready-for-billing tickets"
-                }
-              </p>
+              {invoices.length === 0 ? (
+                <>
+                  <p>No invoices {userRole === "organization" ? "received" : "created"} yet</p>
+                  <p className="text-sm">
+                    {userRole === "organization" 
+                      ? "Invoices will appear here once vendors create them for your tickets"
+                      : "Create invoices from ready-for-billing tickets"
+                    }
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p>No invoices match your current filters</p>
+                  <p className="text-sm">Try adjusting your search or filter criteria</p>
+                </>
+              )}
             </div>
           ) : (
             <Tabs defaultValue="all" className="w-full">

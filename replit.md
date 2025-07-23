@@ -362,6 +362,12 @@ Changelog:
 - July 23, 2025. External payments (check/other) fully functional, credit card/ACH showing "Coming Soon" status
 - July 23, 2025. Updated InvoicesView component with payment status badges and payment method display
 - July 23, 2025. Successfully migrated database schema to support new payment fields
+- July 23, 2025. Enhanced invoice system with comprehensive filtering and sorting capabilities
+- July 23, 2025. Added search functionality for invoices by number, ticket, or organization name
+- July 23, 2025. Implemented date-based sorting (newest first/oldest first) for invoice organization
+- July 23, 2025. Added organization filtering for vendors working with multiple clients
+- July 23, 2025. Organization names now display in vendor invoice tables for better clarity
+- July 23, 2025. Added results summary showing filtered count and active filter indicators
 ```
 
 ## User Preferences
