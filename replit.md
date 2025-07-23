@@ -377,6 +377,9 @@ Changelog:
 - July 23, 2025. Updated vendor dashboard categories with intuitive names: "Action Required", "In Progress", "Ready to Bill", "All Done"
 - July 23, 2025. Enhanced filter system with vendor-friendly status options using emojis and clear action descriptions
 - July 23, 2025. Eliminated confusing status terminology - vendors now see exactly what action is needed for each ticket
+- July 23, 2025. Fixed media file display issues in ticket details - images and videos now show proper thumbnails instead of broken placeholders
+- July 23, 2025. Enhanced work orders display with clickable detailed view modal showing all work order information, images, parts, and costs
+- July 23, 2025. Added comprehensive work order details modal with full image gallery, parts breakdown, and completion notes
 ```
 
 ## User Preferences
