@@ -71,35 +71,44 @@ export function TicketFilters({
 
   const statusOptions = userRole?.startsWith('maintenance') ? [
     { value: "all", label: "All Tickets" },
-    { value: "accepted", label: "⚠️ Action Required" },
-    { value: "in-progress", label: "🔧 Work Started" },
+    { value: "accepted", label: "⚠️ Assign Technician" },
+    { value: "in-progress", label: "🔧 Work in Progress" },
     { value: "return_needed", label: "🔄 Return Visit" },
     { value: "pending_confirmation", label: "👀 Customer Review" },
-    { value: "ready_for_billing", label: "💰 Ready to Bill" },
-    { value: "billed", label: "✅ Invoice Sent" },
+    { value: "ready_for_billing", label: "💰 Create Invoice" },
+    { value: "billed", label: "✅ All Done" },
     { value: "completed", label: "✓ Work Approved" },
     { value: "rejected", label: "❌ Declined" },
     { value: "force_closed", label: "⛔ Closed" }
+  ] : userRole === 'technician' ? [
+    { value: "all", label: "All Tickets" },
+    { value: "accepted", label: "🚀 Start Work" },
+    { value: "in-progress", label: "🔧 Working On" },
+    { value: "return_needed", label: "🔄 Return Visit" },
+    { value: "completed", label: "✓ Completed" },
+    { value: "pending_confirmation", label: "⏳ Awaiting Approval" },
+    { value: "ready_for_billing", label: "💰 Ready to Bill" },
+    { value: "billed", label: "✅ Invoiced" }
   ] : [
-    { value: "all", label: "All Statuses" },
-    { value: "open", label: "Open" },
-    { value: "pending", label: "Pending" },
-    { value: "accepted", label: "Accepted" },
-    { value: "in-progress", label: "In Progress" },
-    { value: "completed", label: "Completed" },
-    { value: "pending_confirmation", label: "Pending Confirmation" },
-    { value: "ready_for_billing", label: "Ready for Billing" },
-    { value: "billed", label: "Billed" },
-    { value: "return_needed", label: "Return Needed" },
-    { value: "force_closed", label: "Force Closed" },
-    { value: "marketplace", label: "Marketplace" }
+    { value: "all", label: "All Tickets" },
+    { value: "pending", label: "🔄 Needs Review" },
+    { value: "accepted", label: "✅ Approved" },
+    { value: "in-progress", label: "🔧 In Progress" },
+    { value: "completed", label: "✓ Work Done" },
+    { value: "pending_confirmation", label: "👀 Review Work" },
+    { value: "ready_for_billing", label: "💰 Ready to Bill" },
+    { value: "billed", label: "💳 Invoiced" },
+    { value: "return_needed", label: "🔄 Return Visit" },
+    { value: "force_closed", label: "⛔ Closed" },
+    { value: "marketplace", label: "🏪 Marketplace" },
+    { value: "rejected", label: "❌ Declined" }
   ];
 
   const priorityOptions = [
     { value: "all", label: "All Priorities" },
-    { value: "low", label: "Low" },
-    { value: "medium", label: "Medium" },
-    { value: "high", label: "High" }
+    { value: "low", label: "🟢 Low Priority" },
+    { value: "medium", label: "🟡 Medium Priority" },
+    { value: "high", label: "🔴 High Priority" }
   ];
 
   return (
@@ -134,14 +143,52 @@ export function TicketFilters({
       </CardHeader>
       
       <CardContent className="space-y-4">
-        {/* Quick Status Filters */}
+        {/* Active Filters Summary */}
+        {hasActiveFilters && (
+          <div className="bg-muted/50 rounded-lg p-3 border">
+            <div className="flex items-center justify-between">
+              <div className="flex flex-wrap gap-2 text-sm">
+                <span className="font-medium">Active filters:</span>
+                {filters.search && (
+                  <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded-md">
+                    Search: "{filters.search}"
+                  </span>
+                )}
+                {filters.status !== 'all' && (
+                  <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded-md">
+                    Status: {statusOptions.find(s => s.value === filters.status)?.label}
+                  </span>
+                )}
+                {filters.priority !== 'all' && (
+                  <span className="bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded-md">
+                    Priority: {priorityOptions.find(p => p.value === filters.priority)?.label}
+                  </span>
+                )}
+                {(filters.dateFrom || filters.dateTo) && (
+                  <span className="bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 px-2 py-1 rounded-md">
+                    Date Range: {filters.dateFrom?.toLocaleDateString()} - {filters.dateTo?.toLocaleDateString()}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Quick Status Filters - Role-based prioritized actions */}
         <div className="flex flex-wrap gap-2">
-          {statusOptions.slice(0, 6).map((status) => (
+          {statusOptions.slice(0, userRole === 'technician' ? 5 : 6).map((status) => (
             <Button
               key={status.value}
               variant={filters.status === status.value ? "default" : "outline"}
               size="sm"
               onClick={() => updateFilter('status', status.value)}
+              className={`${
+                status.value === 'accepted' && userRole?.startsWith('maintenance') ? 'ring-2 ring-orange-200 dark:ring-orange-800' :
+                status.value === 'accepted' && userRole === 'technician' ? 'ring-2 ring-blue-200 dark:ring-blue-800' :
+                status.value === 'pending_confirmation' && userRole?.startsWith('org') ? 'ring-2 ring-purple-200 dark:ring-purple-800' :
+                status.value === 'ready_for_billing' && userRole?.startsWith('maintenance') ? 'ring-2 ring-green-200 dark:ring-green-800' :
+                ''
+              }`}
             >
               {status.label}
             </Button>
@@ -154,7 +201,11 @@ export function TicketFilters({
             <Label htmlFor="search">Search Tickets</Label>
             <Input
               id="search"
-              placeholder="Search by title, description, or ticket number..."
+              placeholder={
+                userRole === 'technician' ? "Search your assigned tickets..." :
+                userRole?.startsWith('maintenance') ? "Search vendor tickets..." :
+                "Search by title, description, or ticket number..."
+              }
               value={filters.search}
               onChange={(e) => updateFilter('search', e.target.value)}
             />
