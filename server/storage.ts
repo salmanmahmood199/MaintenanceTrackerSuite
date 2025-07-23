@@ -818,17 +818,50 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createLocation(insertLocation: InsertLocation): Promise<Location> {
-    const [location] = await db.insert(locations).values(insertLocation).returning();
+    // Auto-generate the full address from separate fields
+    const fullAddress = [
+      insertLocation.streetAddress,
+      insertLocation.streetAddress2,
+      insertLocation.city,
+      insertLocation.state,
+      insertLocation.zipCode
+    ].filter(Boolean).join(', ');
+    
+    const locationData = {
+      ...insertLocation,
+      address: fullAddress, // Set the combined address for backward compatibility
+    };
+    
+    const [location] = await db.insert(locations).values(locationData).returning();
     return location;
   }
 
   async updateLocation(id: number, updates: Partial<UpdateLocation>): Promise<Location | undefined> {
+    // Auto-generate the full address if any address fields are being updated
+    let locationData = { ...updates, updatedAt: new Date() };
+    
+    if (updates.streetAddress || updates.city || updates.state || updates.zipCode) {
+      // Get current location to merge address fields
+      const [currentLocation] = await db.select().from(locations).where(eq(locations.id, id));
+      if (currentLocation) {
+        const fullAddress = [
+          updates.streetAddress || currentLocation.streetAddress,
+          updates.streetAddress2 || currentLocation.streetAddress2,
+          updates.city || currentLocation.city,
+          updates.state || currentLocation.state,
+          updates.zipCode || currentLocation.zipCode
+        ].filter(Boolean).join(', ');
+        
+        locationData.address = fullAddress;
+      }
+    }
+    
     const [location] = await db
       .update(locations)
-      .set({ ...updates, updatedAt: new Date() })
+      .set(locationData)
       .where(eq(locations.id, id))
       .returning();
-    return location;
+    return location || undefined;
   }
 
   async deleteLocation(id: number): Promise<boolean> {

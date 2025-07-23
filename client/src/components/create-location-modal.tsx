@@ -48,7 +48,7 @@ export function CreateLocationModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Add New Location</DialogTitle>
           <DialogDescription>
@@ -70,16 +70,65 @@ export function CreateLocationModal({
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="address">Address</Label>
-            <Textarea
-              id="address"
-              {...register("address")}
-              placeholder="Full address of the location"
-              rows={3}
+            <Label htmlFor="streetAddress">Street Address *</Label>
+            <Input
+              id="streetAddress"
+              {...register("streetAddress")}
+              placeholder="123 Main Street"
             />
-            {errors.address && (
-              <p className="text-sm text-red-600">{errors.address.message}</p>
+            {errors.streetAddress && (
+              <p className="text-sm text-red-600">{errors.streetAddress.message}</p>
             )}
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="streetAddress2">Street Address 2 (Optional)</Label>
+            <Input
+              id="streetAddress2"
+              {...register("streetAddress2")}
+              placeholder="Apt, Suite, Unit, Building, Floor, etc."
+            />
+            {errors.streetAddress2 && (
+              <p className="text-sm text-red-600">{errors.streetAddress2.message}</p>
+            )}
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="city">City *</Label>
+              <Input
+                id="city"
+                {...register("city")}
+                placeholder="New York"
+              />
+              {errors.city && (
+                <p className="text-sm text-red-600">{errors.city.message}</p>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="state">State *</Label>
+              <Input
+                id="state"
+                {...register("state")}
+                placeholder="NY"
+              />
+              {errors.state && (
+                <p className="text-sm text-red-600">{errors.state.message}</p>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="zipCode">ZIP Code *</Label>
+              <Input
+                id="zipCode"
+                {...register("zipCode")}
+                placeholder="10001"
+              />
+              {errors.zipCode && (
+                <p className="text-sm text-red-600">{errors.zipCode.message}</p>
+              )}
+            </div>
           </div>
           
           <div className="space-y-2">

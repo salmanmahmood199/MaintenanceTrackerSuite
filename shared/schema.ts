@@ -160,7 +160,12 @@ export const sessions = pgTable("sessions", {
 export const locations = pgTable("locations", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
-  address: text("address"),
+  streetAddress: text("street_address").notNull().default('Address not specified'),
+  streetAddress2: text("street_address_2"), // Optional secondary address line
+  city: varchar("city", { length: 100 }).notNull().default('City not specified'),
+  state: varchar("state", { length: 50 }).notNull().default('State not specified'),
+  zipCode: varchar("zip_code", { length: 20 }).notNull().default('ZIP not specified'),
+  address: text("address"), // Keep for backward compatibility, will be auto-generated
   description: text("description"),
   organizationId: integer("organization_id").notNull().references(() => organizations.id),
   isActive: boolean("is_active").notNull().default(true),
@@ -568,6 +573,13 @@ export const insertLocationSchema = createInsertSchema(locations).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  address: true, // Auto-generated from separate fields
+}).extend({
+  streetAddress: z.string().min(1, "Street address is required"),
+  city: z.string().min(1, "City is required"),
+  state: z.string().min(1, "State is required"),
+  zipCode: z.string().min(1, "ZIP code is required"),
+  streetAddress2: z.string().optional(),
 });
 
 export const updateLocationSchema = insertLocationSchema.partial();
