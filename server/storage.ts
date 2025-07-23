@@ -92,6 +92,7 @@ export interface IStorage {
   // Vendor-Organization tier operations
   assignVendorToOrganization(vendorId: number, organizationId: number, tier: string): Promise<void>;
   getVendorOrganizationTiers(organizationId: number): Promise<Array<{vendor: MaintenanceVendor, tier: string, isActive: boolean}>>;
+  getVendorOrganizationAssignments(vendorId: number): Promise<Array<{organizationId: number, tier: string, isActive: boolean}>>;
   updateVendorOrganizationTier(vendorId: number, organizationId: number, updates: { tier?: string; isActive?: boolean }): Promise<void>;
   getOrganizationVendors(organizationId: number): Promise<Array<{vendor: MaintenanceVendor, tier: string, isActive: boolean}>>;
   
@@ -509,6 +510,19 @@ export class DatabaseStorage implements IStorage {
       .where(eq(vendorOrganizationTiers.organizationId, organizationId));
     
     return results.map(result => ({ vendor: result.vendor, tier: result.tier, isActive: result.isActive }));
+  }
+
+  async getVendorOrganizationAssignments(vendorId: number): Promise<Array<{organizationId: number, tier: string, isActive: boolean}>> {
+    const results = await db
+      .select({
+        organizationId: vendorOrganizationTiers.organizationId,
+        tier: vendorOrganizationTiers.tier,
+        isActive: vendorOrganizationTiers.isActive,
+      })
+      .from(vendorOrganizationTiers)
+      .where(eq(vendorOrganizationTiers.vendorId, vendorId));
+    
+    return results;
   }
 
   async updateVendorOrganizationTier(vendorId: number, organizationId: number, updates: { tier?: string; isActive?: boolean }): Promise<void> {

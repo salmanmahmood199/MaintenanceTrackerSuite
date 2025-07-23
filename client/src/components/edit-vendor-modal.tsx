@@ -58,6 +58,16 @@ export function EditVendorModal({
     },
   });
 
+  // Fetch vendor's current organization assignments
+  const { data: vendorOrganizations = [] } = useQuery<Array<{organizationId: number, tier: string, isActive: boolean}>>({
+    queryKey: ["/api/maintenance-vendors", vendor?.id, "organizations"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/maintenance-vendors/${vendor!.id}/organizations`);
+      return await response.json();
+    },
+    enabled: !!vendor?.id && open,
+  });
+
   const form = useForm<VendorFormData>({
     resolver: zodResolver(updateMaintenanceVendorSchema.pick({
       name: true,
@@ -80,6 +90,7 @@ export function EditVendorModal({
 
   useEffect(() => {
     if (vendor) {
+      const assignedOrgIds = vendorOrganizations.map(vo => vo.organizationId);
       form.reset({
         name: vendor.name,
         description: vendor.description || "",
@@ -87,11 +98,11 @@ export function EditVendorModal({
         phone: vendor.phone || "",
         email: vendor.email || "",
         specialties: vendor.specialties || [],
-        assignedOrganizations: [],
+        assignedOrganizations: assignedOrgIds,
       });
-      setSelectedOrganizations([]);
+      setSelectedOrganizations(assignedOrgIds);
     }
-  }, [vendor, form]);
+  }, [vendor, vendorOrganizations, form]);
 
   const handleSubmit = (data: VendorFormData) => {
     if (!vendor) return;

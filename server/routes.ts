@@ -297,6 +297,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/maintenance-vendors/:id/organizations', authenticateUser, requireRole(['root']), async (req, res) => {
+    try {
+      const vendorId = parseInt(req.params.id);
+      const assignments = await storage.getVendorOrganizationAssignments(vendorId);
+      res.json(assignments);
+    } catch (error) {
+      console.error('Error fetching vendor organization assignments:', error);
+      res.status(500).json({ message: 'Failed to fetch vendor organization assignments' });
+    }
+  });
+
   app.delete('/api/maintenance-vendors/:id', authenticateUser, requireRole(['root']), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
