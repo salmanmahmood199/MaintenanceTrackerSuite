@@ -262,7 +262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const updates = req.body;
-      const { assignedOrganizations, ...vendorUpdates } = updates;
+      const { assignedOrganizations, hasMarketplaceAccess, ...vendorUpdates } = updates;
       
       // Filter out undefined/null values and validate data
       const cleanUpdates = Object.fromEntries(
@@ -272,6 +272,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const vendor = await storage.updateMaintenanceVendor(id, cleanUpdates);
       if (!vendor) {
         return res.status(404).json({ message: 'Vendor not found' });
+      }
+      
+      // Handle organization assignments if provided
+      if (assignedOrganizations !== undefined) {
+        // First, remove all existing assignments for this vendor
+        await storage.clearVendorOrganizationAssignments(id);
+        
+        // Then add the new assignments
+        if (assignedOrganizations && assignedOrganizations.length > 0) {
+          for (const orgId of assignedOrganizations) {
+            await storage.assignVendorToOrganization(id, orgId, "tier_1");
+          }
+        }
+        
+        // Handle marketplace access separately
+        if (hasMarketplaceAccess) {
+          // Add marketplace tier for the first organization (or a default one)
+          const firstOrgId = assignedOrganizations.length > 0 ? assignedOrganizations[0] : 1;
+          await storage.assignVendorToOrganization(id, firstOrgId, "marketplace");
+        }
       }
       
       res.json(vendor);

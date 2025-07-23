@@ -90,13 +90,17 @@ export function EditVendorModal({
 
   useEffect(() => {
     if (vendor) {
+      console.log('Vendor organizations data:', vendorOrganizations);
       const assignedOrgIds = vendorOrganizations.map(vo => vo.organizationId);
       
       // Check if vendor has marketplace tier access
       const hasMarketplaceAccess = vendorOrganizations.some(vo => vo.tier === "marketplace");
+      console.log('Has marketplace access:', hasMarketplaceAccess);
+      console.log('Organization IDs:', assignedOrgIds);
       
       // Add -1 as identifier for marketplace access if present
       const selectedIds = hasMarketplaceAccess ? [...assignedOrgIds, -1] : assignedOrgIds;
+      console.log('Selected IDs:', selectedIds);
       
       form.reset({
         name: vendor.name,

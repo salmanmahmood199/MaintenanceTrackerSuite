@@ -93,6 +93,7 @@ export interface IStorage {
   assignVendorToOrganization(vendorId: number, organizationId: number, tier: string): Promise<void>;
   getVendorOrganizationTiers(organizationId: number): Promise<Array<{vendor: MaintenanceVendor, tier: string, isActive: boolean}>>;
   getVendorOrganizationAssignments(vendorId: number): Promise<Array<{organizationId: number, tier: string, isActive: boolean}>>;
+  clearVendorOrganizationAssignments(vendorId: number): Promise<void>;
   updateVendorOrganizationTier(vendorId: number, organizationId: number, updates: { tier?: string; isActive?: boolean }): Promise<void>;
   getOrganizationVendors(organizationId: number): Promise<Array<{vendor: MaintenanceVendor, tier: string, isActive: boolean}>>;
   
@@ -523,6 +524,12 @@ export class DatabaseStorage implements IStorage {
       .where(eq(vendorOrganizationTiers.vendorId, vendorId));
     
     return results;
+  }
+
+  async clearVendorOrganizationAssignments(vendorId: number): Promise<void> {
+    await db
+      .delete(vendorOrganizationTiers)
+      .where(eq(vendorOrganizationTiers.vendorId, vendorId));
   }
 
   async updateVendorOrganizationTier(vendorId: number, organizationId: number, updates: { tier?: string; isActive?: boolean }): Promise<void> {
