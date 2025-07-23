@@ -123,7 +123,7 @@ export default function OrganizationView() {
   // Extract vendor tiers that the organization has access to
   const organizationVendorTiers = organizationVendors?.map(ov => ov.tier) || [];
   const hasMarketplaceAccess = user?.role === "root" || user?.role === "org_admin" || 
-    (user?.role === "org_subadmin" && user?.vendorTiers?.includes("marketplace")) ||
+    (user?.role === "org_subadmin" && (user as any)?.vendorTiers?.includes("marketplace")) ||
     (user?.role === "org_subadmin" && organizationVendorTiers.includes("marketplace"));
 
   // Fetch stats for this organization
@@ -331,8 +331,8 @@ export default function OrganizationView() {
 
   // Edit sub-admin mutation
   const editSubAdminMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<InsertSubAdmin> }) => {
-      return apiRequest("PATCH", `/api/sub-admins/${id}`, data);
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      return apiRequest("PUT", `/api/sub-admins/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/organizations", organizationId, "sub-admins"] });
@@ -352,7 +352,7 @@ export default function OrganizationView() {
     },
   });
 
-  const handleEditSubAdmin = (id: number, data: Partial<InsertSubAdmin>) => {
+  const handleEditSubAdmin = (id: number, data: any) => {
     editSubAdminMutation.mutate({ id, data });
   };
 
@@ -855,7 +855,7 @@ export default function OrganizationView() {
         isLoading={acceptTicketMutation.isPending || rejectTicketMutation.isPending}
         userRole={user?.role}
         userPermissions={user?.permissions || undefined}
-        userVendorTiers={user?.vendorTiers || []}
+        userVendorTiers={(user as any)?.vendorTiers || []}
       />
 
       <ConfirmCompletionModal

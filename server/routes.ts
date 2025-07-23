@@ -357,12 +357,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/sub-admins/:id', authenticateUser, requireRole(['root', 'org_admin']), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const subAdmin = await storage.updateSubAdmin(id, req.body);
+      
+      // Validate the input using partial sub-admin schema
+      const editSubAdminSchema = insertSubAdminSchema.omit({ password: true }).partial();
+      const result = editSubAdminSchema.safeParse(req.body);
+      
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid input", errors: result.error.errors });
+      }
+      
+      const subAdmin = await storage.updateSubAdmin(id, result.data);
       if (!subAdmin) {
         return res.status(404).json({ message: 'Sub-admin not found' });
       }
       res.json(subAdmin);
     } catch (error) {
+      console.error("Error updating sub-admin:", error);
       res.status(500).json({ message: 'Failed to update sub-admin' });
     }
   });
