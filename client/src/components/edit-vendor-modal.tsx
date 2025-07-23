@@ -91,6 +91,13 @@ export function EditVendorModal({
   useEffect(() => {
     if (vendor) {
       const assignedOrgIds = vendorOrganizations.map(vo => vo.organizationId);
+      
+      // Check if vendor has marketplace tier access
+      const hasMarketplaceAccess = vendorOrganizations.some(vo => vo.tier === "marketplace");
+      
+      // Add -1 as identifier for marketplace access if present
+      const selectedIds = hasMarketplaceAccess ? [...assignedOrgIds, -1] : assignedOrgIds;
+      
       form.reset({
         name: vendor.name,
         description: vendor.description || "",
@@ -100,7 +107,7 @@ export function EditVendorModal({
         specialties: vendor.specialties || [],
         assignedOrganizations: assignedOrgIds,
       });
-      setSelectedOrganizations(assignedOrgIds);
+      setSelectedOrganizations(selectedIds);
     }
   }, [vendor, vendorOrganizations, form]);
 
@@ -112,7 +119,17 @@ export function EditVendorModal({
       Object.entries(data).filter(([_, value]) => value !== "" && value !== undefined)
     );
     
-    onSubmit(vendor.id, cleanData);
+    // Add selected organizations to the data (including marketplace if selected)
+    const organizationIds = selectedOrganizations.filter(id => id !== -1); // Remove marketplace ID
+    const hasMarketplaceAccess = selectedOrganizations.includes(-1);
+    
+    const dataWithAssignments = {
+      ...cleanData,
+      assignedOrganizations: organizationIds,
+      hasMarketplaceAccess: hasMarketplaceAccess
+    };
+    
+    onSubmit(vendor.id, dataWithAssignments);
   };
 
   const handleResetPassword = () => {
