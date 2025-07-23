@@ -243,6 +243,42 @@ export function EditSubAdminModal({
                         Can accept tickets and assign vendors
                       </label>
                     </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="view_invoices"
+                        checked={field.value?.includes("view_invoices") || false}
+                        onCheckedChange={(checked) => {
+                          const currentPermissions = field.value || [];
+                          if (checked) {
+                            field.onChange([...currentPermissions.filter(p => p !== "view_invoices"), "view_invoices"]);
+                          } else {
+                            field.onChange(currentPermissions.filter(p => p !== "view_invoices"));
+                          }
+                        }}
+                      />
+                      <label htmlFor="view_invoices" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                        Can view invoices
+                      </label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="pay_invoices"
+                        checked={field.value?.includes("pay_invoices") || false}
+                        onCheckedChange={(checked) => {
+                          const currentPermissions = field.value || [];
+                          if (checked) {
+                            field.onChange([...currentPermissions.filter(p => p !== "pay_invoices"), "pay_invoices"]);
+                          } else {
+                            field.onChange(currentPermissions.filter(p => p !== "pay_invoices"));
+                          }
+                        }}
+                      />
+                      <label htmlFor="pay_invoices" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                        Can pay invoices
+                      </label>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
