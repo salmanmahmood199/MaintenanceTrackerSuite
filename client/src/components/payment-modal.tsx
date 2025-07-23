@@ -78,7 +78,7 @@ export function PaymentModal({ open, onOpenChange, invoice }: PaymentModalProps)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5" />
@@ -86,7 +86,7 @@ export function PaymentModal({ open, onOpenChange, invoice }: PaymentModalProps)
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-6 pb-4">
           {/* Invoice Summary */}
           <Card>
             <CardHeader className="pb-3">
@@ -178,7 +178,7 @@ export function PaymentModal({ open, onOpenChange, invoice }: PaymentModalProps)
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg">External Payment Details</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 max-h-[300px] overflow-y-auto">
                 <div>
                   <Label className="text-sm font-medium">Payment Type</Label>
                   <RadioGroup value={paymentType} onValueChange={setPaymentType} className="mt-2">
@@ -211,7 +211,7 @@ export function PaymentModal({ open, onOpenChange, invoice }: PaymentModalProps)
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-3 pt-4 border-t bg-white dark:bg-gray-900 sticky bottom-0">
             <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
               Cancel
             </Button>
