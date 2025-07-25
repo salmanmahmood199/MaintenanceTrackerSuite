@@ -101,7 +101,7 @@ export class GoogleCalendarService {
   }
 
   // Create event in Google Calendar
-  async createEvent(integration: GoogleCalendarIntegration, event: CalendarEvent) {
+  async createEvent(integration: GoogleCalendarIntegration, event: CalendarEvent): Promise<string | null> {
     this.setCredentials(integration);
     
     try {

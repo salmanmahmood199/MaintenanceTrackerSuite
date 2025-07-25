@@ -2077,9 +2077,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // If user has Google Calendar connected and sync enabled, sync to Google
       const integration = await storage.getGoogleCalendarIntegration(user.id);
-      if (integration && integration.syncEnabled && !eventData.isAvailability) {
+      console.log(`Checking Google Calendar integration for user ${user.id}:`, {
+        hasIntegration: !!integration,
+        syncEnabled: integration?.syncEnabled,
+        eventType: eventData.eventType
+      });
+      
+      if (integration && integration.syncEnabled && eventData.eventType !== 'availability') {
         try {
           console.log(`Syncing new TaskScout event "${event.title}" to Google Calendar`);
+          console.log(`Event data:`, {
+            title: event.title,
+            startDate: event.startDate,
+            endDate: event.endDate,
+            startTime: event.startTime,
+            endTime: event.endTime,
+            isAllDay: event.isAllDay,
+            eventType: event.eventType
+          });
+          
           const googleEventId = await googleCalendarService.createEvent(integration, event);
           if (googleEventId) {
             // Update the event with Google ID for bidirectional sync
@@ -2087,10 +2103,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               googleEventId,
               syncedToGoogle: true
             });
-            console.log(`Successfully synced "${event.title}" to Google Calendar (${googleEventId})`);
+            console.log(`✅ Successfully synced "${event.title}" to Google Calendar (${googleEventId})`);
+          } else {
+            console.warn(`❌ Failed to get Google Event ID for "${event.title}"`);
           }
         } catch (syncError) {
-          console.warn('Failed to sync event to Google Calendar:', syncError);
+          console.error('❌ Failed to sync event to Google Calendar:', syncError);
           // Continue without failing the request - event still created in TaskScout
         }
       }
