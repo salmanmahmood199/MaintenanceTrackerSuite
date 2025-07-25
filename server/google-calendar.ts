@@ -8,7 +8,9 @@ export class GoogleCalendarService {
 
   constructor() {
     const redirectUri = process.env.GOOGLE_REDIRECT_URI || 
-      (process.env.REPL_SLUG && process.env.REPL_OWNER 
+      (process.env.REPLIT_DOMAINS 
+        ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}/api/auth/google/callback`
+        : process.env.REPL_SLUG && process.env.REPL_OWNER 
         ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co/api/auth/google/callback`
         : 'http://localhost:5000/api/auth/google/callback');
     
@@ -65,6 +67,20 @@ export class GoogleCalendarService {
     } catch (error) {
       console.error('Failed to refresh Google Calendar token:', error);
       throw new Error('Failed to refresh access token');
+    }
+  }
+
+  // Get user's profile information
+  async getUserInfo(integration: GoogleCalendarIntegration) {
+    this.setCredentials(integration);
+    
+    try {
+      const oauth2 = google.oauth2({ version: 'v2', auth: this.oauth2Client });
+      const response = await oauth2.userinfo.get();
+      return response.data;
+    } catch (error) {
+      console.error('Failed to get Google user info:', error);
+      throw new Error('Failed to get user information');
     }
   }
 

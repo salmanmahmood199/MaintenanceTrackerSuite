@@ -2314,6 +2314,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const redirectUri = authUrl.includes('redirect_uri=') ? 
         decodeURIComponent(authUrl.split('redirect_uri=')[1].split('&')[0]) : 'Not found';
       console.log('Google OAuth redirect URI being used:', redirectUri);
+      console.log('*** ADD THIS EXACT URI TO YOUR GOOGLE CLOUD CONSOLE OAUTH SETTINGS ***');
       
       res.json({ authUrl });
     } catch (error) {
@@ -2323,26 +2324,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Handle Google Calendar OAuth callback
-  app.post('/api/google-calendar/callback', authenticateUser, async (req: AuthenticatedRequest, res) => {
+  app.get('/api/auth/google/callback', async (req, res) => {
     try {
-      const user = req.user!;
-      const { code } = req.body;
+      const { code, state, error } = req.query;
       
-      if (!code) {
-        return res.status(400).json({ message: 'Authorization code is required' });
+      if (error) {
+        console.error('Google OAuth error:', error);
+        return res.redirect('/calendar?error=oauth_error');
       }
-
+      
+      if (!code || !state) {
+        console.error('Missing code or state in OAuth callback');
+        return res.redirect('/calendar?error=missing_params');
+      }
+      
+      const userId = parseInt(state as string);
+      if (!userId) {
+        console.error('Invalid user ID in OAuth state');
+        return res.redirect('/calendar?error=invalid_state');
+      }
+      
       // Exchange code for tokens
-      const tokens = await googleCalendarService.exchangeCodeForTokens(code);
+      const tokens = await googleCalendarService.exchangeCodeForTokens(code as string);
       
       if (!tokens.access_token || !tokens.refresh_token) {
-        return res.status(400).json({ message: 'Failed to obtain access tokens' });
+        console.error('Failed to obtain access tokens');
+        return res.redirect('/calendar?error=token_exchange_failed');
       }
 
       // Create integration record
       const integration = await storage.createGoogleCalendarIntegration({
-        userId: user.id,
-        googleAccountEmail: user.email, // We'll update this with actual Google email
+        userId: userId,
+        googleAccountEmail: 'unknown@gmail.com', // We'll update this with actual Google email
         accessToken: tokens.access_token,
         refreshToken: tokens.refresh_token,
         tokenExpiresAt: new Date(tokens.expiry_date || Date.now() + 3600000),
@@ -2355,7 +2368,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const tempIntegration = { ...integration };
         const userInfo = await googleCalendarService.getUserInfo(tempIntegration);
         if (userInfo.email) {
-          await storage.updateGoogleCalendarIntegration(user.id, {
+          await storage.updateGoogleCalendarIntegration(userId, {
             googleAccountEmail: userInfo.email
           });
         }
@@ -2363,10 +2376,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.warn('Could not fetch Google user info:', userInfoError);
       }
 
-      res.json({ message: 'Google Calendar connected successfully' });
+      console.log('Google Calendar connected successfully for user:', userId);
+      res.redirect('/calendar?success=connected');
     } catch (error) {
       console.error('Error handling Google Calendar callback:', error);
-      res.status(500).json({ message: 'Failed to connect Google Calendar' });
+      res.redirect('/calendar?error=connection_failed');
     }
   });
 
