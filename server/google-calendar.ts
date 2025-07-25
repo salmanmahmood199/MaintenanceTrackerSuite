@@ -7,10 +7,15 @@ export class GoogleCalendarService {
   private calendar: any;
 
   constructor() {
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI || 
+      (process.env.REPL_SLUG && process.env.REPL_OWNER 
+        ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co/api/auth/google/callback`
+        : 'http://localhost:5000/api/auth/google/callback');
+    
     this.oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/api/auth/google/callback'
+      redirectUri
     );
     
     this.calendar = google.calendar({ version: 'v3', auth: this.oauth2Client });

@@ -35,8 +35,10 @@ This setup only needs to be done once by the TaskScout project owner. After comp
 3. Choose "Web application"
 4. Name: "TaskScout Calendar Client"
 5. Add Authorized redirect URIs:
-   - `https://your-repl-url.replit.app/api/auth/google/callback`
+   - `https://your-repl-slug.your-username.repl.co/api/auth/google/callback`
    - `http://localhost:5000/api/auth/google/callback` (for development)
+   
+   **Important**: Replace `your-repl-slug.your-username` with your actual Replit project URL
 6. Copy the Client ID and Client Secret
 
 ### Step 5: Add Environment Variables
