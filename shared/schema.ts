@@ -214,6 +214,25 @@ export const marketplaceBids = pgTable("marketplace_bids", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Vendor assignment history table - tracks all vendor assignments and rejections
+export const vendorAssignmentHistory = pgTable("vendor_assignment_history", {
+  id: serial("id").primaryKey(),
+  ticketId: integer("ticket_id").references(() => tickets.id).notNull(),
+  vendorId: integer("vendor_id").references(() => maintenanceVendors.id).notNull(),
+  vendorName: varchar("vendor_name", { length: 255 }).notNull(),
+  assignedById: integer("assigned_by_id").references(() => users.id).notNull(),
+  assignedByName: varchar("assigned_by_name", { length: 255 }).notNull(),
+  assignmentType: varchar("assignment_type", { length: 50 }).notNull(), // 'initial', 'reassignment', 'marketplace'
+  status: varchar("status", { length: 50 }).notNull(), // 'assigned', 'accepted', 'rejected'
+  rejectionReason: text("rejection_reason"),
+  rejectedAt: timestamp("rejected_at"),
+  rejectedById: integer("rejected_by_id").references(() => users.id),
+  rejectedByName: varchar("rejected_by_name", { length: 255 }),
+  assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+  isActive: boolean("is_active").default(true).notNull(), // true for current assignment, false for historical
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   organization: one(organizations, {
@@ -259,6 +278,7 @@ export const maintenanceVendorsRelations = relations(maintenanceVendors, ({ many
   tickets: many(tickets),
   vendorOrganizationTiers: many(vendorOrganizationTiers),
   marketplaceBids: many(marketplaceBids),
+  vendorAssignmentHistory: many(vendorAssignmentHistory),
 }));
 
 export const vendorOrganizationTiersRelations = relations(vendorOrganizationTiers, ({ one }) => ({
@@ -297,6 +317,7 @@ export const ticketsRelations = relations(tickets, ({ one, many }) => ({
   }),
   workOrders: many(workOrders),
   marketplaceBids: many(marketplaceBids),
+  vendorAssignmentHistory: many(vendorAssignmentHistory),
 }));
 
 export const marketplaceBidsRelations = relations(marketplaceBids, ({ one }) => ({
@@ -307,6 +328,27 @@ export const marketplaceBidsRelations = relations(marketplaceBids, ({ one }) => 
   vendor: one(maintenanceVendors, {
     fields: [marketplaceBids.vendorId],
     references: [maintenanceVendors.id],
+  }),
+}));
+
+export const vendorAssignmentHistoryRelations = relations(vendorAssignmentHistory, ({ one }) => ({
+  ticket: one(tickets, {
+    fields: [vendorAssignmentHistory.ticketId],
+    references: [tickets.id],
+  }),
+  vendor: one(maintenanceVendors, {
+    fields: [vendorAssignmentHistory.vendorId],
+    references: [maintenanceVendors.id],
+  }),
+  assignedBy: one(users, {
+    fields: [vendorAssignmentHistory.assignedById],
+    references: [users.id],
+    relationName: "assignedBy",
+  }),
+  rejectedBy: one(users, {
+    fields: [vendorAssignmentHistory.rejectedById],
+    references: [users.id],
+    relationName: "rejectedBy",
   }),
 }));
 
@@ -671,6 +713,10 @@ export type InsertMarketplaceBid = typeof marketplaceBids.$inferInsert;
 export type BidHistory = typeof bidHistory.$inferSelect;
 export type InsertBidHistory = typeof bidHistory.$inferInsert;
 
+// Vendor assignment history types
+export type VendorAssignmentHistory = typeof vendorAssignmentHistory.$inferSelect;
+export type InsertVendorAssignmentHistory = typeof vendorAssignmentHistory.$inferInsert;
+
 export type Part = typeof parts.$inferSelect;
 export type InsertPart = typeof parts.$inferInsert;
 export type PartPriceHistory = typeof partPriceHistory.$inferSelect;
@@ -692,6 +738,11 @@ export const insertMarketplaceBidSchema = createInsertSchema(marketplaceBids).om
 });
 
 export const insertBidHistorySchema = createInsertSchema(bidHistory).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertVendorAssignmentHistorySchema = createInsertSchema(vendorAssignmentHistory).omit({
   id: true,
   createdAt: true,
 });

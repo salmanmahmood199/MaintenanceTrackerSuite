@@ -12,6 +12,7 @@ import {
   ticketComments,
   marketplaceBids,
   bidHistory,
+  vendorAssignmentHistory,
   parts,
   partPriceHistory,
   calendarEvents,
@@ -41,6 +42,8 @@ import {
   type InsertMarketplaceBid,
   type BidHistory,
   type InsertBidHistory,
+  type VendorAssignmentHistory,
+  type InsertVendorAssignmentHistory,
   type Part,
   type InsertPart,
   type PartPriceHistory,
@@ -170,6 +173,11 @@ export interface IStorage {
   // Bid history operations
   createBidHistory(history: InsertBidHistory): Promise<BidHistory>;
   getBidHistory(bidId: number): Promise<BidHistory[]>;
+  
+  // Vendor assignment history operations
+  createVendorAssignmentHistory(history: InsertVendorAssignmentHistory): Promise<VendorAssignmentHistory>;
+  getVendorAssignmentHistory(ticketId: number): Promise<VendorAssignmentHistory[]>;
+  deactivateVendorAssignmentHistory(ticketId: number): Promise<void>;
   
   // Enhanced marketplace operations
   respondToCounterOffer(bidId: number, vendorUserId: number, action: 'accept' | 'reject' | 'recounter', amount?: number, notes?: string): Promise<void>;
@@ -659,6 +667,38 @@ export class DatabaseStorage implements IStorage {
       .where(eq(tickets.id, id))
       .returning();
     
+    // Create vendor assignment history entry if a vendor was assigned
+    if (acceptData.maintenanceVendorId !== undefined && ticket) {
+      try {
+        // Get vendor details
+        const vendor = await this.getMaintenanceVendor(acceptData.maintenanceVendorId);
+        
+        // Check if this is a reassignment (previous vendor existed)
+        const existingHistory = await this.getVendorAssignmentHistory(id);
+        const assignmentType = existingHistory.length > 0 ? 'reassignment' : 'initial';
+        
+        // Deactivate previous assignment history entries
+        if (assignmentType === 'reassignment') {
+          await this.deactivateVendorAssignmentHistory(id);
+        }
+        
+        await this.createVendorAssignmentHistory({
+          ticketId: id,
+          vendorId: acceptData.maintenanceVendorId,
+          vendorName: vendor?.name || 'Unknown Vendor',
+          assignedById: 0, // This will be set by the API route with the actual user ID
+          assignedByName: 'System', // This will be set by the API route with the actual user name
+          assignmentType,
+          status: 'assigned',
+          assignedAt: new Date(),
+          isActive: true
+        });
+      } catch (error) {
+        console.log('Failed to create vendor assignment history:', error);
+        // Continue without failing the ticket acceptance
+      }
+    }
+    
     console.log(`Ticket ${id} updated result:`, { 
       id: ticket?.id, 
       status: ticket?.status, 
@@ -669,16 +709,47 @@ export class DatabaseStorage implements IStorage {
     return ticket || undefined;
   }
 
-  async rejectTicket(id: number, rejectionReason: string): Promise<Ticket | undefined> {
+  async rejectTicket(id: number, rejectionReason: string, rejectedByUserId?: number, rejectedByUserName?: string): Promise<Ticket | undefined> {
+    // Get current ticket to check if there's a vendor assigned
+    const currentTicket = await this.getTicket(id);
+    
     const [ticket] = await db
       .update(tickets)
       .set({
-        status: "rejected",
+        status: "pending", // Reset to pending so it can be reassigned to a different vendor
         rejectionReason,
+        maintenanceVendorId: null, // Clear vendor assignment to allow reassignment
+        assigneeId: null, // Clear technician assignment
         updatedAt: new Date(),
       })
       .where(eq(tickets.id, id))
       .returning();
+    
+    // Create vendor assignment history entry for the rejection
+    if (currentTicket?.maintenanceVendorId && rejectedByUserId) {
+      try {
+        const vendor = await this.getMaintenanceVendor(currentTicket.maintenanceVendorId);
+        
+        // Update the current assignment history to mark it as rejected
+        await this.createVendorAssignmentHistory({
+          ticketId: id,
+          vendorId: currentTicket.maintenanceVendorId,
+          vendorName: vendor?.name || 'Unknown Vendor',
+          assignedById: rejectedByUserId,
+          assignedByName: rejectedByUserName || 'Unknown User',
+          assignmentType: 'initial', // This gets updated based on existing history
+          status: 'rejected',
+          rejectionReason,
+          rejectedAt: new Date(),
+          rejectedById: rejectedByUserId,
+          rejectedByName: rejectedByUserName,
+          assignedAt: new Date(), // Will be updated with original assignment time
+          isActive: false
+        });
+      } catch (error) {
+        console.log('Failed to create vendor rejection history:', error);
+      }
+    }
     
     return ticket || undefined;
   }
@@ -1286,6 +1357,30 @@ export class DatabaseStorage implements IStorage {
       .from(bidHistory)
       .where(eq(bidHistory.bidId, bidId))
       .orderBy(desc(bidHistory.createdAt));
+  }
+
+  // Vendor assignment history operations
+  async createVendorAssignmentHistory(history: InsertVendorAssignmentHistory): Promise<VendorAssignmentHistory> {
+    const [newHistory] = await db
+      .insert(vendorAssignmentHistory)
+      .values(history)
+      .returning();
+    return newHistory;
+  }
+
+  async getVendorAssignmentHistory(ticketId: number): Promise<VendorAssignmentHistory[]> {
+    return await db
+      .select()
+      .from(vendorAssignmentHistory)
+      .where(eq(vendorAssignmentHistory.ticketId, ticketId))
+      .orderBy(desc(vendorAssignmentHistory.assignedAt));
+  }
+
+  async deactivateVendorAssignmentHistory(ticketId: number): Promise<void> {
+    await db
+      .update(vendorAssignmentHistory)
+      .set({ isActive: false })
+      .where(eq(vendorAssignmentHistory.ticketId, ticketId));
   }
 
   async respondToCounterOffer(

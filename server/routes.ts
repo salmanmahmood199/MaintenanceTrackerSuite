@@ -795,6 +795,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get vendor assignment history for a ticket
+  app.get("/api/tickets/:id/vendor-history", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const ticketId = parseInt(req.params.id);
+      const user = req.user!;
+      
+      // Check if user has access to this ticket
+      const ticket = await storage.getTicketById(ticketId);
+      if (!ticket) {
+        return res.status(404).json({ message: "Ticket not found" });
+      }
+      
+      // Role-based access control for vendor assignment history
+      if (user.role === 'root' || 
+          (user.role === 'org_admin' && ticket.organizationId === user.organizationId) ||
+          (user.role === 'maintenance_admin' && ticket.maintenanceVendorId === user.maintenanceVendorId) ||
+          (user.role === 'org_subadmin' && ticket.organizationId === user.organizationId)) {
+        
+        const history = await storage.getVendorAssignmentHistory(ticketId);
+        res.json(history);
+      } else {
+        res.status(403).json({ message: "Insufficient permissions to view vendor assignment history" });
+      }
+    } catch (error) {
+      console.error("Error fetching vendor assignment history:", error);
+      res.status(500).json({ message: "Failed to fetch vendor assignment history" });
+    }
+  });
+
   // Accept ticket and assign to maintenance vendor
   app.post("/api/tickets/:id/accept", authenticateUser, (req, res, next) => {
     const user = req.user as any;
@@ -804,10 +833,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return next();
     }
     return res.status(403).json({ message: "Insufficient permissions" });
-  }, async (req, res) => {
+  }, async (req: AuthenticatedRequest, res) => {
     try {
       const id = parseInt(req.params.id);
       const { maintenanceVendorId, assigneeId, marketplace } = req.body;
+      const user = req.user!;
       
       console.log(`=== ACCEPT TICKET MIDDLEWARE ${id} ===`);
       console.log(`Body received:`, { maintenanceVendorId, assigneeId, marketplace });
@@ -822,9 +852,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Marketplace assignment result:`, { id: ticket.id, status: ticket.status });
         res.json(ticket);
       } else {
-        // Normal vendor assignment
+        // Normal vendor assignment - pass user info for vendor assignment history
         console.log(`Calling storage.acceptTicket for ticket ${id} with vendor ${maintenanceVendorId}`);
+        
+        // Update the acceptTicket call to include user information  
         const ticket = await storage.acceptTicket(id, { maintenanceVendorId, assigneeId });
+        
+        // Update vendor assignment history with user info after ticket acceptance
+        if (ticket && maintenanceVendorId) {
+          try {
+            // Update the vendor assignment history with proper user info
+            const assignedByName = `${user.firstName} ${user.lastName}`.trim() || user.email;
+            await storage.createVendorAssignmentHistory({
+              ticketId: id,
+              vendorId: maintenanceVendorId,
+              vendorName: '', // Will be filled by storage method
+              assignedById: user.id,
+              assignedByName,
+              assignmentType: 'initial',
+              status: 'assigned',
+              assignedAt: new Date(),
+              isActive: true
+            });
+          } catch (historyError) {
+            console.log('Failed to update vendor assignment history with user info:', historyError);
+          }
+        }
+        
         console.log(`Storage result:`, { id: ticket?.id, vendor: ticket?.maintenanceVendorId, assignee: ticket?.assigneeId, status: ticket?.status });
         if (!ticket) {
           return res.status(404).json({ message: "Ticket not found" });
@@ -867,21 +921,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return next();
     }
     return res.status(403).json({ message: "Insufficient permissions" });
-  }, async (req, res) => {
+  }, async (req: AuthenticatedRequest, res) => {
     try {
       const id = parseInt(req.params.id);
       const { rejectionReason } = req.body;
+      const user = req.user!;
       
       if (!rejectionReason) {
         return res.status(400).json({ message: "Rejection reason is required" });
       }
       
-      const ticket = await storage.rejectTicket(id, rejectionReason);
+      // Pass user information for vendor assignment history
+      const rejectedByUserName = `${user.firstName} ${user.lastName}`.trim() || user.email;
+      const ticket = await storage.rejectTicket(id, rejectionReason, user.id, rejectedByUserName);
+      
       if (!ticket) {
         return res.status(404).json({ message: "Ticket not found" });
       }
       res.json(ticket);
     } catch (error) {
+      console.error('Reject ticket error:', error);
       res.status(500).json({ message: "Failed to reject ticket" });
     }
   });

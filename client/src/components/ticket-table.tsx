@@ -15,6 +15,7 @@ import { formatDate, getPriorityColor, getStatusColor, getVendorStatusDisplay } 
 import { ProgressTrackerEmbedded } from "@/components/progress-tracker";
 import { TicketComments } from "./ticket-comments";
 import { WorkOrdersHistoryEmbedded } from "@/components/work-orders-history-embedded";
+import { VendorAssignmentHistory } from "@/components/vendor-assignment-history";
 import type { Ticket, Location } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -532,7 +533,7 @@ export function TicketTable({
           {selectedTicket && (
             <ScrollArea className="h-[70vh]">
               <Tabs defaultValue="details" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-5">
                   <TabsTrigger value="details">Details</TabsTrigger>
                   <TabsTrigger value="comments">
                     <MessageSquare className="h-4 w-4 mr-2" />
@@ -543,6 +544,7 @@ export function TicketTable({
                     Progress
                   </TabsTrigger>
                   <TabsTrigger value="work-orders">Work Orders</TabsTrigger>
+                  <TabsTrigger value="vendor-history">Vendor History</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="details" className="space-y-6 mt-6">
@@ -693,6 +695,12 @@ export function TicketTable({
 
                 <TabsContent value="work-orders" className="mt-6">
                   <WorkOrdersHistoryEmbedded 
+                    ticketId={selectedTicket.id} 
+                  />
+                </TabsContent>
+
+                <TabsContent value="vendor-history" className="mt-6">
+                  <VendorAssignmentHistory 
                     ticketId={selectedTicket.id} 
                   />
                 </TabsContent>
