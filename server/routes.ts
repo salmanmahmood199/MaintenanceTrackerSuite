@@ -2309,6 +2309,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = req.user!;
       const authUrl = googleCalendarService.generateAuthUrl(user.id);
+      
+      // Debug: Log the redirect URI being used
+      const redirectUri = authUrl.includes('redirect_uri=') ? 
+        decodeURIComponent(authUrl.split('redirect_uri=')[1].split('&')[0]) : 'Not found';
+      console.log('Google OAuth redirect URI being used:', redirectUri);
+      
       res.json({ authUrl });
     } catch (error) {
       console.error('Error generating Google Calendar auth URL:', error);
