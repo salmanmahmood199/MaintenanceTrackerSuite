@@ -17,6 +17,7 @@ import {
   calendarEvents,
   eventExceptions,
   availabilityConfigs,
+  googleCalendarIntegrations,
   type User, 
   type InsertUser, 
   type InsertSubAdmin,
@@ -48,6 +49,8 @@ import {
   type InsertCalendarEvent,
   type AvailabilityConfig,
   type InsertAvailabilityConfig,
+  type GoogleCalendarIntegration,
+  type InsertGoogleCalendarIntegration,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, inArray, desc, or, isNull, gte, lte, ne, asc, ilike, not } from "drizzle-orm";
@@ -195,6 +198,12 @@ export interface IStorage {
   getAvailabilityConfig(userId: number): Promise<AvailabilityConfig | null>;
   createAvailabilityConfig(config: InsertAvailabilityConfig): Promise<AvailabilityConfig>;
   updateAvailabilityConfig(userId: number, config: Partial<InsertAvailabilityConfig>): Promise<AvailabilityConfig | null>;
+  
+  // Google Calendar integration methods
+  createGoogleCalendarIntegration(integration: InsertGoogleCalendarIntegration): Promise<GoogleCalendarIntegration>;
+  getGoogleCalendarIntegration(userId: number): Promise<GoogleCalendarIntegration | null>;
+  updateGoogleCalendarIntegration(userId: number, updates: Partial<GoogleCalendarIntegration>): Promise<GoogleCalendarIntegration | null>;
+  deleteGoogleCalendarIntegration(userId: number): Promise<boolean>;
   
   // Initialize root user
   initializeRootUser(): Promise<void>;
@@ -1657,6 +1666,44 @@ export class DatabaseStorage implements IStorage {
       .orderBy(vendorOrganizationTiers.tier);
     
     return vendorTiers;
+  }
+
+  // Google Calendar integration operations
+  async createGoogleCalendarIntegration(integration: InsertGoogleCalendarIntegration): Promise<GoogleCalendarIntegration> {
+    const [newIntegration] = await db
+      .insert(googleCalendarIntegrations)
+      .values(integration)
+      .returning();
+    
+    return newIntegration;
+  }
+
+  async getGoogleCalendarIntegration(userId: number): Promise<GoogleCalendarIntegration | null> {
+    const integration = await db
+      .select()
+      .from(googleCalendarIntegrations)
+      .where(eq(googleCalendarIntegrations.userId, userId))
+      .limit(1);
+    
+    return integration[0] || null;
+  }
+
+  async updateGoogleCalendarIntegration(userId: number, updates: Partial<GoogleCalendarIntegration>): Promise<GoogleCalendarIntegration | null> {
+    const [updatedIntegration] = await db
+      .update(googleCalendarIntegrations)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(googleCalendarIntegrations.userId, userId))
+      .returning();
+    
+    return updatedIntegration || null;
+  }
+
+  async deleteGoogleCalendarIntegration(userId: number): Promise<boolean> {
+    const result = await db
+      .delete(googleCalendarIntegrations)
+      .where(eq(googleCalendarIntegrations.userId, userId));
+    
+    return (result.rowCount || 0) > 0;
   }
 }
 

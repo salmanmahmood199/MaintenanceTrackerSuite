@@ -417,8 +417,26 @@ export const calendarEvents = pgTable("calendar_events", {
   availabilityDays: text("availability_days").array(), // Days available for recurring availability ["monday", "tuesday", etc.]
   availabilityStartTime: time("availability_start_time"), // Start time for availability blocks
   availabilityEndTime: time("availability_end_time"), // End time for availability blocks
+  googleEventId: text("google_event_id"), // Google Calendar event ID for sync
+  syncedToGoogle: boolean("synced_to_google").default(false),
+  lastSyncAt: timestamp("last_sync_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Google Calendar integration table
+export const googleCalendarIntegrations = pgTable("google_calendar_integrations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull().unique(),
+  googleAccountEmail: text("google_account_email").notNull(),
+  accessToken: text("access_token").notNull(),
+  refreshToken: text("refresh_token").notNull(),
+  tokenExpiresAt: timestamp("token_expires_at").notNull(),
+  calendarId: text("calendar_id").notNull(), // Primary calendar ID
+  syncEnabled: boolean("sync_enabled").default(true),
+  lastSyncAt: timestamp("last_sync_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Event exceptions table for handling deleted instances of recurring events
@@ -447,6 +465,13 @@ export const calendarEventsRelations = relations(calendarEvents, ({ one, many })
     references: [users.id],
   }),
   exceptions: many(eventExceptions),
+}));
+
+export const googleCalendarIntegrationsRelations = relations(googleCalendarIntegrations, ({ one }) => ({
+  user: one(users, {
+    fields: [googleCalendarIntegrations.userId],
+    references: [users.id],
+  }),
 }));
 
 export const eventExceptionsRelations = relations(eventExceptions, ({ one }) => ({
@@ -654,6 +679,9 @@ export type InsertPartPriceHistory = typeof partPriceHistory.$inferInsert;
 export type CalendarEvent = typeof calendarEvents.$inferSelect;
 export type InsertCalendarEvent = typeof calendarEvents.$inferInsert;
 
+export type GoogleCalendarIntegration = typeof googleCalendarIntegrations.$inferSelect;
+export type InsertGoogleCalendarIntegration = z.infer<typeof insertGoogleCalendarIntegrationSchema>;
+
 export type AvailabilityConfig = typeof availabilityConfigs.$inferSelect;
 export type InsertAvailabilityConfig = typeof availabilityConfigs.$inferInsert;
 
@@ -692,6 +720,12 @@ export const insertAvailabilityConfigSchema = createInsertSchema(availabilityCon
 
 export const updateAvailabilityConfigSchema = insertAvailabilityConfigSchema.partial().extend({
   id: z.number(),
+});
+
+export const insertGoogleCalendarIntegrationSchema = createInsertSchema(googleCalendarIntegrations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const insertCalendarEventSchema = createInsertSchema(calendarEvents).omit({

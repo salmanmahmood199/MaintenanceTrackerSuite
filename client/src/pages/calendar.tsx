@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Calendar as CalendarIcon, Plus, Clock, Users, MapPin, Edit2, Trash2, ArrowLeft, Ban, X, ChevronDown } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, Clock, Users, MapPin, Edit2, Trash2, ArrowLeft, Ban, X, ChevronDown, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,8 @@ import { DeleteEventModal } from "@/components/delete-event-modal";
 import AvailabilityConfigModal from "@/components/availability-config-modal";
 import { CalendarDayDetail } from "@/components/calendar-day-detail";
 import { EventDetailsModal } from "@/components/event-details-modal";
+import { GoogleCalendarIntegration } from "@/components/google-calendar-integration";
+import { GoogleOAuthHelpModal } from "@/components/google-oauth-help-modal";
 import { Link } from "wouter";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isToday } from "date-fns";
 
@@ -34,6 +36,9 @@ interface CalendarEvent {
   color: string;
   location?: string;
   isAvailability: boolean;
+  isRecurring?: boolean;
+  googleEventId?: string;
+  syncedToGoogle?: boolean;
 }
 
 const eventTypeColors = {
@@ -66,6 +71,7 @@ export default function Calendar() {
   const [eventDetailsModalOpen, setEventDetailsModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [availabilityConfigOpen, setAvailabilityConfigOpen] = useState(false);
+  const [showOAuthHelp, setShowOAuthHelp] = useState(false);
 
   // Fetch calendar events
   const { data: events = [], isLoading } = useQuery<CalendarEvent[]>({
@@ -484,6 +490,15 @@ export default function Calendar() {
                 Add Personal Event
               </Button>
 
+              <Button 
+                variant="outline" 
+                className="w-full justify-start text-blue-700 border-blue-200 hover:bg-blue-50"
+                onClick={() => setShowOAuthHelp(true)}
+              >
+                <HelpCircle className="h-4 w-4 mr-2" />
+                OAuth Setup Guide
+              </Button>
+
               {/* Recent Events */}
               <div className="space-y-3 mt-6">
                 <h3 className="font-medium text-slate-900">Recent Events</h3>
@@ -506,6 +521,11 @@ export default function Calendar() {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Google Calendar Integration Section */}
+        <div className="mt-6">
+          <GoogleCalendarIntegration />
         </div>
 
         {/* Create Event Modal */}
@@ -613,7 +633,7 @@ export default function Calendar() {
         <UnavailabilityModal
           isOpen={unavailabilityModalOpen}
           onOpenChange={setUnavailabilityModalOpen}
-          selectedDate={selectedDateString}
+          selectedDate={selectedDateString || undefined}
         />
 
         {/* Delete Event Modal */}
@@ -621,7 +641,7 @@ export default function Calendar() {
           isOpen={deleteEventModalOpen}
           onOpenChange={setDeleteEventModalOpen}
           event={selectedEvent}
-          selectedDate={selectedDateString}
+          selectedDate={selectedDateString || undefined}
         />
 
         {/* Day Detail Modal */}
@@ -636,6 +656,12 @@ export default function Calendar() {
           isOpen={eventDetailsModalOpen}
           onOpenChange={setEventDetailsModalOpen}
           event={selectedEvent}
+        />
+
+        {/* Google OAuth Help Modal */}
+        <GoogleOAuthHelpModal
+          open={showOAuthHelp}
+          onOpenChange={setShowOAuthHelp}
         />
       </div>
     </div>

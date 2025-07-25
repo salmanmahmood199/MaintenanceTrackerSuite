@@ -380,6 +380,13 @@ Changelog:
 - July 23, 2025. Fixed media file display issues in ticket details - images and videos now show proper thumbnails instead of broken placeholders
 - July 23, 2025. Enhanced work orders display with clickable detailed view modal showing all work order information, images, parts, and costs
 - July 23, 2025. Added comprehensive work order details modal with full image gallery, parts breakdown, and completion notes
+- July 25, 2025. Implemented comprehensive Google Calendar integration with OAuth 2.0 authentication flow
+- July 25, 2025. Created Google Calendar API service with bidirectional sync capabilities (import from Gmail to internal calendar)
+- July 25, 2025. Added googleCalendarIntegrations database table for storing user authentication tokens and sync settings
+- July 25, 2025. Built Google Calendar integration UI component with connection status, sync controls, and OAuth help guide
+- July 25, 2025. Enhanced calendar page with Google Calendar sync functionality and OAuth setup documentation
+- July 25, 2025. Added comprehensive API routes for Google Calendar authentication, token management, and event synchronization
+- July 25, 2025. Calendar events now support Google sync metadata (googleEventId, syncedToGoogle) for bidirectional integration
 ```
 
 ## User Preferences
