@@ -1,8 +1,8 @@
 # Google Calendar Integration Setup Guide
 
-## Administrator One-Time Setup
+## Project Owner One-Time Setup
 
-This setup only needs to be done once by the system administrator. After completion, all users can connect their personal Google Calendars.
+This setup only needs to be done once by the TaskScout project owner. After completion, ALL users across ALL organizations can connect their personal Google Calendars (root admins, org admins, sub-admins, vendors, technicians, etc.).
 
 ### Step 1: Create Google Cloud Project
 
@@ -53,15 +53,23 @@ GOOGLE_REDIRECT_URI=https://your-repl-url.replit.app/api/auth/google/callback
 
 Restart your Replit application to load the new environment variables.
 
-## User Experience
+## User Experience (All User Types)
 
-After the administrator completes the setup:
+After the project owner completes the setup, ANY user can connect:
 
-1. Users go to the Calendar page
+**Who can connect:**
+- Root administrators
+- Organization admins and sub-admins
+- Maintenance vendor admins
+- Technicians
+- Any user in any organization
+
+**How they connect:**
+1. Go to the Calendar page
 2. Click "Connect Google Calendar" 
-3. Authenticate with their Google account in popup
-4. Their calendar events automatically sync
-5. Users can enable/disable sync and manually refresh as needed
+3. Authenticate with their personal Google account in popup
+4. Their personal calendar events automatically sync
+5. Each user manages their own connection independently
 
 ## Troubleshooting
 
