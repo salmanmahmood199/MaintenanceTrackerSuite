@@ -2416,7 +2416,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Sync events from Google Calendar
+      console.log('Starting Google Calendar sync for user:', user.id);
       const googleEvents = await googleCalendarService.syncFromGoogle(integration, integration.lastSyncAt || undefined);
+      
+      console.log(`Received ${googleEvents.length} events from Google Calendar`);
+      googleEvents.forEach(event => {
+        console.log(`- ${event.summary} (${event.start?.date || event.start?.dateTime}) - Status: ${event.status}`);
+      });
       
       // Process and save Google events to local calendar
       let syncedCount = 0;
@@ -2466,9 +2472,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (existingEvent) {
           // Update existing event
           await storage.updateCalendarEvent(existingEvent.id, localEvent);
+          console.log(`Updated existing event: ${googleEvent.summary}`);
         } else {
           // Create new event
           await storage.createCalendarEvent(localEvent);
+          console.log(`Created new event: ${googleEvent.summary} on ${localEvent.startDate}`);
         }
         
         syncedCount++;

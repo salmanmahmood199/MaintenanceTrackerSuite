@@ -196,6 +196,10 @@ export class GoogleCalendarService {
       const timeMin = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       const timeMax = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
       
+      console.log('Current time:', now.toISOString());
+      console.log('Searching events from:', timeMin.toISOString());
+      console.log('Searching events to:', timeMax.toISOString());
+      
       const params: any = {
         calendarId: integration.calendarId,
         timeMin: timeMin.toISOString(),
@@ -210,6 +214,12 @@ export class GoogleCalendarService {
       const response = await this.calendar.events.list(params);
       const events = response.data.items || [];
       console.log(`Found ${events.length} Google Calendar events to sync`);
+      
+      // Log each event for debugging
+      events.forEach(event => {
+        const startTime = event.start?.date || event.start?.dateTime;
+        console.log(`Google Event: "${event.summary}" on ${startTime} (Status: ${event.status})`);
+      });
       
       return events;
     } catch (error) {
