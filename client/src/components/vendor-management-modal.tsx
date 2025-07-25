@@ -73,7 +73,7 @@ export function VendorManagementModal({
           ) : (
             <div className="grid gap-4">
               {vendors.map(({ vendor, tier, isActive }) => (
-                <Card key={vendor?.id || 'unknown'} className={`transition-all ${isActive ? 'border-slate-200' : 'border-slate-100 bg-slate-50'}`}>
+                <Card key={vendor.id} className={`transition-all ${isActive ? 'border-slate-200' : 'border-slate-100 bg-slate-50'}`}>
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
@@ -81,8 +81,8 @@ export function VendorManagementModal({
                           <Wrench className="h-5 w-5 text-blue-600" />
                         </div>
                         <div>
-                          <CardTitle className="text-lg">{vendor?.name || 'Unknown Vendor'}</CardTitle>
-                          {vendor?.description && (
+                          <CardTitle className="text-lg">{vendor.name}</CardTitle>
+                          {vendor.description && (
                             <p className="text-sm text-slate-600 mt-1">{vendor.description}</p>
                           )}
                         </div>
@@ -104,12 +104,12 @@ export function VendorManagementModal({
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <div className="text-xs text-slate-500 space-y-1">
-                            {vendor?.email && <p>Email: {vendor.email}</p>}
-                            {vendor?.phone && <p>Phone: {vendor.phone}</p>}
+                            {vendor.email && <p>Email: {vendor.email}</p>}
+                            {vendor.phone && <p>Phone: {vendor.phone}</p>}
                           </div>
                         </div>
                         <div>
-                          {vendor?.specialties && vendor.specialties.length > 0 && (
+                          {vendor.specialties && vendor.specialties.length > 0 && (
                             <div>
                               <p className="text-xs text-slate-500 mb-1">Specialties:</p>
                               <div className="flex flex-wrap gap-1">
@@ -130,7 +130,7 @@ export function VendorManagementModal({
                           {/* Active Status Control */}
                           <div className="flex items-center justify-between">
                             <div>
-                              <Label htmlFor={`active-${vendor?.id}`} className="font-medium">
+                              <Label htmlFor={`active-${vendor.id}`} className="font-medium">
                                 Active Status
                               </Label>
                               <p className="text-sm text-slate-600">
@@ -138,9 +138,9 @@ export function VendorManagementModal({
                               </p>
                             </div>
                             <Switch
-                              id={`active-${vendor?.id}`}
+                              id={`active-${vendor.id}`}
                               checked={isActive}
-                              onCheckedChange={(checked) => handleToggleActive(vendor?.id || 0, checked)}
+                              onCheckedChange={(checked) => handleToggleActive(vendor.id, checked)}
                               disabled={isLoading}
                             />
                           </div>
@@ -153,7 +153,7 @@ export function VendorManagementModal({
                             </p>
                             <Select
                               value={tier}
-                              onValueChange={(value) => handleChangeTier(vendor?.id || 0, value)}
+                              onValueChange={(value) => handleChangeTier(vendor.id, value)}
                               disabled={isLoading}
                             >
                               <SelectTrigger>

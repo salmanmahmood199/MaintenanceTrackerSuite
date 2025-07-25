@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarDays, RefreshCw, Settings, Check, X, Globe } from "lucide-react";
+import { CalendarDays, RefreshCw, Settings, Check, X, Globe, Bug } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 interface GoogleCalendarStatus {
@@ -14,6 +14,16 @@ interface GoogleCalendarStatus {
   email: string | null;
   syncEnabled: boolean;
   lastSyncAt: string | null;
+}
+
+interface RecentEvent {
+  id: number;
+  title: string;
+  startDate: string;
+  startTime: string | null;
+  eventType: string;
+  googleEventId: string | null;
+  syncedToGoogle: boolean;
 }
 
 export function GoogleCalendarIntegration() {
@@ -25,6 +35,12 @@ export function GoogleCalendarIntegration() {
   const { data: status, isLoading } = useQuery<GoogleCalendarStatus>({
     queryKey: ['/api/google-calendar/status'],
     refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
+  // Fetch recent events for debugging
+  const { data: recentEvents } = useQuery<RecentEvent[]>({
+    queryKey: ['/api/calendar/recent-events'],
+    enabled: status?.connected || false,
   });
 
   // Connect to Google Calendar
@@ -139,6 +155,29 @@ export function GoogleCalendarIntegration() {
     },
   });
 
+  // Manual sync specific event to Google Calendar (for debugging)
+  const manualSyncMutation = useMutation({
+    mutationFn: async (eventId: number) => {
+      const response = await apiRequest('POST', `/api/google-calendar/sync-event/${eventId}`);
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Event Synced Successfully",
+        description: `"${data.eventTitle}" has been synced to Google Calendar.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/calendar/events'] });
+    },
+    onError: (error) => {
+      console.error('Manual sync error:', error);
+      toast({
+        title: "Sync Failed",
+        description: "Failed to sync event to Google Calendar. Check console for details.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleConnect = () => {
     setIsConnecting(true);
     connectMutation.mutate();
@@ -154,6 +193,10 @@ export function GoogleCalendarIntegration() {
 
   const handleToggleSync = (checked: boolean) => {
     toggleSyncMutation.mutate(checked);
+  };
+
+  const handleManualSync = (eventId: number) => {
+    manualSyncMutation.mutate(eventId);
   };
 
   if (isLoading) {
@@ -311,6 +354,65 @@ export function GoogleCalendarIntegration() {
                     <li>• Sync only imports events, it doesn't modify your Google Calendar</li>
                   </ul>
                 </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Debug Section */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Bug className="h-4 w-4" />
+                <span className="font-medium">Debug Tools</span>
+              </div>
+              
+              <div className="rounded-lg bg-orange-50 dark:bg-orange-950/30 p-4 border border-orange-200 dark:border-orange-800">
+                <h4 className="text-sm font-medium text-orange-900 dark:text-orange-100 mb-2">
+                  Manual Event Sync (Test July 30 Event)
+                </h4>
+                <p className="text-sm text-orange-800 dark:text-orange-200 mb-3">
+                  Recent TaskScout events that may need syncing to Google Calendar:
+                </p>
+                
+                {recentEvents && recentEvents.length > 0 ? (
+                  <div className="space-y-2">
+                    {recentEvents.slice(0, 3).map((event) => (
+                      <div key={event.id} className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded border">
+                        <div className="flex-1">
+                          <div className="text-sm font-medium">{event.title}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {event.startDate} {event.startTime || 'All day'} • {event.eventType}
+                          </div>
+                          <div className="text-xs mt-1">
+                            {event.syncedToGoogle ? (
+                              <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                ✓ Synced to Google
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                                ✗ Not synced
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleManualSync(event.id)}
+                          disabled={manualSyncMutation.isPending || event.syncedToGoogle}
+                        >
+                          {manualSyncMutation.isPending ? (
+                            <RefreshCw className="h-3 w-3 animate-spin" />
+                          ) : (
+                            'Sync Now'
+                          )}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No recent events found.</p>
+                )}
               </div>
             </div>
           </>

@@ -82,23 +82,20 @@ export default function Calendar() {
   // Delete event mutation
   const deleteEventMutation = useMutation({
     mutationFn: async (eventId: number) => {
-      const response = await apiRequest("DELETE", `/api/calendar/events/${eventId}`);
-      return response;
+      await apiRequest("DELETE", `/api/calendar/events/${eventId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/calendar/events"] });
       setEventDetailOpen(false);
-      setEventDetailsModalOpen(false);
       toast({
         title: "Success",
         description: "Event deleted successfully",
       });
     },
-    onError: (error: any) => {
-      console.error("Delete error:", error);
+    onError: () => {
       toast({
         title: "Error",
-        description: error?.message || "Failed to delete event",
+        description: "Failed to delete event",
         variant: "destructive",
       });
     },
@@ -106,21 +103,7 @@ export default function Calendar() {
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
-  
-  // Get the first day of the calendar grid (start of week containing first day of month)
-  const firstDayOfWeek = 0; // Sunday = 0
-  const startOfWeek = new Date(monthStart);
-  startOfWeek.setDate(monthStart.getDate() - monthStart.getDay() + firstDayOfWeek);
-  if (startOfWeek > monthStart) {
-    startOfWeek.setDate(startOfWeek.getDate() - 7);
-  }
-  
-  // Get the last day of the calendar grid (end of week containing last day of month)
-  const endOfWeek = new Date(monthEnd);
-  const daysToAdd = 6 - monthEnd.getDay() + firstDayOfWeek;
-  endOfWeek.setDate(monthEnd.getDate() + (daysToAdd > 6 ? daysToAdd - 7 : daysToAdd));
-  
-  const calendarDays = eachDayOfInterval({ start: startOfWeek, end: endOfWeek });
+  const calendarDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
   const getEventsForDate = (date: Date) => {
     const dateString = format(date, 'yyyy-MM-dd');

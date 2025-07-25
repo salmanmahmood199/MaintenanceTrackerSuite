@@ -65,6 +65,7 @@ export default function OrganizationView() {
 
   // Use organization ID from user (for org_admin/org_subadmin) or route (for root accessing org)
   const organizationId = (user?.role === "org_admin" || user?.role === "org_subadmin") ? user.organizationId : routeOrgId;
+
   // Permission helpers
   const canPlaceTickets = user?.role === "root" || user?.role === "org_admin" || 
     (user?.role === "org_subadmin" && user?.permissions?.includes("place_ticket"));
@@ -83,19 +84,32 @@ export default function OrganizationView() {
   const canManageVendors = user?.role === "root" || user?.role === "org_admin";
 
   // Fetch organization details
-  const { data: organization, isLoading: orgLoading, error: orgError } = useQuery<Organization | undefined>({
+  const { data: organization } = useQuery<Organization | undefined>({
     queryKey: ["/api/organizations", organizationId],
-    enabled: !!organizationId && !!user,
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/organizations");
+      const orgs = await response.json() as Organization[];
+      return orgs.find(org => org.id === organizationId);
+    },
+    enabled: !!organizationId,
   });
 
   // Fetch all tickets for this organization (we'll filter client-side)
   const { data: allTickets = [], isLoading: ticketsLoading } = useQuery<Ticket[]>({
     queryKey: ["/api/tickets", { organizationId }],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/tickets?organizationId=${organizationId}`);
+      return await response.json() as Ticket[];
+    },
   });
 
   // Fetch organization vendors
   const { data: organizationVendors = [] } = useQuery<Array<{vendor: any, tier: string, isActive: boolean}>>({
     queryKey: ["/api/organizations", organizationId, "vendor-tiers"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/organizations/${organizationId}/vendor-tiers`);
+      return await response.json();
+    },
     enabled: !!organizationId,
   });
 

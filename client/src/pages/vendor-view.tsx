@@ -49,15 +49,31 @@ export function VendorView() {
 
   const vendorId = user?.role === "maintenance_admin" ? user.maintenanceVendorId : routeVendorId;
   
+  console.log("VendorView Debug:", {
+    userRole: user?.role,
+    routeVendorId,
+    userMaintenanceVendorId: user?.maintenanceVendorId,
+    finalVendorId: vendorId
+  });
+  
   // Fetch vendor details
   const { data: vendor } = useQuery<MaintenanceVendor | undefined>({
     queryKey: ["/api/maintenance-vendors", vendorId],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/maintenance-vendors");
+      const vendors = await response.json() as MaintenanceVendor[];
+      return vendors.find(v => v.id === vendorId);
+    },
     enabled: !!vendorId,
   });
 
   // Fetch vendor bids to check for counter offers
   const { data: vendorBids = [] } = useQuery({
     queryKey: ["/api/marketplace/vendor-bids"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/marketplace/vendor-bids");
+      return await response.json();
+    },
     enabled: !!vendorId,
   });
 

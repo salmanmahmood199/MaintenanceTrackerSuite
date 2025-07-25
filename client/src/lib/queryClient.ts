@@ -2,19 +2,8 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    let errorMessage;
-    try {
-      const contentType = res.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
-        const errorData = await res.json();
-        errorMessage = errorData.message || errorData.error || res.statusText;
-      } else {
-        errorMessage = await res.text() || res.statusText;
-      }
-    } catch {
-      errorMessage = res.statusText;
-    }
-    throw new Error(`${res.status}: ${errorMessage}`);
+    const text = (await res.text()) || res.statusText;
+    throw new Error(`${res.status}: ${text}`);
   }
 }
 
@@ -22,7 +11,7 @@ export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
-): Promise<any> {
+): Promise<Response> {
   const options: RequestInit = {
     method,
     credentials: "include",
@@ -42,15 +31,7 @@ export async function apiRequest(
   const res = await fetch(url, options);
 
   await throwIfResNotOk(res);
-  
-  // Handle different response types
-  const contentType = res.headers.get("content-type");
-  if (contentType && contentType.includes("application/json")) {
-    return await res.json();
-  } else {
-    // For non-JSON responses (like successful DELETE requests), return text
-    return await res.text();
-  }
+  return res;
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
