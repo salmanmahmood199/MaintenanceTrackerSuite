@@ -2444,15 +2444,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const startDateTime = new Date(startDate);
         const endDateTime = endDate ? new Date(endDate) : startDateTime;
         
+        // Fix timezone issue - extract time properly from Google Calendar
+        let localStartTime = null;
+        let localEndTime = null;
+        
+        if (googleEvent.start?.dateTime) {
+          // Google Calendar already provides correct timezone, just extract time
+          const timeMatch = googleEvent.start.dateTime.match(/T(\d{2}:\d{2})/);
+          localStartTime = timeMatch ? timeMatch[1] : null;
+        }
+        
+        if (googleEvent.end?.dateTime) {
+          const timeMatch = googleEvent.end.dateTime.match(/T(\d{2}:\d{2})/);
+          localEndTime = timeMatch ? timeMatch[1] : null;
+        }
+        
         const localEvent = {
           userId: user.id,
           title: googleEvent.summary || 'Google Calendar Event',
           description: googleEvent.description || '',
           eventType: 'personal',
           startDate: startDateTime.toISOString().split('T')[0],
-          startTime: googleEvent.start?.dateTime ? startDateTime.toTimeString().substring(0, 5) : null,
+          startTime: localStartTime,
           endDate: endDateTime.toISOString().split('T')[0],
-          endTime: googleEvent.end?.dateTime ? endDateTime.toTimeString().substring(0, 5) : null,
+          endTime: localEndTime,
           isAllDay: !!googleEvent.start?.date,
           location: googleEvent.location || null,
           googleEventId: googleEvent.id,

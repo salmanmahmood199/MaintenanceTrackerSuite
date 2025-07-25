@@ -201,12 +201,13 @@ export class GoogleCalendarService {
       console.log('Searching events to:', timeMax.toISOString());
       
       const params: any = {
-        calendarId: integration.calendarId,
+        calendarId: integration.calendarId || 'primary',
         timeMin: timeMin.toISOString(),
         timeMax: timeMax.toISOString(),
         singleEvents: true,
         orderBy: 'startTime',
-        maxResults: 2500 // Increased to get more events
+        maxResults: 2500, // Increased to get more events
+        showDeleted: false // Don't include deleted events
       };
 
       console.log(`Syncing Google Calendar events from ${timeMin.toISOString()} to ${timeMax.toISOString()}`);
