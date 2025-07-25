@@ -2077,25 +2077,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // If user has Google Calendar connected and sync enabled, sync to Google
       const integration = await storage.getGoogleCalendarIntegration(user.id);
-      console.log(`Checking Google Calendar integration for user ${user.id}:`, {
-        hasIntegration: !!integration,
-        syncEnabled: integration?.syncEnabled,
-        eventType: eventData.eventType
-      });
-      
-      if (integration && integration.syncEnabled && eventData.eventType !== 'availability') {
+      if (integration && integration.syncEnabled && !eventData.isAvailability) {
         try {
           console.log(`Syncing new TaskScout event "${event.title}" to Google Calendar`);
-          console.log(`Event data:`, {
-            title: event.title,
-            startDate: event.startDate,
-            endDate: event.endDate,
-            startTime: event.startTime,
-            endTime: event.endTime,
-            isAllDay: event.isAllDay,
-            eventType: event.eventType
-          });
-          
           const googleEventId = await googleCalendarService.createEvent(integration, event);
           if (googleEventId) {
             // Update the event with Google ID for bidirectional sync
@@ -2103,12 +2087,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               googleEventId,
               syncedToGoogle: true
             });
-            console.log(`✅ Successfully synced "${event.title}" to Google Calendar (${googleEventId})`);
-          } else {
-            console.warn(`❌ Failed to get Google Event ID for "${event.title}"`);
+            console.log(`Successfully synced "${event.title}" to Google Calendar (${googleEventId})`);
           }
         } catch (syncError) {
-          console.error('❌ Failed to sync event to Google Calendar:', syncError);
+          console.warn('Failed to sync event to Google Calendar:', syncError);
           // Continue without failing the request - event still created in TaskScout
         }
       }
@@ -2549,102 +2531,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error syncing Google Calendar:', error);
       res.status(500).json({ message: 'Failed to sync Google Calendar' });
-    }
-  });
-
-  // Get recent events for debugging
-  app.get('/api/calendar/recent-events', authenticateUser, async (req: AuthenticatedRequest, res) => {
-    try {
-      const user = req.user!;
-      const events = await storage.getCalendarEvents(user.id);
-      
-      // Get events from the last 7 days
-      const recentEvents = events.filter(e => {
-        const eventDate = new Date(e.startDate);
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        return eventDate >= weekAgo;
-      }).slice(0, 10);
-      
-      res.json(recentEvents.map(e => ({
-        id: e.id,
-        title: e.title,
-        startDate: e.startDate,
-        startTime: e.startTime,
-        eventType: e.eventType,
-        googleEventId: e.googleEventId,
-        syncedToGoogle: e.syncedToGoogle
-      })));
-    } catch (error) {
-      console.error('Error getting recent events:', error);
-      res.status(500).json({ message: 'Failed to get recent events' });
-    }
-  });
-
-  // Manual sync specific event to Google Calendar (for testing/debugging)
-  app.post('/api/google-calendar/sync-event/:eventId', authenticateUser, async (req: AuthenticatedRequest, res) => {
-    try {
-      const user = req.user!;
-      const eventId = parseInt(req.params.eventId);
-      
-      // Get the event
-      const event = await storage.getCalendarEvent(eventId);
-      if (!event) {
-        return res.status(404).json({ message: 'Event not found' });
-      }
-      
-      if (event.userId !== user.id && user.role !== "root") {
-        return res.status(403).json({ message: 'Access denied' });
-      }
-      
-      // Get Google Calendar integration
-      const integration = await storage.getGoogleCalendarIntegration(user.id);
-      if (!integration || !integration.syncEnabled) {
-        return res.status(400).json({ message: 'Google Calendar not connected or sync disabled' });
-      }
-      
-      console.log(`🔄 Manual sync request for event "${event.title}" (ID: ${eventId})`);
-      console.log(`Event details:`, {
-        title: event.title,
-        startDate: event.startDate,
-        endDate: event.endDate,
-        startTime: event.startTime,
-        endTime: event.endTime,
-        isAllDay: event.isAllDay,
-        eventType: event.eventType,
-        googleEventId: event.googleEventId,
-        syncedToGoogle: event.syncedToGoogle
-      });
-      
-      try {
-        const googleEventId = await googleCalendarService.createEvent(integration, event);
-        if (googleEventId) {
-          // Update the event with Google ID
-          await storage.updateCalendarEvent(event.id, {
-            googleEventId,
-            syncedToGoogle: true
-          });
-          console.log(`✅ Successfully synced "${event.title}" to Google Calendar (${googleEventId})`);
-          res.json({ 
-            message: 'Event synced successfully to Google Calendar',
-            googleEventId,
-            eventTitle: event.title
-          });
-        } else {
-          console.warn(`❌ Failed to get Google Event ID for "${event.title}"`);
-          res.status(500).json({ message: 'Failed to create event in Google Calendar' });
-        }
-      } catch (syncError) {
-        console.error('❌ Failed to sync event to Google Calendar:', syncError);
-        res.status(500).json({ 
-          message: 'Failed to sync event to Google Calendar',
-          error: syncError.message
-        });
-      }
-      
-    } catch (error) {
-      console.error('Error in manual sync:', error);
-      res.status(500).json({ message: 'Failed to sync event' });
     }
   });
 
