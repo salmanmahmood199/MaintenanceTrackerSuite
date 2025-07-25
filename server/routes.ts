@@ -2426,21 +2426,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
           continue;
         }
 
+        // Parse start and end dates properly
+        const startDate = googleEvent.start?.date || googleEvent.start?.dateTime;
+        const endDate = googleEvent.end?.date || googleEvent.end?.dateTime;
+        
+        if (!startDate) {
+          console.log('Skipping event without start date:', googleEvent.summary);
+          continue;
+        }
+        
+        const startDateTime = new Date(startDate);
+        const endDateTime = endDate ? new Date(endDate) : startDateTime;
+        
         const localEvent = {
           userId: user.id,
           title: googleEvent.summary || 'Google Calendar Event',
           description: googleEvent.description || '',
           eventType: 'personal',
-          startDate: googleEvent.start?.date || googleEvent.start?.dateTime?.split('T')[0] || '',
-          startTime: googleEvent.start?.dateTime ? googleEvent.start.dateTime.split('T')[1].substring(0, 8) : null,
-          endDate: googleEvent.end?.date || googleEvent.end?.dateTime?.split('T')[0] || '',
-          endTime: googleEvent.end?.dateTime ? googleEvent.end.dateTime.split('T')[1].substring(0, 8) : null,
+          startDate: startDateTime.toISOString().split('T')[0],
+          startTime: googleEvent.start?.dateTime ? startDateTime.toTimeString().substring(0, 5) : null,
+          endDate: endDateTime.toISOString().split('T')[0],
+          endTime: googleEvent.end?.dateTime ? endDateTime.toTimeString().substring(0, 5) : null,
           isAllDay: !!googleEvent.start?.date,
+          location: googleEvent.location || null,
           googleEventId: googleEvent.id,
           syncedToGoogle: true,
           priority: 'medium',
-          status: 'confirmed'
+          status: 'confirmed',
+          color: '#4285F4', // Google Calendar blue
+          isAvailability: false
         };
+        
+        console.log(`Syncing: "${googleEvent.summary}" on ${localEvent.startDate} ${localEvent.startTime || 'all-day'}`);
 
         // Check if event already exists
         const existingEvents = await storage.getCalendarEvents(user.id);

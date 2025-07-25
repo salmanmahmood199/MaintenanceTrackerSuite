@@ -389,6 +389,9 @@ Changelog:
 - July 25, 2025. Calendar events now support Google sync metadata (googleEventId, syncedToGoogle) for bidirectional integration
 - July 25, 2025. Fixed database schema issues and created missing tables (google_calendar_integrations, availability_configs)
 - July 25, 2025. Created administrator setup guide (GOOGLE_CALENDAR_SETUP.md) for one-time OAuth configuration
+- July 25, 2025. Enhanced Google Calendar sync to fetch future events (1 year ahead) with improved date parsing
+- July 25, 2025. Fixed OAuth callback redirect handling for proper Replit domain support
+- July 25, 2025. Successfully connected Google Calendar integration - all future events now sync to TaskScout calendar
 ```
 
 ## User Preferences

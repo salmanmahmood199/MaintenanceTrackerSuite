@@ -191,18 +191,27 @@ export class GoogleCalendarService {
     this.setCredentials(integration);
     
     try {
+      const now = new Date();
+      // Fetch events from 7 days ago to 1 year in the future
+      const timeMin = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const timeMax = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+      
       const params: any = {
         calendarId: integration.calendarId,
+        timeMin: timeMin.toISOString(),
+        timeMax: timeMax.toISOString(),
         singleEvents: true,
-        orderBy: 'startTime'
+        orderBy: 'startTime',
+        maxResults: 2500 // Increased to get more events
       };
 
-      if (lastSyncAt) {
-        params.updatedMin = lastSyncAt.toISOString();
-      }
-
+      console.log(`Syncing Google Calendar events from ${timeMin.toISOString()} to ${timeMax.toISOString()}`);
+      
       const response = await this.calendar.events.list(params);
-      return response.data.items || [];
+      const events = response.data.items || [];
+      console.log(`Found ${events.length} Google Calendar events to sync`);
+      
+      return events;
     } catch (error) {
       console.error('Failed to sync from Google Calendar:', error);
       throw new Error('Failed to sync events from Google Calendar');
