@@ -106,6 +106,7 @@ export interface IStorage {
   // Ticket operations
   getTickets(organizationId?: number, userLocationIds?: number[]): Promise<Ticket[]>;
   getTicket(id: number): Promise<Ticket | undefined>;
+  getTicketById(id: number): Promise<Ticket | undefined>;
   createTicket(ticket: InsertTicket): Promise<Ticket>;
   updateTicket(id: number, updates: Partial<UpdateTicket>): Promise<Ticket | undefined>;
   deleteTicket(id: number): Promise<boolean>;
@@ -600,6 +601,10 @@ export class DatabaseStorage implements IStorage {
   async getTicket(id: number): Promise<Ticket | undefined> {
     const [ticket] = await db.select().from(tickets).where(eq(tickets.id, id));
     return ticket || undefined;
+  }
+
+  async getTicketById(id: number): Promise<Ticket | undefined> {
+    return this.getTicket(id);
   }
 
   async createTicket(insertTicket: InsertTicket): Promise<Ticket> {
