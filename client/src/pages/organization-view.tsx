@@ -66,6 +66,10 @@ export default function OrganizationView() {
   // Use organization ID from user (for org_admin/org_subadmin) or route (for root accessing org)
   const organizationId = (user?.role === "org_admin" || user?.role === "org_subadmin") ? user.organizationId : routeOrgId;
   
+  console.log("Debug - User:", user);
+  console.log("Debug - Organization ID:", organizationId);
+  console.log("Debug - Route Org ID:", routeOrgId);
+  
 
 
   // Permission helpers
@@ -86,21 +90,25 @@ export default function OrganizationView() {
   const canManageVendors = user?.role === "root" || user?.role === "org_admin";
 
   // Fetch organization details
-  const { data: organization } = useQuery<Organization | undefined>({
+  const { data: organization, isLoading: orgLoading, error: orgError } = useQuery<Organization | undefined>({
     queryKey: ["/api/organizations", organizationId],
     queryFn: async () => {
+      console.log("Fetching organization data for ID:", organizationId);
       if (user?.role === "root") {
         // For root users, fetch all organizations and find the one by ID
         const response = await apiRequest("GET", "/api/organizations");
-        const orgs = await response.json() as Organization[];
+        const orgs = response as Organization[];
+        console.log("All orgs for root:", orgs);
         return orgs.find(org => org.id === organizationId);
       } else {
         // For org users, fetch specific organization data
         const response = await apiRequest("GET", `/api/organizations/${organizationId}`);
-        return await response.json() as Organization;
+        const orgData = response as Organization;
+        console.log("Organization data:", orgData);
+        return orgData;
       }
     },
-    enabled: !!organizationId,
+    enabled: !!organizationId && !!user,
   });
 
   // Fetch all tickets for this organization (we'll filter client-side)
@@ -473,11 +481,46 @@ export default function OrganizationView() {
 
 
 
+  console.log("Render check - Organization:", organization);
+  console.log("Render check - Loading:", orgLoading);
+  console.log("Render check - Error:", orgError);
+
+  if (orgLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading organization...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (orgError) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-foreground mb-2">Error Loading Organization</h2>
+          <p className="text-muted-foreground mb-4">{orgError.message}</p>
+          {user?.role === "root" && (
+            <Link href="/admin">
+              <Button variant="outline">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Admin
+              </Button>
+            </Link>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   if (!organization) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-xl font-semibold text-foreground mb-2">Organization Not Found</h2>
+          <p className="text-muted-foreground mb-4">Organization ID: {organizationId}</p>
           {user?.role === "root" && (
             <Link href="/admin">
               <Button variant="outline">
