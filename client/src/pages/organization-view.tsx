@@ -65,6 +65,8 @@ export default function OrganizationView() {
 
   // Use organization ID from user (for org_admin/org_subadmin) or route (for root accessing org)
   const organizationId = (user?.role === "org_admin" || user?.role === "org_subadmin") ? user.organizationId : routeOrgId;
+  
+
 
   // Permission helpers
   const canPlaceTickets = user?.role === "root" || user?.role === "org_admin" || 
@@ -87,9 +89,16 @@ export default function OrganizationView() {
   const { data: organization } = useQuery<Organization | undefined>({
     queryKey: ["/api/organizations", organizationId],
     queryFn: async () => {
-      const response = await apiRequest("GET", "/api/organizations");
-      const orgs = await response.json() as Organization[];
-      return orgs.find(org => org.id === organizationId);
+      if (user?.role === "root") {
+        // For root users, fetch all organizations and find the one by ID
+        const response = await apiRequest("GET", "/api/organizations");
+        const orgs = await response.json() as Organization[];
+        return orgs.find(org => org.id === organizationId);
+      } else {
+        // For org users, fetch specific organization data
+        const response = await apiRequest("GET", `/api/organizations/${organizationId}`);
+        return await response.json() as Organization;
+      }
     },
     enabled: !!organizationId,
   });
