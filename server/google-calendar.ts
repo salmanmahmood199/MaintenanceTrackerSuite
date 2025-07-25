@@ -124,18 +124,22 @@ export class GoogleCalendarService {
         };
       } else {
         // Timed event - properly format with time
-        const startTime = event.startTime ? event.startTime + ':00' : '00:00:00';
-        const endTime = event.endTime ? event.endTime + ':00' : '23:59:59';
+        const startTime = event.startTime || '00:00';
+        const endTime = event.endTime || '23:59';
+        
+        // Ensure proper time format (HH:MM:SS)
+        const formattedStartTime = startTime.includes(':') ? startTime + ':00' : startTime + ':00:00';
+        const formattedEndTime = endTime.includes(':') ? endTime + ':00' : endTime + ':00:00';
         
         googleEvent = {
           summary: event.title,
           description: event.description || '',
           start: {
-            dateTime: event.startDate + 'T' + startTime,
+            dateTime: event.startDate + 'T' + formattedStartTime,
             timeZone: 'America/New_York'
           },
           end: {
-            dateTime: event.endDate + 'T' + endTime,
+            dateTime: event.endDate + 'T' + formattedEndTime,
             timeZone: 'America/New_York'
           },
           location: event.location || ''
@@ -198,10 +202,11 @@ export class GoogleCalendarService {
     
     try {
       await this.calendar.events.delete({
-        calendarId: integration.calendarId,
+        calendarId: integration.calendarId || 'primary',
         eventId: googleEventId
       });
 
+      console.log(`Deleted Google Calendar event: ${googleEventId}`);
       return true;
     } catch (error) {
       console.error('Failed to delete Google Calendar event:', error);

@@ -2130,22 +2130,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const eventId = parseInt(req.params.id);
       const user = req.user!;
       
-      // Verify user owns the event
-      const existingEvent = await storage.getCalendarEvent(eventId);
-      if (!existingEvent) {
+      // Get the event to verify ownership
+      const event = await storage.getCalendarEvent(eventId);
+      if (!event) {
         return res.status(404).json({ message: "Event not found" });
       }
       
-      if (existingEvent.userId !== user.id && user.role !== "root") {
+      // Only the event owner can delete their events
+      if (event.userId !== user.id && user.role !== "root") {
         return res.status(403).json({ message: "Access denied" });
       }
       
-      const deleted = await storage.deleteCalendarEvent(eventId);
-      if (deleted) {
-        res.json({ message: "Event deleted successfully" });
-      } else {
-        res.status(500).json({ message: "Failed to delete event" });
+      // If synced to Google Calendar, delete from Google first
+      if (event.googleEventId) {
+        const integration = await storage.getGoogleCalendarIntegration(user.id);
+        if (integration && integration.syncEnabled) {
+          try {
+            console.log(`Deleting event "${event.title}" from Google Calendar (${event.googleEventId})`);
+            await googleCalendarService.deleteEvent(integration, event.googleEventId);
+            console.log(`Successfully deleted "${event.title}" from Google Calendar`);
+          } catch (syncError) {
+            console.warn('Failed to delete event from Google Calendar:', syncError);
+            // Continue with TaskScout deletion even if Google deletion fails
+          }
+        }
       }
+      
+      const success = await storage.deleteCalendarEvent(eventId);
+      if (!success) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
+      res.json({ message: "Event deleted successfully" });
     } catch (error) {
       console.error("Error deleting calendar event:", error);
       res.status(500).json({ message: "Failed to delete calendar event" });
@@ -2471,14 +2487,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let localEndTime = null;
         
         if (googleEvent.start?.dateTime) {
-          // Google Calendar already provides correct timezone, just extract time
-          const timeMatch = googleEvent.start.dateTime.match(/T(\d{2}:\d{2})/);
-          localStartTime = timeMatch ? timeMatch[1] : null;
+          // Parse the full datetime and extract time in local timezone
+          const startDateTime = new Date(googleEvent.start.dateTime);
+          localStartTime = startDateTime.toLocaleTimeString('en-US', {
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZone: 'America/New_York'
+          });
         }
         
         if (googleEvent.end?.dateTime) {
-          const timeMatch = googleEvent.end.dateTime.match(/T(\d{2}:\d{2})/);
-          localEndTime = timeMatch ? timeMatch[1] : null;
+          const endDateTime = new Date(googleEvent.end.dateTime);
+          localEndTime = endDateTime.toLocaleTimeString('en-US', {
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZone: 'America/New_York'
+          });
         }
         
         const localEvent = {
