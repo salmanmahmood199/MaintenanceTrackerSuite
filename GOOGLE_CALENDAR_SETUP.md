@@ -20,13 +20,18 @@ This setup only needs to be done once by the TaskScout project owner. After comp
 ### Step 3: Configure OAuth Consent Screen
 
 1. Go to "APIs & Services" → "OAuth consent screen"
-2. Choose "Internal" (for Google Workspace) or "External"
+2. Choose "External" (since this is a personal project)
 3. Fill required fields:
    - App name: "TaskScout Calendar Integration"
-   - User support email: Your organization email
-   - Developer contact: Your IT team email
-4. Add scopes: Select Google Calendar API scopes
-5. Save and continue through all steps
+   - User support email: Your email address
+   - Developer contact: Your email address
+4. Under "Scopes", click "Add or Remove Scopes" and add:
+   - `../auth/calendar` (See, edit, share, and permanently delete all calendars)
+   - `../auth/calendar.events` (View and edit events on all calendars)
+   - `../auth/userinfo.email` (See your primary Google Account email address)
+5. **Important for Testing**: Under "Test users", add your own email address
+6. Save and continue through all steps
+7. **Note**: For testing, your app will remain in "Testing" status, which is fine
 
 ### Step 4: Create OAuth Credentials
 
@@ -76,9 +81,16 @@ After the project owner completes the setup, ANY user can connect:
 ## Troubleshooting
 
 - **"OAuth error"**: Check redirect URIs match exactly
-- **"Access blocked"**: Verify OAuth consent screen is configured
+- **"Access blocked - App not verified"**: Add your email to "Test users" in OAuth consent screen
 - **"API not enabled"**: Ensure Google Calendar API is enabled
 - **"Invalid credentials"**: Verify environment variables are set correctly
+- **"redirect_uri_mismatch"**: Ensure exact redirect URI is added to OAuth credentials
+
+### For Testing Phase
+While your app is in "Testing" status:
+1. Only users added to "Test users" list can authenticate
+2. Add your email and any other test users to the Test users section
+3. The app will work perfectly for testing without full Google verification
 
 ## Security Notes
 
