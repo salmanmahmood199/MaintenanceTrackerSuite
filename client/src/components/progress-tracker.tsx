@@ -67,6 +67,19 @@ export function ProgressTrackerEmbedded({
     queryKey: ["/api/tickets", ticket.id, "details"],
   });
 
+  // Fetch vendor assignment history
+  const { data: vendorHistory = [], isLoading: isLoadingVendorHistory } = useQuery<any[]>({
+    queryKey: ["/api/tickets", ticket.id, "vendor-history"],
+    queryFn: async () => {
+      const response = await fetch(`/api/tickets/${ticket.id}/vendor-history`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch vendor assignment history');
+      }
+      return response.json();
+    },
+    enabled: !!ticket.id
+  });
+
   // Calculate progress percentage based on ticket status
   const getProgressPercentage = (status: string) => {
     switch (status) {
@@ -141,6 +154,47 @@ export function ProgressTrackerEmbedded({
   const progressPercentage = getProgressPercentage(ticket.status);
   const currentStage = getCurrentStage(ticket.status);
 
+  // Create vendor assignment steps based on history
+  const createVendorAssignmentSteps = () => {
+    if (!vendorHistory || vendorHistory.length === 0) {
+      return [{
+        id: 'vendor_assigned',
+        title: 'Vendor Assignment Pending',
+        icon: Building,
+        description: 'Awaiting vendor assignment',
+        details: {
+          status: 'No vendor assigned yet'
+        }
+      }];
+    }
+
+    return vendorHistory.map((assignment: any, index: number) => {
+      const isRejected = assignment.status === 'rejected';
+      const isActive = assignment.isActive;
+      
+      return {
+        id: `vendor_assigned_${assignment.id}`,
+        title: isRejected ? `Vendor Rejected: ${assignment.vendorName}` : `Vendor Assigned: ${assignment.vendorName}`,
+        icon: Building,
+        description: isRejected 
+          ? `${assignment.vendorName} declined the work - ${assignment.rejectionReason}`
+          : `${assignment.vendorName} ${isActive ? 'currently assigned' : 'was assigned'} for maintenance work`,
+        details: {
+          vendor: assignment.vendorName,
+          assignedBy: assignment.assignedByName,
+          assignmentType: assignment.assignmentType,
+          status: assignment.status,
+          rejectionReason: assignment.rejectionReason,
+          assignedAt: assignment.assignedAt,
+          rejectedAt: assignment.rejectedAt,
+          isActive: assignment.isActive
+        },
+        isRejected,
+        isActive
+      };
+    });
+  };
+
   // Create all possible workflow steps
   const createAllWorkflowSteps = () => {
     const allSteps = [
@@ -175,17 +229,8 @@ export function ProgressTrackerEmbedded({
           nextStep: 'Vendor assignment pending'
         }
       },
-      {
-        id: 'vendor_assigned',
-        title: 'Vendor Assigned',
-        icon: Building,
-        description: `${ticketDetails?.maintenanceVendor?.name || 'Vendor'} selected for maintenance work`,
-        details: {
-          vendor: ticketDetails?.maintenanceVendor?.name || 'Pending vendor selection',
-          specialties: ticketDetails?.maintenanceVendor?.specialties || 'General maintenance',
-          contact: ticketDetails?.maintenanceVendor?.contactInfo || 'TBD'
-        }
-      },
+      // Dynamically create vendor assignment steps based on history
+      ...createVendorAssignmentSteps(),
       {
         id: 'vendor_accepted',
         title: 'Vendor Accepted Work',
@@ -521,6 +566,19 @@ export function ProgressTracker({
   // Fetch ticket details with related data
   const { data: ticketDetails, isLoading: isLoadingDetails } = useQuery<any>({
     queryKey: ["/api/tickets", ticket.id, "details"],
+    enabled: open,
+  });
+
+  // Fetch vendor assignment history
+  const { data: vendorHistory = [], isLoading: isLoadingVendorHistory } = useQuery<any[]>({
+    queryKey: ["/api/tickets", ticket.id, "vendor-history"],
+    queryFn: async () => {
+      const response = await fetch(`/api/tickets/${ticket.id}/vendor-history`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch vendor history');
+      }
+      return response.json();
+    },
     enabled: open,
   });
 
@@ -861,33 +919,84 @@ export function ProgressTracker({
                     </div>
                   )}
 
-                  {/* Vendor Assignment */}
-                  {ticket.maintenanceVendorId && (
-                    <div className="flex items-start space-x-3 pb-4 border-b border-slate-100">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 text-purple-600 mt-1">
-                        <Building className="h-4 w-4" />
+                  {/* Vendor Assignment History */}
+                  {vendorHistory && vendorHistory.length > 0 && vendorHistory.map((assignment: any) => (
+                    <div key={assignment.id} className="flex items-start space-x-3 pb-4 border-b border-slate-100">
+                      <div className={`flex items-center justify-center w-8 h-8 rounded-full mt-1 ${
+                        assignment.status === 'rejected' 
+                          ? 'bg-red-100 text-red-600' 
+                          : assignment.isActive 
+                            ? 'bg-green-100 text-green-600'
+                            : 'bg-purple-100 text-purple-600'
+                      }`}>
+                        {assignment.status === 'rejected' ? (
+                          <XCircle className="h-4 w-4" />
+                        ) : assignment.isActive ? (
+                          <CheckCircle className="h-4 w-4" />
+                        ) : (
+                          <Building className="h-4 w-4" />
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <h4 className="text-sm font-medium text-slate-900">
-                            Vendor Assigned
+                          <h4 className={`text-sm font-medium ${
+                            assignment.status === 'rejected' 
+                              ? 'text-red-900 line-through' 
+                              : assignment.isActive 
+                                ? 'text-green-900 font-bold'
+                                : 'text-slate-900'
+                          }`}>
+                            {assignment.status === 'rejected' 
+                              ? `❌ Vendor Rejected: ${assignment.vendorName}`
+                              : assignment.isActive 
+                                ? `✅ Current Vendor: ${assignment.vendorName}`
+                                : `Vendor Assigned: ${assignment.vendorName}`
+                            }
                           </h4>
-                          <Badge className="bg-purple-100 text-purple-800">
-                            Assignment
+                          <Badge className={
+                            assignment.status === 'rejected' 
+                              ? 'bg-red-100 text-red-800 border-red-200'
+                              : assignment.isActive 
+                                ? 'bg-green-100 text-green-800 border-green-200'
+                                : 'bg-purple-100 text-purple-800 border-purple-200'
+                          }>
+                            {assignment.status === 'rejected' ? 'Declined' : assignment.isActive ? 'Active' : 'Assigned'}
                           </Badge>
                         </div>
-                        <p className="text-sm text-slate-600 mt-1">
-                          Maintenance vendor assigned to handle this ticket
+                        <p className={`text-sm mt-1 ${
+                          assignment.status === 'rejected' 
+                            ? 'text-red-600' 
+                            : assignment.isActive 
+                              ? 'text-green-600'
+                              : 'text-slate-600'
+                        }`}>
+                          {assignment.status === 'rejected' 
+                            ? `Vendor declined the work: ${assignment.rejectionReason || 'No reason provided'}`
+                            : assignment.isActive 
+                              ? 'Currently handling this maintenance ticket'
+                              : 'Was assigned to handle this maintenance ticket'
+                          }
                         </p>
                         <div className="flex items-center space-x-4 mt-2 text-xs text-slate-500">
                           <div className="flex items-center space-x-1">
-                            <Building className="h-3 w-3" />
-                            <span>Vendor: {ticketDetails?.maintenanceVendor ? `${ticketDetails.maintenanceVendor.name}` : `ID: ${ticket.maintenanceVendorId}`}</span>
+                            <Calendar className="h-3 w-3" />
+                            <span>
+                              {assignment.status === 'rejected' 
+                                ? `Rejected ${format(new Date(assignment.rejectedAt), 'MMM dd, yyyy h:mm a')}`
+                                : `Assigned ${format(new Date(assignment.assignedAt), 'MMM dd, yyyy h:mm a')}`
+                              }
+                            </span>
                           </div>
+                          {assignment.assignedByName && (
+                            <div className="flex items-center space-x-1">
+                              <User className="h-3 w-3" />
+                              <span>By: {assignment.assignedByName}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
-                  )}
+                  ))}
 
                   {/* Work Progress */}
                   {ticket.status === 'in-progress' && (
