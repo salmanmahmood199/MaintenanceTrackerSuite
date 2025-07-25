@@ -1,0 +1,66 @@
+Google Calendar OAuth Setup Guide
+Follow these steps to set up Google Calendar integration for your organization
+
+Administrator Required: This setup requires Google Workspace admin privileges or access to Google Cloud Console.
+1
+Create Google Cloud Project
+Create a new project in Google Cloud Console to manage your OAuth credentials.
+
+1. Go to Google Cloud Console
+2. Click "New Project" and give it a name like "TaskScout Calendar Integration"
+3. Note your Project ID for later reference
+2
+Enable Google Calendar API
+Enable the Google Calendar API for your project.
+
+1. In your Google Cloud Console, go to "APIs & Services" → "Library"
+2. Search for "Google Calendar API"
+3. Click on it and press "Enable"
+3
+Configure OAuth Consent Screen
+Set up the OAuth consent screen that users will see during authentication.
+
+1. Go to "APIs & Services" → "OAuth consent screen"
+2. Choose "Internal" if using Google Workspace, or "External" for general use
+3. Fill in required fields:
+• App name: "TaskScout Calendar Integration"
+• User support email: Your organization email
+• Developer contact: Your IT team email
+4. Add scopes: Select "Google Calendar API" scopes
+5. Save and continue through all steps
+4
+Create OAuth Credentials
+Create the OAuth 2.0 credentials needed for calendar integration.
+
+1. Go to "APIs & Services" → "Credentials"
+2. Click "Create Credentials" → "OAuth 2.0 Client IDs"
+3. Choose "Web application" as the application type
+4. Set the name to "TaskScout Calendar Client"
+5. Add Authorized redirect URIs:
+https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev/api/auth/google/callback
+6. Click "Create" and copy the Client ID and Client Secret
+5
+Configure Environment Variables
+Add your Google OAuth credentials to the application environment.
+
+Add these environment variables:
+
+GOOGLE_CLIENT_ID=your_client_id_here
+GOOGLE_CLIENT_SECRET=your_client_secret_here
+GOOGLE_REDIRECT_URI=https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev/api/auth/google/callback
+6
+Test Integration
+Verify that the Google Calendar integration is working correctly.
+
+1. Restart the application to load new environment variables
+2. Click "Connect Google Calendar" in the integration panel
+3. Complete the OAuth flow in the popup window
+4. Verify the connection shows as "Connected"
+5. Test manual sync to import Google Calendar events
+Success! Once configured, users will be able to sync their Google Calendar events with the internal calendar system, providing a unified view of all scheduled activities.
+Need Help? If you encounter issues during setup, ensure that:
+
+• The Google Calendar API is enabled for your project
+• The OAuth consent screen is properly configured
+• The redirect URI exactly matches your application URL
+• Environment variables are correctly set and the app is restarted

@@ -387,6 +387,8 @@ Changelog:
 - July 25, 2025. Enhanced calendar page with Google Calendar sync functionality and OAuth setup documentation
 - July 25, 2025. Added comprehensive API routes for Google Calendar authentication, token management, and event synchronization
 - July 25, 2025. Calendar events now support Google sync metadata (googleEventId, syncedToGoogle) for bidirectional integration
+- July 25, 2025. Fixed database schema issues and created missing tables (google_calendar_integrations, availability_configs)
+- July 25, 2025. Created administrator setup guide (GOOGLE_CALENDAR_SETUP.md) for one-time OAuth configuration
 ```
 
 ## User Preferences
