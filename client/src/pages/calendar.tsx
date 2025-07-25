@@ -379,7 +379,16 @@ export default function Calendar() {
                                 <div className="font-medium truncate">{event.title}</div>
                                 {event.startTime && (
                                   <div className="text-xs opacity-75">
-                                    {event.startTime}
+                                    {(() => {
+                                      try {
+                                        const [hours, minutes] = event.startTime.split(':').map(Number);
+                                        const date = new Date();
+                                        date.setHours(hours, minutes);
+                                        return format(date, "h:mm a");
+                                      } catch {
+                                        return event.startTime;
+                                      }
+                                    })()}
                                   </div>
                                 )}
                               </div>

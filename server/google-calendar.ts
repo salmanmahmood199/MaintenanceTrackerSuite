@@ -105,26 +105,49 @@ export class GoogleCalendarService {
     this.setCredentials(integration);
     
     try {
-      const googleEvent = {
-        summary: event.title,
-        description: event.description || '',
-        start: {
-          dateTime: event.startDate + 'T' + (event.startTime || '00:00:00'),
-          timeZone: 'America/New_York'
-        },
-        end: {
-          dateTime: event.endDate + 'T' + (event.endTime || '23:59:59'),
-          timeZone: 'America/New_York'
-        },
-        location: event.location || '',
-        colorId: this.getColorIdFromHex(event.color || '#3B82F6')
-      };
+      let googleEvent;
+      
+      if (event.isAllDay) {
+        // All-day event
+        googleEvent = {
+          summary: event.title,
+          description: event.description || '',
+          start: {
+            date: event.startDate,
+            timeZone: 'America/New_York'
+          },
+          end: {
+            date: event.endDate,
+            timeZone: 'America/New_York'
+          },
+          location: event.location || ''
+        };
+      } else {
+        // Timed event - properly format with time
+        const startTime = event.startTime ? event.startTime + ':00' : '00:00:00';
+        const endTime = event.endTime ? event.endTime + ':00' : '23:59:59';
+        
+        googleEvent = {
+          summary: event.title,
+          description: event.description || '',
+          start: {
+            dateTime: event.startDate + 'T' + startTime,
+            timeZone: 'America/New_York'
+          },
+          end: {
+            dateTime: event.endDate + 'T' + endTime,
+            timeZone: 'America/New_York'
+          },
+          location: event.location || ''
+        };
+      }
 
       const response = await this.calendar.events.insert({
-        calendarId: integration.calendarId,
+        calendarId: integration.calendarId || 'primary',
         resource: googleEvent
       });
 
+      console.log(`Created Google Calendar event: ${event.title} (${response.data.id})`);
       return response.data.id;
     } catch (error) {
       console.error('Failed to create Google Calendar event:', error);

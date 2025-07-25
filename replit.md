@@ -392,6 +392,10 @@ Changelog:
 - July 25, 2025. Enhanced Google Calendar sync to fetch future events (1 year ahead) with improved date parsing
 - July 25, 2025. Fixed OAuth callback redirect handling for proper Replit domain support
 - July 25, 2025. Successfully connected Google Calendar integration - all future events now sync to TaskScout calendar
+- July 25, 2025. Fixed timezone display issue in calendar grid - events now show correct local time (3:30 PM instead of 5:30 PM)
+- July 25, 2025. Implemented bidirectional Google Calendar sync - TaskScout events now automatically sync back to Google Calendar
+- July 25, 2025. Enhanced event creation with proper all-day and timed event handling for Google sync
+- July 25, 2025. Added comprehensive logging for sync debugging and error handling
 ```
 
 ## User Preferences

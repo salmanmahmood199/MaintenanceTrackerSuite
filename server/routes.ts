@@ -2054,7 +2054,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const conflicts = await storage.checkEventConflicts(
           user.id,
           eventData.startDate,
-          eventData.endDate,
+          eventData.endDate,  
           eventData.startTime,
           eventData.endTime,
           eventData.isAllDay
@@ -2072,7 +2072,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Create the event in TaskScout first
       const event = await storage.createCalendarEvent(eventData);
+      
+      // If user has Google Calendar connected and sync enabled, sync to Google
+      const integration = await storage.getGoogleCalendarIntegration(user.id);
+      if (integration && integration.syncEnabled && !eventData.isAvailability) {
+        try {
+          console.log(`Syncing new TaskScout event "${event.title}" to Google Calendar`);
+          const googleEventId = await googleCalendarService.createEvent(integration, event);
+          if (googleEventId) {
+            // Update the event with Google ID for bidirectional sync
+            await storage.updateCalendarEvent(event.id, {
+              googleEventId,
+              syncedToGoogle: true
+            });
+            console.log(`Successfully synced "${event.title}" to Google Calendar (${googleEventId})`);
+          }
+        } catch (syncError) {
+          console.warn('Failed to sync event to Google Calendar:', syncError);
+          // Continue without failing the request - event still created in TaskScout
+        }
+      }
+      
       res.status(201).json(event);
     } catch (error) {
       console.error("Error creating calendar event:", error);
