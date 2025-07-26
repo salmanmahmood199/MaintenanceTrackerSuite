@@ -1889,6 +1889,25 @@ export class DatabaseStorage implements IStorage {
           return true;
         }
         
+        // For availability events, check if the day is actually included in their recurrence pattern
+        if (event.isAvailability && event.recurrencePattern) {
+          try {
+            const pattern = JSON.parse(event.recurrencePattern);
+            if (pattern.days && Array.isArray(pattern.days)) {
+              const dayOfWeek = startTime.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+              console.log('Checking availability event for day:', dayOfWeek, 'Available days:', pattern.days);
+              
+              // If this availability event doesn't cover this day, it's not a conflict
+              if (!pattern.days.includes(dayOfWeek)) {
+                console.log('Availability event does not cover this day, not a conflict');
+                return false;
+              }
+            }
+          } catch (e) {
+            console.log('Error parsing recurrence pattern:', e);
+          }
+        }
+        
         // Check if times overlap
         const eventStart = event.startTime;
         const eventEnd = event.endTime;
@@ -1906,7 +1925,19 @@ export class DatabaseStorage implements IStorage {
         const checkStartMin = toMinutes(checkStart);
         const checkEndMin = toMinutes(checkEnd);
         
-        // Check for overlap: events overlap if one starts before the other ends
+        // For availability events, we need to check if the time is WITHIN the available hours
+        // If it's an availability event and the time is within the available window, it's NOT a conflict
+        if (event.isAvailability) {
+          const isWithinAvailableHours = checkStartMin >= eventStartMin && checkEndMin <= eventEndMin;
+          console.log('Availability check:', {
+            isWithinHours: isWithinAvailableHours,
+            checkTime: `${checkStart}-${checkEnd}`,
+            availableTime: `${eventStart}-${eventEnd}`
+          });
+          return !isWithinAvailableHours; // Conflict only if OUTSIDE available hours
+        }
+        
+        // For other events (meetings, unavailability), check for overlap
         return !(checkEndMin <= eventStartMin || checkStartMin >= eventEndMin);
       });
 
