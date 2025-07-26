@@ -52,31 +52,43 @@ export default function AvailabilityConfigModal({ isOpen, onClose }: Availabilit
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Initialize default schedule (9 AM to 5 PM weekdays)
-  const [weeklySchedule, setWeeklySchedule] = useState<WeeklySchedule>({
-    monday: [{ start: "09:00", end: "17:00" }],
-    tuesday: [{ start: "09:00", end: "17:00" }],
-    wednesday: [{ start: "09:00", end: "17:00" }],
-    thursday: [{ start: "09:00", end: "17:00" }],
-    friday: [{ start: "09:00", end: "17:00" }],
-    saturday: [],
-    sunday: [],
-  });
-
-  const [timezone, setTimezone] = useState("America/New_York");
-
-  // Fetch existing availability configuration
-  const { data: existingConfig } = useQuery({
+  // Fetch existing availability configuration first
+  const { data: existingConfig, isLoading } = useQuery({
     queryKey: ["/api/availability/config"],
     retry: false,
   });
 
-  // Load existing configuration when data is available
+  // Initialize with existing data or defaults
+  const [weeklySchedule, setWeeklySchedule] = useState<WeeklySchedule>(() => {
+    if (existingConfig && existingConfig.weeklySchedule) {
+      try {
+        return JSON.parse(existingConfig.weeklySchedule);
+      } catch (error) {
+        console.error("Error parsing initial weekly schedule:", error);
+      }
+    }
+    return {
+      monday: [{ start: "09:00", end: "17:00" }],
+      tuesday: [{ start: "09:00", end: "17:00" }],
+      wednesday: [{ start: "09:00", end: "17:00" }],
+      thursday: [{ start: "09:00", end: "17:00" }],
+      friday: [{ start: "09:00", end: "17:00" }],
+      saturday: [],
+      sunday: [],
+    };
+  });
+
+  const [timezone, setTimezone] = useState(() => {
+    return existingConfig?.timezone || "America/New_York";
+  });
+
+  // Update state when configuration changes
   useEffect(() => {
     if (existingConfig && existingConfig.timezone && existingConfig.weeklySchedule) {
       setTimezone(existingConfig.timezone);
       try {
         const schedule = JSON.parse(existingConfig.weeklySchedule);
+        console.log('Loading existing availability config:', schedule);
         setWeeklySchedule(schedule);
       } catch (error) {
         console.error("Error parsing weekly schedule:", error);
