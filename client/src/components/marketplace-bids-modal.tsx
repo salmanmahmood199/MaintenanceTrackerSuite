@@ -299,27 +299,27 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
                   <CardContent className="space-y-4">
                     {/* Bid Details */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="bg-muted p-3 rounded-md">
+                      <div className="bg-muted dark:bg-slate-800 p-3 rounded-md">
                         <Label className="text-xs text-muted-foreground">Hourly Rate</Label>
-                        <div className="text-lg font-semibold">${bid.hourlyRate}</div>
+                        <div className="text-lg font-semibold text-foreground">${bid.hourlyRate}</div>
                       </div>
-                      <div className="bg-muted p-3 rounded-md">
+                      <div className="bg-muted dark:bg-slate-800 p-3 rounded-md">
                         <Label className="text-xs text-muted-foreground">Estimated Hours</Label>
-                        <div className="text-lg font-semibold">{bid.estimatedHours}</div>
+                        <div className="text-lg font-semibold text-foreground">{bid.estimatedHours}</div>
                       </div>
-                      <div className="bg-muted p-3 rounded-md">
+                      <div className="bg-muted dark:bg-slate-800 p-3 rounded-md">
                         <Label className="text-xs text-muted-foreground">Total Amount</Label>
-                        <div className="text-lg font-semibold text-green-600">${bid.totalAmount}</div>
+                        <div className="text-lg font-semibold text-green-600 dark:text-green-400">${bid.totalAmount}</div>
                       </div>
                     </div>
 
                     {/* Response Time */}
                     {bid.responseTime && (
                       <div>
-                        <Label className="text-sm font-medium">Response Time</Label>
+                        <Label className="text-sm font-medium text-foreground">Response Time</Label>
                         <div className="flex items-center gap-2 mt-1">
                           <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span>{bid.responseTime}</span>
+                          <span className="text-foreground">{bid.responseTime}</span>
                         </div>
                       </div>
                     )}
@@ -327,10 +327,10 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
                     {/* Parts */}
                     {bid.parts && bid.parts.length > 0 && (
                       <div>
-                        <Label className="text-sm font-medium">Required Parts</Label>
+                        <Label className="text-sm font-medium text-foreground">Required Parts</Label>
                         <div className="mt-2 space-y-1">
                           {bid.parts.map((part: any, index: number) => (
-                            <div key={index} className="flex justify-between text-sm bg-muted p-2 rounded">
+                            <div key={index} className="flex justify-between text-sm bg-muted dark:bg-slate-800 text-foreground p-2 rounded">
                               <span>{part.name} × {part.quantity}</span>
                               <span>${(part.estimatedCost * part.quantity).toFixed(2)}</span>
                             </div>
@@ -342,27 +342,27 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
                     {/* Additional Notes */}
                     {bid.additionalNotes && (
                       <div>
-                        <Label className="text-sm font-medium">Additional Notes</Label>
+                        <Label className="text-sm font-medium text-foreground">Additional Notes</Label>
                         <p className="text-sm text-muted-foreground mt-1">{bid.additionalNotes}</p>
                       </div>
                     )}
 
                     {/* Counter Offer or Rejection Details */}
                     {bid.status === "rejected" && bid.rejectionReason && (
-                      <div className="bg-red-50 border border-red-200 p-3 rounded-md">
-                        <Label className="text-sm font-medium text-red-800">Rejection Reason</Label>
-                        <p className="text-sm text-red-700 mt-1">{bid.rejectionReason}</p>
+                      <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 p-3 rounded-md">
+                        <Label className="text-sm font-medium text-red-800 dark:text-red-200">Rejection Reason</Label>
+                        <p className="text-sm text-red-700 dark:text-red-300 mt-1">{bid.rejectionReason}</p>
                       </div>
                     )}
 
                     {bid.status === "counter" && bid.counterOffer && (
-                      <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-md">
-                        <Label className="text-sm font-medium text-yellow-800">Counter Offer</Label>
+                      <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 p-3 rounded-md">
+                        <Label className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Counter Offer</Label>
                         <div className="flex justify-between items-center mt-1">
-                          <span className="text-lg font-semibold text-yellow-700">${bid.counterOffer}</span>
+                          <span className="text-lg font-semibold text-yellow-700 dark:text-yellow-300">${bid.counterOffer}</span>
                         </div>
                         {bid.counterNotes && (
-                          <p className="text-sm text-yellow-700 mt-2">{bid.counterNotes}</p>
+                          <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-2">{bid.counterNotes}</p>
                         )}
                       </div>
                     )}
