@@ -56,6 +56,8 @@ export function TechnicianCalendarWidget({
   const [scheduleData, setScheduleData] = useState<ScheduleData | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [showTimeSlots, setShowTimeSlots] = useState(false);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<{start: string, end: string} | null>(null);
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -176,10 +178,60 @@ export function TechnicianCalendarWidget({
   };
 
   const handleDateClick = (date: Date) => {
-    setSelectedDate(selectedDate && isSameDay(selectedDate, date) ? null : date);
+    const newSelectedDate = selectedDate && isSameDay(selectedDate, date) ? null : date;
+    setSelectedDate(newSelectedDate);
+    setShowTimeSlots(!!newSelectedDate);
+    setSelectedTimeSlot(null);
     if (onDateSelect) {
       onDateSelect(date);
     }
+  };
+
+  // Generate time slots for the day (8 AM to 6 PM in 30-minute intervals)
+  const generateTimeSlots = () => {
+    const slots = [];
+    for (let hour = 8; hour < 18; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        const startTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        const endHour = minute === 30 ? hour + 1 : hour;
+        const endMinute = minute === 30 ? 0 : 30;
+        const endTime = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
+        
+        slots.push({
+          start: startTime,
+          end: endTime,
+          label: `${formatTime(startTime)} - ${formatTime(endTime)}`
+        });
+      }
+    }
+    return slots;
+  };
+
+  const formatTime = (time: string) => {
+    const [hour, minute] = time.split(':').map(Number);
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+    return `${displayHour}:${minute.toString().padStart(2, '0')} ${period}`;
+  };
+
+  const isTimeSlotAvailable = (startTime: string, endTime: string) => {
+    if (!selectedDate || !scheduleData) return true;
+    
+    const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
+    
+    // Check if time slot conflicts with existing events or tickets
+    const dayEvents = getDayEvents(selectedDate);
+    
+    for (const event of dayEvents) {
+      if (event.startTime && event.endTime) {
+        // Check for time overlap
+        if (startTime < event.endTime && endTime > event.startTime) {
+          return false;
+        }
+      }
+    }
+    
+    return true;
   };
 
   const defaultTrigger = (
@@ -194,7 +246,7 @@ export function TechnicianCalendarWidget({
       <DialogTrigger asChild>
         {trigger || defaultTrigger}
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 text-black dark:text-white">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="w-5 h-5" />
@@ -214,7 +266,7 @@ export function TechnicianCalendarWidget({
               <ChevronLeft className="w-4 h-4" />
             </Button>
             
-            <h3 className="text-lg font-semibold">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
               {format(currentDate, 'MMMM yyyy')}
             </h3>
             
@@ -229,7 +281,7 @@ export function TechnicianCalendarWidget({
           </div>
 
           {/* Legend */}
-          <div className="flex flex-wrap gap-4 text-sm">
+          <div className="flex flex-wrap gap-4 text-sm text-gray-700 dark:text-gray-300">
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 bg-green-500 rounded"></span>
               <span>Available</span>
@@ -251,15 +303,15 @@ export function TechnicianCalendarWidget({
           {/* Calendar Grid */}
           <div className="relative">
             {loading && (
-              <div className="absolute inset-0 bg-white/50 dark:bg-gray-900/50 flex items-center justify-center z-10">
-                <div className="text-sm">Loading calendar...</div>
+              <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 flex items-center justify-center z-10">
+                <div className="text-sm text-gray-900 dark:text-white">Loading calendar...</div>
               </div>
             )}
             
             <div className="grid grid-cols-7 gap-1">
               {/* Day Headers */}
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                <div key={day} className="p-2 text-center text-sm font-medium text-gray-500 dark:text-gray-400">
+                <div key={day} className="p-2 text-center text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                   {day}
                 </div>
               ))}
@@ -325,33 +377,107 @@ export function TechnicianCalendarWidget({
           {/* Selected Date Details */}
           {selectedDate && (
             <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <h4 className="font-semibold mb-2 flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                {format(selectedDate, 'EEEE, MMMM d, yyyy')}
-              </h4>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
+                  <Calendar className="w-4 h-4" />
+                  {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+                </h4>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowTimeSlots(!showTimeSlots)}
+                  className="text-xs"
+                >
+                  {showTimeSlots ? 'Hide Time Slots' : 'Select Time Slot'}
+                </Button>
+              </div>
               
-              {getDayEvents(selectedDate).length > 0 ? (
-                <div className="space-y-2">
-                  {getDayEvents(selectedDate).map((event, index) => (
-                    <div key={`${event.id}-${index}`} className="flex items-center gap-2 text-sm">
-                      <Clock className="w-4 h-4 text-blue-500" />
-                      <span className="font-medium">{event.title}</span>
-                      {event.startTime && (
-                        <span className="text-gray-500 dark:text-gray-400">
-                          {event.startTime}
-                          {event.endTime && ` - ${event.endTime}`}
-                        </span>
-                      )}
-                    </div>
-                  ))}
+              {/* Existing Events */}
+              {getDayEvents(selectedDate).length > 0 && (
+                <div className="mb-4">
+                  <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Scheduled Events:</h5>
+                  <div className="space-y-2">
+                    {getDayEvents(selectedDate).map((event, index) => (
+                      <div key={`${event.id}-${index}`} className="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 p-2 rounded border border-gray-200 dark:border-gray-600">
+                        <Clock className="w-4 h-4 text-blue-500" />
+                        <span className="font-medium text-gray-900 dark:text-gray-100">{event.title}</span>
+                        {event.startTime && (
+                          <span className="text-gray-500 dark:text-gray-400">
+                            {formatTime(event.startTime)}
+                            {event.endTime && ` - ${formatTime(event.endTime)}`}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ) : (
+              )}
+              
+              {/* Time Slot Selection */}
+              {showTimeSlots && (
+                <div className="space-y-3">
+                  <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">Available Time Slots:</h5>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-60 overflow-y-auto">
+                    {generateTimeSlots().map((slot, index) => {
+                      const isAvailable = isTimeSlotAvailable(slot.start, slot.end);
+                      const isSelected = selectedTimeSlot?.start === slot.start && selectedTimeSlot?.end === slot.end;
+                      
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => setSelectedTimeSlot(isSelected ? null : { start: slot.start, end: slot.end })}
+                          disabled={!isAvailable}
+                          className={`
+                            p-2 text-xs rounded border transition-all
+                            ${isAvailable 
+                              ? isSelected 
+                                ? 'bg-blue-500 text-white border-blue-500' 
+                                : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-gray-700'
+                              : 'bg-gray-100 dark:bg-gray-600 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-600 cursor-not-allowed'
+                            }
+                          `}
+                        >
+                          {slot.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  
+                  {selectedTimeSlot && (
+                    <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                            Selected: {formatTime(selectedTimeSlot.start)} - {formatTime(selectedTimeSlot.end)}
+                          </p>
+                          <p className="text-xs text-blue-700 dark:text-blue-300">
+                            Ready to schedule for {format(selectedDate, 'MMM d, yyyy')}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            // Here you would typically handle the time slot selection
+                            // For now, we'll just show a message
+                            alert(`Time slot selected: ${format(selectedDate, 'MMM d, yyyy')} ${formatTime(selectedTimeSlot.start)} - ${formatTime(selectedTimeSlot.end)}`);
+                          }}
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          Book Slot
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {!showTimeSlots && getDayEvents(selectedDate).length === 0 && (
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   {getDayStatus(selectedDate) === 'available' 
-                    ? 'Available for scheduling' 
+                    ? 'Available for scheduling. Click "Select Time Slot" to schedule something.' 
                     : getDayStatus(selectedDate) === 'unavailable'
                     ? 'Not available'
-                    : 'No scheduled events'
+                    : 'No scheduled events. Click "Select Time Slot" to schedule something.'
                   }
                 </p>
               )}
