@@ -1850,6 +1850,8 @@ export class DatabaseStorage implements IStorage {
       const startDateStr = startTime.toISOString().split('T')[0];
       const endDateStr = endTime.toISOString().split('T')[0];
       
+      console.log('Checking for conflicts on date:', startDateStr);
+      
       const conflicts = await db.select().from(calendarEvents)
         .where(
           and(
@@ -1857,7 +1859,7 @@ export class DatabaseStorage implements IStorage {
             or(
               // Event starts on the same day
               eq(calendarEvents.startDate, startDateStr),
-              // Event ends on the same day
+              // Event ends on the same day  
               eq(calendarEvents.endDate, startDateStr),
               // Multi-day event that spans our date
               and(
@@ -1867,6 +1869,16 @@ export class DatabaseStorage implements IStorage {
             )
           )
         );
+
+      console.log('Raw conflicts found:', conflicts.map(c => ({
+        id: c.id,
+        title: c.title,
+        startDate: c.startDate,
+        endDate: c.endDate,
+        startTime: c.startTime,
+        endTime: c.endTime,
+        isAllDay: c.isAllDay
+      })));
 
       console.log('Calendar conflicts found:', conflicts.length);
       
