@@ -263,7 +263,7 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
           ) : (
             <>
               {bids.map((bid) => (
-                <Card key={bid.id} className={`border ${bid.isSuperseded ? 'border-red-300 bg-red-50 dark:bg-red-950/20' : ''}`}>
+                <Card key={bid.id} className={`border ${bid.isSuperseded ? 'border-red-300 dark:border-red-600' : ''}`}>
                   <CardHeader>
                     {bid.isSuperseded && (
                       <div className="bg-red-100 dark:bg-red-900/50 border border-red-300 dark:border-red-600 p-3 rounded-md mb-4">
