@@ -82,6 +82,15 @@ export const tickets = pgTable("tickets", {
   forceClosedBy: integer("force_closed_by"),
   forceCloseReason: text("force_close_reason"),
   images: text("images").array(),
+  // ETA and scheduling fields
+  estimatedStartDate: date("estimated_start_date"), // When work is expected to begin
+  estimatedEndDate: date("estimated_end_date"), // When work is expected to complete
+  estimatedDuration: integer("estimated_duration"), // Duration in minutes
+  scheduledStartTime: timestamp("scheduled_start_time"), // Specific scheduled start time
+  scheduledEndTime: timestamp("scheduled_end_time"), // Specific scheduled end time
+  etaProvidedAt: timestamp("eta_provided_at"), // When ETA was set
+  etaProvidedBy: integer("eta_provided_by"), // Who provided the ETA
+  etaNotes: text("eta_notes"), // Additional notes about timing
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

@@ -176,10 +176,21 @@ export function VendorView() {
 
   // Accept ticket mutation
   const acceptTicketMutation = useMutation({
-    mutationFn: async ({ ticketId, assigneeId }: { ticketId: number; assigneeId?: number }) => {
+    mutationFn: async ({ ticketId, acceptData }: { 
+      ticketId: number; 
+      acceptData: {
+        assigneeId?: number;
+        estimatedStartDate?: string;
+        estimatedEndDate?: string;
+        estimatedDuration?: number;
+        scheduledStartTime?: string;
+        scheduledEndTime?: string;
+        etaNotes?: string;
+      }
+    }) => {
       return apiRequest("POST", `/api/tickets/${ticketId}/accept`, {
         maintenanceVendorId: vendorId,
-        assigneeId,
+        ...acceptData,
       });
     },
     onSuccess: () => {
@@ -229,8 +240,16 @@ export function VendorView() {
     },
   });
 
-  const handleAcceptTicket = (ticketId: number, assigneeId?: number) => {
-    acceptTicketMutation.mutate({ ticketId, assigneeId });
+  const handleAcceptTicket = (ticketId: number, acceptData: {
+    assigneeId?: number;
+    estimatedStartDate?: string;
+    estimatedEndDate?: string;
+    estimatedDuration?: number;
+    scheduledStartTime?: string;
+    scheduledEndTime?: string;
+    etaNotes?: string;
+  }) => {
+    acceptTicketMutation.mutate({ ticketId, acceptData });
   };
 
   const handleRejectTicket = (ticketId: number, rejectionReason: string) => {

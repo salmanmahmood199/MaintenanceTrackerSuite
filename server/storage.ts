@@ -647,7 +647,17 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(tickets).where(eq(tickets.status, status)).orderBy(desc(tickets.createdAt));
   }
 
-  async acceptTicket(id: number, acceptData: { maintenanceVendorId?: number; assigneeId?: number }): Promise<Ticket | undefined> {
+  async acceptTicket(id: number, acceptData: { 
+    maintenanceVendorId?: number; 
+    assigneeId?: number;
+    estimatedStartDate?: string;
+    estimatedEndDate?: string;
+    estimatedDuration?: number;
+    scheduledStartTime?: Date;
+    scheduledEndTime?: Date;
+    etaNotes?: string;
+    etaProvidedBy?: number;
+  }): Promise<Ticket | undefined> {
     console.log(`AcceptTicket storage method called for ticket ${id} with data:`, acceptData);
     
     const updateData: any = {
@@ -662,6 +672,30 @@ export class DatabaseStorage implements IStorage {
     if (acceptData.assigneeId !== undefined) {
       updateData.assigneeId = acceptData.assigneeId;
       updateData.assignedAt = new Date(); // Set timestamp when ticket is assigned to technician
+    }
+    
+    // Add ETA fields if provided
+    if (acceptData.estimatedStartDate) {
+      updateData.estimatedStartDate = acceptData.estimatedStartDate;
+    }
+    if (acceptData.estimatedEndDate) {
+      updateData.estimatedEndDate = acceptData.estimatedEndDate;
+    }
+    if (acceptData.estimatedDuration !== undefined) {
+      updateData.estimatedDuration = acceptData.estimatedDuration;
+    }
+    if (acceptData.scheduledStartTime) {
+      updateData.scheduledStartTime = acceptData.scheduledStartTime;
+    }
+    if (acceptData.scheduledEndTime) {
+      updateData.scheduledEndTime = acceptData.scheduledEndTime;
+    }
+    if (acceptData.etaNotes) {
+      updateData.etaNotes = acceptData.etaNotes;
+    }
+    if (acceptData.etaProvidedBy !== undefined) {
+      updateData.etaProvidedBy = acceptData.etaProvidedBy;
+      updateData.etaProvidedAt = new Date();
     }
     
     console.log(`Updating ticket ${id} with:`, updateData);
@@ -1804,6 +1838,107 @@ export class DatabaseStorage implements IStorage {
       .where(eq(googleCalendarIntegrations.userId, userId));
     
     return (result.rowCount || 0) > 0;
+  }
+
+  // Technician availability and scheduling operations
+  async checkTechnicianAvailability(technicianId: number, startTime: Date, endTime: Date): Promise<boolean> {
+    // Check calendar events for conflicts
+    const conflicts = await db.select().from(calendarEvents)
+      .where(
+        and(
+          eq(calendarEvents.userId, technicianId),
+          or(
+            and(
+              gte(calendarEvents.startTime, startTime),
+              lte(calendarEvents.startTime, endTime)
+            ),
+            and(
+              gte(calendarEvents.endTime, startTime),
+              lte(calendarEvents.endTime, endTime)
+            ),
+            and(
+              lte(calendarEvents.startTime, startTime),
+              gte(calendarEvents.endTime, endTime)
+            )
+          )
+        )
+      );
+
+    // Check existing ticket assignments that overlap
+    const ticketConflicts = await db.select().from(tickets)
+      .where(
+        and(
+          eq(tickets.assigneeId, technicianId),
+          ne(tickets.status, 'completed'),
+          ne(tickets.status, 'billed'),
+          ne(tickets.status, 'force_closed'),
+          or(
+            and(
+              gte(tickets.scheduledStartTime, startTime),
+              lte(tickets.scheduledStartTime, endTime)
+            ),
+            and(
+              gte(tickets.scheduledEndTime, startTime),
+              lte(tickets.scheduledEndTime, endTime)
+            ),
+            and(
+              lte(tickets.scheduledStartTime, startTime),
+              gte(tickets.scheduledEndTime, endTime)
+            )
+          )
+        )
+      );
+
+    return conflicts.length === 0 && ticketConflicts.length === 0;
+  }
+
+  async getTechnicianSchedule(technicianId: number, startDate: Date, endDate: Date): Promise<{
+    events: CalendarEvent[];
+    tickets: Ticket[];
+    availability: AvailabilityConfig[];
+  }> {
+    // Get calendar events
+    const events = await db.select().from(calendarEvents)
+      .where(
+        and(
+          eq(calendarEvents.userId, technicianId),
+          gte(calendarEvents.startTime, startDate),
+          lte(calendarEvents.endTime, endDate)
+        )
+      )
+      .orderBy(calendarEvents.startTime);
+
+    // Get scheduled tickets
+    const assignedTickets = await db.select().from(tickets)
+      .where(
+        and(
+          eq(tickets.assigneeId, technicianId),
+          ne(tickets.status, 'completed'),
+          ne(tickets.status, 'billed'),
+          ne(tickets.status, 'force_closed'),
+          or(
+            and(
+              gte(tickets.scheduledStartTime, startDate),
+              lte(tickets.scheduledStartTime, endDate)
+            ),
+            and(
+              gte(tickets.scheduledEndTime, startDate),
+              lte(tickets.scheduledEndTime, endDate)
+            )
+          )
+        )
+      )
+      .orderBy(tickets.scheduledStartTime);
+
+    // Get availability configuration
+    const availability = await db.select().from(availabilityConfigs)
+      .where(eq(availabilityConfigs.userId, technicianId));
+
+    return {
+      events,
+      tickets: assignedTickets,
+      availability
+    };
   }
 }
 

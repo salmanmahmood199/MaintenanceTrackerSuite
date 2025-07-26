@@ -836,11 +836,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }, async (req: AuthenticatedRequest, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { maintenanceVendorId, assigneeId, marketplace } = req.body;
+      const { 
+        maintenanceVendorId, 
+        assigneeId, 
+        marketplace,
+        estimatedStartDate,
+        estimatedEndDate,
+        estimatedDuration,
+        scheduledStartTime,
+        scheduledEndTime,
+        etaNotes
+      } = req.body;
       const user = req.user!;
       
       console.log(`=== ACCEPT TICKET MIDDLEWARE ${id} ===`);
-      console.log(`Body received:`, { maintenanceVendorId, assigneeId, marketplace });
+      console.log(`Body received:`, { maintenanceVendorId, assigneeId, marketplace, estimatedStartDate, estimatedEndDate, etaNotes });
       
       if (marketplace) {
         // Assign ticket to marketplace for bidding
@@ -852,11 +862,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Marketplace assignment result:`, { id: ticket.id, status: ticket.status });
         res.json(ticket);
       } else {
+        // Check for conflicts if technician is assigned with specific schedule
+        if (assigneeId && scheduledStartTime && scheduledEndTime) {
+          const isAvailable = await storage.checkTechnicianAvailability(
+            assigneeId, 
+            new Date(scheduledStartTime), 
+            new Date(scheduledEndTime)
+          );
+          
+          if (!isAvailable) {
+            return res.status(409).json({ 
+              message: "Technician is not available during the scheduled time. Please check their calendar and choose a different time slot." 
+            });
+          }
+        }
+        
         // Normal vendor assignment - pass user info for vendor assignment history
         console.log(`Calling storage.acceptTicket for ticket ${id} with vendor ${maintenanceVendorId}`);
         
-        // Update the acceptTicket call to include user information  
-        const ticket = await storage.acceptTicket(id, { maintenanceVendorId, assigneeId });
+        // Update the acceptTicket call to include ETA information  
+        const ticket = await storage.acceptTicket(id, { 
+          maintenanceVendorId, 
+          assigneeId,
+          estimatedStartDate,
+          estimatedEndDate,
+          estimatedDuration,
+          scheduledStartTime,
+          scheduledEndTime,
+          etaNotes,
+          etaProvidedBy: user.id
+        });
         
         // Update vendor assignment history with user info after ticket acceptance
         if (ticket && maintenanceVendorId) {
@@ -888,6 +923,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Accept ticket error:', error);
       res.status(500).json({ message: "Failed to accept ticket" });
+    }
+  });
+
+  // Get technician availability and schedule
+  app.get("/api/technicians/:id/availability", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const technicianId = parseInt(req.params.id);
+      const { startDate, endDate } = req.query;
+      
+      const startDateTime = startDate ? new Date(startDate as string) : new Date();
+      const endDateTime = endDate ? new Date(endDate as string) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
+      
+      const schedule = await storage.getTechnicianSchedule(technicianId, startDateTime, endDateTime);
+      res.json(schedule);
+    } catch (error) {
+      console.error("Error fetching technician availability:", error);
+      res.status(500).json({ message: "Failed to fetch technician availability" });
+    }
+  });
+
+  // Check technician availability for specific time slot
+  app.post("/api/technicians/:id/check-availability", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const technicianId = parseInt(req.params.id);
+      const { startTime, endTime } = req.body;
+      
+      const isAvailable = await storage.checkTechnicianAvailability(
+        technicianId, 
+        new Date(startTime), 
+        new Date(endTime)
+      );
+      
+      res.json({ available: isAvailable });
+    } catch (error) {
+      console.error("Error checking technician availability:", error);
+      res.status(500).json({ message: "Failed to check technician availability" });
     }
   });
 
