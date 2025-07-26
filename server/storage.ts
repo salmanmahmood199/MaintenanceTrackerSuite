@@ -685,10 +685,16 @@ export class DatabaseStorage implements IStorage {
       updateData.estimatedDuration = acceptData.estimatedDuration;
     }
     if (acceptData.scheduledStartTime) {
-      updateData.scheduledStartTime = acceptData.scheduledStartTime;
+      // Ensure it's a Date object
+      updateData.scheduledStartTime = acceptData.scheduledStartTime instanceof Date 
+        ? acceptData.scheduledStartTime 
+        : new Date(acceptData.scheduledStartTime);
     }
     if (acceptData.scheduledEndTime) {
-      updateData.scheduledEndTime = acceptData.scheduledEndTime;
+      // Ensure it's a Date object
+      updateData.scheduledEndTime = acceptData.scheduledEndTime instanceof Date 
+        ? acceptData.scheduledEndTime 
+        : new Date(acceptData.scheduledEndTime);
     }
     if (acceptData.etaNotes) {
       updateData.etaNotes = acceptData.etaNotes;
