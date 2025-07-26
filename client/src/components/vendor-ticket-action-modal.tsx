@@ -44,13 +44,13 @@ export function VendorTicketActionModal({
   const [rejectionReason, setRejectionReason] = useState("");
   
   // ETA related state
-  const [estimatedStartDate, setEstimatedStartDate] = useState("");
-  const [estimatedEndDate, setEstimatedEndDate] = useState("");
-  const [estimatedDuration, setEstimatedDuration] = useState("");
-  const [scheduledStartTime, setScheduledStartTime] = useState("");
-  const [scheduledEndTime, setScheduledEndTime] = useState("");
   const [etaNotes, setEtaNotes] = useState("");
-  const [showSchedule, setShowSchedule] = useState(false);
+  const [selectedETA, setSelectedETA] = useState<{
+    date: Date;
+    startTime: string;
+    endTime: string;
+    duration: number;
+  } | null>(null);
   const [availabilityCheck, setAvailabilityCheck] = useState<{ available: boolean; checked: boolean }>({ available: true, checked: false });
 
   // Get technician availability when technician is selected
@@ -65,17 +65,25 @@ export function VendorTicketActionModal({
     enabled: !!selectedTechnician && open
   });
 
-  // Check availability when scheduled time changes
+  // Check availability when ETA is selected
   useEffect(() => {
     const checkAvailability = async () => {
-      if (selectedTechnician && scheduledStartTime && scheduledEndTime) {
+      if (selectedTechnician && selectedETA) {
         try {
+          const startDateTime = new Date(selectedETA.date);
+          const [startHours, startMinutes] = selectedETA.startTime.split(':');
+          startDateTime.setHours(parseInt(startHours), parseInt(startMinutes), 0, 0);
+          
+          const endDateTime = new Date(selectedETA.date);
+          const [endHours, endMinutes] = selectedETA.endTime.split(':');
+          endDateTime.setHours(parseInt(endHours), parseInt(endMinutes), 0, 0);
+          
           const response = await fetch(`/api/technicians/${selectedTechnician}/check-availability`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              startTime: scheduledStartTime,
-              endTime: scheduledEndTime
+              startTime: startDateTime.toISOString(),
+              endTime: endDateTime.toISOString()
             })
           });
           const data = await response.json();
@@ -90,21 +98,39 @@ export function VendorTicketActionModal({
     };
 
     checkAvailability();
-  }, [selectedTechnician, scheduledStartTime, scheduledEndTime]);
+  }, [selectedTechnician, selectedETA]);
 
   const handleSubmit = () => {
     if (!ticket) return;
 
     if (action === "accept") {
-      const acceptData = {
-        assigneeId: selectedTechnician ? parseInt(selectedTechnician) : undefined,
-        estimatedStartDate: estimatedStartDate || undefined,
-        estimatedEndDate: estimatedEndDate || undefined,
-        estimatedDuration: estimatedDuration ? parseInt(estimatedDuration) : undefined,
-        scheduledStartTime: scheduledStartTime || undefined,
-        scheduledEndTime: scheduledEndTime || undefined,
-        etaNotes: etaNotes || undefined,
-      };
+      const acceptData: any = {};
+      
+      if (selectedTechnician) {
+        acceptData.assigneeId = parseInt(selectedTechnician);
+      }
+      
+      if (selectedETA) {
+        // Format the selected date and time for the backend
+        const startDateTime = new Date(selectedETA.date);
+        const [startHours, startMinutes] = selectedETA.startTime.split(':');
+        startDateTime.setHours(parseInt(startHours), parseInt(startMinutes), 0, 0);
+        
+        const endDateTime = new Date(selectedETA.date);
+        const [endHours, endMinutes] = selectedETA.endTime.split(':');
+        endDateTime.setHours(parseInt(endHours), parseInt(endMinutes), 0, 0);
+        
+        acceptData.scheduledStartTime = startDateTime.toISOString();
+        acceptData.scheduledEndTime = endDateTime.toISOString();
+        acceptData.estimatedDuration = selectedETA.duration;
+        acceptData.estimatedStartDate = format(selectedETA.date, 'yyyy-MM-dd');
+        acceptData.estimatedEndDate = format(selectedETA.date, 'yyyy-MM-dd');
+      }
+      
+      if (etaNotes) {
+        acceptData.etaNotes = etaNotes;
+      }
+      
       onAccept(ticket.id, acceptData);
     } else if (action === "reject") {
       if (!rejectionReason.trim()) return;
@@ -115,13 +141,8 @@ export function VendorTicketActionModal({
   const handleClose = () => {
     setSelectedTechnician("");
     setRejectionReason("");
-    setEstimatedStartDate("");
-    setEstimatedEndDate("");
-    setEstimatedDuration("");
-    setScheduledStartTime("");
-    setScheduledEndTime("");
     setEtaNotes("");
-    setShowSchedule(false);
+    setSelectedETA(null);
     setAvailabilityCheck({ available: true, checked: false });
     onOpenChange(false);
   };
@@ -139,8 +160,8 @@ export function VendorTicketActionModal({
 
         <div className="space-y-4">
           <div>
-            <Label className="text-sm font-medium">Ticket</Label>
-            <p className="text-sm text-slate-600">
+            <Label className="text-sm font-medium text-gray-900 dark:text-gray-100">Ticket</Label>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               {ticket.ticketNumber} - {ticket.title}
             </p>
           </div>
@@ -148,7 +169,7 @@ export function VendorTicketActionModal({
           {action === "accept" && (
             <>
               <div>
-                <Label htmlFor="technician-select" className="text-sm font-medium">
+                <Label htmlFor="technician-select" className="text-sm font-medium text-gray-900 dark:text-gray-100">
                   Assign Technician (Optional)
                 </Label>
                 <Select value={selectedTechnician} onValueChange={setSelectedTechnician}>
@@ -167,187 +188,82 @@ export function VendorTicketActionModal({
                   </SelectContent>
                 </Select>
                 {isLoadingSchedule && selectedTechnician && (
-                  <p className="text-xs text-slate-500 mt-1">Loading technician schedule...</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Loading technician schedule...</p>
                 )}
               </div>
 
-              {/* ETA Estimation Section */}
-              <div className="border rounded-lg p-4 bg-slate-50">
-                <div className="flex items-center gap-2 mb-3">
-                  <Calendar className="h-4 w-4 text-blue-600" />
-                  <Label className="text-sm font-medium">Work Estimates</Label>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="estimated-start" className="text-xs font-medium text-slate-600">
-                      Estimated Start Date
-                    </Label>
-                    <Input
-                      id="estimated-start"
-                      type="date"
-                      value={estimatedStartDate}
-                      onChange={(e) => setEstimatedStartDate(e.target.value)}
-                      className="mt-1"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="estimated-end" className="text-xs font-medium text-slate-600">
-                      Estimated Completion Date
-                    </Label>
-                    <Input
-                      id="estimated-end"
-                      type="date"
-                      value={estimatedEndDate}
-                      onChange={(e) => setEstimatedEndDate(e.target.value)}
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-3">
-                  <Label htmlFor="duration" className="text-xs font-medium text-slate-600">
-                    Estimated Duration (hours)
-                  </Label>
-                  <Input
-                    id="duration"
-                    type="number"
-                    placeholder="e.g., 2"
-                    value={estimatedDuration}
-                    onChange={(e) => setEstimatedDuration(e.target.value)}
-                    className="mt-1"
-                    min="0.5"
-                    step="0.5"
-                  />
-                </div>
-              </div>
-
-              {/* Scheduled Time Section */}
+              {/* Calendar ETA Selection */}
               {selectedTechnician && (
-                <div className="border rounded-lg p-4 bg-blue-50">
+                <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-blue-600" />
-                      <Label className="text-sm font-medium">Schedule Technician</Label>
+                      <Calendar className="h-4 w-4 text-blue-600" />
+                      <Label className="text-sm font-medium text-gray-900 dark:text-gray-100">Schedule Work</Label>
                     </div>
-                    <div className="flex gap-2">
-                      <TechnicianCalendarWidget
-                        technicianId={parseInt(selectedTechnician)}
-                        technicianName={technicians.find(t => t.id.toString() === selectedTechnician)?.firstName || 'Technician'}
-                        onDateSelect={(date) => {
-                          // Set the date part for scheduled start time
-                          const dateStr = format(date, 'yyyy-MM-dd');
-                          if (scheduledStartTime) {
-                            const timeStr = scheduledStartTime.split('T')[1] || '09:00';
-                            setScheduledStartTime(`${dateStr}T${timeStr}`);
-                          } else {
-                            setScheduledStartTime(`${dateStr}T09:00`);
-                          }
-                          if (scheduledEndTime) {
-                            const timeStr = scheduledEndTime.split('T')[1] || '17:00';
-                            setScheduledEndTime(`${dateStr}T${timeStr}`);
-                          } else {
-                            setScheduledEndTime(`${dateStr}T17:00`);
-                          }
-                        }}
-                        trigger={
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                          >
-                            <Eye className="w-4 h-4 mr-2" />
-                            View Calendar
-                          </Button>
-                        }
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowSchedule(!showSchedule)}
-                      >
-                        {showSchedule ? "Hide" : "Show"} Schedule
-                      </Button>
-                    </div>
+                    <TechnicianCalendarWidget
+                      technicianId={parseInt(selectedTechnician)}
+                      technicianName={technicians.find(t => t.id.toString() === selectedTechnician)?.firstName || 'Technician'}
+                      onTimeSlotSelect={(slot) => {
+                        setSelectedETA(slot);
+                      }}
+                      trigger={
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          View Calendar
+                        </Button>
+                      }
+                    />
                   </div>
                   
-                  {showSchedule && (
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="scheduled-start" className="text-xs font-medium text-slate-600">
-                            Scheduled Start Time
-                          </Label>
-                          <Input
-                            id="scheduled-start"
-                            type="datetime-local"
-                            value={scheduledStartTime}
-                            onChange={(e) => setScheduledStartTime(e.target.value)}
-                            className="mt-1"
-                          />
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="scheduled-end" className="text-xs font-medium text-slate-600">
-                            Scheduled End Time
-                          </Label>
-                          <Input
-                            id="scheduled-end"
-                            type="datetime-local"
-                            value={scheduledEndTime}
-                            onChange={(e) => setScheduledEndTime(e.target.value)}
-                            className="mt-1"
-                          />
-                        </div>
+                  {selectedETA && (
+                    <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded">
+                      <div className="text-sm">
+                        <p className="font-medium text-blue-900 dark:text-blue-100">
+                          Scheduled: {format(selectedETA.date, 'EEEE, MMMM d, yyyy')}
+                        </p>
+                        <p className="text-blue-700 dark:text-blue-300">
+                          Time: {selectedETA.startTime} - {selectedETA.endTime} ({selectedETA.duration >= 1 ? `${selectedETA.duration} hour${selectedETA.duration > 1 ? 's' : ''}` : `${selectedETA.duration * 60} min`})
+                        </p>
                       </div>
-
-                      {/* Availability Check */}
-                      {availabilityCheck.checked && (
-                        <div className={`flex items-center gap-2 p-2 rounded text-sm ${
-                          availabilityCheck.available 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {availabilityCheck.available ? (
-                            <>
-                              <CheckCircle className="h-4 w-4" />
-                              Technician is available during this time
-                            </>
-                          ) : (
-                            <>
-                              <AlertCircle className="h-4 w-4" />
-                              Technician has a conflict during this time
-                            </>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Technician Schedule Display */}
-                      {technicianSchedule && technicianSchedule.length > 0 && (
-                        <div className="mt-3">
-                          <Label className="text-xs font-medium text-slate-600">Current Schedule</Label>
-                          <div className="mt-1 space-y-1 max-h-32 overflow-y-auto">
-                            {technicianSchedule.slice(0, 5).map((item: any, index: number) => (
-                              <div key={index} className="text-xs p-2 bg-white rounded border">
-                                {item.title} - {format(new Date(item.startTime), 'MMM dd, h:mm a')} to {format(new Date(item.endTime), 'h:mm a')}
-                              </div>
-                            ))}
-                            {technicianSchedule.length > 5 && (
-                              <p className="text-xs text-slate-500">+ {technicianSchedule.length - 5} more items</p>
-                            )}
-                          </div>
-                        </div>
-                      )}
                     </div>
+                  )}
+                  
+                  {!selectedETA && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                      Click "View Calendar" to select a time slot for this technician
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Availability Check */}
+              {selectedTechnician && selectedETA && availabilityCheck.checked && (
+                <div className={`flex items-center gap-2 p-3 rounded border ${
+                  availabilityCheck.available 
+                    ? 'bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-200 border-green-200 dark:border-green-700' 
+                    : 'bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-200 border-red-200 dark:border-red-700'
+                }`}>
+                  {availabilityCheck.available ? (
+                    <>
+                      <CheckCircle className="h-4 w-4" />
+                      Technician is available during this time
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle className="h-4 w-4" />
+                      Technician has a conflict during this time
+                    </>
                   )}
                 </div>
               )}
 
               {/* Notes Section */}
               <div>
-                <Label htmlFor="eta-notes" className="text-sm font-medium">
+                <Label htmlFor="eta-notes" className="text-sm font-medium text-gray-900 dark:text-gray-100">
                   Additional Notes (Optional)
                 </Label>
                 <Textarea
@@ -363,7 +279,7 @@ export function VendorTicketActionModal({
 
           {action === "reject" && (
             <div>
-              <Label htmlFor="rejection-reason" className="text-sm font-medium">
+              <Label htmlFor="rejection-reason" className="text-sm font-medium text-gray-900 dark:text-gray-100">
                 Rejection Reason *
               </Label>
               <Textarea

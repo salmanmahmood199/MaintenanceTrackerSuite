@@ -9,6 +9,12 @@ interface TechnicianCalendarWidgetProps {
   technicianId: number;
   technicianName: string;
   onDateSelect?: (date: Date) => void;
+  onTimeSlotSelect?: (selectedSlot: {
+    date: Date;
+    startTime: string;
+    endTime: string;
+    duration: number;
+  }) => void;
   trigger?: React.ReactNode;
 }
 
@@ -49,6 +55,7 @@ export function TechnicianCalendarWidget({
   technicianId, 
   technicianName, 
   onDateSelect,
+  onTimeSlotSelect,
   trigger 
 }: TechnicianCalendarWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -58,6 +65,7 @@ export function TechnicianCalendarWidget({
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showTimeSlots, setShowTimeSlots] = useState(false);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<{start: string, end: string} | null>(null);
+  const [selectedDuration, setSelectedDuration] = useState<number>(1); // Default 1 hour
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -187,14 +195,29 @@ export function TechnicianCalendarWidget({
     }
   };
 
-  // Generate time slots for the day (8 AM to 6 PM in 30-minute intervals)
+  // Generate time slots for the day (8 AM to 6 PM based on selected duration)
   const generateTimeSlots = () => {
     const slots = [];
+    const durationHours = selectedDuration;
+    const durationMinutes = durationHours * 60;
+    
+    // Generate slots every 30 minutes from 8 AM to 6 PM
     for (let hour = 8; hour < 18; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
-        const startTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        const endHour = minute === 30 ? hour + 1 : hour;
-        const endMinute = minute === 30 ? 0 : 30;
+        const startHour = hour;
+        const startMinute = minute;
+        const startTime = `${startHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}`;
+        
+        // Calculate end time based on duration
+        const endTotalMinutes = startHour * 60 + startMinute + durationMinutes;
+        const endHour = Math.floor(endTotalMinutes / 60);
+        const endMinute = endTotalMinutes % 60;
+        
+        // Don't show slots that would end after 6 PM (18:00)
+        if (endHour > 18 || (endHour === 18 && endMinute > 0)) {
+          continue;
+        }
+        
         const endTime = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
         
         slots.push({
@@ -416,7 +439,40 @@ export function TechnicianCalendarWidget({
               {/* Time Slot Selection */}
               {showTimeSlots && (
                 <div className="space-y-3">
-                  <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">Available Time Slots:</h5>
+                  {/* Duration Selection */}
+                  <div className="space-y-2">
+                    <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">Select Duration:</h5>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { value: 0.25, label: '15 min' },
+                        { value: 0.5, label: '30 min' },
+                        { value: 0.75, label: '45 min' },
+                        { value: 1, label: '1 hour' },
+                        { value: 2, label: '2 hours' },
+                        { value: 3, label: '3 hours' },
+                        { value: 4, label: '4+ hours' }
+                      ].map((duration) => (
+                        <button
+                          key={duration.value}
+                          onClick={() => {
+                            setSelectedDuration(duration.value);
+                            setSelectedTimeSlot(null); // Reset selected slot when duration changes
+                          }}
+                          className={`
+                            px-3 py-1 text-xs rounded border transition-all
+                            ${selectedDuration === duration.value
+                              ? 'bg-purple-500 text-white border-purple-500'
+                              : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-600 hover:bg-purple-50 dark:hover:bg-gray-700'
+                            }
+                          `}
+                        >
+                          {duration.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">Available Time Slots ({selectedDuration >= 1 ? `${selectedDuration} hour${selectedDuration > 1 ? 's' : ''}` : `${selectedDuration * 60} min`}):</h5>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-60 overflow-y-auto">
                     {generateTimeSlots().map((slot, index) => {
                       const isAvailable = isTimeSlotAvailable(slot.start, slot.end);
@@ -457,13 +513,19 @@ export function TechnicianCalendarWidget({
                         <Button
                           size="sm"
                           onClick={() => {
-                            // Here you would typically handle the time slot selection
-                            // For now, we'll just show a message
-                            alert(`Time slot selected: ${format(selectedDate, 'MMM d, yyyy')} ${formatTime(selectedTimeSlot.start)} - ${formatTime(selectedTimeSlot.end)}`);
+                            if (selectedDate && selectedTimeSlot && onTimeSlotSelect) {
+                              onTimeSlotSelect({
+                                date: selectedDate,
+                                startTime: selectedTimeSlot.start,
+                                endTime: selectedTimeSlot.end,
+                                duration: selectedDuration
+                              });
+                              setIsOpen(false); // Close the calendar
+                            }
                           }}
                           className="bg-blue-600 hover:bg-blue-700 text-white"
                         >
-                          Book Slot
+                          Select Slot
                         </Button>
                       </div>
                     </div>
