@@ -81,18 +81,24 @@ export function ProgressTrackerEmbedded({
   });
 
   // Calculate progress percentage based on ticket status
+  // Progress should never go backwards, even if vendors reject
   const getProgressPercentage = (status: string) => {
+    // Check if there's vendor assignment history to determine minimum progress
+    const hasVendorHistory = vendorHistory && vendorHistory.length > 0;
+    const minProgressIfVendorAssigned = 35; // Minimum progress once vendors have been assigned
+    
     switch (status) {
       case "pending": return 10;
-      case "accepted": return 25;
-      case "rejected": return 0;
+      case "accepted": return hasVendorHistory ? Math.max(25, minProgressIfVendorAssigned) : 25;
+      case "rejected": return 0; // Only office rejection goes to 0
+      case "vendor_rejected": return minProgressIfVendorAssigned; // Vendor rejection maintains progress
       case "in-progress": return 60;
       case "completed": return 85;
       case "pending_confirmation": return 90;
       case "confirmed": return 95;
       case "ready_for_billing": return 98;
       case "billed": return 100;
-      default: return 0;
+      default: return hasVendorHistory ? minProgressIfVendorAssigned : 0;
     }
   };
 
@@ -583,18 +589,24 @@ export function ProgressTracker({
   });
 
   // Calculate progress percentage based on ticket status
+  // Progress should never go backwards, even if vendors reject
   const getProgressPercentage = (status: string) => {
+    // Check if there's vendor assignment history to determine minimum progress
+    const hasVendorHistory = vendorHistory && vendorHistory.length > 0;
+    const minProgressIfVendorAssigned = 35; // Minimum progress once vendors have been assigned
+    
     switch (status) {
       case "pending": return 10;
-      case "accepted": return 25;
-      case "rejected": return 0;
+      case "accepted": return hasVendorHistory ? Math.max(25, minProgressIfVendorAssigned) : 25;
+      case "rejected": return 0; // Only office rejection goes to 0
+      case "vendor_rejected": return minProgressIfVendorAssigned; // Vendor rejection maintains progress
       case "in-progress": return 60;
       case "completed": return 85;
       case "pending_confirmation": return 90;
       case "confirmed": return 95;
       case "ready_for_billing": return 98;
       case "billed": return 100;
-      default: return 0;
+      default: return hasVendorHistory ? minProgressIfVendorAssigned : 0;
     }
   };
 
