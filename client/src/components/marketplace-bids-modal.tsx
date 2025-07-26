@@ -237,7 +237,7 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5" />
             Marketplace Bids - {ticket.ticketNumber}
@@ -247,7 +247,7 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 pr-4">
+        <ScrollArea className="flex-1 min-h-0 pr-4">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <div className="text-muted-foreground">Loading bids...</div>
@@ -428,11 +428,12 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
               ))}
             </div>
           )}
+          <div className="h-4"></div> {/* Bottom padding for scroll area */}
         </ScrollArea>
 
-        {/* Action Forms */}
+        {/* Action Forms - Fixed at bottom */}
         {actionType === "reject" && selectedBidId && (
-          <div className="border-t pt-4">
+          <div className="border-t pt-4 bg-background flex-shrink-0">
             <h4 className="font-medium mb-2">Reject Bid</h4>
             <div className="space-y-3">
               <div>
@@ -461,10 +462,8 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
           </div>
         )}
 
-
-        
         {actionType === "counter" && selectedBidId && (
-          <div className="border-t bg-blue-50 dark:bg-blue-950/20 p-4 rounded-md mt-4">
+          <div className="border-t bg-blue-50 dark:bg-blue-950/20 p-4 rounded-md flex-shrink-0">
             <h4 className="font-semibold text-lg mb-4 text-blue-900 dark:text-blue-100">Counter Offer</h4>
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
