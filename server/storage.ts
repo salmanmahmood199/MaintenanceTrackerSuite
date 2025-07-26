@@ -163,6 +163,8 @@ export interface IStorage {
   getMarketplaceTickets(): Promise<Ticket[]>;
   getTicketBids(ticketId: number): Promise<(MarketplaceBid & { vendor: Pick<MaintenanceVendor, 'id' | 'name' | 'email'> })[]>;
   createMarketplaceBid(bid: InsertMarketplaceBid): Promise<MarketplaceBid>;
+  getMarketplaceBid(bidId: number): Promise<MarketplaceBid | undefined>;
+  updateMarketplaceBid(bidId: number, updates: Partial<InsertMarketplaceBid>): Promise<MarketplaceBid | undefined>;
   acceptMarketplaceBid(bidId: number): Promise<{ bid: MarketplaceBid; ticket: Ticket }>;
   rejectMarketplaceBid(bidId: number, rejectionReason: string): Promise<MarketplaceBid>;
   counterMarketplaceBid(bidId: number, counterOffer: number, counterNotes: string): Promise<MarketplaceBid>;
@@ -1214,6 +1216,20 @@ export class DatabaseStorage implements IStorage {
   async createMarketplaceBid(bid: InsertMarketplaceBid): Promise<MarketplaceBid> {
     const [newBid] = await db.insert(marketplaceBids).values(bid).returning();
     return newBid;
+  }
+
+  async getMarketplaceBid(bidId: number): Promise<MarketplaceBid | undefined> {
+    const [bid] = await db.select().from(marketplaceBids).where(eq(marketplaceBids.id, bidId));
+    return bid || undefined;
+  }
+
+  async updateMarketplaceBid(bidId: number, updates: Partial<InsertMarketplaceBid>): Promise<MarketplaceBid | undefined> {
+    const [updatedBid] = await db
+      .update(marketplaceBids)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(marketplaceBids.id, bidId))
+      .returning();
+    return updatedBid || undefined;
   }
 
   async acceptMarketplaceBid(bidId: number): Promise<{ bid: MarketplaceBid; ticket: Ticket }> {

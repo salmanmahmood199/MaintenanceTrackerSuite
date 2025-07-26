@@ -94,14 +94,14 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
 
   // Check if vendor has already submitted a bid for this ticket
   const { data: existingBid } = useQuery({
-    queryKey: ["/api/tickets", ticket?.id, "vendor-bid", vendorId],
+    queryKey: ["/api/marketplace/vendor-bids", ticket?.id],
     queryFn: async () => {
-      if (!ticket?.id || !vendorId) return null;
-      const response = await apiRequest("GET", `/api/tickets/${ticket.id}/bids`);
+      if (!ticket?.id) return null;
+      const response = await apiRequest("GET", "/api/marketplace/vendor-bids");
       const bids = await response.json();
-      return bids.find((bid: any) => bid.vendorId === vendorId) || null;
+      return bids.find((bid: any) => bid.ticketId === ticket.id) || null;
     },
-    enabled: !!ticket?.id && !!vendorId,
+    enabled: !!ticket?.id && isOpen,
   });
 
   const placeBidMutation = useMutation({
@@ -127,6 +127,60 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
       });
     },
   });
+
+  // Update bid mutation
+  const updateBidMutation = useMutation({
+    mutationFn: async ({ bidId, bidData }: { bidId: number, bidData: any }) => {
+      console.log("Updating bid data:", bidData);
+      await apiRequest("PUT", `/api/marketplace/bids/${bidId}`, bidData);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Bid Updated Successfully",
+        description: "Your bid has been updated.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/marketplace/tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/marketplace/vendor-bids"] });
+      onClose();
+      resetForm();
+    },
+    onError: (error: any) => {
+      console.error("Bid update error:", error);
+      toast({
+        title: "Error",
+        description: `Failed to update bid: ${error.message || "Please try again."}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Pre-populate form when existingBid changes
+  useEffect(() => {
+    if (existingBid && isOpen) {
+      setHourlyRate(existingBid.hourlyRate);
+      setEstimatedHours(existingBid.estimatedHours);
+      setAdditionalNotes(existingBid.additionalNotes || "");
+      setParts(existingBid.parts || []);
+      
+      // Parse response time to extract value and unit
+      const responseTimeStr = existingBid.responseTime;
+      if (responseTimeStr.includes("hour")) {
+        const match = responseTimeStr.match(/(\d+)\s+hours?/);
+        if (match) {
+          setResponseTimeValue(match[1]);
+          setResponseTimeUnit("hours");
+        }
+      } else if (responseTimeStr.includes("By")) {
+        const match = responseTimeStr.match(/By .+?\((\d+)\s+(\w+)\)/);
+        if (match) {
+          setResponseTimeValue(match[1]);
+          setResponseTimeUnit(match[2] + "s"); // days/weeks
+        }
+      }
+    } else if (isOpen) {
+      resetForm();
+    }
+  }, [existingBid, isOpen]);
 
   // Update response time string when value or unit changes
   useEffect(() => {
@@ -187,7 +241,7 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
     return laborCost + partsCost;
   };
 
-  const handlePlaceBid = () => {
+  const handleSubmitBid = () => {
     if (!ticket || !hourlyRate || !estimatedHours || !responseTimeValue || !responseTimeUnit) {
       toast({
         title: "Missing Information",
@@ -207,8 +261,13 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
       additionalNotes,
     };
 
-    console.log("Submitting bid data:", bidData);
-    placeBidMutation.mutate(bidData);
+    if (existingBid) {
+      console.log("Updating existing bid:", bidData);
+      updateBidMutation.mutate({ bidId: existingBid.id, bidData });
+    } else {
+      console.log("Placing new bid:", bidData);
+      placeBidMutation.mutate(bidData);
+    }
   };
 
   const getPriorityColor = (priority: string) => {
@@ -538,22 +597,25 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
 
                     {/* Action Buttons */}
                     <div className="flex gap-2">
-                      {existingBid ? (
+                      {existingBid && (existingBid.status === "accepted" || existingBid.status === "rejected") ? (
                         <div className="flex items-center gap-2 w-full">
-                          <Badge variant="secondary" className="bg-green-100 text-green-800">
-                            Bid Submitted
+                          <Badge variant="secondary" className={existingBid.status === "accepted" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
+                            Bid {existingBid.status}
                           </Badge>
                           <span className="text-sm text-muted-foreground">
-                            Status: {existingBid.approved ? "Approved" : existingBid.status === "rejected" ? "Rejected" : "Pending"}
+                            Status: {existingBid.status}
                           </span>
                         </div>
                       ) : (
                         <Button
-                          onClick={handlePlaceBid}
-                          disabled={placeBidMutation.isPending || !hourlyRate || !estimatedHours || !responseTimeValue || !responseTimeUnit}
+                          onClick={handleSubmitBid}
+                          disabled={(placeBidMutation.isPending || updateBidMutation.isPending) || !hourlyRate || !estimatedHours || !responseTimeValue || !responseTimeUnit}
                           className="flex-1"
                         >
-                          {placeBidMutation.isPending ? "Placing Bid..." : "Place Bid"}
+                          {(placeBidMutation.isPending || updateBidMutation.isPending) ? 
+                            (existingBid ? "Updating Bid..." : "Placing Bid...") : 
+                            (existingBid ? "Update Bid" : "Place Bid")
+                          }
                         </Button>
                       )}
                       <Button variant="outline" onClick={onClose}>

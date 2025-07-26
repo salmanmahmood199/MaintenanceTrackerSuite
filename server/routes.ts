@@ -1232,6 +1232,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update marketplace bid
+  app.put("/api/marketplace/bids/:id", authenticateUser, requireRole(["maintenance_admin"]), async (req: AuthenticatedRequest, res) => {
+    try {
+      const bidId = parseInt(req.params.id);
+      const { hourlyRate, estimatedHours, responseTime, parts, totalAmount, additionalNotes } = req.body;
+      const user = req.user!;
+      
+      console.log('Updating marketplace bid:', { bidId, hourlyRate, estimatedHours, responseTime, parts, totalAmount, additionalNotes });
+      
+      if (!user.maintenanceVendorId) {
+        return res.status(400).json({ message: "User must be associated with a vendor to update bids" });
+      }
+
+      // Check if the bid belongs to this vendor
+      const existingBid = await storage.getMarketplaceBid(bidId);
+      if (!existingBid || existingBid.vendorId !== user.maintenanceVendorId) {
+        return res.status(403).json({ message: "Not authorized to update this bid" });
+      }
+
+      // Only allow updates to pending bids
+      if (existingBid.status !== 'pending') {
+        return res.status(400).json({ message: "Can only update pending bids" });
+      }
+
+      const bid = await storage.updateMarketplaceBid(bidId, {
+        hourlyRate: hourlyRate.toString(),
+        estimatedHours: estimatedHours.toString(),
+        responseTime,
+        parts: parts || [],
+        totalAmount: totalAmount.toString(),
+        additionalNotes,
+        updatedAt: new Date()
+      });
+      
+      console.log('Marketplace bid updated successfully:', bid);
+      res.json(bid);
+    } catch (error) {
+      console.error('Update marketplace bid error:', error);
+      res.status(500).json({ message: "Failed to update marketplace bid", error: error.message });
+    }
+  });
+
   // Accept marketplace bid
   app.post("/api/marketplace/bids/:id/accept", authenticateUser, requireRole(["org_admin", "org_subadmin"]), async (req: AuthenticatedRequest, res) => {
     try {
