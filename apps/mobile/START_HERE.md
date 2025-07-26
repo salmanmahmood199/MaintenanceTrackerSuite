@@ -89,9 +89,12 @@ npx expo start --tunnel
 ```
 
 ### Issue: App won't connect to server
-The server URL is already configured to: `https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev`
+The server URL is automatically configured to connect to the main TaskScout server at: `http://0.0.0.0:5000`
 
-If it doesn't work, edit `src/contexts/AuthContext.tsx` and update the URL.
+The app automatically detects the correct server URL. If you have connection issues:
+1. Make sure the main TaskScout server is running (check the main Replit console)
+2. Ensure your phone and computer are on the same WiFi network
+3. Try tunnel mode: `npx expo start --tunnel`
 
 ## Success Checklist
 - ✅ Terminal shows QR code

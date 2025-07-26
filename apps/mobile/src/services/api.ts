@@ -1,6 +1,17 @@
 import * as SecureStore from 'expo-secure-store';
+import Constants from 'expo-constants';
 
-const API_BASE_URL = __DEV__ ? 'http://localhost:5000' : 'https://your-production-url.com';
+// Get current Replit app URL
+const getApiUrl = () => {
+  if (__DEV__) {
+    // Development - connect to main server on port 5000
+    return 'http://0.0.0.0:5000';
+  }
+  // Production - use current Replit URL
+  return Constants.expoConfig?.extra?.apiUrl || 'https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev';
+};
+
+const API_BASE_URL = getApiUrl();
 
 export class ApiClient {
   private baseURL: string;

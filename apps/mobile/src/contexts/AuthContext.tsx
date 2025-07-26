@@ -2,8 +2,15 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 
-// Import shared types
-import type { User } from '@maintenance/shared';
+// Define User type locally since shared import path isn't available
+interface User {
+  id: number;
+  email: string;
+  role: string;
+  organizationId?: number;
+  maintenanceVendorId?: number;
+  assignedLocationIds?: number[];
+}
 
 interface AuthContextType {
   user: User | null;
@@ -25,10 +32,11 @@ export const useAuth = () => {
 // Get API URL based on environment
 const getApiUrl = () => {
   if (__DEV__) {
-    // Development - use your local IP address
-    return 'http://96.241.167.161:5000';
+    // Development - connect to main server on port 5000
+    return 'http://0.0.0.0:5000';
   }
-  return 'https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev';
+  // Production - use current Replit URL
+  return Constants.expoConfig?.extra?.apiUrl || 'https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev';
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

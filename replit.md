@@ -403,6 +403,10 @@ Changelog:
 - July 26, 2025. Disabled action buttons (Accept, Reject, Counter) for outdated bid versions
 - July 26, 2025. Complete bid history now visible in "View Bids" modal showing both old and new bid versions
 - July 26, 2025. Organizations can see full negotiation history with clear visual separation between current and superseded bids
+- July 26, 2025. Updated React Native mobile app with current server connectivity and fixed configuration issues
+- July 26, 2025. Mobile app now properly connects to TaskScout server at http://0.0.0.0:5000 with automatic API detection
+- July 26, 2025. Updated mobile app dependencies and fixed TypeScript configuration for Expo SDK 53
+- July 26, 2025. Mobile app includes comprehensive setup instructions in START_HERE.md for easy deployment
 ```
 
 ## User Preferences

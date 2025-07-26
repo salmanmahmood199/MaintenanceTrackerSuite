@@ -4,13 +4,11 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
-      "@maintenance/shared": ["../../packages/shared"],
-      "@shared/*": ["../../packages/shared/*"]
+      "@shared/*": ["../../shared/*"]
     }
   },
   "include": [
     "**/*.ts",
-    "**/*.tsx",
-    "../../packages/shared/**/*"
+    "**/*.tsx"
   ]
 }
