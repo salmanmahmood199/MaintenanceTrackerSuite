@@ -1897,7 +1897,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Ticket not found" });
       }
       
-      // Check access based on role
+      // Check access based on role - allow all users who can view the ticket
       let hasAccess = false;
       if (user.role === "root") {
         hasAccess = true;
@@ -1911,6 +1911,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (user.role === "maintenance_admin" && ticket.maintenanceVendorId === user.maintenanceVendorId) {
         hasAccess = true;
       } else if (user.role === "technician" && ticket.assigneeId === user.id) {
+        hasAccess = true;
+      } else if (ticket.organizationId === user.organizationId) {
+        // Allow any user from the same organization to comment (e.g., marketplace@nsrpetro.com)
+        hasAccess = true;
+      } else if (ticket.reporterId === user.id) {
+        // Allow original reporter to comment
         hasAccess = true;
       }
       
@@ -1952,6 +1958,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (user.role === "maintenance_admin" && ticket.maintenanceVendorId === user.maintenanceVendorId) {
         hasAccess = true;
       } else if (user.role === "technician" && ticket.assigneeId === user.id) {
+        hasAccess = true;
+      } else if (ticket.organizationId === user.organizationId) {
+        // Allow any user from the same organization to comment (e.g., marketplace@nsrpetro.com)
+        hasAccess = true;
+      } else if (ticket.reporterId === user.id) {
+        // Allow original reporter to comment
         hasAccess = true;
       }
       

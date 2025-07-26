@@ -1842,23 +1842,26 @@ export class DatabaseStorage implements IStorage {
 
   // Technician availability and scheduling operations
   async checkTechnicianAvailability(technicianId: number, startTime: Date, endTime: Date): Promise<boolean> {
-    // Check calendar events for conflicts
+    // Check calendar events for conflicts (using date-based filtering for now)
+    const startDateStr = startTime.toISOString().split('T')[0];
+    const endDateStr = endTime.toISOString().split('T')[0];
+    
     const conflicts = await db.select().from(calendarEvents)
       .where(
         and(
           eq(calendarEvents.userId, technicianId),
           or(
             and(
-              gte(calendarEvents.startTime, startTime),
-              lte(calendarEvents.startTime, endTime)
+              gte(calendarEvents.startDate, startDateStr),
+              lte(calendarEvents.startDate, endDateStr)
             ),
             and(
-              gte(calendarEvents.endTime, startTime),
-              lte(calendarEvents.endTime, endTime)
+              gte(calendarEvents.endDate, startDateStr),
+              lte(calendarEvents.endDate, endDateStr)
             ),
             and(
-              lte(calendarEvents.startTime, startTime),
-              gte(calendarEvents.endTime, endTime)
+              lte(calendarEvents.startDate, startDateStr),
+              gte(calendarEvents.endDate, endDateStr)
             )
           )
         )
@@ -1902,11 +1905,11 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(calendarEvents.userId, technicianId),
-          gte(calendarEvents.startTime, startDate),
-          lte(calendarEvents.endTime, endDate)
+          gte(calendarEvents.startDate, startDate.toISOString().split('T')[0]),
+          lte(calendarEvents.endDate, endDate.toISOString().split('T')[0])
         )
       )
-      .orderBy(calendarEvents.startTime);
+      .orderBy(calendarEvents.startDate, calendarEvents.startTime);
 
     // Get scheduled tickets
     const assignedTickets = await db.select().from(tickets)

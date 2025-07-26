@@ -5,10 +5,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Calendar, Clock, User2, AlertCircle, CheckCircle } from "lucide-react";
+import { Calendar, Clock, User2, AlertCircle, CheckCircle, Eye } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import type { Ticket, User } from "@shared/schema";
+import { TechnicianCalendarWidget } from "./technician-calendar-widget";
 
 interface VendorTicketActionModalProps {
   open: boolean;
@@ -230,14 +231,46 @@ export function VendorTicketActionModal({
                       <Clock className="h-4 w-4 text-blue-600" />
                       <Label className="text-sm font-medium">Schedule Technician</Label>
                     </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowSchedule(!showSchedule)}
-                    >
-                      {showSchedule ? "Hide" : "Show"} Calendar
-                    </Button>
+                    <div className="flex gap-2">
+                      <TechnicianCalendarWidget
+                        technicianId={parseInt(selectedTechnician)}
+                        technicianName={technicians.find(t => t.id.toString() === selectedTechnician)?.firstName || 'Technician'}
+                        onDateSelect={(date) => {
+                          // Set the date part for scheduled start time
+                          const dateStr = format(date, 'yyyy-MM-dd');
+                          if (scheduledStartTime) {
+                            const timeStr = scheduledStartTime.split('T')[1] || '09:00';
+                            setScheduledStartTime(`${dateStr}T${timeStr}`);
+                          } else {
+                            setScheduledStartTime(`${dateStr}T09:00`);
+                          }
+                          if (scheduledEndTime) {
+                            const timeStr = scheduledEndTime.split('T')[1] || '17:00';
+                            setScheduledEndTime(`${dateStr}T${timeStr}`);
+                          } else {
+                            setScheduledEndTime(`${dateStr}T17:00`);
+                          }
+                        }}
+                        trigger={
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            View Calendar
+                          </Button>
+                        }
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowSchedule(!showSchedule)}
+                      >
+                        {showSchedule ? "Hide" : "Show"} Schedule
+                      </Button>
+                    </div>
                   </div>
                   
                   {showSchedule && (
