@@ -9,7 +9,7 @@ import { EnhancedInvoiceCreator } from "@/components/enhanced-invoice-creator";
 import { InvoicesView } from "@/components/invoices-view";
 import { VendorTicketActionModal } from "@/components/vendor-ticket-action-modal";
 import { MarketplaceTicketsView } from "@/components/marketplace-tickets-view";
-import { VendorBidsView } from "@/components/vendor-bids-view";
+
 import PartsManagement from "./parts-management";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -540,14 +540,8 @@ export function VendorView() {
               </div>
             )}
 
-            {/* Vendor Bids Section */}
-            <VendorBidsView />
-
-            {/* Available Marketplace Tickets */}
-            <div className="mt-8">
-              <h2 className="text-xl font-semibold text-foreground mb-4">Available Marketplace Tickets</h2>
-              <MarketplaceTicketsView />
-            </div>
+            {/* Unified Marketplace View with Toggle */}
+            <MarketplaceTicketsView />
           </div>
         )}
 

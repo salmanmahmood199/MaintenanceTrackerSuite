@@ -194,9 +194,19 @@ export function MarketplaceTicketsView() {
       </div>
 
       <Tabs defaultValue="available" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="available">Available Marketplace Tickets</TabsTrigger>
-          <TabsTrigger value="bids">Your Bids ({vendorBids.length})</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 bg-muted p-1 rounded-lg">
+          <TabsTrigger 
+            value="available" 
+            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm font-medium transition-all"
+          >
+            Available Marketplace Tickets
+          </TabsTrigger>
+          <TabsTrigger 
+            value="bids" 
+            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm font-medium transition-all"
+          >
+            Your Bids ({vendorBids.length})
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="available" className="space-y-4 mt-4">
