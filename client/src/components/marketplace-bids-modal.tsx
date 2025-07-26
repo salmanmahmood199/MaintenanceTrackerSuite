@@ -35,6 +35,10 @@ interface MarketplaceBid {
   rejectionReason?: string;
   counterOffer?: number;
   counterNotes?: string;
+  isSuperseded?: boolean;
+  supersededByBidId?: number;
+  previousBidId?: number;
+  version?: number;
   createdAt: string;
   vendor: {
     id: number;
@@ -259,13 +263,27 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
           ) : (
             <div className="space-y-4">
               {bids.map((bid) => (
-                <Card key={bid.id} className="border">
+                <Card key={bid.id} className={`border ${bid.isSuperseded ? 'border-red-300 bg-red-50 dark:bg-red-950/20' : ''}`}>
                   <CardHeader>
+                    {bid.isSuperseded && (
+                      <div className="bg-red-100 dark:bg-red-900/50 border border-red-300 dark:border-red-600 p-3 rounded-md mb-4">
+                        <div className="flex items-center gap-2">
+                          <XCircle className="h-5 w-5 text-red-600" />
+                          <span className="font-semibold text-red-800 dark:text-red-200">This bid has been updated</span>
+                        </div>
+                        <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                          This is an older version (v{bid.version}) of the bid. A newer version has been submitted.
+                        </p>
+                      </div>
+                    )}
                     <div className="flex items-start justify-between">
                       <div>
                         <CardTitle className="text-lg flex items-center gap-2">
                           <User className="h-5 w-5" />
                           {bid.vendor.name}
+                          {bid.version && bid.version > 1 && (
+                            <Badge variant="outline" className="ml-2">v{bid.version}</Badge>
+                          )}
                         </CardTitle>
                         <p className="text-sm text-muted-foreground">{bid.vendor.email}</p>
                       </div>
@@ -350,7 +368,7 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
                     )}
 
                     {/* Action Buttons */}
-                    {bid.status === "pending" && (
+                    {bid.status === "pending" && !bid.isSuperseded && (
                       <div className="flex gap-2 pt-2">
                         <Button
                           onClick={() => handleAction(bid.id, "accept")}
@@ -373,6 +391,35 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
                         >
                           <DollarSign className="h-4 w-4 mr-1" />
                           Counter
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {/* Disabled Action Buttons for Superseded Bids */}
+                    {bid.status === "pending" && bid.isSuperseded && (
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          disabled={true}
+                          className="bg-gray-300 text-gray-500 cursor-not-allowed"
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Accept (Superseded)
+                        </Button>
+                        <Button
+                          variant="outline"
+                          disabled={true}
+                          className="border-gray-300 text-gray-500 cursor-not-allowed"
+                        >
+                          <XCircle className="h-4 w-4 mr-1" />
+                          Reject (Superseded)
+                        </Button>
+                        <Button
+                          variant="outline"
+                          disabled={true}
+                          className="border-gray-300 text-gray-500 cursor-not-allowed"
+                        >
+                          <DollarSign className="h-4 w-4 mr-1" />
+                          Counter (Superseded)
                         </Button>
                       </div>
                     )}

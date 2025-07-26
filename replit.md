@@ -396,6 +396,13 @@ Changelog:
 - July 25, 2025. Implemented bidirectional Google Calendar sync - TaskScout events now automatically sync back to Google Calendar
 - July 25, 2025. Enhanced event creation with proper all-day and timed event handling for Google sync
 - July 25, 2025. Added comprehensive logging for sync debugging and error handling
+- July 26, 2025. Implemented comprehensive bid versioning system for marketplace bids
+- July 26, 2025. Enhanced database schema with bid versioning fields (isSuperseded, supersededByBidId, previousBidId, version)
+- July 26, 2025. Updated marketplace bid updates to create new bid records instead of modifying existing ones
+- July 26, 2025. Added visual indicators for superseded bids with red warning notices and version badges
+- July 26, 2025. Disabled action buttons (Accept, Reject, Counter) for outdated bid versions
+- July 26, 2025. Complete bid history now visible in "View Bids" modal showing both old and new bid versions
+- July 26, 2025. Organizations can see full negotiation history with clear visual separation between current and superseded bids
 ```
 
 ## User Preferences

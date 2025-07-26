@@ -219,6 +219,11 @@ export const marketplaceBids = pgTable("marketplace_bids", {
   counterOffer: decimal("counter_offer", { precision: 10, scale: 2 }),
   counterNotes: text("counter_notes"),
   approved: boolean("approved").default(false).notNull(),
+  // Bid versioning fields
+  isSuperseded: boolean("is_superseded").default(false).notNull(),
+  supersededByBidId: integer("superseded_by_bid_id").references(() => marketplaceBids.id),
+  previousBidId: integer("previous_bid_id").references(() => marketplaceBids.id),
+  version: integer("version").default(1).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

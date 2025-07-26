@@ -1197,6 +1197,10 @@ export class DatabaseStorage implements IStorage {
       counterOffer: marketplaceBids.counterOffer,
       counterNotes: marketplaceBids.counterNotes,
       approved: marketplaceBids.approved,
+      isSuperseded: marketplaceBids.isSuperseded,
+      supersededByBidId: marketplaceBids.supersededByBidId,
+      previousBidId: marketplaceBids.previousBidId,
+      version: marketplaceBids.version,
       createdAt: marketplaceBids.createdAt,
       updatedAt: marketplaceBids.updatedAt,
       vendor: {
@@ -1208,7 +1212,7 @@ export class DatabaseStorage implements IStorage {
     .from(marketplaceBids)
     .leftJoin(maintenanceVendors, eq(marketplaceBids.vendorId, maintenanceVendors.id))
     .where(eq(marketplaceBids.ticketId, ticketId))
-    .orderBy(desc(marketplaceBids.createdAt));
+    .orderBy(marketplaceBids.vendorId, desc(marketplaceBids.version)); // Show newest versions first per vendor
 
     return bids as (MarketplaceBid & { vendor: Pick<MaintenanceVendor, 'id' | 'name' | 'email'> })[];
   }
@@ -1223,13 +1227,61 @@ export class DatabaseStorage implements IStorage {
     return bid || undefined;
   }
 
+  async getTicketBidsWithVersions(ticketId: number): Promise<MarketplaceBid[]> {
+    // Get all bids for this ticket (including superseded ones), ordered by version
+    const bids = await db
+      .select()
+      .from(marketplaceBids)
+      .where(eq(marketplaceBids.ticketId, ticketId))
+      .orderBy(marketplaceBids.vendorId, marketplaceBids.version);
+    
+    return bids;
+  }
+
   async updateMarketplaceBid(bidId: number, updates: Partial<InsertMarketplaceBid>): Promise<MarketplaceBid | undefined> {
-    const [updatedBid] = await db
+    console.log("Updating marketplace bid:", { bidId, ...updates });
+    
+    // Get the original bid
+    const [originalBid] = await db.select().from(marketplaceBids).where(eq(marketplaceBids.id, bidId));
+    if (!originalBid) {
+      throw new Error("Original bid not found");
+    }
+
+    // Mark the original bid as superseded
+    await db
       .update(marketplaceBids)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(marketplaceBids.id, bidId))
-      .returning();
-    return updatedBid || undefined;
+      .set({ 
+        isSuperseded: true,
+        updatedAt: new Date()
+      })
+      .where(eq(marketplaceBids.id, bidId));
+
+    // Create a new bid with updated values and version increment
+    const newBidData = {
+      ticketId: originalBid.ticketId,
+      vendorId: originalBid.vendorId,
+      hourlyRate: updates.hourlyRate ?? originalBid.hourlyRate,
+      estimatedHours: updates.estimatedHours ?? originalBid.estimatedHours,
+      responseTime: updates.responseTime ?? originalBid.responseTime,
+      parts: updates.parts ?? originalBid.parts,
+      totalAmount: updates.totalAmount ?? originalBid.totalAmount,
+      additionalNotes: updates.additionalNotes ?? originalBid.additionalNotes,
+      status: "pending", // New bid always starts as pending
+      version: originalBid.version + 1,
+      previousBidId: originalBid.id,
+      isSuperseded: false
+    };
+
+    const [newBid] = await db.insert(marketplaceBids).values(newBidData).returning();
+    
+    // Update the original bid to reference the new bid
+    await db
+      .update(marketplaceBids)
+      .set({ supersededByBidId: newBid.id })
+      .where(eq(marketplaceBids.id, bidId));
+
+    console.log("Marketplace bid updated successfully:", newBid);
+    return newBid || undefined;
   }
 
   async acceptMarketplaceBid(bidId: number): Promise<{ bid: MarketplaceBid; ticket: Ticket }> {
