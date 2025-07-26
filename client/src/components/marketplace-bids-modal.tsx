@@ -236,7 +236,7 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5" />
@@ -247,7 +247,7 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 min-h-0 pr-4">
+        <div className="flex-1 overflow-y-auto min-h-0 space-y-4 pr-4">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <div className="text-muted-foreground">Loading bids...</div>
@@ -261,7 +261,7 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <>
               {bids.map((bid) => (
                 <Card key={bid.id} className={`border ${bid.isSuperseded ? 'border-red-300 bg-red-50 dark:bg-red-950/20' : ''}`}>
                   <CardHeader>
@@ -426,14 +426,13 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
                   </CardContent>
                 </Card>
               ))}
-            </div>
+            </>
           )}
-          <div className="h-4"></div> {/* Bottom padding for scroll area */}
-        </ScrollArea>
+        </div>
 
         {/* Action Forms - Fixed at bottom */}
         {actionType === "reject" && selectedBidId && (
-          <div className="border-t pt-4 bg-background flex-shrink-0">
+          <div className="border-t pt-4 bg-background flex-shrink-0 mt-4">
             <h4 className="font-medium mb-2">Reject Bid</h4>
             <div className="space-y-3">
               <div>
@@ -463,7 +462,7 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
         )}
 
         {actionType === "counter" && selectedBidId && (
-          <div className="border-t bg-blue-50 dark:bg-blue-950/20 p-4 rounded-md flex-shrink-0">
+          <div className="border-t bg-blue-50 dark:bg-blue-950/20 p-4 rounded-md flex-shrink-0 mt-4">
             <h4 className="font-semibold text-lg mb-4 text-blue-900 dark:text-blue-100">Counter Offer</h4>
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
