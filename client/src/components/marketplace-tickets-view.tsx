@@ -234,8 +234,21 @@ export function MarketplaceTicketsView() {
                             <h3 className="text-lg font-semibold text-foreground">{ticket.title}</h3>
                             <Badge variant="secondary" className="text-xs">#{ticket.ticketNumber}</Badge>
                             {existingBid && (
-                              <Badge variant="outline" className="text-xs">
-                                Bid: {existingBid.status}
+                              <Badge 
+                                variant={
+                                  existingBid.status === 'pending' ? 'default' : 
+                                  existingBid.status === 'accepted' ? 'default' : 
+                                  existingBid.status === 'counter' ? 'default' : 
+                                  'destructive'
+                                }
+                                className={`text-xs ${
+                                  existingBid.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' :
+                                  existingBid.status === 'accepted' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
+                                  existingBid.status === 'counter' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400' :
+                                  'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                                }`}
+                              >
+                                Bid: {existingBid.status === 'counter' ? 'Counter Offer' : existingBid.status}
                               </Badge>
                             )}
                           </div>
@@ -292,12 +305,20 @@ export function MarketplaceTicketsView() {
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="text-lg font-semibold text-foreground">{bid.ticket.title}</h3>
                           <Badge variant="secondary" className="text-xs">#{bid.ticket.ticketNumber}</Badge>
-                          <Badge variant={
-                            bid.status === 'pending' ? 'default' : 
-                            bid.status === 'accepted' ? 'default' : 
-                            bid.status === 'counter' ? 'default' : 
-                            'destructive'
-                          }>
+                          <Badge 
+                            variant={
+                              bid.status === 'pending' ? 'default' : 
+                              bid.status === 'accepted' ? 'default' : 
+                              bid.status === 'counter' ? 'default' : 
+                              'destructive'
+                            }
+                            className={`${
+                              bid.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' :
+                              bid.status === 'accepted' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
+                              bid.status === 'counter' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400' :
+                              'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                            }`}
+                          >
                             {bid.status === 'counter' ? 'Counter Offer' : bid.status}
                           </Badge>
                         </div>
