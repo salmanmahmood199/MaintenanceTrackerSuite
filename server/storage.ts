@@ -56,7 +56,7 @@ import {
   type InsertGoogleCalendarIntegration,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, inArray, desc, or, isNull, gte, lte, ne, asc, ilike, not } from "drizzle-orm";
+import { eq, and, inArray, desc, or, isNull, gte, lte, ne, asc, ilike, not, isNotNull } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
 export interface IStorage {
@@ -1842,57 +1842,101 @@ export class DatabaseStorage implements IStorage {
 
   // Technician availability and scheduling operations
   async checkTechnicianAvailability(technicianId: number, startTime: Date, endTime: Date): Promise<boolean> {
-    // Check calendar events for conflicts (using date-based filtering for now)
-    const startDateStr = startTime.toISOString().split('T')[0];
-    const endDateStr = endTime.toISOString().split('T')[0];
-    
-    const conflicts = await db.select().from(calendarEvents)
-      .where(
-        and(
-          eq(calendarEvents.userId, technicianId),
-          or(
-            and(
-              gte(calendarEvents.startDate, startDateStr),
-              lte(calendarEvents.startDate, endDateStr)
-            ),
-            and(
-              gte(calendarEvents.endDate, startDateStr),
-              lte(calendarEvents.endDate, endDateStr)
-            ),
-            and(
-              lte(calendarEvents.startDate, startDateStr),
-              gte(calendarEvents.endDate, endDateStr)
+    try {
+      console.log('Checking availability for technician:', technicianId);
+      console.log('Time range:', startTime.toISOString(), 'to', endTime.toISOString());
+      
+      // Check calendar events for conflicts (using proper date-time filtering)
+      const startDateStr = startTime.toISOString().split('T')[0];
+      const endDateStr = endTime.toISOString().split('T')[0];
+      
+      const conflicts = await db.select().from(calendarEvents)
+        .where(
+          and(
+            eq(calendarEvents.userId, technicianId),
+            or(
+              // Event starts on the same day
+              eq(calendarEvents.startDate, startDateStr),
+              // Event ends on the same day
+              eq(calendarEvents.endDate, startDateStr),
+              // Multi-day event that spans our date
+              and(
+                lte(calendarEvents.startDate, startDateStr),
+                gte(calendarEvents.endDate, startDateStr)
+              )
             )
           )
-        )
-      );
+        );
 
-    // Check existing ticket assignments that overlap
-    const ticketConflicts = await db.select().from(tickets)
-      .where(
-        and(
-          eq(tickets.assigneeId, technicianId),
-          ne(tickets.status, 'completed'),
-          ne(tickets.status, 'billed'),
-          ne(tickets.status, 'force_closed'),
-          or(
-            and(
-              gte(tickets.scheduledStartTime, startTime),
-              lte(tickets.scheduledStartTime, endTime)
-            ),
-            and(
-              gte(tickets.scheduledEndTime, startTime),
-              lte(tickets.scheduledEndTime, endTime)
-            ),
-            and(
-              lte(tickets.scheduledStartTime, startTime),
-              gte(tickets.scheduledEndTime, endTime)
-            )
+      console.log('Calendar conflicts found:', conflicts.length);
+      
+      // For same-day events, check time overlap if time is specified
+      const timeConflicts = conflicts.filter(event => {
+        if (!event.startTime || !event.endTime) {
+          // All-day events are conflicts
+          return true;
+        }
+        
+        // Check if times overlap
+        const eventStart = event.startTime;
+        const eventEnd = event.endTime;
+        const checkStart = startTime.toTimeString().slice(0, 5); // HH:MM format
+        const checkEnd = endTime.toTimeString().slice(0, 5); // HH:MM format
+        
+        // Convert time strings to minutes for easier comparison
+        const toMinutes = (timeStr: string) => {
+          const [hours, minutes] = timeStr.split(':').map(Number);
+          return hours * 60 + minutes;
+        };
+        
+        const eventStartMin = toMinutes(eventStart);
+        const eventEndMin = toMinutes(eventEnd);
+        const checkStartMin = toMinutes(checkStart);
+        const checkEndMin = toMinutes(checkEnd);
+        
+        // Check for overlap: events overlap if one starts before the other ends
+        return !(checkEndMin <= eventStartMin || checkStartMin >= eventEndMin);
+      });
+
+      console.log('Time-based conflicts found:', timeConflicts.length);
+
+      // Check existing ticket assignments that overlap
+      const ticketConflicts = await db.select().from(tickets)
+        .where(
+          and(
+            eq(tickets.assigneeId, technicianId),
+            ne(tickets.status, 'completed'),
+            ne(tickets.status, 'billed'),
+            ne(tickets.status, 'force_closed'),
+            isNotNull(tickets.scheduledStartTime),
+            isNotNull(tickets.scheduledEndTime)
           )
-        )
-      );
+        );
 
-    return conflicts.length === 0 && ticketConflicts.length === 0;
+      console.log('All ticket assignments found:', ticketConflicts.length);
+
+      // Filter tickets for actual time conflicts
+      const actualTicketConflicts = ticketConflicts.filter(ticket => {
+        if (!ticket.scheduledStartTime || !ticket.scheduledEndTime) return false;
+        
+        const ticketStart = new Date(ticket.scheduledStartTime);
+        const ticketEnd = new Date(ticket.scheduledEndTime);
+        
+        // Check for overlap: tickets overlap if one starts before the other ends
+        return !(endTime <= ticketStart || startTime >= ticketEnd);
+      });
+
+      console.log('Actual ticket conflicts found:', actualTicketConflicts.length);
+
+      const isAvailable = timeConflicts.length === 0 && actualTicketConflicts.length === 0;
+      console.log('Final availability result:', isAvailable);
+      
+      return isAvailable;
+    } catch (error) {
+      console.error('Error checking technician availability:', error);
+      // Return false if there's an error to be safe
+      return false;
+    }
   }
 
   async getTechnicianSchedule(technicianId: number, startDate: Date, endDate: Date): Promise<{
