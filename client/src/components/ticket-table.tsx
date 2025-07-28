@@ -80,7 +80,7 @@ export function TicketTable({
   // Location display component that works for all users
   function LocationDisplay({ locationId }: { locationId: number | null }) {
     const { data: location } = useQuery<Location | null>({
-      queryKey: ["/api/locations", locationId],
+      queryKey: ["/api/location", locationId],
       queryFn: () => locationId ? fetchLocationById(locationId) : Promise.resolve(null),
       enabled: !!locationId,
     });
@@ -109,7 +109,7 @@ export function TicketTable({
   // Detailed location display for ticket modal
   function LocationDetailDisplay({ locationId }: { locationId: number | null }) {
     const { data: location } = useQuery<Location | null>({
-      queryKey: ["/api/locations", locationId],
+      queryKey: ["/api/location", locationId],
       queryFn: () => locationId ? fetchLocationById(locationId) : Promise.resolve(null),
       enabled: !!locationId,
     });
