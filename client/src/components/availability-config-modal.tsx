@@ -83,7 +83,15 @@ export default function AvailabilityConfigModal({ isOpen, onClose }: Availabilit
       // Parse and set weekly schedule
       if (existingConfig.weeklySchedule) {
         try {
-          const schedule = JSON.parse(existingConfig.weeklySchedule);
+          let schedule;
+          
+          // Handle both string and object formats
+          if (typeof existingConfig.weeklySchedule === 'string') {
+            schedule = JSON.parse(existingConfig.weeklySchedule);
+          } else {
+            schedule = existingConfig.weeklySchedule;
+          }
+          
           console.log('Loading existing availability config:', schedule);
           console.log('Saturday data:', schedule.saturday);
           console.log('Sunday data:', schedule.sunday);
