@@ -130,6 +130,15 @@ export default function Login() {
               <p className="text-xs text-slate-600">Email: root@mail.com</p>
               <p className="text-xs text-slate-600">Password: admin</p>
             </div>
+
+            <div className="mt-4 text-center">
+              <p className="text-sm text-slate-600">
+                New residential user?{" "}
+                <a href="/register/residential" className="text-blue-600 hover:underline">
+                  Register here
+                </a>
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>

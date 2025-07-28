@@ -54,6 +54,7 @@ import {
   type InsertAvailabilityConfig,
   type GoogleCalendarIntegration,
   type InsertGoogleCalendarIntegration,
+  InsertResidentialUser,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, inArray, desc, or, isNull, gte, lte, ne, asc, ilike, not, isNotNull } from "drizzle-orm";
@@ -64,6 +65,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  createResidentialUser(user: InsertResidentialUser): Promise<User>;
   verifyUser(email: string, password: string): Promise<User | undefined>;
   
   // Sub-admin operations
@@ -239,6 +241,29 @@ export class DatabaseStorage implements IStorage {
       .values({
         ...insertUser,
         password: hashedPassword,
+      })
+      .returning();
+    return user;
+  }
+
+  async createResidentialUser(insertUser: InsertResidentialUser): Promise<User> {
+    const hashedPassword = await bcrypt.hash(insertUser.password, 10);
+    const [user] = await db
+      .insert(users)
+      .values({
+        email: insertUser.email,
+        password: hashedPassword,
+        firstName: insertUser.firstName,
+        lastName: insertUser.lastName,
+        phone: insertUser.phone,
+        address: insertUser.address,
+        city: insertUser.city,
+        state: insertUser.state,
+        zipCode: insertUser.zipCode,
+        role: "residential",
+        permissions: ["place_ticket", "view_invoices", "pay_invoices"],
+        vendorTiers: ["marketplace"], // Residential users can only assign to marketplace
+        isActive: true,
       })
       .returning();
     return user;

@@ -12,9 +12,14 @@ export const users = pgTable("users", {
   firstName: varchar("first_name", { length: 100 }),
   lastName: varchar("last_name", { length: 100 }),
   phone: varchar("phone", { length: 15 }).unique(),
-  role: text("role").notNull(), // 'root', 'org_admin', 'maintenance_admin', 'technician', 'org_subadmin'
+  role: text("role").notNull(), // 'root', 'org_admin', 'maintenance_admin', 'technician', 'org_subadmin', 'residential'
   organizationId: integer("organization_id"),
   maintenanceVendorId: integer("maintenance_vendor_id"),
+  // Residential user fields
+  address: text("address"),
+  city: varchar("city", { length: 100 }),
+  state: varchar("state", { length: 50 }),
+  zipCode: varchar("zip_code", { length: 10 }),
   permissions: text("permissions").array(), // ["place_ticket", "accept_ticket", "view_invoices", "pay_invoices"]
   vendorTiers: text("vendor_tiers").array(), // ["tier_1", "tier_2", "tier_3", "marketplace"] - what tiers they can assign
   isActive: boolean("is_active").default(true).notNull(),
@@ -67,12 +72,17 @@ export const tickets = pgTable("tickets", {
   description: text("description").notNull(),
   priority: text("priority").notNull(),
   status: text("status").notNull().default("pending"), // pending, accepted, rejected, in-progress, completed, return_needed, pending_confirmation, confirmed, marketplace, ready_for_billing, force_closed, billed
-  organizationId: integer("organization_id").notNull(),
+  organizationId: integer("organization_id"), // Optional for residential users
   reporterId: integer("reporter_id").notNull(),
   assigneeId: integer("assignee_id"),
   assignedAt: timestamp("assigned_at"), // When ticket was assigned to technician
   maintenanceVendorId: integer("maintenance_vendor_id"),
   locationId: integer("location_id"),
+  // Residential user address fields (when organizationId is null)
+  residentialAddress: text("residential_address"),
+  residentialCity: varchar("residential_city", { length: 100 }),
+  residentialState: varchar("residential_state", { length: 50 }),
+  residentialZip: varchar("residential_zip", { length: 10 }),
   rejectionReason: text("rejection_reason"),
   completedAt: timestamp("completed_at"),
   confirmedAt: timestamp("confirmed_at"),
@@ -684,6 +694,18 @@ export const loginSchema = z.object({
   password: z.string().min(1),
 });
 
+export const insertResidentialUserSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  phone: z.string().min(10, "Phone number must be at least 10 digits"),
+  address: z.string().min(1, "Address is required"),
+  city: z.string().min(1, "City is required"),
+  state: z.string().min(1, "State is required"),
+  zipCode: z.string().min(5, "ZIP code is required"),
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertSubAdmin = z.infer<typeof insertSubAdminSchema>;
@@ -715,6 +737,7 @@ export type Location = typeof locations.$inferSelect;
 export type InsertUserLocationAssignment = z.infer<typeof insertUserLocationAssignmentSchema>;
 export type UserLocationAssignment = typeof userLocationAssignments.$inferSelect;
 export type LoginData = z.infer<typeof loginSchema>;
+export type InsertResidentialUser = z.infer<typeof insertResidentialUserSchema>;
 
 // Ticket comment types
 export type TicketComment = typeof ticketComments.$inferSelect;

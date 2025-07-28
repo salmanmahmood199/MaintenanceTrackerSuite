@@ -15,6 +15,7 @@ import {
   insertLocationSchema,
   insertTicketCommentSchema,
   insertMarketplaceBidSchema,
+  insertResidentialUserSchema,
   type Ticket,
   type User,
   type AuthenticatedRequest,
@@ -34,6 +35,7 @@ import fs from "fs";
 import { db } from "./db";
 import { and, eq, desc, inArray } from "drizzle-orm";
 import { invoices, tickets } from "@shared/schema";
+import { z } from "zod";
 
 // Configure multer for image uploads
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -127,6 +129,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json({ message: "Logged out successfully" });
     });
+  });
+
+  // Residential user registration
+  app.post("/api/auth/register/residential", async (req, res) => {
+    try {
+      const validatedData = insertResidentialUserSchema.parse(req.body);
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(validatedData.email);
+      if (existingUser) {
+        return res.status(400).json({ message: "User already exists with this email" });
+      }
+      
+      const user = await storage.createResidentialUser(validatedData);
+      
+      // Remove password from response
+      const { password, ...userWithoutPassword } = user;
+      
+      res.status(201).json({ 
+        message: "Residential user registered successfully",
+        user: userWithoutPassword 
+      });
+    } catch (error) {
+      console.error("Registration error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ message: "Registration failed" });
+    }
   });
 
   app.get("/api/auth/logout", (req, res) => {
@@ -906,6 +940,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else if (user.role === "technician") {
           tickets = await storage.getTickets();
           tickets = tickets.filter((ticket) => ticket.assigneeId === user.id);
+        } else if (user.role === "residential") {
+          // Residential users can only see their own tickets
+          tickets = await storage.getTickets();
+          tickets = tickets.filter((ticket) => ticket.reporterId === user.id);
         } else {
           return res.status(403).json({ message: "Unauthorized" });
         }
@@ -965,20 +1003,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create new ticket with image upload
-  app.post("/api/tickets", upload.array("images", 5), async (req, res) => {
+  app.post("/api/tickets", upload.array("images", 5), authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
+      const user = req.user!;
       const files = req.files as Express.Multer.File[];
       const imageUrls = files
         ? files.map((file) => `/uploads/${file.filename}`)
         : [];
 
+      // Handle residential users differently
+      if (user.role === "residential") {
+        const ticketData = {
+          title: req.body.title,
+          description: req.body.description,
+          priority: req.body.priority,
+          status: "marketplace", // Automatically assign to marketplace
+          organizationId: null, // No organization for residential
+          reporterId: user.id,
+          locationId: null,
+          residentialAddress: req.body.address || user.address,
+          residentialCity: req.body.city || user.city,
+          residentialState: req.body.state || user.state,
+          residentialZip: req.body.zipCode || user.zipCode,
+          images: imageUrls,
+        };
+
+        console.log("Creating residential ticket:", ticketData);
+        
+        const validatedData = insertTicketSchema.parse(ticketData);
+        const ticket = await storage.createTicket(validatedData);
+
+        res.status(201).json(ticket);
+        return;
+      }
+
+      // Handle organization users (existing logic)
       const ticketData = {
         title: req.body.title,
         description: req.body.description,
         priority: req.body.priority,
         status: req.body.status || "open",
-        organizationId: parseInt(req.body.organizationId) || 1,
-        reporterId: parseInt(req.body.reporterId) || 1,
+        organizationId: parseInt(req.body.organizationId) || user.organizationId || 1,
+        reporterId: user.id,
         locationId: req.body.locationId ? parseInt(req.body.locationId) : null,
         images: imageUrls,
       };

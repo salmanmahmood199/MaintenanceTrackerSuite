@@ -12,6 +12,8 @@ import { VendorView } from "@/pages/vendor-view";
 import TechnicianDashboard from "@/pages/technician-dashboard";
 import Calendar from "@/pages/calendar";
 import NotFound from "@/pages/not-found";
+import { ResidentialRegisterPage } from "@/pages/residential-register";
+import ResidentialDashboard from "@/pages/residential-dashboard";
 
 function Router() {
   const { user, isAuthenticated, isLoading, isRoot } = useAuth();
@@ -28,6 +30,7 @@ function Router() {
     return (
       <Switch>
         <Route path="/login" component={Login} />
+        <Route path="/register/residential" component={ResidentialRegisterPage} />
         <Route component={() => <Login />} />
       </Switch>
     );
@@ -76,6 +79,16 @@ function Router() {
       <Switch>
         <Route path="/calendar" component={Calendar} />
         <Route path="/" component={TechnicianDashboard} />
+        <Route component={NotFound} />
+      </Switch>
+    );
+  }
+
+  // Residential users get their own dashboard
+  if (user?.role === "residential") {
+    return (
+      <Switch>
+        <Route path="/" component={ResidentialDashboard} />
         <Route component={NotFound} />
       </Switch>
     );

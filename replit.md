@@ -143,6 +143,7 @@ Root Admin (root@mail.com / admin)
 2. **Organization Admin**: Manage organization users and tickets
 3. **Maintenance Admin**: Manage technicians and vendor operations
 4. **Technician**: Handle assigned maintenance tickets
+5. **Residential**: Self-service maintenance request portal with marketplace assignment
 
 ## API Endpoints
 
@@ -407,6 +408,12 @@ Changelog:
 - July 26, 2025. Mobile app now properly connects to TaskScout server at http://0.0.0.0:5000 with automatic API detection
 - July 26, 2025. Updated mobile app dependencies and fixed TypeScript configuration for Expo SDK 53
 - July 26, 2025. Mobile app includes comprehensive setup instructions in START_HERE.md for easy deployment
+- July 28, 2025. Implemented comprehensive residential user support with self-registration portal
+- July 28, 2025. Added residential user authentication system with address fields for service location tracking
+- July 28, 2025. Created residential dashboard with automatic marketplace ticket assignment (no approval step required)
+- July 28, 2025. Enhanced database schema with residential address fields for both users and tickets tables
+- July 28, 2025. Added residential user registration link to login page for easy onboarding
+- July 28, 2025. Residential tickets automatically assigned to marketplace for vendor bidding without organization approval
 ```
 
 ## User Preferences
