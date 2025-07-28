@@ -1,17 +1,27 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ResidentialTicketModal } from "@/components/residential-ticket-modal";
 import { useAuth } from "@/hooks/useAuth";
 import { Ticket } from "@shared/schema";
-import { Plus, Home, MapPin, Clock, AlertCircle } from "lucide-react";
+import { Plus, Home, MapPin, Clock, AlertCircle, LogOut } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
 
 function ResidentialDashboard() {
   const { user } = useAuth();
   const [showCreateTicket, setShowCreateTicket] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const queryClient = useQueryClient();
+
+  const logoutMutation = useMutation({
+    mutationFn: () => apiRequest("/api/auth/logout", { method: "POST" }),
+    onSuccess: () => {
+      queryClient.clear();
+      window.location.href = "/login";
+    },
+  });
 
   const { data: tickets = [], isLoading } = useQuery<Ticket[]>({
     queryKey: ["/api/tickets"],
@@ -75,13 +85,24 @@ function ResidentialDashboard() {
                 </p>
               </div>
             </div>
-            <Button 
-              onClick={() => setShowCreateTicket(true)}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Request Service
-            </Button>
+            <div className="flex items-center space-x-3">
+              <Button 
+                onClick={() => setShowCreateTicket(true)}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Request Service
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => logoutMutation.mutate()}
+                disabled={logoutMutation.isPending}
+                className="border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                {logoutMutation.isPending ? "Logging out..." : "Logout"}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
