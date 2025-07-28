@@ -21,7 +21,18 @@ function ResidentialDashboard() {
       queryClient.clear();
       window.location.href = "/login";
     },
+    onError: (error) => {
+      console.error('Logout error:', error);
+      // Even if logout fails on server, clear local state and redirect
+      queryClient.clear();
+      window.location.href = "/login";
+    },
   });
+
+  const handleLogout = () => {
+    console.log('Logout button clicked');
+    logoutMutation.mutate();
+  };
 
   const { data: tickets = [], isLoading } = useQuery<Ticket[]>({
     queryKey: ["/api/tickets"],
@@ -95,7 +106,7 @@ function ResidentialDashboard() {
               </Button>
               <Button
                 variant="outline"
-                onClick={() => logoutMutation.mutate()}
+                onClick={handleLogout}
                 disabled={logoutMutation.isPending}
                 className="border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700"
               >
