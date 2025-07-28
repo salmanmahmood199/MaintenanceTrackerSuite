@@ -50,11 +50,31 @@ export function ResidentialRegistration() {
     try {
       const { confirmPassword, ...registrationData } = formData;
       
-      await fetch("/api/auth/register/residential", {
+      const response = await fetch("/api/auth/register/residential", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(registrationData),
       });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        if (result.errors && result.errors.length > 0) {
+          const errorMessages = result.errors.map((err: any) => err.message).join(", ");
+          toast({
+            title: "Registration Failed",
+            description: errorMessages,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Registration Failed",
+            description: result.message || "Failed to create account. Please try again.",
+            variant: "destructive",
+          });
+        }
+        return;
+      }
 
       setIsSuccess(true);
       toast({
@@ -64,7 +84,7 @@ export function ResidentialRegistration() {
     } catch (error: any) {
       toast({
         title: "Registration Failed",
-        description: error.message || "Failed to create account. Please try again.",
+        description: "Failed to create account. Please try again.",
         variant: "destructive",
       });
     } finally {
