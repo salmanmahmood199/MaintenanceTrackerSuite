@@ -85,7 +85,22 @@ export default function AvailabilityConfigModal({ isOpen, onClose }: Availabilit
         try {
           const schedule = JSON.parse(existingConfig.weeklySchedule);
           console.log('Loading existing availability config:', schedule);
-          setWeeklySchedule(schedule);
+          console.log('Saturday data:', schedule.saturday);
+          console.log('Sunday data:', schedule.sunday);
+          
+          // Ensure all days have proper array structure
+          const normalizedSchedule = {
+            monday: schedule.monday || [],
+            tuesday: schedule.tuesday || [],
+            wednesday: schedule.wednesday || [],
+            thursday: schedule.thursday || [],
+            friday: schedule.friday || [],
+            saturday: schedule.saturday || [],
+            sunday: schedule.sunday || [],
+          };
+          
+          console.log('Normalized schedule:', normalizedSchedule);
+          setWeeklySchedule(normalizedSchedule);
         } catch (error) {
           console.error("Error parsing weekly schedule:", error);
           // Keep default schedule if parsing fails
