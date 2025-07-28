@@ -192,6 +192,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       maintenanceVendorId: req.user!.maintenanceVendorId,
       permissions: req.user!.permissions,
       vendorTiers: req.user!.vendorTiers,
+      // Include residential address fields for residential users
+      address: req.user!.address,
+      city: req.user!.city,
+      state: req.user!.state,
+      zipCode: req.user!.zipCode,
     });
   });
 

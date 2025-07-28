@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CreateTicketModal } from "@/components/create-ticket-modal";
+// Import will be added later for residential ticket creation
 import { useAuth } from "@/hooks/useAuth";
 import { Ticket } from "@shared/schema";
 import { Plus, Home, MapPin, Clock, AlertCircle } from "lucide-react";
@@ -94,7 +94,7 @@ function ResidentialDashboard() {
             <div className="flex items-center space-x-2 text-muted-foreground">
               <MapPin className="w-4 h-4" />
               <span className="text-sm">
-                Service Address: {(user as any)?.address}, {(user as any)?.city}, {(user as any)?.state} {(user as any)?.zipCode}
+                Service Address: {(user as any)?.address || 'Loading...'}, {(user as any)?.city || ''}, {(user as any)?.state || ''} {(user as any)?.zipCode || ''}
               </span>
             </div>
           </CardContent>
@@ -178,12 +178,19 @@ function ResidentialDashboard() {
         </div>
       </div>
 
-      {/* Modals */}
+      {/* TODO: Add residential ticket creation modal */}
       {showCreateTicket && (
-        <CreateTicketModal 
-          open={showCreateTicket}
-          onClose={() => setShowCreateTicket(false)}
-        />
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Create Service Request</h3>
+            <p className="text-muted-foreground mb-4">
+              This feature will be available soon. You'll be able to request maintenance services directly from this dashboard.
+            </p>
+            <Button onClick={() => setShowCreateTicket(false)}>
+              Close
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );
