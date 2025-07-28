@@ -36,6 +36,22 @@ interface VendorBid {
   };
 }
 
+interface MarketplaceTicket {
+  id: number;
+  ticketNumber: string;
+  title: string;
+  description: string;
+  priority: string;
+  status: string;
+  createdAt: string;
+  images?: string[];
+  locationId?: number;
+  residentialAddress?: string;
+  residentialCity?: string;
+  residentialState?: string;
+  residentialZip?: string;
+}
+
 // Bid Details Modal Component
 function BidDetailsModal({ bid, isOpen, onClose }: { bid: VendorBid | null; isOpen: boolean; onClose: () => void }) {
   if (!bid) return null;
@@ -128,15 +144,16 @@ function BidDetailsModal({ bid, isOpen, onClose }: { bid: VendorBid | null; isOp
 }
 
 export function MarketplaceTicketsView() {
-  const [selectedTicket, setSelectedTicket] = useState<any>(null);
+  const [selectedTicket, setSelectedTicket] = useState<MarketplaceTicket | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isBidModalOpen, setIsBidModalOpen] = useState(false);
   const [selectedBid, setSelectedBid] = useState<VendorBid | null>(null);
   const [isBidDetailsOpen, setIsBidDetailsOpen] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   // Fetch marketplace tickets
-  const { data: marketplaceTickets = [], isLoading } = useQuery({
+  const { data: marketplaceTickets = [], isLoading } = useQuery<MarketplaceTicket[]>({
     queryKey: ["/api/marketplace/tickets"],
   });
 
@@ -154,9 +171,14 @@ export function MarketplaceTicketsView() {
     return vendorBids.find(bid => bid.ticketId === ticketId);
   };
 
-  const handleViewTicket = (ticket: any) => {
+  const handleViewTicket = (ticket: MarketplaceTicket) => {
     setSelectedTicket(ticket);
     setIsViewModalOpen(true);
+  };
+
+  const handlePlaceBid = (ticket: MarketplaceTicket) => {
+    setSelectedTicket(ticket);
+    setIsBidModalOpen(true);
   };
 
   const handleViewBidDetails = (bid: VendorBid) => {
@@ -272,6 +294,15 @@ export function MarketplaceTicketsView() {
                         <div className="flex gap-2">
                           <Button variant="outline" size="sm" onClick={() => handleViewTicket(ticket)}>
                             <Eye className="h-4 w-4 mr-1" />
+                            View Details
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            onClick={() => handlePlaceBid(ticket)}
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                            disabled={existingBid?.status === 'accepted'}
+                          >
+                            <DollarSign className="h-4 w-4 mr-1" />
                             {existingBid ? "Update Bid" : "Place Bid"}
                           </Button>
                         </div>
@@ -368,7 +399,7 @@ export function MarketplaceTicketsView() {
                           Details
                         </Button>
                         {bid.status === 'pending' && (
-                          <Button variant="outline" size="sm" onClick={() => handleViewTicket(marketplaceTickets.find((t: any) => t.id === bid.ticketId))}>
+                          <Button variant="outline" size="sm" onClick={() => handlePlaceBid(marketplaceTickets.find((t: MarketplaceTicket) => t.id === bid.ticketId)!)}>
                             <Edit className="h-4 w-4 mr-1" />
                             Edit Bid
                           </Button>
@@ -383,10 +414,77 @@ export function MarketplaceTicketsView() {
         </TabsContent>
       </Tabs>
 
+      {/* View Ticket Details Modal (Read-only) */}
+      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              {selectedTicket?.ticketNumber} - {selectedTicket?.title}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedTicket && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Priority</label>
+                  <Badge variant={selectedTicket.priority === "high" ? "destructive" : selectedTicket.priority === "medium" ? "default" : "secondary"}>
+                    {selectedTicket.priority} priority
+                  </Badge>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Status</label>
+                  <Badge variant="outline">{selectedTicket.status}</Badge>
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Description</label>
+                <p className="text-foreground mt-1">{selectedTicket.description}</p>
+              </div>
+
+              {selectedTicket.residentialAddress && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center gap-2 mb-1">
+                    <MapPin className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <span className="text-sm font-medium text-blue-900 dark:text-blue-100">Service Address</span>
+                  </div>
+                  <div className="ml-6">
+                    <p className="text-blue-900 dark:text-blue-100">
+                      {selectedTicket.residentialAddress}
+                    </p>
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                      {selectedTicket.residentialCity}, {selectedTicket.residentialState} {selectedTicket.residentialZip}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {selectedTicket.images && selectedTicket.images.length > 0 && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Images</label>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    {selectedTicket.images.map((image, index) => (
+                      <img
+                        key={index}
+                        src={image}
+                        alt={`Ticket image ${index + 1}`}
+                        className="w-full h-32 object-cover rounded border"
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Place/Update Bid Modal */}
       <MarketplaceTicketModal
         ticket={selectedTicket}
-        isOpen={isViewModalOpen}
-        onClose={() => setIsViewModalOpen(false)}
+        isOpen={isBidModalOpen}
+        onClose={() => setIsBidModalOpen(false)}
       />
 
       <BidDetailsModal
