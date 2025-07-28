@@ -1,10 +1,21 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -31,24 +42,27 @@ interface AvailabilityConfigModalProps {
 }
 
 const DAYS = [
-  { key: 'monday', label: 'Monday' },
-  { key: 'tuesday', label: 'Tuesday' },
-  { key: 'wednesday', label: 'Wednesday' },
-  { key: 'thursday', label: 'Thursday' },
-  { key: 'friday', label: 'Friday' },
-  { key: 'saturday', label: 'Saturday' },
-  { key: 'sunday', label: 'Sunday' },
+  { key: "monday", label: "Monday" },
+  { key: "tuesday", label: "Tuesday" },
+  { key: "wednesday", label: "Wednesday" },
+  { key: "thursday", label: "Thursday" },
+  { key: "friday", label: "Friday" },
+  { key: "saturday", label: "Saturday" },
+  { key: "sunday", label: "Sunday" },
 ] as const;
 
 const TIMEZONES = [
-  { value: 'America/New_York', label: 'Eastern Time (ET)' },
-  { value: 'America/Chicago', label: 'Central Time (CT)' },
-  { value: 'America/Denver', label: 'Mountain Time (MT)' },
-  { value: 'America/Los_Angeles', label: 'Pacific Time (PT)' },
-  { value: 'UTC', label: 'UTC' },
+  { value: "America/New_York", label: "Eastern Time (ET)" },
+  { value: "America/Chicago", label: "Central Time (CT)" },
+  { value: "America/Denver", label: "Mountain Time (MT)" },
+  { value: "America/Los_Angeles", label: "Pacific Time (PT)" },
+  { value: "UTC", label: "UTC" },
 ];
 
-export default function AvailabilityConfigModal({ isOpen, onClose }: AvailabilityConfigModalProps) {
+export default function AvailabilityConfigModal({
+  isOpen,
+  onClose,
+}: AvailabilityConfigModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -73,7 +87,12 @@ export default function AvailabilityConfigModal({ isOpen, onClose }: Availabilit
 
   // Load existing configuration when data is available
   useEffect(() => {
-    if (existingConfig && existingConfig.timezone && existingConfig.weeklySchedule) {
+    console.log(existingConfig);
+    if (
+      existingConfig &&
+      existingConfig.timezone &&
+      existingConfig.weeklySchedule
+    ) {
       setTimezone(existingConfig.timezone);
       try {
         const schedule = JSON.parse(existingConfig.weeklySchedule);
@@ -85,7 +104,10 @@ export default function AvailabilityConfigModal({ isOpen, onClose }: Availabilit
   }, [existingConfig]);
 
   const saveAvailabilityMutation = useMutation({
-    mutationFn: async (config: { weeklySchedule: WeeklySchedule; timezone: string }) => {
+    mutationFn: async (config: {
+      weeklySchedule: WeeklySchedule;
+      timezone: string;
+    }) => {
       return await apiRequest("POST", "/api/availability/config", config);
     },
     onSuccess: () => {
@@ -107,24 +129,29 @@ export default function AvailabilityConfigModal({ isOpen, onClose }: Availabilit
   });
 
   const addTimeSlot = (day: keyof WeeklySchedule) => {
-    setWeeklySchedule(prev => ({
+    setWeeklySchedule((prev) => ({
       ...prev,
       [day]: [...prev[day], { start: "09:00", end: "17:00" }],
     }));
   };
 
   const removeTimeSlot = (day: keyof WeeklySchedule, index: number) => {
-    setWeeklySchedule(prev => ({
+    setWeeklySchedule((prev) => ({
       ...prev,
       [day]: prev[day].filter((_, i) => i !== index),
     }));
   };
 
-  const updateTimeSlot = (day: keyof WeeklySchedule, index: number, field: 'start' | 'end', value: string) => {
-    setWeeklySchedule(prev => ({
+  const updateTimeSlot = (
+    day: keyof WeeklySchedule,
+    index: number,
+    field: "start" | "end",
+    value: string,
+  ) => {
+    setWeeklySchedule((prev) => ({
       ...prev,
-      [day]: prev[day].map((slot, i) => 
-        i === index ? { ...slot, [field]: value } : slot
+      [day]: prev[day].map((slot, i) =>
+        i === index ? { ...slot, [field]: value } : slot,
       ),
     }));
   };
@@ -165,8 +192,14 @@ export default function AvailabilityConfigModal({ isOpen, onClose }: Availabilit
           </div>
 
           <div className="text-sm text-muted-foreground">
-            <p>Set your weekly availability schedule. This defines when you're generally available for bookings.</p>
-            <p>You can add multiple time blocks per day (e.g., morning and afternoon shifts).</p>
+            <p>
+              Set your weekly availability schedule. This defines when you're
+              generally available for bookings.
+            </p>
+            <p>
+              You can add multiple time blocks per day (e.g., morning and
+              afternoon shifts).
+            </p>
           </div>
 
           {/* Weekly Schedule */}
@@ -189,7 +222,9 @@ export default function AvailabilityConfigModal({ isOpen, onClose }: Availabilit
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {weeklySchedule[key].length === 0 ? (
-                    <p className="text-sm text-muted-foreground italic">Not available</p>
+                    <p className="text-sm text-muted-foreground italic">
+                      Not available
+                    </p>
                   ) : (
                     weeklySchedule[key].map((slot, index) => (
                       <div key={index} className="flex items-center gap-2">
@@ -197,14 +232,23 @@ export default function AvailabilityConfigModal({ isOpen, onClose }: Availabilit
                           <Input
                             type="time"
                             value={slot.start}
-                            onChange={(e) => updateTimeSlot(key, index, 'start', e.target.value)}
+                            onChange={(e) =>
+                              updateTimeSlot(
+                                key,
+                                index,
+                                "start",
+                                e.target.value,
+                              )
+                            }
                             className="w-32"
                           />
                           <span className="text-muted-foreground">to</span>
                           <Input
                             type="time"
                             value={slot.end}
-                            onChange={(e) => updateTimeSlot(key, index, 'end', e.target.value)}
+                            onChange={(e) =>
+                              updateTimeSlot(key, index, "end", e.target.value)
+                            }
                             className="w-32"
                           />
                         </div>
@@ -231,7 +275,9 @@ export default function AvailabilityConfigModal({ isOpen, onClose }: Availabilit
               disabled={saveAvailabilityMutation.isPending}
               className="flex-1"
             >
-              {saveAvailabilityMutation.isPending ? "Saving..." : "Save Availability"}
+              {saveAvailabilityMutation.isPending
+                ? "Saving..."
+                : "Save Availability"}
             </Button>
             <Button variant="outline" onClick={onClose}>
               Cancel
