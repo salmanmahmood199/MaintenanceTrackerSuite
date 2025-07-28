@@ -52,46 +52,44 @@ export default function AvailabilityConfigModal({ isOpen, onClose }: Availabilit
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch existing availability configuration first
+  // Fetch existing availability configuration when modal is open
   const { data: existingConfig, isLoading } = useQuery({
     queryKey: ["/api/availability/config"],
+    enabled: isOpen,
     retry: false,
   });
 
-  // Initialize with existing data or defaults
-  const [weeklySchedule, setWeeklySchedule] = useState<WeeklySchedule>(() => {
-    if (existingConfig && existingConfig.weeklySchedule) {
-      try {
-        return JSON.parse(existingConfig.weeklySchedule);
-      } catch (error) {
-        console.error("Error parsing initial weekly schedule:", error);
-      }
-    }
-    return {
-      monday: [{ start: "09:00", end: "17:00" }],
-      tuesday: [{ start: "09:00", end: "17:00" }],
-      wednesday: [{ start: "09:00", end: "17:00" }],
-      thursday: [{ start: "09:00", end: "17:00" }],
-      friday: [{ start: "09:00", end: "17:00" }],
-      saturday: [],
-      sunday: [],
-    };
+  // Initialize state with defaults - will be updated when data loads
+  const [weeklySchedule, setWeeklySchedule] = useState<WeeklySchedule>({
+    monday: [{ start: "09:00", end: "17:00" }],
+    tuesday: [{ start: "09:00", end: "17:00" }],
+    wednesday: [{ start: "09:00", end: "17:00" }],
+    thursday: [{ start: "09:00", end: "17:00" }],
+    friday: [{ start: "09:00", end: "17:00" }],
+    saturday: [],
+    sunday: [],
   });
 
-  const [timezone, setTimezone] = useState(() => {
-    return existingConfig?.timezone || "America/New_York";
-  });
+  const [timezone, setTimezone] = useState("America/New_York");
 
-  // Update state when configuration changes
+  // Update state when configuration loads from API
   useEffect(() => {
-    if (existingConfig && existingConfig.timezone && existingConfig.weeklySchedule) {
-      setTimezone(existingConfig.timezone);
-      try {
-        const schedule = JSON.parse(existingConfig.weeklySchedule);
-        console.log('Loading existing availability config:', schedule);
-        setWeeklySchedule(schedule);
-      } catch (error) {
-        console.error("Error parsing weekly schedule:", error);
+    if (existingConfig) {
+      // Set timezone
+      if (existingConfig.timezone) {
+        setTimezone(existingConfig.timezone);
+      }
+      
+      // Parse and set weekly schedule
+      if (existingConfig.weeklySchedule) {
+        try {
+          const schedule = JSON.parse(existingConfig.weeklySchedule);
+          console.log('Loading existing availability config:', schedule);
+          setWeeklySchedule(schedule);
+        } catch (error) {
+          console.error("Error parsing weekly schedule:", error);
+          // Keep default schedule if parsing fails
+        }
       }
     }
   }, [existingConfig]);
@@ -147,6 +145,24 @@ export default function AvailabilityConfigModal({ isOpen, onClose }: Availabilit
       timezone,
     });
   };
+
+  if (isLoading) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Configure Your Availability
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center py-8">
+            <div className="text-muted-foreground">Loading availability configuration...</div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
