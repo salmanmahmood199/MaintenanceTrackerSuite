@@ -4,15 +4,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ResidentialTicketModal } from "@/components/residential-ticket-modal";
+import { MarketplaceBidsModal } from "@/components/marketplace-bids-modal";
 import { useAuth } from "@/hooks/useAuth";
 import { Ticket } from "@shared/schema";
-import { Plus, Home, MapPin, Clock, AlertCircle, LogOut } from "lucide-react";
+import { Plus, Home, MapPin, Clock, AlertCircle, LogOut, Eye } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 function ResidentialDashboard() {
   const { user } = useAuth();
   const [showCreateTicket, setShowCreateTicket] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [selectedBidsTicket, setSelectedBidsTicket] = useState<Ticket | null>(null);
+  const [showBidsModal, setShowBidsModal] = useState(false);
   const queryClient = useQueryClient();
 
   const logoutMutation = useMutation({
@@ -213,8 +216,23 @@ function ResidentialDashboard() {
                           </div>
                         </div>
                       </div>
-                      <div className="ml-4">
+                      <div className="ml-4 flex flex-col items-end space-y-2">
                         {getStatusBadge(ticket.status)}
+                        {ticket.status === "marketplace" && (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedBidsTicket(ticket);
+                              setShowBidsModal(true);
+                            }}
+                            className="text-xs"
+                          >
+                            <Eye className="w-3 h-3 mr-1" />
+                            View Bids
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -231,6 +249,18 @@ function ResidentialDashboard() {
           open={showCreateTicket}
           onOpenChange={setShowCreateTicket}
           userId={user.id}
+        />
+      )}
+
+      {/* Marketplace Bids Modal */}
+      {selectedBidsTicket && (
+        <MarketplaceBidsModal
+          ticket={selectedBidsTicket}
+          isOpen={showBidsModal}
+          onClose={() => {
+            setShowBidsModal(false);
+            setSelectedBidsTicket(null);
+          }}
         />
       )}
     </div>
