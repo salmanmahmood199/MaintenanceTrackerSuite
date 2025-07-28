@@ -16,8 +16,23 @@ function ResidentialDashboard() {
   const queryClient = useQueryClient();
 
   const logoutMutation = useMutation({
-    mutationFn: () => apiRequest("/api/auth/logout", { method: "POST" }),
+    mutationFn: async () => {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include", // Important for session cookies
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Logout failed: ${response.status} ${response.statusText}`);
+      }
+      
+      return response.json();
+    },
     onSuccess: () => {
+      console.log('Logout successful');
       queryClient.clear();
       window.location.href = "/login";
     },
