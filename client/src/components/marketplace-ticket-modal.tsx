@@ -27,7 +27,7 @@ interface LocationInfoProps {
 
 function LocationInfo({ locationId }: LocationInfoProps) {
   const { data: location } = useQuery<Location>({
-    queryKey: ["/api/location", locationId],
+    queryKey: ["/api/locations", locationId],
     queryFn: async () => {
       const response = await apiRequest("GET", `/api/locations/${locationId}`);
       return await response.json();
