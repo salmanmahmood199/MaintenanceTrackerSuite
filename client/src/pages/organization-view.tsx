@@ -4,7 +4,21 @@ import { useRoute } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Users, Clock, Wrench, Check, AlertTriangle, UserPlus, Key, Edit, LogOut, Settings, Calendar } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  Users,
+  Clock,
+  Wrench,
+  Check,
+  AlertTriangle,
+  UserPlus,
+  Key,
+  Edit,
+  LogOut,
+  Settings,
+  Calendar,
+} from "lucide-react";
 import { CreateTicketModal } from "@/components/create-ticket-modal";
 import { CreateSubAdminModal } from "@/components/create-subadmin-modal";
 import { EditSubAdminModal } from "@/components/edit-subadmin-modal";
@@ -23,7 +37,14 @@ import { Link } from "wouter";
 import AISearchBar from "@/components/ai-search-bar";
 import { TicketFilters, type FilterState } from "@/components/ticket-filters";
 import { filterTickets } from "@/utils/ticket-filters";
-import type { Ticket, InsertTicket, InsertSubAdmin, Organization, User, MaintenanceVendor } from "@shared/schema";
+import type {
+  Ticket,
+  InsertTicket,
+  InsertSubAdmin,
+  Organization,
+  User,
+  MaintenanceVendor,
+} from "@shared/schema";
 
 interface TicketStats {
   pending: number;
@@ -41,13 +62,18 @@ export default function OrganizationView() {
   const [isEditSubAdminOpen, setIsEditSubAdminOpen] = useState(false);
   const [isVendorManagementOpen, setIsVendorManagementOpen] = useState(false);
   const [isTicketActionOpen, setIsTicketActionOpen] = useState(false);
-  const [isConfirmCompletionModalOpen, setIsConfirmCompletionModalOpen] = useState(false);
+  const [isConfirmCompletionModalOpen, setIsConfirmCompletionModalOpen] =
+    useState(false);
   const [isAssignLocationsOpen, setIsAssignLocationsOpen] = useState(false);
   const [selectedSubAdmin, setSelectedSubAdmin] = useState<User | null>(null);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
-  const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(null);
+  const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(
+    null,
+  );
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [activeTab, setActiveTab] = useState<"tickets" | "subadmins" | "locations" | "vendors" | "invoices">("tickets");
+  const [activeTab, setActiveTab] = useState<
+    "tickets" | "subadmins" | "locations" | "vendors" | "invoices"
+  >("tickets");
   const [filters, setFilters] = useState<FilterState>({
     search: "",
     status: "all",
@@ -56,58 +82,90 @@ export default function OrganizationView() {
     dateTo: null,
     organizationId: "all",
     vendorId: "all",
-    assigneeId: "all"
+    assigneeId: "all",
   });
-  const [marketplaceBidsTicket, setMarketplaceBidsTicket] = useState<Ticket | null>(null);
+  const [marketplaceBidsTicket, setMarketplaceBidsTicket] =
+    useState<Ticket | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
 
   // Use organization ID from user (for org_admin/org_subadmin) or route (for root accessing org)
-  const organizationId = (user?.role === "org_admin" || user?.role === "org_subadmin") ? user.organizationId : routeOrgId;
+  const organizationId =
+    user?.role === "org_admin" || user?.role === "org_subadmin"
+      ? user.organizationId
+      : routeOrgId;
 
   // Permission helpers
-  const canPlaceTickets = user?.role === "root" || user?.role === "org_admin" || 
-    (user?.role === "org_subadmin" && user?.permissions?.includes("place_ticket"));
-  
-  const canAcceptTickets = user?.role === "root" || user?.role === "org_admin" || 
-    (user?.role === "org_subadmin" && user?.permissions?.includes("accept_ticket"));
-  
-  const canViewInvoices = user?.role === "root" || user?.role === "org_admin" || 
-    (user?.role === "org_subadmin" && user?.permissions?.includes("view_invoices"));
-  
-  const canPayInvoices = user?.role === "root" || user?.role === "org_admin" || 
-    (user?.role === "org_subadmin" && user?.permissions?.includes("pay_invoices"));
-  
-  const canManageSubAdmins = user?.role === "root" || user?.role === "org_admin";
-  
+  const canPlaceTickets =
+    user?.role === "root" ||
+    user?.role === "org_admin" ||
+    (user?.role === "org_subadmin" &&
+      user?.permissions?.includes("place_ticket"));
+
+  const canAcceptTickets =
+    user?.role === "root" ||
+    user?.role === "org_admin" ||
+    (user?.role === "org_subadmin" &&
+      user?.permissions?.includes("accept_ticket"));
+
+  const canViewInvoices =
+    user?.role === "root" ||
+    user?.role === "org_admin" ||
+    (user?.role === "org_subadmin" &&
+      user?.permissions?.includes("view_invoices"));
+
+  const canPayInvoices =
+    user?.role === "root" ||
+    user?.role === "org_admin" ||
+    (user?.role === "org_subadmin" &&
+      user?.permissions?.includes("pay_invoices"));
+
+  const canManageSubAdmins =
+    user?.role === "root" || user?.role === "org_admin";
+
   const canManageVendors = user?.role === "root" || user?.role === "org_admin";
 
   // Fetch organization details
-  const { data: organization } = useQuery<Organization | undefined>({
+  const {
+    data: organization,
+    isLoading: organizationLoading,
+    isFetching: organizationFetching,
+    isError,
+  } = useQuery<Organization | undefined>({
     queryKey: ["/api/organizations", organizationId],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/organizations");
-      const orgs = await response.json() as Organization[];
-      return orgs.find(org => org.id === organizationId);
+      const orgs = (await response.json()) as Organization[];
+      return orgs.find((org) => org.id === organizationId);
     },
     enabled: !!organizationId,
   });
 
   // Fetch all tickets for this organization (we'll filter client-side)
-  const { data: allTickets = [], isLoading: ticketsLoading } = useQuery<Ticket[]>({
+  const { data: allTickets = [], isLoading: ticketsLoading } = useQuery<
+    Ticket[]
+  >({
     queryKey: ["/api/tickets", { organizationId }],
     queryFn: async () => {
-      const response = await apiRequest("GET", `/api/tickets?organizationId=${organizationId}`);
-      return await response.json() as Ticket[];
+      const response = await apiRequest(
+        "GET",
+        `/api/tickets?organizationId=${organizationId}`,
+      );
+      return (await response.json()) as Ticket[];
     },
   });
 
   // Fetch organization vendors
-  const { data: organizationVendors = [] } = useQuery<Array<{vendor: any, tier: string, isActive: boolean}>>({
+  const { data: organizationVendors = [] } = useQuery<
+    Array<{ vendor: any; tier: string; isActive: boolean }>
+  >({
     queryKey: ["/api/organizations", organizationId, "vendor-tiers"],
     queryFn: async () => {
-      const response = await apiRequest("GET", `/api/organizations/${organizationId}/vendor-tiers`);
+      const response = await apiRequest(
+        "GET",
+        `/api/organizations/${organizationId}/vendor-tiers`,
+      );
       return await response.json();
     },
     enabled: !!organizationId,
@@ -115,23 +173,31 @@ export default function OrganizationView() {
 
   // Apply client-side filtering
   const tickets = filterTickets(allTickets, filters);
-  
+
   // Extract vendors for filtering (only when data is available)
-  const vendors = organizationVendors?.map(ov => ov.vendor) || [];
-  
+  const vendors = organizationVendors?.map((ov) => ov.vendor) || [];
+
   // Check if user has marketplace access (ability to view bids)
   // Extract vendor tiers that the organization has access to
-  const organizationVendorTiers = organizationVendors?.map(ov => ov.tier) || [];
-  const hasMarketplaceAccess = user?.role === "root" || user?.role === "org_admin" || 
-    (user?.role === "org_subadmin" && (user as any)?.vendorTiers?.includes("marketplace")) ||
-    (user?.role === "org_subadmin" && organizationVendorTiers.includes("marketplace"));
+  const organizationVendorTiers =
+    organizationVendors?.map((ov) => ov.tier) || [];
+  const hasMarketplaceAccess =
+    user?.role === "root" ||
+    user?.role === "org_admin" ||
+    (user?.role === "org_subadmin" &&
+      (user as any)?.vendorTiers?.includes("marketplace")) ||
+    (user?.role === "org_subadmin" &&
+      organizationVendorTiers.includes("marketplace"));
 
   // Fetch stats for this organization
   const { data: stats } = useQuery<TicketStats>({
     queryKey: ["/api/tickets/stats", organizationId],
     queryFn: async () => {
-      const response = await apiRequest("GET", `/api/tickets/stats?organizationId=${organizationId}`);
-      return await response.json() as TicketStats;
+      const response = await apiRequest(
+        "GET",
+        `/api/tickets/stats?organizationId=${organizationId}`,
+      );
+      return (await response.json()) as TicketStats;
     },
   });
 
@@ -139,15 +205,24 @@ export default function OrganizationView() {
   const { data: subAdmins = [] } = useQuery<User[]>({
     queryKey: ["/api/organizations", organizationId, "sub-admins"],
     queryFn: async () => {
-      const response = await apiRequest("GET", `/api/organizations/${organizationId}/sub-admins`);
-      return await response.json() as User[];
+      const response = await apiRequest(
+        "GET",
+        `/api/organizations/${organizationId}/sub-admins`,
+      );
+      return (await response.json()) as User[];
     },
     enabled: !!organizationId,
   });
 
   // Create ticket mutation
   const createTicketMutation = useMutation({
-    mutationFn: async ({ data, images }: { data: InsertTicket; images: File[] }) => {
+    mutationFn: async ({
+      data,
+      images,
+    }: {
+      data: InsertTicket;
+      images: File[];
+    }) => {
       const formData = new FormData();
       formData.append("title", data.title);
       formData.append("description", data.description);
@@ -155,12 +230,12 @@ export default function OrganizationView() {
       formData.append("status", data.status);
       formData.append("organizationId", organizationId?.toString() || "0");
       formData.append("reporterId", user?.id.toString() || "1");
-      
+
       // Add location ID if provided
       if (data.locationId) {
         formData.append("locationId", data.locationId.toString());
       }
-      
+
       images.forEach((image) => {
         formData.append("images", image);
       });
@@ -191,7 +266,13 @@ export default function OrganizationView() {
 
   // Accept ticket mutation
   const acceptTicketMutation = useMutation({
-    mutationFn: async ({ ticketId, data }: { ticketId: number; data: { maintenanceVendorId?: number; assigneeId?: number } }) => {
+    mutationFn: async ({
+      ticketId,
+      data,
+    }: {
+      ticketId: number;
+      data: { maintenanceVendorId?: number; assigneeId?: number };
+    }) => {
       return apiRequest("POST", `/api/tickets/${ticketId}/accept`, data);
     },
     onSuccess: () => {
@@ -214,8 +295,16 @@ export default function OrganizationView() {
 
   // Reject ticket mutation
   const rejectTicketMutation = useMutation({
-    mutationFn: async ({ ticketId, rejectionReason }: { ticketId: number; rejectionReason: string }) => {
-      return apiRequest("POST", `/api/tickets/${ticketId}/reject`, { rejectionReason });
+    mutationFn: async ({
+      ticketId,
+      rejectionReason,
+    }: {
+      ticketId: number;
+      rejectionReason: string;
+    }) => {
+      return apiRequest("POST", `/api/tickets/${ticketId}/reject`, {
+        rejectionReason,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
@@ -237,18 +326,36 @@ export default function OrganizationView() {
 
   // Confirm completion mutation
   const confirmCompletionMutation = useMutation({
-    mutationFn: async ({ id, confirmed, feedback }: { id: number; confirmed: boolean; feedback?: string }) => {
-      return apiRequest("POST", `/api/tickets/${id}/confirm`, { confirmed, feedback });
+    mutationFn: async ({
+      id,
+      confirmed,
+      feedback,
+    }: {
+      id: number;
+      confirmed: boolean;
+      feedback?: string;
+    }) => {
+      return apiRequest("POST", `/api/tickets/${id}/confirm`, {
+        confirmed,
+        feedback,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tickets/stats"] });
       setIsConfirmCompletionModalOpen(false);
       setSelectedTicket(null);
-      toast({ title: "Success", description: "Ticket confirmation processed successfully" });
+      toast({
+        title: "Success",
+        description: "Ticket confirmation processed successfully",
+      });
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to process confirmation", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to process confirmation",
+        variant: "destructive",
+      });
     },
   });
 
@@ -256,7 +363,11 @@ export default function OrganizationView() {
   const forceCloseMutation = useMutation({
     mutationFn: async ({ id, reason }: { id: number; reason: string }) => {
       try {
-        const response = await apiRequest("POST", `/api/tickets/${id}/force-close`, { reason });
+        const response = await apiRequest(
+          "POST",
+          `/api/tickets/${id}/force-close`,
+          { reason },
+        );
         return response.json();
       } catch (error) {
         console.error("Force close error:", error);
@@ -267,24 +378,37 @@ export default function OrganizationView() {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tickets/stats"] });
       // Also invalidate the specific organization tickets query
-      queryClient.invalidateQueries({ queryKey: ["/api/tickets", { organizationId }] });
-      toast({ title: "Success", description: "Ticket force closed successfully" });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/tickets", { organizationId }],
+      });
+      toast({
+        title: "Success",
+        description: "Ticket force closed successfully",
+      });
     },
     onError: (error) => {
       console.error("Force close mutation error:", error);
-      toast({ title: "Error", description: "Failed to force close ticket", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to force close ticket",
+        variant: "destructive",
+      });
     },
   });
-
-
 
   // Create sub-admin mutation
   const createSubAdminMutation = useMutation({
     mutationFn: async (data: InsertSubAdmin) => {
-      return apiRequest("POST", `/api/organizations/${organizationId}/sub-admins`, data);
+      return apiRequest(
+        "POST",
+        `/api/organizations/${organizationId}/sub-admins`,
+        data,
+      );
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/organizations", organizationId, "sub-admins"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/organizations", organizationId, "sub-admins"],
+      });
       setIsCreateSubAdminOpen(false);
       toast({
         title: "Success",
@@ -306,11 +430,23 @@ export default function OrganizationView() {
 
   // Update vendor mutation
   const updateVendorMutation = useMutation({
-    mutationFn: async ({ vendorId, updates }: { vendorId: number; updates: { tier?: string; isActive?: boolean } }) => {
-      return apiRequest("PATCH", `/api/organizations/${organizationId}/vendors/${vendorId}/tier`, updates);
+    mutationFn: async ({
+      vendorId,
+      updates,
+    }: {
+      vendorId: number;
+      updates: { tier?: string; isActive?: boolean };
+    }) => {
+      return apiRequest(
+        "PATCH",
+        `/api/organizations/${organizationId}/vendors/${vendorId}/tier`,
+        updates,
+      );
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/organizations", organizationId, "vendor-tiers"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/organizations", organizationId, "vendor-tiers"],
+      });
       toast({
         title: "Success",
         description: "Vendor updated successfully",
@@ -325,7 +461,10 @@ export default function OrganizationView() {
     },
   });
 
-  const handleUpdateVendor = (vendorId: number, updates: { tier?: string; isActive?: boolean }) => {
+  const handleUpdateVendor = (
+    vendorId: number,
+    updates: { tier?: string; isActive?: boolean },
+  ) => {
     updateVendorMutation.mutate({ vendorId, updates });
   };
 
@@ -335,7 +474,9 @@ export default function OrganizationView() {
       return apiRequest("PUT", `/api/sub-admins/${id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/organizations", organizationId, "sub-admins"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/organizations", organizationId, "sub-admins"],
+      });
       setIsEditSubAdminOpen(false);
       setSelectedSubAdmin(null);
       toast({
@@ -364,10 +505,14 @@ export default function OrganizationView() {
   // Location assignment mutation
   const assignLocationsMutation = useMutation({
     mutationFn: async (locationIds: number[]) => {
-      return apiRequest("PUT", `/api/users/${selectedSubAdmin!.id}/locations`, { locationIds });
+      return apiRequest("PUT", `/api/users/${selectedSubAdmin!.id}/locations`, {
+        locationIds,
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/users", selectedSubAdmin!.id, "locations"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/users", selectedSubAdmin!.id, "locations"],
+      });
       setIsAssignLocationsOpen(false);
       setSelectedSubAdmin(null);
       toast({
@@ -391,7 +536,7 @@ export default function OrganizationView() {
 
   // Ticket action handlers
   const handleAcceptTicket = (ticketId: number) => {
-    const ticket = tickets?.find(t => t.id === ticketId);
+    const ticket = tickets?.find((t) => t.id === ticketId);
     if (ticket) {
       setSelectedTicket(ticket);
       setTicketAction("accept");
@@ -400,7 +545,7 @@ export default function OrganizationView() {
   };
 
   const handleRejectTicket = (ticketId: number) => {
-    const ticket = tickets?.find(t => t.id === ticketId);
+    const ticket = tickets?.find((t) => t.id === ticketId);
     if (ticket) {
       setSelectedTicket(ticket);
       setTicketAction("reject");
@@ -408,7 +553,14 @@ export default function OrganizationView() {
     }
   };
 
-  const handleTicketAccept = (ticketId: number, data: { maintenanceVendorId?: number; assigneeId?: number; marketplace?: boolean }) => {
+  const handleTicketAccept = (
+    ticketId: number,
+    data: {
+      maintenanceVendorId?: number;
+      assigneeId?: number;
+      marketplace?: boolean;
+    },
+  ) => {
     if (data.marketplace) {
       // Assign to marketplace instead of a specific vendor
       assignToMarketplaceMutation.mutate(ticketId);
@@ -449,7 +601,7 @@ export default function OrganizationView() {
   };
 
   const handleConfirmCompletion = (id: number) => {
-    const ticket = tickets.find(t => t.id === id);
+    const ticket = tickets.find((t) => t.id === id);
     if (ticket) {
       setSelectedTicket(ticket);
       setIsConfirmCompletionModalOpen(true);
@@ -460,15 +612,29 @@ export default function OrganizationView() {
     forceCloseMutation.mutate({ id, reason });
   };
 
+  if (organizationLoading || organizationFetching) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading organization details...</p>
+      </div>
+    );
+  }
 
-
-
+  if (isError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-destructive">An error occurred </p>
+      </div>
+    );
+  }
 
   if (!organization) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-foreground mb-2">Organization Not Found</h2>
+          <h2 className="text-xl font-semibold text-foreground mb-2">
+            Organization Not Found
+          </h2>
           {user?.role === "root" && (
             <Link href="/admin">
               <Button variant="outline">
@@ -498,8 +664,12 @@ export default function OrganizationView() {
                 </Link>
               )}
               <div>
-                <h1 className="text-xl font-bold text-foreground">{organization.name}</h1>
-                <p className="text-sm text-muted-foreground">Organization Dashboard</p>
+                <h1 className="text-xl font-bold text-foreground">
+                  {organization.name}
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Organization Dashboard
+                </p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -512,17 +682,17 @@ export default function OrganizationView() {
               <span className="text-sm text-muted-foreground">
                 {user?.firstName} {user?.lastName} ({user?.email})
               </span>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
-                onClick={() => window.location.href = '/api/auth/logout'}
+                onClick={() => (window.location.href = "/api/auth/logout")}
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
               </Button>
             </div>
           </div>
-          
+
           {/* AI Search Bar */}
           <div className="pb-4">
             <AISearchBar className="max-w-2xl mx-auto" />
@@ -560,20 +730,32 @@ export default function OrganizationView() {
         <div className="bg-card rounded-lg shadow mb-8 p-6 border border-border">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Organization</p>
-              <p className="text-lg font-semibold text-foreground">{organization.name}</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                Organization
+              </p>
+              <p className="text-lg font-semibold text-foreground">
+                {organization.name}
+              </p>
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Address</p>
-              <p className="text-lg font-semibold text-foreground">{organization.address || 'Not specified'}</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                Address
+              </p>
+              <p className="text-lg font-semibold text-foreground">
+                {organization.address || "Not specified"}
+              </p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Phone</p>
-              <p className="text-lg font-semibold text-foreground">{organization.phone || 'Not specified'}</p>
+              <p className="text-lg font-semibold text-foreground">
+                {organization.phone || "Not specified"}
+              </p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Email</p>
-              <p className="text-lg font-semibold text-foreground">{organization.email || 'Not specified'}</p>
+              <p className="text-lg font-semibold text-foreground">
+                {organization.email || "Not specified"}
+              </p>
             </div>
           </div>
         </div>
@@ -582,7 +764,9 @@ export default function OrganizationView() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Open Tickets</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Open Tickets
+              </CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -609,11 +793,15 @@ export default function OrganizationView() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">High Priority</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                High Priority
+              </CardTitle>
               <AlertTriangle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats?.highPriority || 0}</div>
+              <div className="text-2xl font-bold">
+                {stats?.highPriority || 0}
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -710,7 +898,9 @@ export default function OrganizationView() {
                 onReject={canAcceptTickets ? handleRejectTicket : undefined}
                 onComplete={canAcceptTickets ? handleCompleteTicket : undefined}
                 onConfirm={handleConfirmCompletion}
-                onViewBids={hasMarketplaceAccess ? setMarketplaceBidsTicket : undefined}
+                onViewBids={
+                  hasMarketplaceAccess ? setMarketplaceBidsTicket : undefined
+                }
                 onForceClose={canAcceptTickets ? handleForceClose : undefined}
                 showActions={true}
                 userRole={user?.role}
@@ -733,7 +923,9 @@ export default function OrganizationView() {
               {subAdmins.length === 0 ? (
                 <div className="text-center py-8">
                   <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground text-center py-4">No sub-administrators yet</p>
+                  <p className="text-muted-foreground text-center py-4">
+                    No sub-administrators yet
+                  </p>
                   <Button
                     onClick={() => setIsCreateSubAdminOpen(true)}
                     className="mt-4"
@@ -745,18 +937,23 @@ export default function OrganizationView() {
               ) : (
                 <div className="space-y-4">
                   {subAdmins.map((subAdmin) => (
-                    <div key={subAdmin.id} className="flex items-center justify-between p-4 border border-border rounded-lg bg-background">
+                    <div
+                      key={subAdmin.id}
+                      className="flex items-center justify-between p-4 border border-border rounded-lg bg-background"
+                    >
                       <div className="flex items-center space-x-4">
                         <div>
                           <p className="font-medium text-foreground">
                             {subAdmin.firstName} {subAdmin.lastName}
                           </p>
-                          <p className="text-sm text-muted-foreground">{subAdmin.email}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {subAdmin.email}
+                          </p>
                         </div>
                         <div className="flex space-x-2">
                           {subAdmin.permissions?.map((permission) => (
                             <Badge key={permission} variant="secondary">
-                              {permission.replace('_', ' ')}
+                              {permission.replace("_", " ")}
                             </Badge>
                           ))}
                         </div>
@@ -793,8 +990,12 @@ export default function OrganizationView() {
         {activeTab === "vendors" && canManageVendors && (
           <div className="bg-card rounded-lg shadow border border-border">
             <div className="px-6 py-4 border-b border-border">
-              <h3 className="text-lg font-medium text-foreground">Vendor Management</h3>
-              <p className="text-sm text-muted-foreground">Configure vendor assignments and tiers for your organization</p>
+              <h3 className="text-lg font-medium text-foreground">
+                Vendor Management
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Configure vendor assignments and tiers for your organization
+              </p>
             </div>
             <div className="p-6">
               <Button onClick={() => setIsVendorManagementOpen(true)}>
@@ -806,7 +1007,11 @@ export default function OrganizationView() {
         )}
 
         {activeTab === "invoices" && canViewInvoices && (
-          <InvoicesView userRole="organization" organizationId={organizationId!} canPayInvoices={canPayInvoices} />
+          <InvoicesView
+            userRole="organization"
+            organizationId={organizationId!}
+            canPayInvoices={canPayInvoices}
+          />
         )}
       </main>
 
@@ -852,7 +1057,9 @@ export default function OrganizationView() {
         vendors={organizationVendors || []}
         onAccept={handleTicketAccept}
         onReject={handleTicketReject}
-        isLoading={acceptTicketMutation.isPending || rejectTicketMutation.isPending}
+        isLoading={
+          acceptTicketMutation.isPending || rejectTicketMutation.isPending
+        }
         userRole={user?.role}
         userPermissions={user?.permissions || undefined}
         userVendorTiers={(user as any)?.vendorTiers || []}
@@ -861,7 +1068,13 @@ export default function OrganizationView() {
       <ConfirmCompletionModal
         open={isConfirmCompletionModalOpen}
         onOpenChange={setIsConfirmCompletionModalOpen}
-        onConfirm={(confirmed, feedback) => confirmCompletionMutation.mutate({ id: selectedTicket!.id, confirmed, feedback })}
+        onConfirm={(confirmed, feedback) =>
+          confirmCompletionMutation.mutate({
+            id: selectedTicket!.id,
+            confirmed,
+            feedback,
+          })
+        }
         isLoading={confirmCompletionMutation.isPending}
         ticket={selectedTicket}
       />

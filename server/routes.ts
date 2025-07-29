@@ -135,34 +135,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/register/residential", async (req, res) => {
     try {
       const validatedData = insertResidentialUserSchema.parse(req.body);
-      
+
       // Check if email already exists across all tables
       const emailExists = await storage.checkEmailExists(validatedData.email);
       if (emailExists) {
-        return res.status(400).json({ message: "Email address is already in use" });
+        return res
+          .status(400)
+          .json({ message: "Email address is already in use" });
       }
 
       // Check if phone already exists across all tables
       const phoneExists = await storage.checkPhoneExists(validatedData.phone);
       if (phoneExists) {
-        return res.status(400).json({ message: "Phone number is already in use" });
+        return res
+          .status(400)
+          .json({ message: "Phone number is already in use" });
       }
-      
+
       const user = await storage.createResidentialUser(validatedData);
-      
+
       // Remove password from response
       const { password, ...userWithoutPassword } = user;
-      
-      res.status(201).json({ 
+
+      res.status(201).json({
         message: "Residential user registered successfully",
-        user: userWithoutPassword 
+        user: userWithoutPassword,
       });
     } catch (error) {
       console.error("Registration error:", error);
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          message: "Validation error", 
-          errors: error.errors 
+        return res.status(400).json({
+          message: "Validation error",
+          errors: error.errors,
         });
       }
       res.status(500).json({ message: "Registration failed" });
@@ -247,12 +251,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req, res) => {
       try {
         const orgData = insertOrganizationSchema.parse(req.body);
-        
+
         // Check if email already exists across all tables
         if (orgData.email) {
           const emailExists = await storage.checkEmailExists(orgData.email);
           if (emailExists) {
-            return res.status(400).json({ message: "Email address is already in use" });
+            return res
+              .status(400)
+              .json({ message: "Email address is already in use" });
           }
         }
 
@@ -260,10 +266,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (orgData.phone) {
           const phoneExists = await storage.checkPhoneExists(orgData.phone);
           if (phoneExists) {
-            return res.status(400).json({ message: "Phone number is already in use" });
+            return res
+              .status(400)
+              .json({ message: "Phone number is already in use" });
           }
         }
-        
+
         const organization = await storage.createOrganization(orgData);
         res.status(201).json(organization);
       } catch (error: any) {
@@ -382,7 +390,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (vendorInfo.email) {
           const emailExists = await storage.checkEmailExists(vendorInfo.email);
           if (emailExists) {
-            return res.status(400).json({ message: "Email address is already in use" });
+            return res
+              .status(400)
+              .json({ message: "Email address is already in use" });
           }
         }
 
@@ -390,7 +400,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (vendorInfo.phone) {
           const phoneExists = await storage.checkPhoneExists(vendorInfo.phone);
           if (phoneExists) {
-            return res.status(400).json({ message: "Phone number is already in use" });
+            return res
+              .status(400)
+              .json({ message: "Phone number is already in use" });
           }
         }
 
@@ -606,22 +618,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const validatedData = insertSubAdminSchema.parse(req.body);
-        
+
         // Check if email already exists across all tables
         const emailExists = await storage.checkEmailExists(validatedData.email);
         if (emailExists) {
-          return res.status(400).json({ message: "Email address is already in use" });
+          return res
+            .status(400)
+            .json({ message: "Email address is already in use" });
         }
 
         // Check if phone already exists across all tables
         if (validatedData.phone) {
-          const phoneExists = await storage.checkPhoneExists(validatedData.phone);
+          const phoneExists = await storage.checkPhoneExists(
+            validatedData.phone,
+          );
           if (phoneExists) {
-            return res.status(400).json({ message: "Phone number is already in use" });
+            return res
+              .status(400)
+              .json({ message: "Phone number is already in use" });
           }
         }
-        
-        const subAdmin = await storage.createSubAdmin(validatedData, organizationId);
+
+        const subAdmin = await storage.createSubAdmin(
+          validatedData,
+          organizationId,
+        );
         res.status(201).json(subAdmin);
       } catch (error) {
         res.status(500).json({ message: "Failed to create sub-admin" });
@@ -926,14 +947,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Check if email already exists across all tables
         const emailExists = await storage.checkEmailExists(userData.email);
         if (emailExists) {
-          return res.status(400).json({ message: "Email address is already in use" });
+          return res
+            .status(400)
+            .json({ message: "Email address is already in use" });
         }
 
         // Check if phone already exists across all tables
         if (userData.phone) {
           const phoneExists = await storage.checkPhoneExists(userData.phone);
           if (phoneExists) {
-            return res.status(400).json({ message: "Phone number is already in use" });
+            return res
+              .status(400)
+              .json({ message: "Phone number is already in use" });
           }
         }
 
@@ -1077,91 +1102,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create new ticket with image upload
-  app.post("/api/tickets", upload.array("images", 5), authenticateUser, async (req: AuthenticatedRequest, res) => {
-    try {
-      const user = req.user!;
-      const files = req.files as Express.Multer.File[];
-      const imageUrls = files
-        ? files.map((file) => `/uploads/${file.filename}`)
-        : [];
+  app.post(
+    "/api/tickets",
+    upload.array("images", 5),
+    authenticateUser,
+    async (req: AuthenticatedRequest, res) => {
+      try {
+        const user = req.user!;
+        const files = req.files as Express.Multer.File[];
+        const imageUrls = files
+          ? files.map((file) => `/uploads/${file.filename}`)
+          : [];
 
-      // Handle residential users differently
-      if (user.role === "residential") {
-        let residentialAddress, residentialCity, residentialState, residentialZip;
-        
-        // Check if user wants to use home address or provided new address
-        if (req.body.useHomeAddress === "true") {
-          residentialAddress = user.address;
-          residentialCity = user.city;
-          residentialState = user.state;
-          residentialZip = user.zipCode;
-        } else {
-          // Use provided service address
-          residentialAddress = req.body.address;
-          residentialCity = req.body.city;
-          residentialState = req.body.state;
-          residentialZip = req.body.zipCode;
-          
-          // If address2 is provided, combine it with address
-          if (req.body.address2) {
-            residentialAddress = `${req.body.address}, ${req.body.address2}`;
+        // Handle residential users differently
+        if (user.role === "residential") {
+          let residentialAddress,
+            residentialCity,
+            residentialState,
+            residentialZip;
+
+          // Check if user wants to use home address or provided new address
+          if (req.body.useHomeAddress === "true") {
+            residentialAddress = user.address;
+            residentialCity = user.city;
+            residentialState = user.state;
+            residentialZip = user.zipCode;
+          } else {
+            // Use provided service address
+            residentialAddress = req.body.address;
+            residentialCity = req.body.city;
+            residentialState = req.body.state;
+            residentialZip = req.body.zipCode;
+
+            // If address2 is provided, combine it with address
+            if (req.body.address2) {
+              residentialAddress = `${req.body.address}, ${req.body.address2}`;
+            }
           }
+
+          const ticketData = {
+            title: req.body.title,
+            description: req.body.description,
+            priority: req.body.priority,
+            status: "marketplace", // Automatically assign to marketplace
+            organizationId: null, // No organization for residential
+            reporterId: user.id,
+            locationId: null,
+            residentialAddress,
+            residentialCity,
+            residentialState,
+            residentialZip,
+            images: imageUrls,
+          };
+
+          console.log("Creating residential ticket:", ticketData);
+
+          const validatedData = insertTicketSchema.parse(ticketData);
+          const ticket = await storage.createTicket(validatedData);
+
+          res.status(201).json(ticket);
+          return;
         }
 
+        // Handle organization users (existing logic)
         const ticketData = {
           title: req.body.title,
           description: req.body.description,
           priority: req.body.priority,
-          status: "marketplace", // Automatically assign to marketplace
-          organizationId: null, // No organization for residential
+          status: req.body.status || "open",
+          organizationId:
+            parseInt(req.body.organizationId) || user.organizationId || 1,
           reporterId: user.id,
-          locationId: null,
-          residentialAddress,
-          residentialCity,
-          residentialState,
-          residentialZip,
+          locationId: req.body.locationId
+            ? parseInt(req.body.locationId)
+            : null,
           images: imageUrls,
         };
 
-        console.log("Creating residential ticket:", ticketData);
-        
+        console.log("Received ticket data:", ticketData);
+        console.log("Request body locationId:", req.body.locationId);
+
         const validatedData = insertTicketSchema.parse(ticketData);
         const ticket = await storage.createTicket(validatedData);
 
         res.status(201).json(ticket);
-        return;
+      } catch (error: any) {
+        console.error("Create ticket error:", error);
+        if (error.name === "ZodError") {
+          res
+            .status(400)
+            .json({ message: "Invalid ticket data", errors: error.errors });
+        } else {
+          res.status(500).json({ message: "Failed to create ticket" });
+        }
       }
-
-      // Handle organization users (existing logic)
-      const ticketData = {
-        title: req.body.title,
-        description: req.body.description,
-        priority: req.body.priority,
-        status: req.body.status || "open",
-        organizationId: parseInt(req.body.organizationId) || user.organizationId || 1,
-        reporterId: user.id,
-        locationId: req.body.locationId ? parseInt(req.body.locationId) : null,
-        images: imageUrls,
-      };
-
-      console.log("Received ticket data:", ticketData);
-      console.log("Request body locationId:", req.body.locationId);
-
-      const validatedData = insertTicketSchema.parse(ticketData);
-      const ticket = await storage.createTicket(validatedData);
-
-      res.status(201).json(ticket);
-    } catch (error: any) {
-      console.error("Create ticket error:", error);
-      if (error.name === "ZodError") {
-        res
-          .status(400)
-          .json({ message: "Invalid ticket data", errors: error.errors });
-      } else {
-        res.status(500).json({ message: "Failed to create ticket" });
-      }
-    }
-  });
+    },
+  );
 
   // Update ticket status
   app.patch("/api/tickets/:id", async (req, res) => {
@@ -1700,10 +1736,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req: AuthenticatedRequest, res) => {
       try {
         const tickets = await storage.getMarketplaceTickets();
-        
+
         // Filter out sensitive address information for privacy
         // Only show city, state, and ZIP code until bid is accepted
-        const sanitizedTickets = tickets.map(ticket => ({
+        const sanitizedTickets = tickets.map((ticket) => ({
           ...ticket,
           // Hide full residential address, only show city, state, zip
           residentialAddress: undefined, // Hide street address
@@ -1712,7 +1748,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           residentialState: ticket.residentialState,
           residentialZip: ticket.residentialZip,
         }));
-        
+
         res.json(sanitizedTickets);
       } catch (error) {
         res
@@ -1739,29 +1775,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const bids = await storage.getVendorBids(vendorId);
-        
+
         // For accepted bids, include full address information
         // For pending/rejected bids, keep only city, state, zip for privacy
-        const sanitizedBids = bids.map(bid => {
-          if (bid.status === 'accepted') {
+        const sanitizedBids = bids.map((bid) => {
+          if (bid.status === "accepted") {
             // Show full address for accepted bids
             return bid;
           } else {
             // Hide full address for non-accepted bids
             return {
               ...bid,
-              ticket: bid.ticket ? {
-                ...bid.ticket,
-                residentialAddress: undefined, // Hide street address
-                // Keep city, state, zip for location context
-                residentialCity: bid.ticket.residentialCity,
-                residentialState: bid.ticket.residentialState,
-                residentialZip: bid.ticket.residentialZip,
-              } : bid.ticket
+              ticket: bid.ticket
+                ? {
+                    ...bid.ticket,
+                    residentialAddress: undefined, // Hide street address
+                    // Keep city, state, zip for location context
+                    residentialCity: bid.ticket.residentialCity,
+                    residentialState: bid.ticket.residentialState,
+                    residentialZip: bid.ticket.residentialZip,
+                  }
+                : bid.ticket,
             };
           }
         });
-        
+
         res.json(sanitizedBids);
       } catch (error) {
         console.error("Get vendor bids error:", error);
@@ -3708,7 +3746,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const user = req.user!;
         const integration = await storage.getGoogleCalendarIntegration(user.id);
-
+        console.log(
+          "Google Calendar sync requested for user:",
+          user.id,
+          "Integration:",
+          integration,
+        );
         if (!integration) {
           return res
             .status(404)

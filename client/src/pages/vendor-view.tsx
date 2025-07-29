@@ -3,7 +3,15 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRoute } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, LogOut, FileText, Package, Calendar, AlertCircle, CheckCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  LogOut,
+  FileText,
+  Package,
+  Calendar,
+  AlertCircle,
+  CheckCircle,
+} from "lucide-react";
 import { TicketTable } from "@/components/ticket-table";
 import { EnhancedInvoiceCreator } from "@/components/enhanced-invoice-creator";
 import { InvoicesView } from "@/components/invoices-view";
@@ -20,13 +28,21 @@ import { Link } from "wouter";
 import AISearchBar from "@/components/ai-search-bar";
 import { TicketFilters, type FilterState } from "@/components/ticket-filters";
 import { filterTickets } from "@/utils/ticket-filters";
-import type { Ticket, MaintenanceVendor, WorkOrder, User, Organization } from "@shared/schema";
+import type {
+  Ticket,
+  MaintenanceVendor,
+  WorkOrder,
+  User,
+  Organization,
+} from "@shared/schema";
 
 export function VendorView() {
   const [, routeParams] = useRoute("/vendor/:id");
   const routeVendorId = routeParams?.id ? parseInt(routeParams.id) : undefined;
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [activeTab, setActiveTab] = useState<"tickets" | "marketplace" | "invoices" | "parts" | "technicians">("tickets");
+  const [activeTab, setActiveTab] = useState<
+    "tickets" | "marketplace" | "invoices" | "parts" | "technicians"
+  >("tickets");
   const [filters, setFilters] = useState<FilterState>({
     search: "",
     status: "all",
@@ -35,39 +51,56 @@ export function VendorView() {
     dateTo: null,
     organizationId: "all",
     vendorId: "all",
-    assigneeId: "all"
+    assigneeId: "all",
   });
-  const [isCreateInvoiceModalOpen, setIsCreateInvoiceModalOpen] = useState(false);
-  const [selectedTicketForInvoice, setSelectedTicketForInvoice] = useState<Ticket | null>(null);
-  const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
+  const [isCreateInvoiceModalOpen, setIsCreateInvoiceModalOpen] =
+    useState(false);
+  const [selectedTicketForInvoice, setSelectedTicketForInvoice] =
+    useState<Ticket | null>(null);
+  const [selectedOrganization, setSelectedOrganization] =
+    useState<Organization | null>(null);
   const [isTicketActionModalOpen, setIsTicketActionModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
-  const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(null);
-  const [isTicketDetailsModalOpen, setIsTicketDetailsModalOpen] = useState(false);
-  const [isCreateTechnicianModalOpen, setIsCreateTechnicianModalOpen] = useState(false);
-  const [isEditTechnicianModalOpen, setIsEditTechnicianModalOpen] = useState(false);
-  const [selectedTechnicianForEdit, setSelectedTechnicianForEdit] = useState<User | null>(null);
-  
+  const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(
+    null,
+  );
+  const [isTicketDetailsModalOpen, setIsTicketDetailsModalOpen] =
+    useState(false);
+  const [isCreateTechnicianModalOpen, setIsCreateTechnicianModalOpen] =
+    useState(false);
+  const [isEditTechnicianModalOpen, setIsEditTechnicianModalOpen] =
+    useState(false);
+  const [selectedTechnicianForEdit, setSelectedTechnicianForEdit] =
+    useState<User | null>(null);
+
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const vendorId = user?.role === "maintenance_admin" ? user.maintenanceVendorId : routeVendorId;
-  
+  const vendorId =
+    user?.role === "maintenance_admin"
+      ? user.maintenanceVendorId
+      : routeVendorId;
+
   console.log("VendorView Debug:", {
     userRole: user?.role,
     routeVendorId,
     userMaintenanceVendorId: user?.maintenanceVendorId,
-    finalVendorId: vendorId
+    finalVendorId: vendorId,
   });
-  
+
   // Fetch vendor details
-  const { data: vendor } = useQuery<MaintenanceVendor | undefined>({
+  const {
+    data: vendor,
+    isLoading,
+    isFetching,
+    isError,
+  } = useQuery<MaintenanceVendor | undefined>({
     queryKey: ["/api/maintenance-vendors", vendorId],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/maintenance-vendors");
-      const vendors = await response.json() as MaintenanceVendor[];
-      return vendors.find(v => v.id === vendorId);
+      const vendors = (await response.json()) as MaintenanceVendor[];
+      return vendors.find((v) => v.id === vendorId);
     },
     enabled: !!vendorId,
   });
@@ -83,17 +116,24 @@ export function VendorView() {
   });
 
   // Count pending counter offers
-  const counterOffersCount = vendorBids.filter((bid: any) => bid.status === "counter").length;
+  const counterOffersCount = vendorBids.filter(
+    (bid: any) => bid.status === "counter",
+  ).length;
 
   // Fetch all tickets for this vendor (we'll filter client-side)
-  const { data: allTickets = [], isLoading: ticketsLoading } = useQuery<Ticket[]>({
+  const { data: allTickets = [], isLoading: ticketsLoading } = useQuery<
+    Ticket[]
+  >({
     queryKey: ["/api/tickets", { maintenanceVendorId: vendorId }],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (vendorId) params.append("maintenanceVendorId", vendorId.toString());
-      
-      const response = await apiRequest("GET", `/api/tickets?${params.toString()}`);
-      return await response.json() as Ticket[];
+
+      const response = await apiRequest(
+        "GET",
+        `/api/tickets?${params.toString()}`,
+      );
+      return (await response.json()) as Ticket[];
     },
     enabled: !!vendorId,
   });
@@ -102,7 +142,9 @@ export function VendorView() {
   const tickets = filterTickets(allTickets, filters);
 
   // Fetch organizations for filtering
-  const { data: organizations = [] } = useQuery<Array<{id: number; name: string}>>({
+  const { data: organizations = [] } = useQuery<
+    Array<{ id: number; name: string }>
+  >({
     queryKey: ["/api/organizations"],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/organizations");
@@ -115,8 +157,11 @@ export function VendorView() {
     queryKey: ["/api/technicians", vendorId],
     queryFn: async () => {
       if (!vendorId) return [];
-      const response = await apiRequest("GET", `/api/maintenance-vendors/${vendorId}/technicians`);
-      return await response.json() as User[];
+      const response = await apiRequest(
+        "GET",
+        `/api/maintenance-vendors/${vendorId}/technicians`,
+      );
+      return (await response.json()) as User[];
     },
     enabled: !!vendorId,
   });
@@ -125,8 +170,11 @@ export function VendorView() {
   const { data: invoiceWorkOrders = [] } = useQuery<WorkOrder[]>({
     queryKey: ["/api/tickets", selectedTicketForInvoice?.id, "work-orders"],
     queryFn: async () => {
-      const response = await apiRequest("GET", `/api/tickets/${selectedTicketForInvoice!.id}/work-orders`);
-      return await response.json() as WorkOrder[];
+      const response = await apiRequest(
+        "GET",
+        `/api/tickets/${selectedTicketForInvoice!.id}/work-orders`,
+      );
+      return (await response.json()) as WorkOrder[];
     },
     enabled: !!selectedTicketForInvoice?.id,
   });
@@ -159,7 +207,11 @@ export function VendorView() {
   const forceCloseMutation = useMutation({
     mutationFn: async ({ id, reason }: { id: number; reason: string }) => {
       try {
-        const response = await apiRequest("POST", `/api/tickets/${id}/force-close`, { reason });
+        const response = await apiRequest(
+          "POST",
+          `/api/tickets/${id}/force-close`,
+          { reason },
+        );
         return response.json();
       } catch (error) {
         console.error("Force close error:", error);
@@ -170,19 +222,31 @@ export function VendorView() {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tickets/stats"] });
       // Also invalidate the specific vendor tickets query
-      queryClient.invalidateQueries({ queryKey: ["/api/tickets", { maintenanceVendorId: vendor?.id }] });
-      toast({ title: "Success", description: "Ticket force closed successfully" });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/tickets", { maintenanceVendorId: vendor?.id }],
+      });
+      toast({
+        title: "Success",
+        description: "Ticket force closed successfully",
+      });
     },
     onError: (error) => {
       console.error("Force close mutation error:", error);
-      toast({ title: "Error", description: "Failed to force close ticket", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to force close ticket",
+        variant: "destructive",
+      });
     },
   });
 
   // Accept ticket mutation
   const acceptTicketMutation = useMutation({
-    mutationFn: async ({ ticketId, acceptData }: { 
-      ticketId: number; 
+    mutationFn: async ({
+      ticketId,
+      acceptData,
+    }: {
+      ticketId: number;
       acceptData: {
         assigneeId?: number;
         estimatedStartDate?: string;
@@ -191,7 +255,7 @@ export function VendorView() {
         scheduledStartTime?: string;
         scheduledEndTime?: string;
         etaNotes?: string;
-      }
+      };
     }) => {
       return apiRequest("POST", `/api/tickets/${ticketId}/accept`, {
         maintenanceVendorId: vendorId,
@@ -220,7 +284,13 @@ export function VendorView() {
 
   // Reject ticket mutation
   const rejectTicketMutation = useMutation({
-    mutationFn: async ({ ticketId, rejectionReason }: { ticketId: number; rejectionReason: string }) => {
+    mutationFn: async ({
+      ticketId,
+      rejectionReason,
+    }: {
+      ticketId: number;
+      rejectionReason: string;
+    }) => {
       return apiRequest("POST", `/api/tickets/${ticketId}/reject`, {
         rejectionReason,
       });
@@ -245,15 +315,18 @@ export function VendorView() {
     },
   });
 
-  const handleAcceptTicket = (ticketId: number, acceptData: {
-    assigneeId?: number;
-    estimatedStartDate?: string;
-    estimatedEndDate?: string;
-    estimatedDuration?: number;
-    scheduledStartTime?: string;
-    scheduledEndTime?: string;
-    etaNotes?: string;
-  }) => {
+  const handleAcceptTicket = (
+    ticketId: number,
+    acceptData: {
+      assigneeId?: number;
+      estimatedStartDate?: string;
+      estimatedEndDate?: string;
+      estimatedDuration?: number;
+      scheduledStartTime?: string;
+      scheduledEndTime?: string;
+      etaNotes?: string;
+    },
+  ) => {
     acceptTicketMutation.mutate({ ticketId, acceptData });
   };
 
@@ -262,7 +335,7 @@ export function VendorView() {
   };
 
   const openAcceptModal = (ticketId: number) => {
-    const ticket = tickets.find(t => t.id === ticketId);
+    const ticket = tickets.find((t) => t.id === ticketId);
     if (ticket) {
       setSelectedTicket(ticket);
       setTicketAction("accept");
@@ -271,7 +344,7 @@ export function VendorView() {
   };
 
   const openRejectModal = (ticketId: number) => {
-    const ticket = tickets.find(t => t.id === ticketId);
+    const ticket = tickets.find((t) => t.id === ticketId);
     if (ticket) {
       setSelectedTicket(ticket);
       setTicketAction("reject");
@@ -289,10 +362,10 @@ export function VendorView() {
   });
 
   const handleCreateInvoice = async (ticketId: number) => {
-    const ticket = tickets?.find(t => t.id === ticketId);
+    const ticket = tickets?.find((t) => t.id === ticketId);
     if (ticket) {
       // Find the organization for this ticket
-      const org = allOrganizations.find(o => o.id === ticket.organizationId);
+      const org = allOrganizations.find((o) => o.id === ticket.organizationId);
       setSelectedTicketForInvoice(ticket);
       setSelectedOrganization(org || null);
       setIsCreateInvoiceModalOpen(true);
@@ -306,11 +379,17 @@ export function VendorView() {
   // Create technician mutation
   const createTechnicianMutation = useMutation({
     mutationFn: async (technicianData: any) => {
-      const response = await apiRequest("POST", `/api/maintenance-vendors/${vendorId}/technicians`, technicianData);
+      const response = await apiRequest(
+        "POST",
+        `/api/maintenance-vendors/${vendorId}/technicians`,
+        technicianData,
+      );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/technicians", vendorId] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/technicians", vendorId],
+      });
       setIsCreateTechnicianModalOpen(false);
       toast({
         title: "Success",
@@ -329,11 +408,17 @@ export function VendorView() {
   // Update technician mutation
   const updateTechnicianMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
-      const response = await apiRequest("PATCH", `/api/maintenance-vendors/${vendorId}/technicians/${id}`, data);
+      const response = await apiRequest(
+        "PATCH",
+        `/api/maintenance-vendors/${vendorId}/technicians/${id}`,
+        data,
+      );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/technicians", vendorId] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/technicians", vendorId],
+      });
       setIsEditTechnicianModalOpen(false);
       setSelectedTechnicianForEdit(null);
       toast({
@@ -353,11 +438,16 @@ export function VendorView() {
   // Delete technician mutation
   const deleteTechnicianMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest("DELETE", `/api/maintenance-vendors/${vendorId}/technicians/${id}`);
+      const response = await apiRequest(
+        "DELETE",
+        `/api/maintenance-vendors/${vendorId}/technicians/${id}`,
+      );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/technicians", vendorId] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/technicians", vendorId],
+      });
       toast({
         title: "Success",
         description: "Technician deleted successfully!",
@@ -383,11 +473,29 @@ export function VendorView() {
     }
   };
 
+  if (isLoading || isFetching) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Loading vendor details...</p>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-destructive">An error occurred </p>
+      </div>
+    );
+  }
+
   if (!vendor) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-foreground mb-2">Vendor Not Found</h2>
+          <h2 className="text-xl font-semibold text-foreground mb-2">
+            Vendor Not Found
+          </h2>
           <Link href="/">
             <Button variant="outline">
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -415,11 +523,15 @@ export function VendorView() {
                 </Link>
               )}
               <div>
-                <h1 className="text-xl font-bold text-foreground">{vendor.name}</h1>
-                <p className="text-sm text-muted-foreground">Maintenance Vendor Dashboard</p>
+                <h1 className="text-xl font-bold text-foreground">
+                  {vendor.name}
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Maintenance Vendor Dashboard
+                </p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <Link href="/calendar">
                 <Button variant="outline" size="sm">
@@ -430,17 +542,17 @@ export function VendorView() {
               <span className="text-sm text-muted-foreground">
                 {user?.firstName} {user?.lastName} ({user?.email})
               </span>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
-                onClick={() => window.location.href = '/api/auth/logout'}
+                onClick={() => (window.location.href = "/api/auth/logout")}
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
               </Button>
             </div>
           </div>
-          
+
           {/* AI Search Bar */}
           <div className="pb-4">
             <AISearchBar className="max-w-2xl mx-auto" />
@@ -524,16 +636,25 @@ export function VendorView() {
                       <AlertCircle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-orange-700 dark:text-orange-300">Action Required</p>
-                      <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                        {tickets.filter((t: Ticket) => t.status === 'accepted' && !t.assigneeId).length}
+                      <p className="text-sm font-medium text-orange-700 dark:text-orange-300">
+                        Action Required
                       </p>
-                      <p className="text-xs text-orange-600/70 dark:text-orange-400/70">Assign technicians</p>
+                      <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                        {
+                          tickets.filter(
+                            (t: Ticket) =>
+                              t.status === "accepted" && !t.assigneeId,
+                          ).length
+                        }
+                      </p>
+                      <p className="text-xs text-orange-600/70 dark:text-orange-400/70">
+                        Assign technicians
+                      </p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/20">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
@@ -541,16 +662,29 @@ export function VendorView() {
                       <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-blue-700 dark:text-blue-300">In Progress</p>
-                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                        {tickets.filter((t: Ticket) => ['in-progress', 'return_needed', 'accepted'].includes(t.status) && t.assigneeId).length}
+                      <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                        In Progress
                       </p>
-                      <p className="text-xs text-blue-600/70 dark:text-blue-400/70">Active work</p>
+                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                        {
+                          tickets.filter(
+                            (t: Ticket) =>
+                              [
+                                "in-progress",
+                                "return_needed",
+                                "accepted",
+                              ].includes(t.status) && t.assigneeId,
+                          ).length
+                        }
+                      </p>
+                      <p className="text-xs text-blue-600/70 dark:text-blue-400/70">
+                        Active work
+                      </p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card className="border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
@@ -558,16 +692,27 @@ export function VendorView() {
                       <FileText className="h-5 w-5 text-green-600 dark:text-green-400" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-green-700 dark:text-green-300">Ready to Bill</p>
-                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                        {tickets.filter((t: Ticket) => ['ready_for_billing', 'pending_confirmation'].includes(t.status)).length}
+                      <p className="text-sm font-medium text-green-700 dark:text-green-300">
+                        Ready to Bill
                       </p>
-                      <p className="text-xs text-green-600/70 dark:text-green-400/70">Create invoices</p>
+                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                        {
+                          tickets.filter((t: Ticket) =>
+                            [
+                              "ready_for_billing",
+                              "pending_confirmation",
+                            ].includes(t.status),
+                          ).length
+                        }
+                      </p>
+                      <p className="text-xs text-green-600/70 dark:text-green-400/70">
+                        Create invoices
+                      </p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card className="border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950/20">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
@@ -575,17 +720,27 @@ export function VendorView() {
                       <CheckCircle className="h-5 w-5 text-gray-600 dark:text-gray-400" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">All Done</p>
-                      <p className="text-2xl font-bold text-gray-600 dark:text-gray-400">
-                        {tickets.filter((t: Ticket) => ['completed', 'billed', 'force_closed'].includes(t.status)).length}
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        All Done
                       </p>
-                      <p className="text-xs text-gray-600/70 dark:text-gray-400/70">Closed tickets</p>
+                      <p className="text-2xl font-bold text-gray-600 dark:text-gray-400">
+                        {
+                          tickets.filter((t: Ticket) =>
+                            ["completed", "billed", "force_closed"].includes(
+                              t.status,
+                            ),
+                          ).length
+                        }
+                      </p>
+                      <p className="text-xs text-gray-600/70 dark:text-gray-400/70">
+                        Closed tickets
+                      </p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
-            
+
             {/* Comprehensive Filters */}
             <TicketFilters
               onFiltersChange={setFilters}
@@ -599,15 +754,29 @@ export function VendorView() {
               {ticketsLoading ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                  <p className="text-muted-foreground mt-2">Loading tickets...</p>
+                  <p className="text-muted-foreground mt-2">
+                    Loading tickets...
+                  </p>
                 </div>
               ) : (
                 <TicketTable
                   tickets={tickets}
-                  onAccept={user?.role === "maintenance_admin" ? openAcceptModal : undefined}
-                  onReject={user?.role === "maintenance_admin" ? openRejectModal : undefined}
+                  onAccept={
+                    user?.role === "maintenance_admin"
+                      ? openAcceptModal
+                      : undefined
+                  }
+                  onReject={
+                    user?.role === "maintenance_admin"
+                      ? openRejectModal
+                      : undefined
+                  }
                   onCreateInvoice={handleCreateInvoice}
-                  onForceClose={user?.role === "maintenance_admin" ? handleForceClose : undefined}
+                  onForceClose={
+                    user?.role === "maintenance_admin"
+                      ? handleForceClose
+                      : undefined
+                  }
                   showActions={true}
                   userRole={user?.role}
                   userPermissions={user?.permissions || []}
@@ -626,11 +795,13 @@ export function VendorView() {
                 <div className="flex items-center gap-2">
                   <AlertCircle className="h-5 w-5 text-orange-500" />
                   <h3 className="font-medium text-orange-800 dark:text-orange-200">
-                    You have {counterOffersCount} pending counter offer{counterOffersCount > 1 ? 's' : ''}
+                    You have {counterOffersCount} pending counter offer
+                    {counterOffersCount > 1 ? "s" : ""}
                   </h3>
                 </div>
                 <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
-                  Organizations have sent counter offers for your bids. Review and respond below.
+                  Organizations have sent counter offers for your bids. Review
+                  and respond below.
                 </p>
               </div>
             )}
@@ -644,14 +815,14 @@ export function VendorView() {
           <InvoicesView vendorId={vendorId!} userRole="vendor" />
         )}
 
-        {activeTab === "parts" && vendorId && (
-          <PartsManagement />
-        )}
+        {activeTab === "parts" && vendorId && <PartsManagement />}
 
         {activeTab === "technicians" && (
           <div>
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-foreground">Technician Management</h2>
+              <h2 className="text-xl font-semibold text-foreground">
+                Technician Management
+              </h2>
               <Button onClick={() => setIsCreateTechnicianModalOpen(true)}>
                 Add Technician
               </Button>
@@ -662,23 +833,40 @@ export function VendorView() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-border">
-                      <th className="text-left p-4 font-medium text-muted-foreground">Name</th>
-                      <th className="text-left p-4 font-medium text-muted-foreground">Email</th>
-                      <th className="text-left p-4 font-medium text-muted-foreground">Phone</th>
-                      <th className="text-left p-4 font-medium text-muted-foreground">Status</th>
-                      <th className="text-left p-4 font-medium text-muted-foreground">Actions</th>
+                      <th className="text-left p-4 font-medium text-muted-foreground">
+                        Name
+                      </th>
+                      <th className="text-left p-4 font-medium text-muted-foreground">
+                        Email
+                      </th>
+                      <th className="text-left p-4 font-medium text-muted-foreground">
+                        Phone
+                      </th>
+                      <th className="text-left p-4 font-medium text-muted-foreground">
+                        Status
+                      </th>
+                      <th className="text-left p-4 font-medium text-muted-foreground">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {technicians.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="p-8 text-center text-muted-foreground">
-                          No technicians found. Add your first technician to get started.
+                        <td
+                          colSpan={5}
+                          className="p-8 text-center text-muted-foreground"
+                        >
+                          No technicians found. Add your first technician to get
+                          started.
                         </td>
                       </tr>
                     ) : (
                       technicians.map((technician) => (
-                        <tr key={technician.id} className="border-b border-border last:border-b-0">
+                        <tr
+                          key={technician.id}
+                          className="border-b border-border last:border-b-0"
+                        >
                           <td className="p-4">
                             <div>
                               <p className="font-medium text-foreground">
@@ -686,8 +874,12 @@ export function VendorView() {
                               </p>
                             </div>
                           </td>
-                          <td className="p-4 text-foreground">{technician.email}</td>
-                          <td className="p-4 text-foreground">{technician.phone}</td>
+                          <td className="p-4 text-foreground">
+                            {technician.email}
+                          </td>
+                          <td className="p-4 text-foreground">
+                            {technician.phone}
+                          </td>
                           <td className="p-4">
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
                               Active
@@ -705,7 +897,9 @@ export function VendorView() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleDeleteTechnician(technician.id)}
+                                onClick={() =>
+                                  handleDeleteTechnician(technician.id)
+                                }
                                 className="text-red-600 hover:text-red-700"
                               >
                                 Delete
@@ -742,7 +936,9 @@ export function VendorView() {
           technicians={technicians || []}
           onAccept={handleAcceptTicket}
           onReject={handleRejectTicket}
-          isLoading={acceptTicketMutation.isPending || rejectTicketMutation.isPending}
+          isLoading={
+            acceptTicketMutation.isPending || rejectTicketMutation.isPending
+          }
         />
 
         <CreateTechnicianModal
@@ -756,7 +952,12 @@ export function VendorView() {
           open={isEditTechnicianModalOpen}
           onOpenChange={setIsEditTechnicianModalOpen}
           technician={selectedTechnicianForEdit}
-          onSubmit={(data) => updateTechnicianMutation.mutate({ id: selectedTechnicianForEdit!.id, data })}
+          onSubmit={(data) =>
+            updateTechnicianMutation.mutate({
+              id: selectedTechnicianForEdit!.id,
+              data,
+            })
+          }
           isLoading={updateTechnicianMutation.isPending}
         />
       </div>

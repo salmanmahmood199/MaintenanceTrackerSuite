@@ -17,13 +17,20 @@ import { Link } from "wouter";
 import AISearchBar from "@/components/ai-search-bar";
 import { TicketFilters, type FilterState } from "@/components/ticket-filters";
 import { filterTickets } from "@/utils/ticket-filters";
-import type { Ticket, MaintenanceVendor, WorkOrder, User } from "@shared/schema";
+import type {
+  Ticket,
+  MaintenanceVendor,
+  WorkOrder,
+  User,
+} from "@shared/schema";
 
 export function VendorView() {
   const [, routeParams] = useRoute("/vendor/:id");
   const routeVendorId = routeParams?.id ? parseInt(routeParams.id) : undefined;
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [activeTab, setActiveTab] = useState<"tickets" | "marketplace" | "invoices" | "parts">("tickets");
+  const [activeTab, setActiveTab] = useState<
+    "tickets" | "marketplace" | "invoices" | "parts"
+  >("tickets");
   const [filters, setFilters] = useState<FilterState>({
     search: "",
     status: "all",
@@ -32,48 +39,66 @@ export function VendorView() {
     dateTo: null,
     organizationId: "all",
     vendorId: "all",
-    assigneeId: "all"
+    assigneeId: "all",
   });
-  const [isCreateInvoiceModalOpen, setIsCreateInvoiceModalOpen] = useState(false);
-  const [selectedTicketForInvoice, setSelectedTicketForInvoice] = useState<Ticket | null>(null);
+  const [isCreateInvoiceModalOpen, setIsCreateInvoiceModalOpen] =
+    useState(false);
+  const [selectedTicketForInvoice, setSelectedTicketForInvoice] =
+    useState<Ticket | null>(null);
   const [isTicketActionModalOpen, setIsTicketActionModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
-  const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(null);
-  const [isTicketDetailsModalOpen, setIsTicketDetailsModalOpen] = useState(false);
-  
+  const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(
+    null,
+  );
+  const [isTicketDetailsModalOpen, setIsTicketDetailsModalOpen] =
+    useState(false);
+
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const vendorId = user?.role === "maintenance_admin" ? user.maintenanceVendorId : routeVendorId;
-  
+  const vendorId =
+    user?.role === "maintenance_admin"
+      ? user.maintenanceVendorId
+      : routeVendorId;
+
   console.log("VendorView Debug:", {
     userRole: user?.role,
     routeVendorId,
     userMaintenanceVendorId: user?.maintenanceVendorId,
-    finalVendorId: vendorId
+    finalVendorId: vendorId,
   });
-  
+
   // Fetch vendor details
-  const { data: vendor } = useQuery<MaintenanceVendor | undefined>({
+  const {
+    data: vendor,
+    isLoading,
+    isFetching,
+    isError,
+  } = useQuery<MaintenanceVendor | undefined>({
     queryKey: ["/api/maintenance-vendors", vendorId],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/maintenance-vendors");
-      const vendors = await response.json() as MaintenanceVendor[];
-      return vendors.find(v => v.id === vendorId);
+      const vendors = (await response.json()) as MaintenanceVendor[];
+      return vendors.find((v) => v.id === vendorId);
     },
     enabled: !!vendorId,
   });
 
   // Fetch all tickets for this vendor (we'll filter client-side)
-  const { data: allTickets = [], isLoading: ticketsLoading } = useQuery<Ticket[]>({
+  const { data: allTickets = [], isLoading: ticketsLoading } = useQuery<
+    Ticket[]
+  >({
     queryKey: ["/api/tickets", { maintenanceVendorId: vendorId }],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (vendorId) params.append("maintenanceVendorId", vendorId.toString());
-      
-      const response = await apiRequest("GET", `/api/tickets?${params.toString()}`);
-      return await response.json() as Ticket[];
+
+      const response = await apiRequest(
+        "GET",
+        `/api/tickets?${params.toString()}`,
+      );
+      return (await response.json()) as Ticket[];
     },
     enabled: !!vendorId,
   });
@@ -82,7 +107,9 @@ export function VendorView() {
   const tickets = filterTickets(allTickets, filters);
 
   // Fetch organizations for filtering
-  const { data: organizations = [] } = useQuery<Array<{id: number; name: string}>>({
+  const { data: organizations = [] } = useQuery<
+    Array<{ id: number; name: string }>
+  >({
     queryKey: ["/api/organizations"],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/organizations");
@@ -95,8 +122,11 @@ export function VendorView() {
     queryKey: ["/api/technicians", vendorId],
     queryFn: async () => {
       if (!vendorId) return [];
-      const response = await apiRequest("GET", `/api/maintenance-vendors/${vendorId}/technicians`);
-      return await response.json() as User[];
+      const response = await apiRequest(
+        "GET",
+        `/api/maintenance-vendors/${vendorId}/technicians`,
+      );
+      return (await response.json()) as User[];
     },
     enabled: !!vendorId,
   });
@@ -105,8 +135,11 @@ export function VendorView() {
   const { data: invoiceWorkOrders = [] } = useQuery<WorkOrder[]>({
     queryKey: ["/api/tickets", selectedTicketForInvoice?.id, "work-orders"],
     queryFn: async () => {
-      const response = await apiRequest("GET", `/api/tickets/${selectedTicketForInvoice!.id}/work-orders`);
-      return await response.json() as WorkOrder[];
+      const response = await apiRequest(
+        "GET",
+        `/api/tickets/${selectedTicketForInvoice!.id}/work-orders`,
+      );
+      return (await response.json()) as WorkOrder[];
     },
     enabled: !!selectedTicketForInvoice?.id,
   });
@@ -139,7 +172,11 @@ export function VendorView() {
   const forceCloseMutation = useMutation({
     mutationFn: async ({ id, reason }: { id: number; reason: string }) => {
       try {
-        const response = await apiRequest("POST", `/api/tickets/${id}/force-close`, { reason });
+        const response = await apiRequest(
+          "POST",
+          `/api/tickets/${id}/force-close`,
+          { reason },
+        );
         return response.json();
       } catch (error) {
         console.error("Force close error:", error);
@@ -150,18 +187,33 @@ export function VendorView() {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tickets/stats"] });
       // Also invalidate the specific vendor tickets query
-      queryClient.invalidateQueries({ queryKey: ["/api/tickets", { maintenanceVendorId: vendor?.id }] });
-      toast({ title: "Success", description: "Ticket force closed successfully" });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/tickets", { maintenanceVendorId: vendor?.id }],
+      });
+      toast({
+        title: "Success",
+        description: "Ticket force closed successfully",
+      });
     },
     onError: (error) => {
       console.error("Force close mutation error:", error);
-      toast({ title: "Error", description: "Failed to force close ticket", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to force close ticket",
+        variant: "destructive",
+      });
     },
   });
 
   // Accept ticket mutation
   const acceptTicketMutation = useMutation({
-    mutationFn: async ({ ticketId, assigneeId }: { ticketId: number; assigneeId?: number }) => {
+    mutationFn: async ({
+      ticketId,
+      assigneeId,
+    }: {
+      ticketId: number;
+      assigneeId?: number;
+    }) => {
       return apiRequest("POST", `/api/tickets/${ticketId}/accept`, {
         maintenanceVendorId: vendorId,
         assigneeId,
@@ -189,7 +241,13 @@ export function VendorView() {
 
   // Reject ticket mutation
   const rejectTicketMutation = useMutation({
-    mutationFn: async ({ ticketId, rejectionReason }: { ticketId: number; rejectionReason: string }) => {
+    mutationFn: async ({
+      ticketId,
+      rejectionReason,
+    }: {
+      ticketId: number;
+      rejectionReason: string;
+    }) => {
       return apiRequest("POST", `/api/tickets/${ticketId}/reject`, {
         rejectionReason,
       });
@@ -223,7 +281,7 @@ export function VendorView() {
   };
 
   const openAcceptModal = (ticketId: number) => {
-    const ticket = tickets.find(t => t.id === ticketId);
+    const ticket = tickets.find((t) => t.id === ticketId);
     if (ticket) {
       setSelectedTicket(ticket);
       setTicketAction("accept");
@@ -232,7 +290,7 @@ export function VendorView() {
   };
 
   const openRejectModal = (ticketId: number) => {
-    const ticket = tickets.find(t => t.id === ticketId);
+    const ticket = tickets.find((t) => t.id === ticketId);
     if (ticket) {
       setSelectedTicket(ticket);
       setTicketAction("reject");
@@ -241,7 +299,7 @@ export function VendorView() {
   };
 
   const handleCreateInvoice = (ticketId: number) => {
-    const ticket = tickets?.find(t => t.id === ticketId);
+    const ticket = tickets?.find((t) => t.id === ticketId);
     if (ticket) {
       setSelectedTicketForInvoice(ticket);
       setIsCreateInvoiceModalOpen(true);
@@ -252,11 +310,29 @@ export function VendorView() {
     forceCloseMutation.mutate({ id, reason });
   };
 
+  if (isLoading || isFetching) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Loading vendor details...</p>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-destructive">An error occurred </p>
+      </div>
+    );
+  }
+
   if (!vendor) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-foreground mb-2">Vendor Not Found</h2>
+          <h2 className="text-xl font-semibold text-foreground mb-2">
+            Vendor Not Found
+          </h2>
           <Link href="/">
             <Button variant="outline">
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -284,11 +360,15 @@ export function VendorView() {
                 </Link>
               )}
               <div>
-                <h1 className="text-xl font-bold text-foreground">{vendor.name}</h1>
-                <p className="text-sm text-muted-foreground">Maintenance Vendor Dashboard</p>
+                <h1 className="text-xl font-bold text-foreground">
+                  {vendor.name}
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Maintenance Vendor Dashboard
+                </p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <Link href="/calendar">
                 <Button variant="outline" size="sm">
@@ -299,17 +379,17 @@ export function VendorView() {
               <span className="text-sm text-muted-foreground">
                 {user?.firstName} {user?.lastName} ({user?.email})
               </span>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
-                onClick={() => window.location.href = '/api/auth/logout'}
+                onClick={() => (window.location.href = "/api/auth/logout")}
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
               </Button>
             </div>
           </div>
-          
+
           {/* AI Search Bar */}
           <div className="pb-4">
             <AISearchBar className="max-w-2xl mx-auto" />
@@ -382,15 +462,29 @@ export function VendorView() {
               {ticketsLoading ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                  <p className="text-muted-foreground mt-2">Loading tickets...</p>
+                  <p className="text-muted-foreground mt-2">
+                    Loading tickets...
+                  </p>
                 </div>
               ) : (
                 <TicketTable
                   tickets={tickets}
-                  onAccept={user?.role === "maintenance_admin" ? openAcceptModal : undefined}
-                  onReject={user?.role === "maintenance_admin" ? openRejectModal : undefined}
+                  onAccept={
+                    user?.role === "maintenance_admin"
+                      ? openAcceptModal
+                      : undefined
+                  }
+                  onReject={
+                    user?.role === "maintenance_admin"
+                      ? openRejectModal
+                      : undefined
+                  }
                   onCreateInvoice={handleCreateInvoice}
-                  onForceClose={user?.role === "maintenance_admin" ? handleForceClose : undefined}
+                  onForceClose={
+                    user?.role === "maintenance_admin"
+                      ? handleForceClose
+                      : undefined
+                  }
                   showActions={true}
                   userRole={user?.role}
                   userPermissions={user?.permissions || []}
@@ -401,17 +495,11 @@ export function VendorView() {
           </div>
         )}
 
-        {activeTab === "marketplace" && (
-          <MarketplaceTicketsView />
-        )}
+        {activeTab === "marketplace" && <MarketplaceTicketsView />}
 
-        {activeTab === "invoices" && (
-          <InvoicesView vendorId={vendorId} />
-        )}
+        {activeTab === "invoices" && <InvoicesView vendorId={vendorId} />}
 
-        {activeTab === "parts" && vendorId && (
-          <PartsManagement />
-        )}
+        {activeTab === "parts" && vendorId && <PartsManagement />}
 
         {/* Modals */}
         <CreateInvoiceModal
@@ -431,7 +519,9 @@ export function VendorView() {
           technicians={technicians || []}
           onAccept={handleAcceptTicket}
           onReject={handleRejectTicket}
-          isLoading={acceptTicketMutation.isPending || rejectTicketMutation.isPending}
+          isLoading={
+            acceptTicketMutation.isPending || rejectTicketMutation.isPending
+          }
         />
       </div>
     </div>
