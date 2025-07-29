@@ -1,34 +1,23 @@
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 
-// Email SMTP configuration
+// Email SMTP configuration for Gmail and Google Workspace
 const createTransporter = () => {
   const emailUser = process.env.GMAIL_USER;
   
-  // Check if it's a Gmail account or custom domain
-  if (emailUser && emailUser.endsWith('@gmail.com')) {
-    return nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD,
-      },
-    });
-  } else {
-    // For custom domains like taskscout.ai, try common SMTP settings
-    return nodemailer.createTransport({
-      host: 'smtp.gmail.com', // Many custom domains use Gmail for email
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD,
-      },
-      tls: {
-        rejectUnauthorized: false
-      }
-    });
-  }
+  // Use Gmail SMTP for both regular Gmail and Google Workspace business emails
+  return nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false, // Use STARTTLS
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_APP_PASSWORD,
+    },
+    tls: {
+      rejectUnauthorized: false
+    }
+  });
 };
 
 // Generate secure reset token
