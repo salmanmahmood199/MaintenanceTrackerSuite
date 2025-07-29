@@ -690,16 +690,16 @@ export const rejectTicketSchema = z.object({
 });
 
 export const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(1, "Password is required"),
 });
 
 export const insertResidentialUserSchema = z.object({
-  email: z.string().email(),
+  email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
-  phone: z.string().min(10, "Phone number must be at least 10 digits"),
+  phone: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits"),
   address: z.string().min(1, "Address is required"),
   city: z.string().min(1, "City is required"),
   state: z.string().min(1, "State is required"),

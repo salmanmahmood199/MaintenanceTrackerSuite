@@ -136,10 +136,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertResidentialUserSchema.parse(req.body);
       
-      // Check if user already exists
-      const existingUser = await storage.getUserByEmail(validatedData.email);
-      if (existingUser) {
-        return res.status(400).json({ message: "User already exists with this email" });
+      // Check if email already exists across all tables
+      const emailExists = await storage.checkEmailExists(validatedData.email);
+      if (emailExists) {
+        return res.status(400).json({ message: "Email address is already in use" });
+      }
+
+      // Check if phone already exists across all tables
+      const phoneExists = await storage.checkPhoneExists(validatedData.phone);
+      if (phoneExists) {
+        return res.status(400).json({ message: "Phone number is already in use" });
       }
       
       const user = await storage.createResidentialUser(validatedData);
@@ -241,6 +247,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req, res) => {
       try {
         const orgData = insertOrganizationSchema.parse(req.body);
+        
+        // Check if email already exists across all tables
+        if (orgData.email) {
+          const emailExists = await storage.checkEmailExists(orgData.email);
+          if (emailExists) {
+            return res.status(400).json({ message: "Email address is already in use" });
+          }
+        }
+
+        // Check if phone already exists across all tables
+        if (orgData.phone) {
+          const phoneExists = await storage.checkPhoneExists(orgData.phone);
+          if (phoneExists) {
+            return res.status(400).json({ message: "Phone number is already in use" });
+          }
+        }
+        
         const organization = await storage.createOrganization(orgData);
         res.status(201).json(organization);
       } catch (error: any) {
@@ -354,6 +377,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const vendorData = insertMaintenanceVendorSchema.parse(req.body);
         const { assignedOrganizations, ...vendorInfo } = vendorData;
+
+        // Check if email already exists across all tables
+        if (vendorInfo.email) {
+          const emailExists = await storage.checkEmailExists(vendorInfo.email);
+          if (emailExists) {
+            return res.status(400).json({ message: "Email address is already in use" });
+          }
+        }
+
+        // Check if phone already exists across all tables
+        if (vendorInfo.phone) {
+          const phoneExists = await storage.checkPhoneExists(vendorInfo.phone);
+          if (phoneExists) {
+            return res.status(400).json({ message: "Phone number is already in use" });
+          }
+        }
 
         const vendor = await storage.createMaintenanceVendor(vendorInfo);
 
@@ -566,7 +605,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .json({ message: "Access denied to this organization" });
         }
 
-        const subAdmin = await storage.createSubAdmin(req.body, organizationId);
+        const validatedData = insertSubAdminSchema.parse(req.body);
+        
+        // Check if email already exists across all tables
+        const emailExists = await storage.checkEmailExists(validatedData.email);
+        if (emailExists) {
+          return res.status(400).json({ message: "Email address is already in use" });
+        }
+
+        // Check if phone already exists across all tables
+        if (validatedData.phone) {
+          const phoneExists = await storage.checkPhoneExists(validatedData.phone);
+          if (phoneExists) {
+            return res.status(400).json({ message: "Phone number is already in use" });
+          }
+        }
+        
+        const subAdmin = await storage.createSubAdmin(validatedData, organizationId);
         res.status(201).json(subAdmin);
       } catch (error) {
         res.status(500).json({ message: "Failed to create sub-admin" });
@@ -866,6 +921,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(403).json({
             message: "Cannot create users outside your maintenance vendor",
           });
+        }
+
+        // Check if email already exists across all tables
+        const emailExists = await storage.checkEmailExists(userData.email);
+        if (emailExists) {
+          return res.status(400).json({ message: "Email address is already in use" });
+        }
+
+        // Check if phone already exists across all tables
+        if (userData.phone) {
+          const phoneExists = await storage.checkPhoneExists(userData.phone);
+          if (phoneExists) {
+            return res.status(400).json({ message: "Phone number is already in use" });
+          }
         }
 
         const user = await storage.createUser(userData);

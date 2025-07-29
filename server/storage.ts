@@ -61,6 +61,10 @@ import { eq, and, inArray, desc, or, isNull, gte, lte, ne, asc, ilike, not, isNo
 import bcrypt from "bcrypt";
 
 export interface IStorage {
+  // Validation operations
+  checkEmailExists(email: string, excludeId?: number, excludeType?: 'user' | 'organization' | 'vendor'): Promise<boolean>;
+  checkPhoneExists(phone: string, excludeId?: number, excludeType?: 'user' | 'organization' | 'vendor'): Promise<boolean>;
+  
   // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
@@ -220,9 +224,84 @@ export interface IStorage {
   
   // Initialize root user
   initializeRootUser(): Promise<void>;
+
+  // Validation methods
+  checkEmailExists(email: string, excludeId?: number, excludeType?: 'user' | 'organization' | 'vendor'): Promise<boolean>;
+  checkPhoneExists(phone: string, excludeId?: number, excludeType?: 'user' | 'organization' | 'vendor'): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
+  // Validation operations
+  async checkEmailExists(email: string, excludeId?: number, excludeType?: 'user' | 'organization' | 'vendor'): Promise<boolean> {
+    // Check users table
+    if (excludeType !== 'user') {
+      let userCondition = eq(users.email, email);
+      if (excludeType === 'user' && excludeId) {
+        userCondition = and(eq(users.email, email), ne(users.id, excludeId));
+      }
+      const [userResult] = await db.select({ id: users.id }).from(users).where(userCondition);
+      if (userResult) return true;
+    }
+
+    // Check organizations table  
+    if (excludeType !== 'organization') {
+      let orgCondition = eq(organizations.email, email);
+      if (excludeType === 'organization' && excludeId) {
+        orgCondition = and(eq(organizations.email, email), ne(organizations.id, excludeId));
+      }
+      const [orgResult] = await db.select({ id: organizations.id }).from(organizations).where(orgCondition);
+      if (orgResult) return true;
+    }
+
+    // Check vendors table
+    if (excludeType !== 'vendor') {
+      let vendorCondition = eq(maintenanceVendors.email, email);
+      if (excludeType === 'vendor' && excludeId) {
+        vendorCondition = and(eq(maintenanceVendors.email, email), ne(maintenanceVendors.id, excludeId));
+      }
+      const [vendorResult] = await db.select({ id: maintenanceVendors.id }).from(maintenanceVendors).where(vendorCondition);
+      if (vendorResult) return true;
+    }
+
+    return false;
+  }
+
+  async checkPhoneExists(phone: string, excludeId?: number, excludeType?: 'user' | 'organization' | 'vendor'): Promise<boolean> {
+    if (!phone) return false;
+
+    // Check users table
+    if (excludeType !== 'user') {
+      let userCondition = eq(users.phone, phone);
+      if (excludeType === 'user' && excludeId) {
+        userCondition = and(eq(users.phone, phone), ne(users.id, excludeId));
+      }
+      const [userResult] = await db.select({ id: users.id }).from(users).where(userCondition);
+      if (userResult) return true;
+    }
+
+    // Check organizations table  
+    if (excludeType !== 'organization') {
+      let orgCondition = eq(organizations.phone, phone);
+      if (excludeType === 'organization' && excludeId) {
+        orgCondition = and(eq(organizations.phone, phone), ne(organizations.id, excludeId));
+      }
+      const [orgResult] = await db.select({ id: organizations.id }).from(organizations).where(orgCondition);
+      if (orgResult) return true;
+    }
+
+    // Check vendors table
+    if (excludeType !== 'vendor') {
+      let vendorCondition = eq(maintenanceVendors.phone, phone);
+      if (excludeType === 'vendor' && excludeId) {
+        vendorCondition = and(eq(maintenanceVendors.phone, phone), ne(maintenanceVendors.id, excludeId));
+      }
+      const [vendorResult] = await db.select({ id: maintenanceVendors.id }).from(maintenanceVendors).where(vendorCondition);
+      if (vendorResult) return true;
+    }
+
+    return false;
+  }
+
   // User operations
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
