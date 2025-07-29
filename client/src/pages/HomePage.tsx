@@ -330,8 +330,12 @@ export default function HomePage() {
                       
                       {/* App Header */}
                       <div className="text-center mb-6">
-                        <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl mx-auto mb-2 flex items-center justify-center">
-                          <Rocket className="w-6 h-6" />
+                        <div className="w-12 h-12 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-xl mx-auto mb-2 flex items-center justify-center">
+                          <img 
+                            src="/assets/taskscout-logo.png" 
+                            alt="TaskScout Logo" 
+                            className="w-8 h-8 object-contain"
+                          />
                         </div>
                         <h3 className="text-lg font-bold">TaskScout</h3>
                       </div>
@@ -1168,10 +1172,12 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-3 mb-4 md:mb-0">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-                <Rocket className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              <img 
+                src="/assets/taskscout-logo.png" 
+                alt="TaskScout Logo" 
+                className="w-8 h-8 object-contain"
+              />
+              <span className="text-xl font-bold bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
                 TaskScout
               </span>
             </div>
