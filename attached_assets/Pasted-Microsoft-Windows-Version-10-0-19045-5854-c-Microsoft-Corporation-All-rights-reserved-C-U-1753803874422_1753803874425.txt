@@ -1,0 +1,66 @@
+Microsoft Windows [Version 10.0.19045.5854]
+(c) Microsoft Corporation. All rights reserved.
+
+C:\Users\station6>cd C:\Users\station6\Downloads\MaintenanceTracker-1 (1)\MaintenanceTracker-1\apps\mobile
+
+C:\Users\station6\Downloads\MaintenanceTracker-1 (1)\MaintenanceTracker-1\apps\mobile>npx expo start
+Need to install the following packages:
+expo@53.0.20
+Ok to proceed? (y) y
+
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+Starting project at C:\Users\station6\Downloads\MaintenanceTracker-1 (1)\MaintenanceTracker-1\apps\mobile
+Error: Cannot find module 'expo/metro-config'
+Require stack:
+- C:\Users\station6\Downloads\MaintenanceTracker-1 (1)\MaintenanceTracker-1\apps\mobile\metro.config.js
+- C:\Users\station6\AppData\Local\npm-cache\_npx\249ca9fcd30c476a\node_modules\import-fresh\index.js
+- C:\Users\station6\AppData\Local\npm-cache\_npx\249ca9fcd30c476a\node_modules\cosmiconfig\dist\loaders.js
+- C:\Users\station6\AppData\Local\npm-cache\_npx\249ca9fcd30c476a\node_modules\cosmiconfig\dist\createExplorer.js
+- C:\Users\station6\AppData\Local\npm-cache\_npx\249ca9fcd30c476a\node_modules\cosmiconfig\dist\index.js
+- C:\Users\station6\AppData\Local\npm-cache\_npx\249ca9fcd30c476a\node_modules\metro-config\src\loadConfig.js
+- C:\Users\station6\AppData\Local\npm-cache\_npx\249ca9fcd30c476a\node_modules\metro-config\src\index.js
+- C:\Users\station6\AppData\Local\npm-cache\_npx\249ca9fcd30c476a\node_modules\@expo\cli\build\src\start\server\metro\instantiateMetro.js
+- C:\Users\station6\AppData\Local\npm-cache\_npx\249ca9fcd30c476a\node_modules\@expo\cli\build\src\start\server\metro\MetroBundlerDevServer.js
+- C:\Users\station6\AppData\Local\npm-cache\_npx\249ca9fcd30c476a\node_modules\@expo\cli\build\src\start\server\DevServerManager.js
+- C:\Users\station6\AppData\Local\npm-cache\_npx\249ca9fcd30c476a\node_modules\@expo\cli\build\src\start\startAsync.js
+- C:\Users\station6\AppData\Local\npm-cache\_npx\249ca9fcd30c476a\node_modules\@expo\cli\build\src\start\index.js
+- C:\Users\station6\AppData\Local\npm-cache\_npx\249ca9fcd30c476a\node_modules\@expo\cli\build\bin\cli
+- C:\Users\station6\AppData\Local\npm-cache\_npx\249ca9fcd30c476a\node_modules\expo\bin\cli
+Error: Cannot find module 'expo/metro-config'
+Require stack:
+- C:\Users\station6\Downloads\MaintenanceTracker-1 (1)\MaintenanceTracker-1\apps\mobile\metro.config.js
+- C:\Users\station6\AppData\Local\npm-cache\_npx\249ca9fcd30c476a\node_modules\import-fresh\index.js
+- C:\Users\station6\AppData\Local\npm-cache\_npx\249ca9fcd30c476a\node_modules\cosmiconfig\dist\loaders.js
+- C:\Users\station6\AppData\Local\npm-cache\_npx\249ca9fcd30c476a\node_modules\cosmiconfig\dist\createExplorer.js
+- C:\Users\station6\AppData\Local\npm-cache\_npx\249ca9fcd30c476a\node_modules\cosmiconfig\dist\index.js
+- C:\Users\station6\AppData\Local\npm-cache\_npx\249ca9fcd30c476a\node_modules\metro-config\src\loadConfig.js
+- C:\Users\station6\AppData\Local\npm-cache\_npx\249ca9fcd30c476a\node_modules\metro-config\src\index.js
+- C:\Users\station6\AppData\Local\npm-cache\_npx\249ca9fcd30c476a\node_modules\@expo\cli\build\src\start\server\metro\instantiateMetro.js
+- C:\Users\station6\AppData\Local\npm-cache\_npx\249ca9fcd30c476a\node_modules\@expo\cli\build\src\start\server\metro\MetroBundlerDevServer.js
+- C:\Users\station6\AppData\Local\npm-cache\_npx\249ca9fcd30c476a\node_modules\@expo\cli\build\src\start\server\DevServerManager.js
+- C:\Users\station6\AppData\Local\npm-cache\_npx\249ca9fcd30c476a\node_modules\@expo\cli\build\src\start\startAsync.js
+- C:\Users\station6\AppData\Local\npm-cache\_npx\249ca9fcd30c476a\node_modules\@expo\cli\build\src\start\index.js
+- C:\Users\station6\AppData\Local\npm-cache\_npx\249ca9fcd30c476a\node_modules\@expo\cli\build\bin\cli
+- C:\Users\station6\AppData\Local\npm-cache\_npx\249ca9fcd30c476a\node_modules\expo\bin\cli
+    at Function._resolveFilename (node:internal/modules/cjs/loader:1244:15)
+    at Function._load (node:internal/modules/cjs/loader:1070:27)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:217:24)
+    at Module.require (node:internal/modules/cjs/loader:1335:12)
+    at require (node:internal/modules/helpers:136:16)
+    at Object.<anonymous> (C:\Users\station6\Downloads\MaintenanceTracker-1 (1)\MaintenanceTracker-1\apps\mobile\metro.config.js:1:30)
+    at Module._compile (node:internal/modules/cjs/loader:1562:14)
+    at Object..js (node:internal/modules/cjs/loader:1699:10)
+    at Module.load (node:internal/modules/cjs/loader:1313:32)
+npm notice
+npm notice New major version of npm available! 10.9.2 -> 11.5.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.5.1
+npm notice To update run: npm install -g npm@11.5.1
+npm notice
+
+C:\Users\station6\Downloads\MaintenanceTracker-1 (1)\MaintenanceTracker-1\apps\mobile>
