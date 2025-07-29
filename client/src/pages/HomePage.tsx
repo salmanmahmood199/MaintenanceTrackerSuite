@@ -240,7 +240,7 @@ export default function HomePage() {
       <nav className="relative z-10 flex items-center justify-between p-6 backdrop-blur-sm">
         <div className="flex items-center space-x-3">
           <img 
-            src="/attached_assets/Logo_1753808482955.png" 
+            src="/assets/taskscout-logo.png" 
             alt="TaskScout Logo" 
             className="w-12 h-12 object-contain"
           />

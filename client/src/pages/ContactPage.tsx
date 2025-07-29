@@ -188,7 +188,7 @@ export default function ContactPage() {
             
             <div className="flex items-center justify-center space-x-3 mb-6">
               <img 
-                src="/attached_assets/Logo_1753808482955.png" 
+                src="/assets/taskscout-logo.png" 
                 alt="TaskScout Logo" 
                 className="w-16 h-16 object-contain"
               />
