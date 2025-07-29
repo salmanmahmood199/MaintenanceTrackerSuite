@@ -35,7 +35,9 @@ import {
   Award,
   Truck,
   Building,
-  Wrench
+  Wrench,
+  Home,
+  DollarSign
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -287,8 +289,8 @@ export default function HomePage() {
           </h1>
           
           <p className="text-xl md:text-2xl text-gray-300 mb-12 max-w-4xl mx-auto leading-relaxed">
-            Revolutionize your business maintenance with AI-powered automation, marketplace bidding for commercial and residential customers, 
-            real-time collaboration, and seamless mobile experiences across web and native apps.
+            Revolutionary maintenance management with two game-changing solutions: AI-powered full-cycle ticketing 
+            from creation to completion, and an Uber-like marketplace connecting you with top-rated service providers instantly.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
@@ -524,6 +526,182 @@ export default function HomePage() {
                 <div className="text-gray-400">{stat.label}</div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Two Revolutionary Solutions Section */}
+      <section className="relative z-10 px-6 py-20">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+              Two Revolutionary Solutions
+            </h2>
+            <p className="text-xl text-gray-400 max-w-3xl mx-auto">
+              Experience the future of maintenance with AI-powered automation and Uber-like marketplace convenience.
+            </p>
+          </div>
+
+          {/* Two Major Features */}
+          <div className="grid md:grid-cols-2 gap-12 mb-16">
+            {/* AI-Powered Ticketing */}
+            <div className="bg-gradient-to-br from-teal-500/10 to-cyan-500/10 border border-teal-500/20 rounded-3xl p-8 backdrop-blur-sm hover:scale-105 transition-all duration-500">
+              <div className="w-16 h-16 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                <Zap className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-3xl font-bold text-center mb-4 bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
+                AI-Powered A-Z Ticketing
+              </h3>
+              <p className="text-gray-300 text-center mb-6 leading-relaxed">
+                Complete maintenance lifecycle management from creation to completion. AI intelligently categorizes, prioritizes, 
+                and routes tickets while tracking every step with real-time updates and automated workflows.
+              </p>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3">
+                  <CheckCircle className="w-5 h-5 text-teal-400 flex-shrink-0" />
+                  <span className="text-gray-300">Smart ticket creation with AI assistance</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <CheckCircle className="w-5 h-5 text-teal-400 flex-shrink-0" />
+                  <span className="text-gray-300">Automated priority detection and routing</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <CheckCircle className="w-5 h-5 text-teal-400 flex-shrink-0" />
+                  <span className="text-gray-300">Real-time progress tracking and updates</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <CheckCircle className="w-5 h-5 text-teal-400 flex-shrink-0" />
+                  <span className="text-gray-300">Complete work order and invoice management</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Uber-Like Marketplace */}
+            <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-3xl p-8 backdrop-blur-sm hover:scale-105 transition-all duration-500">
+              <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                <Users className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-3xl font-bold text-center mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                Uber-Like Marketplace
+              </h3>
+              <p className="text-gray-300 text-center mb-6 leading-relaxed">
+                Instant connections with qualified service providers through competitive bidding. Get multiple quotes in minutes, 
+                compare ratings and prices, then choose the perfect vendor for your maintenance needs.
+              </p>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3">
+                  <CheckCircle className="w-5 h-5 text-blue-400 flex-shrink-0" />
+                  <span className="text-gray-300">Instant competitive bidding system</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <CheckCircle className="w-5 h-5 text-blue-400 flex-shrink-0" />
+                  <span className="text-gray-300">Verified vendor ratings and reviews</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <CheckCircle className="w-5 h-5 text-blue-400 flex-shrink-0" />
+                  <span className="text-gray-300">Transparent pricing and negotiations</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <CheckCircle className="w-5 h-5 text-blue-400 flex-shrink-0" />
+                  <span className="text-gray-300">Fast vendor selection and scheduling</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* User Types Section */}
+          <div className="grid md:grid-cols-2 gap-8 mb-16">
+            {/* Commercial */}
+            <div className="bg-gradient-to-br from-emerald-500/10 to-green-500/10 border border-emerald-500/20 rounded-2xl p-6 backdrop-blur-sm">
+              <div className="text-center mb-4">
+                <Building className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
+                <h4 className="text-2xl font-bold text-emerald-400">Commercial Businesses</h4>
+                <p className="text-gray-300 text-sm">Restaurants • Gas Stations • Hotels • Retail Stores</p>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center space-x-2">
+                  <Star className="w-4 h-4 text-emerald-400" />
+                  <span className="text-gray-300">Full A-Z maintenance ticketing system</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Star className="w-4 h-4 text-emerald-400" />
+                  <span className="text-gray-300">Option to use marketplace or direct vendors</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Star className="w-4 h-4 text-emerald-400" />
+                  <span className="text-gray-300">Advanced reporting and analytics</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Residential */}
+            <div className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-2xl p-6 backdrop-blur-sm">
+              <div className="text-center mb-4">
+                <Home className="w-12 h-12 text-amber-400 mx-auto mb-3" />
+                <h4 className="text-2xl font-bold text-amber-400">Residential Users</h4>
+                <p className="text-gray-300 text-sm">Homeowners • Renters • Property Managers</p>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center space-x-2">
+                  <Star className="w-4 h-4 text-amber-400" />
+                  <span className="text-gray-300">Simple Uber-like experience</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Star className="w-4 h-4 text-amber-400" />
+                  <span className="text-gray-300">Automatic marketplace posting</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Star className="w-4 h-4 text-amber-400" />
+                  <span className="text-gray-300">Instant vendor quotes and booking</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Transparent Pricing Section */}
+          <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-3xl p-8 backdrop-blur-sm text-center">
+            <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+              <DollarSign className="w-8 h-8 text-white" />
+            </div>
+            <h3 className="text-3xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+              Transparent Pricing That Works
+            </h3>
+            <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
+              We believe in simple, fair pricing. Commercial businesses and residential users never pay platform fees.
+            </p>
+            
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+                <div className="text-center mb-4">
+                  <Building className="w-8 h-8 text-teal-400 mx-auto mb-2" />
+                  <h4 className="text-xl font-bold text-white">Commercial</h4>
+                </div>
+                <div className="text-3xl font-bold text-teal-400 mb-2">FREE</div>
+                <div className="text-gray-400">No platform fees ever</div>
+              </div>
+              
+              <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+                <div className="text-center mb-4">
+                  <Home className="w-8 h-8 text-amber-400 mx-auto mb-2" />
+                  <h4 className="text-xl font-bold text-white">Residential</h4>
+                </div>
+                <div className="text-3xl font-bold text-amber-400 mb-2">FREE</div>
+                <div className="text-gray-400">No platform fees ever</div>
+              </div>
+              
+              <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+                <div className="text-center mb-4">
+                  <Wrench className="w-8 h-8 text-purple-400 mx-auto mb-2" />
+                  <h4 className="text-xl font-bold text-white">Vendors</h4>
+                </div>
+                <div className="text-3xl font-bold text-purple-400 mb-2">$99</div>
+                <div className="text-gray-400">Per month flat rate</div>
+              </div>
+            </div>
+            
+            <p className="text-gray-400 mt-6 text-sm">
+              Vendors pay one simple monthly fee to access unlimited customers and grow their business through our marketplace.
+            </p>
           </div>
         </div>
       </section>

@@ -55,8 +55,10 @@ interface TicketStats {
 }
 
 export default function OrganizationView() {
-  const [, params] = useRoute("/admin/organizations/:id");
-  const routeOrgId = parseInt(params?.id || "0");
+  const [match, params] = useRoute("/organization/:id");
+
+  const routeOrgId = params.id;
+  console.log(routeOrgId, "orgiddd");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreateSubAdminOpen, setIsCreateSubAdminOpen] = useState(false);
   const [isEditSubAdminOpen, setIsEditSubAdminOpen] = useState(false);
@@ -95,7 +97,7 @@ export default function OrganizationView() {
     user?.role === "org_admin" || user?.role === "org_subadmin"
       ? user.organizationId
       : routeOrgId;
-
+  console.log(organizationId, "orgiddd");
   // Permission helpers
   const canPlaceTickets =
     user?.role === "root" ||
@@ -137,11 +139,11 @@ export default function OrganizationView() {
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/organizations");
       const orgs = (await response.json()) as Organization[];
-      return orgs.find((org) => org.id === organizationId);
+      return orgs.find((org) => org.id == organizationId);
     },
     enabled: !!organizationId,
   });
-
+  console.log(organizationId, "orgiddd", organization);
   // Fetch all tickets for this organization (we'll filter client-side)
   const { data: allTickets = [], isLoading: ticketsLoading } = useQuery<
     Ticket[]
