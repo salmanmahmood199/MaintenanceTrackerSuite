@@ -15,7 +15,7 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { MapPin, Calendar, Clock, DollarSign, Wrench, Plus, Trash2, CalendarIcon } from "lucide-react";
+import { MapPin, Calendar, DollarSign, Wrench, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { Ticket, Location } from "@shared/schema";
@@ -65,24 +65,14 @@ interface MarketplaceTicketModalProps {
   onClose: () => void;
 }
 
-interface PartItem {
-  id: string;
-  name: string;
-  estimatedCost: number;
-  quantity: number;
-}
+
 
 export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceTicketModalProps) {
-  const [hourlyRate, setHourlyRate] = useState("");
-  const [estimatedHours, setEstimatedHours] = useState("");
+  const [totalAmount, setTotalAmount] = useState("");
   const [responseTimeValue, setResponseTimeValue] = useState("");
   const [responseTimeUnit, setResponseTimeUnit] = useState("hours");
   const [responseDate, setResponseDate] = useState<Date | undefined>(undefined);
   const [responseTime, setResponseTime] = useState("");
-  const [parts, setParts] = useState<PartItem[]>([]);
-  const [newPartName, setNewPartName] = useState("");
-  const [newPartCost, setNewPartCost] = useState("");
-  const [newPartQuantity, setNewPartQuantity] = useState("1");
   const [additionalNotes, setAdditionalNotes] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -157,10 +147,8 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
   // Pre-populate form when existingBid changes
   useEffect(() => {
     if (existingBid && isOpen) {
-      setHourlyRate(existingBid.hourlyRate);
-      setEstimatedHours(existingBid.estimatedHours);
+      setTotalAmount(existingBid.totalAmount || "");
       setAdditionalNotes(existingBid.additionalNotes || "");
-      setParts(existingBid.parts || []);
       
       // Parse response time to extract value and unit
       const responseTimeStr = existingBid.responseTime;
@@ -201,51 +189,22 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
   }, [responseTimeValue, responseTimeUnit, responseDate]);
 
   const resetForm = () => {
-    setHourlyRate("");
-    setEstimatedHours("");
+    setTotalAmount("");
     setResponseTimeValue("");
     setResponseTimeUnit("hours");
     setResponseDate(undefined);
     setResponseTime("");
-    setParts([]);
-    setNewPartName("");
-    setNewPartCost("");
-    setNewPartQuantity("1");
     setAdditionalNotes("");
     setShowDatePicker(false);
   };
 
-  const addPart = () => {
-    if (!newPartName || !newPartCost) return;
-    
-    const newPart: PartItem = {
-      id: Date.now().toString(),
-      name: newPartName,
-      estimatedCost: parseFloat(newPartCost),
-      quantity: parseInt(newPartQuantity) || 1,
-    };
-    
-    setParts([...parts, newPart]);
-    setNewPartName("");
-    setNewPartCost("");
-    setNewPartQuantity("1");
-  };
 
-  const removePart = (partId: string) => {
-    setParts(parts.filter(p => p.id !== partId));
-  };
-
-  const calculateTotalBid = () => {
-    const laborCost = (parseFloat(hourlyRate) || 0) * (parseFloat(estimatedHours) || 0);
-    const partsCost = parts.reduce((sum, part) => sum + (part.estimatedCost * part.quantity), 0);
-    return laborCost + partsCost;
-  };
 
   const handleSubmitBid = () => {
-    if (!ticket || !hourlyRate || !estimatedHours || !responseTimeValue || !responseTimeUnit) {
+    if (!ticket || !totalAmount || !responseTimeValue || !responseTimeUnit) {
       toast({
         title: "Missing Information",
-        description: "Please provide hourly rate, estimated hours, and response time.",
+        description: "Please provide total bid amount and response time.",
         variant: "destructive",
       });
       return;
@@ -253,11 +212,11 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
 
     const bidData = {
       ticketId: ticket.id,
-      hourlyRate: parseFloat(hourlyRate),
-      estimatedHours: parseFloat(estimatedHours),
+      hourlyRate: 0, // Not used in simplified form
+      estimatedHours: 0, // Not used in simplified form
       responseTime,
-      parts: parts,
-      totalAmount: calculateTotalBid(),
+      parts: [], // Not used in simplified form
+      totalAmount: parseFloat(totalAmount),
       additionalNotes,
     };
 
@@ -413,30 +372,21 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {/* Labor Costs */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="hourlyRate">Hourly Rate ($)</Label>
-                        <Input
-                          id="hourlyRate"
-                          type="number"
-                          step="0.01"
-                          placeholder="35.00"
-                          value={hourlyRate}
-                          onChange={(e) => setHourlyRate(e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="estimatedHours">Estimated Hours</Label>
-                        <Input
-                          id="estimatedHours"
-                          type="number"
-                          step="0.5"
-                          placeholder="4"
-                          value={estimatedHours}
-                          onChange={(e) => setEstimatedHours(e.target.value)}
-                        />
-                      </div>
+                    {/* Total Bid Amount */}
+                    <div>
+                      <Label htmlFor="totalAmount">Total Bid Amount ($)</Label>
+                      <Input
+                        id="totalAmount"
+                        type="number"
+                        step="0.01"
+                        placeholder="150.00"
+                        value={totalAmount}
+                        onChange={(e) => setTotalAmount(e.target.value)}
+                        className="text-lg font-semibold"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Enter your total quote for this job including labor and materials
+                      </p>
                     </div>
 
                     {/* Response Time */}
@@ -514,89 +464,7 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
                       </div>
                     </div>
 
-                    <Separator />
 
-                    {/* Parts Section */}
-                    <div>
-                      <Label className="text-sm font-medium">Required Parts</Label>
-                      
-                      {/* Add Part Form */}
-                      <div className="grid grid-cols-12 gap-2 mt-2">
-                        <Input
-                          placeholder="Part name"
-                          value={newPartName}
-                          onChange={(e) => setNewPartName(e.target.value)}
-                          className="col-span-5"
-                        />
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="Cost"
-                          value={newPartCost}
-                          onChange={(e) => setNewPartCost(e.target.value)}
-                          className="col-span-3"
-                        />
-                        <Input
-                          type="number"
-                          placeholder="Qty"
-                          value={newPartQuantity}
-                          onChange={(e) => setNewPartQuantity(e.target.value)}
-                          className="col-span-2"
-                        />
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={addPart}
-                          className="col-span-2"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-
-                      {/* Parts List */}
-                      {parts.length > 0 && (
-                        <div className="mt-3 space-y-2">
-                          {parts.map((part) => (
-                            <div key={part.id} className="flex items-center justify-between p-2 bg-muted rounded-md">
-                              <div className="flex-1">
-                                <span className="font-medium">{part.name}</span>
-                                <span className="text-sm text-muted-foreground ml-2">
-                                  ${part.estimatedCost.toFixed(2)} × {part.quantity} = ${(part.estimatedCost * part.quantity).toFixed(2)}
-                                </span>
-                              </div>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => removePart(part.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <Separator />
-
-                    {/* Total Calculation */}
-                    <div className="bg-muted p-3 rounded-md">
-                      <div className="space-y-1 text-sm">
-                        <div className="flex justify-between">
-                          <span>Labor ({estimatedHours || 0} hrs × ${hourlyRate || 0}):</span>
-                          <span>${((parseFloat(hourlyRate) || 0) * (parseFloat(estimatedHours) || 0)).toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Parts:</span>
-                          <span>${parts.reduce((sum, part) => sum + (part.estimatedCost * part.quantity), 0).toFixed(2)}</span>
-                        </div>
-                        <Separator className="my-2" />
-                        <div className="flex justify-between font-medium">
-                          <span>Total Bid:</span>
-                          <span>${calculateTotalBid().toFixed(2)}</span>
-                        </div>
-                      </div>
-                    </div>
 
                     {/* Additional Notes */}
                     <div>
@@ -624,7 +492,7 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
                       ) : (
                         <Button
                           onClick={handleSubmitBid}
-                          disabled={(placeBidMutation.isPending || updateBidMutation.isPending) || !hourlyRate || !estimatedHours || !responseTimeValue || !responseTimeUnit}
+                          disabled={(placeBidMutation.isPending || updateBidMutation.isPending) || !totalAmount || !responseTimeValue || !responseTimeUnit}
                           className="flex-1"
                         >
                           {(placeBidMutation.isPending || updateBidMutation.isPending) ? 

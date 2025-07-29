@@ -421,6 +421,9 @@ Changelog:
 - July 29, 2025. Implemented marketplace privacy protection - vendors only see city, state, and ZIP code until bid acceptance
 - July 29, 2025. Enhanced address privacy system: full street addresses hidden from marketplace vendors, revealed only after successful bid acceptance
 - July 29, 2025. Updated marketplace ticket displays and vendor bid views to show limited location information for residential user privacy
+- July 29, 2025. Simplified marketplace bidding form - removed Required Parts section and Estimated Hours field for streamlined vendor experience
+- July 29, 2025. Enhanced bidding workflow with simple total bid amount input and response time selection only
+- July 29, 2025. Updated bid display components to show simplified bid information focusing on total amount and response time
 ```
 
 ## User Preferences

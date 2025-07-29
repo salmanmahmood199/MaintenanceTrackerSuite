@@ -76,39 +76,16 @@ function BidDetailsModal({ bid, isOpen, onClose }: { bid: VendorBid | null; isOp
             </div>
           </div>
           
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Hourly Rate</label>
-              <p className="text-foreground font-medium">${bid.hourlyRate}</p>
+              <label className="text-sm font-medium text-muted-foreground">Total Bid Amount</label>
+              <p className="text-foreground font-bold text-2xl">${bid.totalAmount}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Estimated Hours</label>
-              <p className="text-foreground font-medium">{bid.estimatedHours} hrs</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">Total Amount</label>
-              <p className="text-foreground font-bold text-lg">${bid.totalAmount}</p>
+              <label className="text-sm font-medium text-muted-foreground">Response Time</label>
+              <p className="text-foreground font-medium">{bid.responseTime}</p>
             </div>
           </div>
-
-          <div>
-            <label className="text-sm font-medium text-muted-foreground">Response Time</label>
-            <p className="text-foreground">{bid.responseTime}</p>
-          </div>
-
-          {bid.parts && bid.parts.length > 0 && (
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">Parts Required</label>
-              <div className="mt-2 space-y-2">
-                {bid.parts.map((part: any, index: number) => (
-                  <div key={part.id || index} className="flex justify-between items-center p-2 bg-muted rounded">
-                    <span>{part.name} (Qty: {part.quantity})</span>
-                    <span className="font-medium">${part.estimatedCost}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {bid.additionalNotes && (
             <div>
@@ -357,18 +334,14 @@ export function MarketplaceTicketsView() {
                           </Badge>
                         </div>
                         
-                        <div className="grid grid-cols-3 gap-4 mb-3">
+                        <div className="grid grid-cols-2 gap-4 mb-3">
                           <div>
                             <span className="text-xs text-muted-foreground">Your Bid</span>
-                            <p className="font-semibold text-foreground">${bid.totalAmount}</p>
+                            <p className="font-semibold text-lg text-foreground">${bid.totalAmount}</p>
                           </div>
                           <div>
-                            <span className="text-xs text-muted-foreground">Rate/Hour</span>
-                            <p className="font-medium text-foreground">${bid.hourlyRate}</p>
-                          </div>
-                          <div>
-                            <span className="text-xs text-muted-foreground">Est. Hours</span>
-                            <p className="font-medium text-foreground">{bid.estimatedHours}h</p>
+                            <span className="text-xs text-muted-foreground">Response Time</span>
+                            <p className="font-medium text-foreground">{bid.responseTime}</p>
                           </div>
                         </div>
 
