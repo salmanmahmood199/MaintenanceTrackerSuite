@@ -19,6 +19,7 @@ import {
   eventExceptions,
   availabilityConfigs,
   googleCalendarIntegrations,
+  passwordResetTokens,
   type User, 
   type InsertUser, 
   type InsertSubAdmin,
@@ -54,6 +55,7 @@ import {
   type InsertAvailabilityConfig,
   type GoogleCalendarIntegration,
   type InsertGoogleCalendarIntegration,
+  type PasswordResetToken,
   InsertResidentialUser,
 } from "@shared/schema";
 import { db } from "./db";
@@ -228,6 +230,13 @@ export interface IStorage {
   // Validation methods
   checkEmailExists(email: string, excludeId?: number, excludeType?: 'user' | 'organization' | 'vendor'): Promise<boolean>;
   checkPhoneExists(phone: string, excludeId?: number, excludeType?: 'user' | 'organization' | 'vendor'): Promise<boolean>;
+
+  // Password reset operations
+  createPasswordResetToken(userId: number, token: string, expiresAt: Date): Promise<PasswordResetToken>;
+  getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined>;
+  markPasswordResetTokenAsUsed(token: string): Promise<boolean>;
+  deleteExpiredPasswordResetTokens(): Promise<void>;
+  updateUserPassword(userId: number, newPassword: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2207,6 +2216,51 @@ export class DatabaseStorage implements IStorage {
       tickets: assignedTickets,
       availability
     };
+  }
+
+  // Password reset operations
+  async createPasswordResetToken(userId: number, token: string, expiresAt: Date): Promise<PasswordResetToken> {
+    const [resetToken] = await db.insert(passwordResetTokens).values({
+      userId,
+      token,
+      expiresAt,
+      used: false,
+    }).returning();
+    return resetToken;
+  }
+
+  async getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined> {
+    const [resetToken] = await db.select()
+      .from(passwordResetTokens)
+      .where(and(
+        eq(passwordResetTokens.token, token),
+        eq(passwordResetTokens.used, false),
+        gte(passwordResetTokens.expiresAt, new Date())
+      ));
+    return resetToken;
+  }
+
+  async markPasswordResetTokenAsUsed(token: string): Promise<boolean> {
+    const result = await db.update(passwordResetTokens)
+      .set({ used: true })
+      .where(eq(passwordResetTokens.token, token));
+    return result.rowCount > 0;
+  }
+
+  async deleteExpiredPasswordResetTokens(): Promise<void> {
+    await db.delete(passwordResetTokens)
+      .where(or(
+        eq(passwordResetTokens.used, true),
+        lte(passwordResetTokens.expiresAt, new Date())
+      ));
+  }
+
+  async updateUserPassword(userId: number, newPassword: string): Promise<boolean> {
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const result = await db.update(users)
+      .set({ password: hashedPassword })
+      .where(eq(users.id, userId));
+    return result.rowCount > 0;
   }
 }
 

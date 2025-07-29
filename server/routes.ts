@@ -16,10 +16,13 @@ import {
   insertTicketCommentSchema,
   insertMarketplaceBidSchema,
   insertResidentialUserSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
   type Ticket,
   type User,
   type AuthenticatedRequest,
 } from "@shared/schema";
+import { generateResetToken, sendPasswordResetEmail, sendPasswordResetConfirmationEmail } from "./email-service";
 import {
   getSessionConfig,
   authenticateUser,
@@ -208,6 +211,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
       state: req.user!.state,
       zipCode: req.user!.zipCode,
     });
+  });
+
+  // Password reset routes
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const { email } = forgotPasswordSchema.parse(req.body);
+      
+      // Find user by email
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        // Don't reveal if email exists or not for security
+        return res.json({ message: "If the email exists, a password reset link has been sent." });
+      }
+
+      // Generate reset token (15 minutes expiry)
+      const resetToken = generateResetToken();
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+      // Clean up expired tokens first
+      await storage.deleteExpiredPasswordResetTokens();
+
+      // Create password reset token
+      await storage.createPasswordResetToken(user.id, resetToken, expiresAt);
+
+      // Send password reset email
+      await sendPasswordResetEmail(email, resetToken, user.firstName || '');
+
+      res.json({ message: "If the email exists, a password reset link has been sent." });
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          message: "Validation error",
+          errors: error.errors,
+        });
+      }
+      res.status(500).json({ message: "Failed to process password reset request" });
+    }
+  });
+
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const validatedData = resetPasswordSchema.parse(req.body);
+      
+      // Verify reset token
+      const resetToken = await storage.getPasswordResetToken(validatedData.token);
+      if (!resetToken) {
+        return res.status(400).json({ message: "Invalid or expired reset token" });
+      }
+
+      // Get user
+      const user = await storage.getUser(resetToken.userId);
+      if (!user) {
+        return res.status(400).json({ message: "User not found" });
+      }
+
+      // Update user password
+      const passwordUpdated = await storage.updateUserPassword(resetToken.userId, validatedData.password);
+      if (!passwordUpdated) {
+        return res.status(500).json({ message: "Failed to update password" });
+      }
+
+      // Mark token as used
+      await storage.markPasswordResetTokenAsUsed(validatedData.token);
+
+      // Send confirmation email
+      try {
+        await sendPasswordResetConfirmationEmail(user.email, user.firstName || '');
+      } catch (emailError) {
+        console.error("Failed to send confirmation email:", emailError);
+        // Don't fail the password reset if confirmation email fails
+      }
+
+      res.json({ message: "Password reset successful" });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          message: "Validation error",
+          errors: error.errors,
+        });
+      }
+      res.status(500).json({ message: "Failed to reset password" });
+    }
   });
 
   // AI Assistant route

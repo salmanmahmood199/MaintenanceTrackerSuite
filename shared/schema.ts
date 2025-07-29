@@ -525,6 +525,16 @@ export const availabilityConfigs = pgTable("availability_configs", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Password reset tokens table for email-based password recovery
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  used: boolean("used").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const calendarEventsRelations = relations(calendarEvents, ({ one, many }) => ({
   user: one(users, {
     fields: [calendarEvents.userId],
@@ -550,6 +560,13 @@ export const eventExceptionsRelations = relations(eventExceptions, ({ one }) => 
 export const availabilityConfigsRelations = relations(availabilityConfigs, ({ one }) => ({
   user: one(users, {
     fields: [availabilityConfigs.userId],
+    references: [users.id],
+  }),
+}));
+
+export const passwordResetTokensRelations = relations(passwordResetTokens, ({ one }) => ({
+  user: one(users, {
+    fields: [passwordResetTokens.userId],
     references: [users.id],
   }),
 }));
@@ -733,6 +750,20 @@ export const insertResidentialTicketSchema = z.object({
   path: ["serviceStreetAddress"],
 });
 
+// Password reset schemas
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, "Reset token is required"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string().min(6, "Please confirm your password"),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertSubAdmin = z.infer<typeof insertSubAdminSchema>;
@@ -766,6 +797,9 @@ export type UserLocationAssignment = typeof userLocationAssignments.$inferSelect
 export type LoginData = z.infer<typeof loginSchema>;
 export type InsertResidentialUser = z.infer<typeof insertResidentialUserSchema>;
 export type InsertResidentialTicket = z.infer<typeof insertResidentialTicketSchema>;
+export type ForgotPassword = z.infer<typeof forgotPasswordSchema>;
+export type ResetPassword = z.infer<typeof resetPasswordSchema>;
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 
 // Ticket comment types
 export type TicketComment = typeof ticketComments.$inferSelect;

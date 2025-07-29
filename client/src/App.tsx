@@ -14,6 +14,8 @@ import Calendar from "@/pages/calendar";
 import NotFound from "@/pages/not-found";
 import { ResidentialRegisterPage } from "@/pages/residential-register";
 import ResidentialDashboard from "@/pages/residential-dashboard";
+import ForgotPasswordPage from "@/pages/forgot-password";
+import ResetPasswordPage from "@/pages/reset-password";
 
 function Router() {
   const { user, isAuthenticated, isLoading, isRoot } = useAuth();
@@ -31,6 +33,8 @@ function Router() {
       <Switch>
         <Route path="/login" component={Login} />
         <Route path="/register/residential" component={ResidentialRegisterPage} />
+        <Route path="/forgot-password" component={ForgotPasswordPage} />
+        <Route path="/reset-password" component={ResetPasswordPage} />
         <Route component={() => <Login />} />
       </Switch>
     );
