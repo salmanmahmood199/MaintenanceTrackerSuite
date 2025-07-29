@@ -1087,6 +1087,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Handle residential users differently
       if (user.role === "residential") {
+        let residentialAddress, residentialCity, residentialState, residentialZip;
+        
+        // Check if user wants to use home address or provided new address
+        if (req.body.useHomeAddress === "true") {
+          residentialAddress = user.address;
+          residentialCity = user.city;
+          residentialState = user.state;
+          residentialZip = user.zipCode;
+        } else {
+          // Use provided service address
+          residentialAddress = req.body.address;
+          residentialCity = req.body.city;
+          residentialState = req.body.state;
+          residentialZip = req.body.zipCode;
+          
+          // If address2 is provided, combine it with address
+          if (req.body.address2) {
+            residentialAddress = `${req.body.address}, ${req.body.address2}`;
+          }
+        }
+
         const ticketData = {
           title: req.body.title,
           description: req.body.description,
@@ -1095,10 +1116,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           organizationId: null, // No organization for residential
           reporterId: user.id,
           locationId: null,
-          residentialAddress: req.body.address || user.address,
-          residentialCity: req.body.city || user.city,
-          residentialState: req.body.state || user.state,
-          residentialZip: req.body.zipCode || user.zipCode,
+          residentialAddress,
+          residentialCity,
+          residentialState,
+          residentialZip,
           images: imageUrls,
         };
 

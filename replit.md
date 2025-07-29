@@ -414,6 +414,10 @@ Changelog:
 - July 28, 2025. Enhanced database schema with residential address fields for both users and tickets tables
 - July 28, 2025. Added residential user registration link to login page for easy onboarding
 - July 28, 2025. Residential tickets automatically assigned to marketplace for vendor bidding without organization approval
+- July 29, 2025. Enhanced residential ticket creation with flexible address options - users can choose home address or enter new service address
+- July 29, 2025. Implemented comprehensive email and phone validation across entire platform preventing duplicates across users, organizations, and vendors
+- July 29, 2025. Updated all API routes with validation functions ensuring unique emails and 10-digit phone numbers with proper format validation
+- July 29, 2025. Created dedicated residential ticket modal with address selection and full service address input fields including apartment/unit support
 ```
 
 ## User Preferences

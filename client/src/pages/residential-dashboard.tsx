@@ -6,9 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { ResidentialTicketModal } from "@/components/residential-ticket-modal";
 import { MarketplaceBidsModal } from "@/components/marketplace-bids-modal";
 import { useAuth } from "@/hooks/useAuth";
-import { Ticket } from "@shared/schema";
+import { Ticket, type InsertResidentialTicket } from "@shared/schema";
 import { Plus, Home, MapPin, Clock, AlertCircle, LogOut, Eye } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 function ResidentialDashboard() {
   const { user } = useAuth();
@@ -17,6 +18,7 @@ function ResidentialDashboard() {
   const [selectedBidsTicket, setSelectedBidsTicket] = useState<Ticket | null>(null);
   const [showBidsModal, setShowBidsModal] = useState(false);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
@@ -55,6 +57,58 @@ function ResidentialDashboard() {
   const { data: tickets = [], isLoading } = useQuery<Ticket[]>({
     queryKey: ["/api/tickets"],
     enabled: !!user,
+  });
+
+  const createTicketMutation = useMutation({
+    mutationFn: async ({ data, images }: { data: InsertResidentialTicket; images: File[] }) => {
+      const formData = new FormData();
+      
+      // Add form fields
+      formData.append("title", data.title);
+      formData.append("description", data.description);
+      formData.append("priority", data.priority);
+      
+      // Handle address based on useHomeAddress flag
+      if (data.useHomeAddress) {
+        // Use home address from user profile
+        formData.append("useHomeAddress", "true");
+      } else {
+        // Use provided service address
+        formData.append("useHomeAddress", "false");
+        formData.append("address", data.serviceStreetAddress || "");
+        formData.append("address2", data.serviceStreetAddress2 || "");
+        formData.append("city", data.serviceCity || "");
+        formData.append("state", data.serviceState || "");
+        formData.append("zipCode", data.serviceZipCode || "");
+      }
+
+      // Add images
+      images.forEach((image) => {
+        formData.append("images", image);
+      });
+
+      const response = await apiRequest("POST", "/api/tickets", formData);
+      if (!response.ok) {
+        throw new Error(`Failed to create ticket: ${response.status}`);
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+      setShowCreateTicket(false);
+      toast({
+        title: "Service Request Created",
+        description: "Your service request has been submitted to the marketplace for vendor bids.",
+      });
+    },
+    onError: (error: any) => {
+      console.error("Create ticket error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create service request. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   const getStatusBadge = (status: string) => {
@@ -248,7 +302,14 @@ function ResidentialDashboard() {
         <ResidentialTicketModal 
           open={showCreateTicket}
           onOpenChange={setShowCreateTicket}
-          userId={user.id}
+          onSubmit={(data, images) => createTicketMutation.mutate({ data, images })}
+          isLoading={createTicketMutation.isPending}
+          userHomeAddress={{
+            address: user.address || "",
+            city: user.city || "",
+            state: user.state || "",
+            zipCode: user.zipCode || "",
+          }}
         />
       )}
 

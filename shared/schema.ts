@@ -706,6 +706,33 @@ export const insertResidentialUserSchema = z.object({
   zipCode: z.string().min(5, "ZIP code is required"),
 });
 
+export const insertResidentialTicketSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: z.string().min(1, "Description is required"),
+  priority: z.enum(["low", "medium", "high"]),
+  useHomeAddress: z.boolean(),
+  // Service address fields (required when useHomeAddress is false)
+  serviceStreetAddress: z.string().optional(),
+  serviceStreetAddress2: z.string().optional(),
+  serviceCity: z.string().optional(),
+  serviceState: z.string().optional(),
+  serviceZipCode: z.string().optional(),
+}).refine((data) => {
+  // If not using home address, service address fields are required
+  if (!data.useHomeAddress) {
+    return (
+      data.serviceStreetAddress && 
+      data.serviceCity && 
+      data.serviceState && 
+      data.serviceZipCode
+    );
+  }
+  return true;
+}, {
+  message: "Service address is required when not using home address",
+  path: ["serviceStreetAddress"],
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertSubAdmin = z.infer<typeof insertSubAdminSchema>;
@@ -738,6 +765,7 @@ export type InsertUserLocationAssignment = z.infer<typeof insertUserLocationAssi
 export type UserLocationAssignment = typeof userLocationAssignments.$inferSelect;
 export type LoginData = z.infer<typeof loginSchema>;
 export type InsertResidentialUser = z.infer<typeof insertResidentialUserSchema>;
+export type InsertResidentialTicket = z.infer<typeof insertResidentialTicketSchema>;
 
 // Ticket comment types
 export type TicketComment = typeof ticketComments.$inferSelect;
