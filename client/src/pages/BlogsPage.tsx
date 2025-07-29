@@ -129,7 +129,7 @@ export default function BlogsPage() {
   const featuredPosts = blogPosts.filter(post => post.featured);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-teal-900 to-cyan-900 text-white">
       {/* Animated Background */}
       <div className="fixed inset-0 opacity-20">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 animate-pulse"></div>
@@ -149,18 +149,20 @@ export default function BlogsPage() {
 
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
-                  <Rocket className="w-6 h-6 text-white" />
-                </div>
+                <img 
+                  src="/assets/taskscout-logo.png" 
+                  alt="TaskScout Logo" 
+                  className="w-12 h-12 object-contain"
+                />
                 <div>
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
                     TaskScout Blog
                   </h1>
                   <p className="text-gray-400">DMV Area Property Management Insights</p>
                 </div>
               </div>
               <Link href="/contact">
-                <Button className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">
+                <Button className="bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-500 hover:from-teal-600 hover:via-cyan-600 hover:to-blue-600">
                   Start Free Trial
                 </Button>
               </Link>

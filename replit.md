@@ -457,6 +457,14 @@ Changelog:
 - July 29, 2025. Added client-side URL validation accepting simple domains like "taskscout.ai" with automatic https:// prefix
 - July 29, 2025. Added navigation links to blog section in homepage header for better accessibility
 - July 29, 2025. Contact form fully operational with comprehensive validation and email integration to hello@taskscout.ai
+- July 29, 2025. Enhanced homepage with sticky navigation header for better user experience during scrolling
+- July 29, 2025. Added comprehensive pricing section at top of homepage with clear navigation anchors (#pricing, #features, #testimonials)
+- July 29, 2025. Updated footer with professional layout including Privacy Policy, Terms of Service, and Support links
+- July 29, 2025. Changed copyright year from 2024 to 2025 across all pages
+- July 29, 2025. Replaced rocket icons with TaskScout logo in mobile phone mockup and footer for consistent branding
+- July 29, 2025. Updated Contact and Blog pages to match teal/turquoise color scheme consistent with new logo branding
+- July 29, 2025. Added proper section IDs for smooth navigation scrolling (pricing, features, testimonials sections)
+- July 29, 2025. Enhanced navigation with pricing link and teal hover effects matching new brand colors
 ```
 
 ## User Preferences

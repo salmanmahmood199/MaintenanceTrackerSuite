@@ -239,7 +239,7 @@ export default function HomePage() {
       </div>
 
       {/* Navigation */}
-      <nav className="relative z-10 flex items-center justify-between p-6 backdrop-blur-sm">
+      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between p-6 backdrop-blur-md bg-black/20 border-b border-white/10">
         <div className="flex items-center space-x-3">
           <img 
             src="/assets/taskscout-logo.png" 
@@ -251,10 +251,16 @@ export default function HomePage() {
           </h1>
         </div>
         <div className="hidden md:flex items-center space-x-6 text-gray-300">
-          <Link href="/blogs" className="hover:text-white transition-colors">
+          <a href="#pricing" className="hover:text-teal-300 transition-colors">
+            Pricing
+          </a>
+          <Link href="/blogs" className="hover:text-teal-300 transition-colors">
             Blog
           </Link>
-          <Link href="/contact" className="hover:text-white transition-colors">
+          <a href="#features" className="hover:text-teal-300 transition-colors">
+            Features
+          </a>
+          <Link href="/contact" className="hover:text-teal-300 transition-colors">
             Contact
           </Link>
         </div>
@@ -273,7 +279,7 @@ export default function HomePage() {
       </nav>
 
       {/* Hero Section */}
-      <section className={`relative z-10 px-6 py-20 text-center transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+      <section className={`relative z-10 px-6 pt-32 pb-20 text-center transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
         <div className="max-w-6xl mx-auto">
           <Badge className="mb-6 bg-gradient-to-r from-teal-500/20 to-cyan-500/20 text-teal-300 border-teal-500/30">
             <Star className="w-4 h-4 mr-2" />
@@ -663,7 +669,7 @@ export default function HomePage() {
           </div>
 
           {/* Transparent Pricing Section */}
-          <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-3xl p-8 backdrop-blur-sm text-center">
+          <div id="pricing" className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-3xl p-8 backdrop-blur-sm text-center">
             <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mb-6 mx-auto">
               <DollarSign className="w-8 h-8 text-white" />
             </div>
@@ -711,7 +717,7 @@ export default function HomePage() {
       </section>
 
       {/* Enhanced Features Grid with Screenshots */}
-      <section className="relative z-10 px-6 py-20">
+      <section id="features" className="relative z-10 px-6 py-20">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
@@ -1105,7 +1111,7 @@ export default function HomePage() {
       </section>
 
       {/* Testimonials */}
-      <section className="relative z-10 px-6 py-20">
+      <section id="testimonials" className="relative z-10 px-6 py-20">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
@@ -1181,8 +1187,11 @@ export default function HomePage() {
                 TaskScout
               </span>
             </div>
-            <div className="text-gray-400 text-sm">
-              © 2024 TaskScout. All rights reserved.
+            <div className="flex space-x-6 text-sm">
+              <a href="#" className="text-gray-400 hover:text-teal-300 transition-colors">Privacy Policy</a>
+              <a href="#" className="text-gray-400 hover:text-teal-300 transition-colors">Terms of Service</a>
+              <a href="#" className="text-gray-400 hover:text-teal-300 transition-colors">Support</a>
+              <span className="text-gray-400">© 2025 TaskScout. All rights reserved.</span>
             </div>
           </div>
         </div>
