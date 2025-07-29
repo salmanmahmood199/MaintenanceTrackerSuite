@@ -239,10 +239,12 @@ export default function HomePage() {
       {/* Navigation */}
       <nav className="relative z-10 flex items-center justify-between p-6 backdrop-blur-sm">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-            <Rocket className="w-6 h-6 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+          <img 
+            src="/attached_assets/Logo_1753808482955.png" 
+            alt="TaskScout Logo" 
+            className="w-12 h-12 object-contain"
+          />
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-teal-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
             TaskScout
           </h1>
         </div>
@@ -261,7 +263,7 @@ export default function HomePage() {
             </Button>
           </Link>
           <Link href="/contact">
-            <Button className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">
+            <Button className="bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-500 hover:from-teal-600 hover:via-cyan-600 hover:to-blue-600">
               Get Started
             </Button>
           </Link>
@@ -271,15 +273,15 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className={`relative z-10 px-6 py-20 text-center transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
         <div className="max-w-6xl mx-auto">
-          <Badge className="mb-6 bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-300 border-blue-500/30">
+          <Badge className="mb-6 bg-gradient-to-r from-teal-500/20 to-cyan-500/20 text-teal-300 border-teal-500/30">
             <Star className="w-4 h-4 mr-2" />
             Next-Generation Maintenance Platform
           </Badge>
           
-          <h1 className="text-6xl md:text-8xl font-bold mb-8 bg-gradient-to-r from-white via-blue-200 to-purple-200 bg-clip-text text-transparent leading-tight">
+          <h1 className="text-6xl md:text-8xl font-bold mb-8 bg-gradient-to-r from-white via-teal-200 to-cyan-200 bg-clip-text text-transparent leading-tight">
             The Future of
             <br />
-            <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-teal-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
               Maintenance
             </span>
           </h1>
@@ -291,7 +293,7 @@ export default function HomePage() {
 
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
             <Link href="/contact">
-              <Button size="lg" className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-lg px-8 py-4 rounded-full shadow-2xl transform hover:scale-105 transition-all duration-300">
+              <Button size="lg" className="bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-500 hover:from-teal-600 hover:via-cyan-600 hover:to-blue-600 text-lg px-8 py-4 rounded-full shadow-2xl transform hover:scale-105 transition-all duration-300">
                 Start Free Trial
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
@@ -314,12 +316,12 @@ export default function HomePage() {
                 <div className="w-72 h-[500px] bg-gradient-to-b from-gray-800 to-gray-900 rounded-[3rem] p-6 shadow-2xl border border-gray-700 relative overflow-hidden">
                   <div className="w-full h-full bg-gradient-to-b from-slate-800 to-slate-900 rounded-[2rem] relative overflow-hidden">
                     {/* Mobile Screen Content */}
-                    <div className="absolute inset-4 bg-gradient-to-b from-blue-900/20 to-purple-900/20 rounded-[1.5rem] p-4">
+                    <div className="absolute inset-4 bg-gradient-to-b from-teal-900/20 to-cyan-900/20 rounded-[1.5rem] p-4">
                       {/* Status Bar */}
                       <div className="flex justify-between items-center text-xs text-gray-400 mb-4">
                         <span>9:41</span>
                         <div className="flex space-x-1">
-                          <div className="w-4 h-2 bg-green-400 rounded-sm"></div>
+          <div className="w-4 h-2 bg-teal-400 rounded-sm"></div>
                           <Wifi className="w-3 h-3" />
                         </div>
                       </div>

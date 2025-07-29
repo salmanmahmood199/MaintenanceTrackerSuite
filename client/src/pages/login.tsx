@@ -65,10 +65,12 @@ export default function Login() {
       <div className="relative z-10 w-full max-w-md space-y-8">
         <div className="text-center">
           <div className="flex justify-center items-center space-x-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-              <Bolt className="h-6 w-6 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">TaskScout</h1>
+            <img 
+              src="/attached_assets/Logo_1753808482955.png" 
+              alt="TaskScout Logo" 
+              className="w-16 h-16 object-contain"
+            />
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-teal-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">TaskScout</h1>
           </div>
           <p className="text-gray-400">Sign in to your account</p>
         </div>
@@ -119,7 +121,7 @@ export default function Login() {
 
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
+                className="w-full bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-500 hover:from-teal-600 hover:via-cyan-600 hover:to-blue-600 text-white"
                 disabled={loginMutation.isPending}
               >
                 {loginMutation.isPending ? (
@@ -135,7 +137,7 @@ export default function Login() {
               <div className="text-center">
                 <a 
                   href="/forgot-password" 
-                  className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                  className="text-sm text-teal-400 hover:text-teal-300 transition-colors"
                 >
                   Forgot your password?
                 </a>
@@ -151,7 +153,7 @@ export default function Login() {
             <div className="mt-4 text-center">
               <p className="text-sm text-gray-400">
                 New residential user?{" "}
-                <a href="/register/residential" className="text-blue-400 hover:text-blue-300 transition-colors">
+                <a href="/register/residential" className="text-teal-400 hover:text-teal-300 transition-colors">
                   Register here
                 </a>
               </p>

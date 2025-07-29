@@ -152,7 +152,7 @@ export default function ContactPage() {
           </div>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/">
-              <Button className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">
+              <Button className="bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-500 hover:from-teal-600 hover:via-cyan-600 hover:to-blue-600">
                 Back to Home
               </Button>
             </Link>
@@ -187,10 +187,12 @@ export default function ContactPage() {
             </Link>
             
             <div className="flex items-center justify-center space-x-3 mb-6">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
-                <Rocket className="w-6 h-6 text-white" />
-              </div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              <img 
+                src="/attached_assets/Logo_1753808482955.png" 
+                alt="TaskScout Logo" 
+                className="w-16 h-16 object-contain"
+              />
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
                 TaskScout
               </h1>
             </div>
@@ -304,8 +306,8 @@ export default function ContactPage() {
                           <SelectItem value="maintenance-vendor">Maintenance Vendor/Service Provider</SelectItem>
                         </SelectContent>
                       </Select>
-                      <div className="mt-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                        <div className="text-sm text-blue-300">
+                      <div className="mt-2 p-3 bg-teal-500/10 border border-teal-500/20 rounded-lg">
+                        <div className="text-sm text-teal-300">
                           <div className="font-medium mb-1">ℹ️ Role Explanations:</div>
                           <div className="space-y-1 text-xs">
                             <div><strong>Commercial Business:</strong> Restaurant, gas station, hotel, retail store, or any business needing maintenance services through our marketplace</div>
@@ -347,7 +349,7 @@ export default function ContactPage() {
                     <Button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-lg py-4 rounded-xl"
+                      className="w-full bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-500 hover:from-teal-600 hover:via-cyan-600 hover:to-blue-600 text-lg py-4 rounded-xl"
                     >
                       {isSubmitting ? (
                         <div className="flex items-center space-x-2">
@@ -365,15 +367,15 @@ export default function ContactPage() {
 
             {/* Benefits Sidebar */}
             <div className="space-y-6">
-              <Card className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border-blue-500/20 backdrop-blur-sm">
+              <Card className="bg-gradient-to-br from-teal-500/10 to-cyan-500/10 border-teal-500/20 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <h3 className="text-xl font-bold mb-4 text-white flex items-center">
-                    <Sparkles className="w-6 h-6 mr-2 text-blue-400" />
+                    <Sparkles className="w-6 h-6 mr-2 text-teal-400" />
                     What's Included
                   </h3>
                   <ul className="space-y-3">
                     <li className="flex items-center space-x-3">
-                      <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                      <CheckCircle className="w-5 h-5 text-teal-400 flex-shrink-0" />
                       <span className="text-gray-300">14-day full-featured trial</span>
                     </li>
                     <li className="flex items-center space-x-3">
@@ -422,11 +424,11 @@ export default function ContactPage() {
               <div className="text-center">
                 <p className="text-gray-400 text-sm mb-2">Need help? Contact us directly:</p>
                 <div className="space-y-1">
-                  <a href="mailto:hello@taskscout.ai" className="flex items-center justify-center space-x-2 text-blue-400 hover:text-blue-300 transition-colors">
+                  <a href="mailto:hello@taskscout.ai" className="flex items-center justify-center space-x-2 text-teal-400 hover:text-teal-300 transition-colors">
                     <Mail className="w-4 h-4" />
                     <span>hello@taskscout.ai</span>
                   </a>
-                  <a href="tel:+1-555-TASKSCOUT" className="flex items-center justify-center space-x-2 text-blue-400 hover:text-blue-300 transition-colors">
+                  <a href="tel:+1-555-TASKSCOUT" className="flex items-center justify-center space-x-2 text-teal-400 hover:text-teal-300 transition-colors">
                     <Phone className="w-4 h-4" />
                     <span>(555) TASKSCOUT</span>
                   </a>
