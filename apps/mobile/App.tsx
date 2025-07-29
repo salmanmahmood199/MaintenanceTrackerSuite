@@ -10,6 +10,7 @@ import LoginScreen from './src/screens/LoginScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
 import TicketDetailsScreen from './src/screens/TicketDetailsScreen';
 import CreateTicketScreen from './src/screens/CreateTicketScreen';
+import MarketplaceScreen from './src/screens/MarketplaceScreen';
 
 // Import providers
 import { AuthProvider } from './src/contexts/AuthContext';
@@ -45,6 +46,11 @@ export default function App() {
               name="CreateTicket" 
               component={CreateTicketScreen}
               options={{ title: 'Create Ticket' }}
+            />
+            <Stack.Screen 
+              name="Marketplace" 
+              component={MarketplaceScreen}
+              options={{ title: 'Marketplace' }}
             />
           </Stack.Navigator>
         </NavigationContainer>

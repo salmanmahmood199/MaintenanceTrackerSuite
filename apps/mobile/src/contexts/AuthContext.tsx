@@ -6,16 +6,28 @@ import Constants from 'expo-constants';
 interface User {
   id: number;
   email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
   role: string;
   organizationId?: number;
   maintenanceVendorId?: number;
   assignedLocationIds?: number[];
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  permissions: string[];
+  vendorTiers: string[];
+  isActive: boolean;
 }
 
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
+  register: (userData: any) => Promise<boolean>;
+  forgotPassword: (email: string) => Promise<boolean>;
   isLoading: boolean;
 }
 
@@ -107,8 +119,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const register = async (userData: any): Promise<boolean> => {
+    try {
+      const response = await fetch(`${apiUrl}/api/auth/register/residential`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        await SecureStore.setItemAsync('sessionToken', 'authenticated');
+        setUser(data.user);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Registration error:', error);
+      return false;
+    }
+  };
+
+  const forgotPassword = async (email: string): Promise<boolean> => {
+    try {
+      const response = await fetch(`${apiUrl}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      return false;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, logout, register, forgotPassword, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

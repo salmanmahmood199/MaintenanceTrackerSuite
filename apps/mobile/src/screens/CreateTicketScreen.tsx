@@ -11,6 +11,15 @@ const CreateTicketScreen = ({ navigation }: any) => {
   const [priority, setPriority] = useState('medium');
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  
+  // Address fields for residential users
+  const [useHomeAddress, setUseHomeAddress] = useState(true);
+  const [serviceAddress, setServiceAddress] = useState('');
+  const [serviceCity, setServiceCity] = useState('');
+  const [serviceState, setServiceState] = useState('');
+  const [serviceZipCode, setServiceZipCode] = useState('');
+  const [serviceApartment, setServiceApartment] = useState('');
+  
   const { user } = useAuth();
 
   const pickImage = async () => {
@@ -44,13 +53,72 @@ const CreateTicketScreen = ({ navigation }: any) => {
       return;
     }
 
+    if (images.length === 0) {
+      Alert.alert('Error', 'Please upload at least one image or video');
+      return;
+    }
+
+    // For residential users, validate service address if not using home address
+    if (user?.role === 'residential' && !useHomeAddress) {
+      if (!serviceAddress || !serviceCity || !serviceState || !serviceZipCode) {
+        Alert.alert('Error', 'Please fill in all service address fields');
+        return;
+      }
+    }
+
     setLoading(true);
     try {
-      // TODO: Implement API call to create ticket
-      Alert.alert('Success', 'Ticket created successfully', [
-        { text: 'OK', onPress: () => navigation.goBack() }
-      ]);
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('description', description);
+      formData.append('priority', priority);
+
+      // Add address fields for residential users
+      if (user?.role === 'residential') {
+        if (useHomeAddress) {
+          formData.append('useHomeAddress', 'true');
+        } else {
+          formData.append('serviceAddress', serviceAddress);
+          formData.append('serviceCity', serviceCity);
+          formData.append('serviceState', serviceState);
+          formData.append('serviceZipCode', serviceZipCode);
+          if (serviceApartment) {
+            formData.append('serviceApartment', serviceApartment);
+          }
+        }
+      }
+
+      // Add images
+      images.forEach((imageUri, index) => {
+        const uriParts = imageUri.split('.');
+        const fileType = uriParts[uriParts.length - 1];
+        
+        formData.append('files', {
+          uri: imageUri,
+          name: `image_${index}.${fileType}`,
+          type: `image/${fileType}`,
+        } as any);
+      });
+
+      const response = await fetch('http://0.0.0.0:5000/api/tickets', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        Alert.alert('Success', 'Ticket created successfully', [
+          { text: 'OK', onPress: () => navigation.goBack() }
+        ]);
+      } else {
+        const errorData = await response.json();
+        Alert.alert('Error', errorData.message || 'Failed to create ticket');
+      }
     } catch (error) {
+      console.error('Create ticket error:', error);
       Alert.alert('Error', 'Failed to create ticket. Please try again.');
     } finally {
       setLoading(false);
@@ -94,8 +162,74 @@ const CreateTicketScreen = ({ navigation }: any) => {
             </Picker>
           </View>
           
+          {user?.role === 'residential' && (
+            <View style={styles.addressSection}>
+              <Title style={styles.sectionTitle}>Service Location</Title>
+              
+              <View style={styles.addressToggle}>
+                <Button
+                  mode={useHomeAddress ? 'contained' : 'outlined'}
+                  onPress={() => setUseHomeAddress(true)}
+                  style={styles.toggleButton}
+                >
+                  Use Home Address
+                </Button>
+                <Button
+                  mode={!useHomeAddress ? 'contained' : 'outlined'}
+                  onPress={() => setUseHomeAddress(false)}
+                  style={styles.toggleButton}
+                >
+                  Different Address
+                </Button>
+              </View>
+
+              {!useHomeAddress && (
+                <View style={styles.customAddress}>
+                  <TextInput
+                    label="Street Address"
+                    value={serviceAddress}
+                    onChangeText={setServiceAddress}
+                    mode="outlined"
+                    style={styles.input}
+                  />
+                  <TextInput
+                    label="Apartment/Unit (Optional)"
+                    value={serviceApartment}
+                    onChangeText={setServiceApartment}
+                    mode="outlined"
+                    style={styles.input}
+                  />
+                  <TextInput
+                    label="City"
+                    value={serviceCity}
+                    onChangeText={setServiceCity}
+                    mode="outlined"
+                    style={styles.input}
+                  />
+                  <View style={styles.row}>
+                    <TextInput
+                      label="State"
+                      value={serviceState}
+                      onChangeText={setServiceState}
+                      mode="outlined"
+                      style={[styles.input, styles.halfWidth]}
+                    />
+                    <TextInput
+                      label="ZIP Code"
+                      value={serviceZipCode}
+                      onChangeText={setServiceZipCode}
+                      mode="outlined"
+                      style={[styles.input, styles.halfWidth]}
+                      keyboardType="numeric"
+                    />
+                  </View>
+                </View>
+              )}
+            </View>
+          )}
+
           <View style={styles.imageSection}>
-            <Title style={styles.sectionTitle}>Images</Title>
+            <Title style={styles.sectionTitle}>Images/Videos *</Title>
             <View style={styles.imageButtons}>
               <Button
                 mode="outlined"
@@ -173,6 +307,27 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     marginTop: 16,
+  },
+  addressSection: {
+    marginBottom: 16,
+  },
+  addressToggle: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    gap: 8,
+  },
+  toggleButton: {
+    flex: 1,
+  },
+  customAddress: {
+    marginTop: 8,
+  },
+  row: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  halfWidth: {
+    flex: 1,
   },
 });
 
