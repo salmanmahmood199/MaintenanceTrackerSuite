@@ -45,8 +45,9 @@ export default function ResetPasswordPage() {
       setIsLoading(true);
       setError(null);
       
-      await apiRequest("/api/auth/reset-password", {
+      await fetch("/api/auth/reset-password", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
 
