@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
+import HomePage from "@/pages/HomePage";
 import Dashboard from "@/pages/dashboard";
 import Login from "@/pages/login";
 import AdminDashboard from "@/pages/admin-dashboard";
@@ -31,11 +32,14 @@ function Router() {
   if (!isAuthenticated) {
     return (
       <Switch>
+        <Route path="/" component={HomePage} />
+        <Route path="/home" component={HomePage} />
         <Route path="/login" component={Login} />
+        <Route path="/register" component={HomePage} />
         <Route path="/register/residential" component={ResidentialRegisterPage} />
         <Route path="/forgot-password" component={ForgotPasswordPage} />
         <Route path="/reset-password" component={ResetPasswordPage} />
-        <Route component={() => <Login />} />
+        <Route component={HomePage} />
       </Switch>
     );
   }
