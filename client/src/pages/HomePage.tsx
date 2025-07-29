@@ -282,7 +282,7 @@ export default function HomePage() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
-            <Link href="/register">
+            <Link href="/contact">
               <Button size="lg" className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-lg px-8 py-4 rounded-full shadow-2xl transform hover:scale-105 transition-all duration-300">
                 Start Free Trial
                 <ArrowRight className="ml-2 w-5 h-5" />
