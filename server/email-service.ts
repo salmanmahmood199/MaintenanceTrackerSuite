@@ -173,34 +173,11 @@ export async function sendResidentialWelcomeEmail(
   };
 
   try {
-    // Add connection debugging
-    console.log('🔄 Attempting to send welcome email...');
-    console.log('📧 Using email:', process.env.GMAIL_USER);
-    console.log('🔐 App password length:', process.env.GMAIL_APP_PASSWORD?.length);
-    
     await transporter.sendMail(mailOptions);
     console.log(`✅ Welcome email sent successfully to ${email}`);
   } catch (error) {
     console.error('❌ Error sending welcome email:', error);
-    
-    // Check specific error types
-    if (error.responseCode === 534) {
-      console.log('\n🚨 GOOGLE WORKSPACE SETUP REQUIRED:');
-      console.log('1. Enable 2-Factor Authentication on hello@taskscout.ai');
-      console.log('2. Go to Google Account Settings → Security → 2-Step Verification');
-      console.log('3. Click "App passwords" and generate a new password for "Mail"');
-      console.log('4. Use the 16-character app password (no spaces)');
-    }
-    
-    // For debugging purposes, log the email content that would have been sent
-    console.log('\n🔍 EMAIL DEBUG - Welcome email that would have been sent:');
-    console.log('To:', email);
-    console.log('Subject:', mailOptions.subject);
-    console.log('Content preview:', `Welcome ${fullName}! Your TaskScout account is ready.`);
-    console.log('Registration is successful, but email delivery failed due to SMTP configuration.\n');
-    
-    // Don't throw error - allow registration to complete
-    console.log('⚠️  Registration completed successfully despite email delivery issue');
+    throw new Error('Failed to send welcome email');
   }
 }
 
