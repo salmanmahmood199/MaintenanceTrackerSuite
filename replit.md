@@ -424,6 +424,13 @@ Changelog:
 - July 29, 2025. Simplified marketplace bidding form - removed Required Parts section and Estimated Hours field for streamlined vendor experience
 - July 29, 2025. Enhanced bidding workflow with hourly rate input and response time selection only (no hour estimation required)
 - July 29, 2025. Updated bid display components to show hourly rate instead of total amount, maintaining hourly pricing model without complexity
+- July 29, 2025. Implemented comprehensive Gmail SMTP-based password recovery system with secure 15-minute expiry tokens
+- July 29, 2025. Added password reset database table and API endpoints for forgot/reset password workflow
+- July 29, 2025. Created professional email templates for password reset and confirmation notifications
+- July 29, 2025. Built frontend components for forgot password and reset password pages with proper validation
+- July 29, 2025. Added "Forgot your password?" link to login page for easy access to password recovery
+- July 29, 2025. Enhanced residential user registration with welcome email functionality
+- July 29, 2025. Created comprehensive welcome email template with platform overview and getting started tips
 ```
 
 ## User Preferences

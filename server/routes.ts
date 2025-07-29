@@ -22,7 +22,7 @@ import {
   type User,
   type AuthenticatedRequest,
 } from "@shared/schema";
-import { generateResetToken, sendPasswordResetEmail, sendPasswordResetConfirmationEmail } from "./email-service";
+import { generateResetToken, sendPasswordResetEmail, sendPasswordResetConfirmationEmail, sendResidentialWelcomeEmail } from "./email-service";
 import {
   getSessionConfig,
   authenticateUser,
@@ -156,6 +156,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const user = await storage.createResidentialUser(validatedData);
+
+      // Send welcome email (don't fail registration if email fails)
+      try {
+        await sendResidentialWelcomeEmail(
+          user.email, 
+          user.firstName || '', 
+          user.lastName || ''
+        );
+        console.log(`Welcome email sent to new residential user: ${user.email}`);
+      } catch (emailError) {
+        console.error('Failed to send welcome email:', emailError);
+        // Don't fail the registration if email fails
+      }
 
       // Remove password from response
       const { password, ...userWithoutPassword } = user;
