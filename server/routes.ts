@@ -35,6 +35,7 @@ import multer from "multer";
 import bcrypt from "bcrypt";
 import path from "path";
 import fs from "fs";
+import nodemailer from "nodemailer";
 import { db } from "./db";
 import { and, eq, desc, inArray } from "drizzle-orm";
 import { invoices, tickets } from "@shared/schema";
@@ -4149,8 +4150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Send email notification
-      const nodemailer = await import('nodemailer');
-      const transporter = nodemailer.createTransporter({
+      const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
           user: process.env.GMAIL_USER,

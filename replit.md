@@ -451,6 +451,12 @@ Changelog:
 - July 29, 2025. Created SEO-optimized blogs section targeting DMV/Washington DC area with property management content and search functionality
 - July 29, 2025. Added contact form email integration with professional welcome emails and confirmation notifications for trial requests
 - July 29, 2025. Enhanced homepage "Start Free Trial" button to redirect to new contact page for lead generation
+- July 29, 2025. Fixed nodemailer import error - contact form submissions now work properly with proper ES module import
+- July 29, 2025. Updated platform messaging to reflect broader business maintenance context (restaurants, gas stations, hotels) beyond property
+- July 29, 2025. Enhanced contact form with vendor vs commercial business selection and marketplace explanations
+- July 29, 2025. Added client-side URL validation accepting simple domains like "taskscout.ai" with automatic https:// prefix
+- July 29, 2025. Added navigation links to blog section in homepage header for better accessibility
+- July 29, 2025. Contact form fully operational with comprehensive validation and email integration to hello@taskscout.ai
 ```
 
 ## User Preferences
