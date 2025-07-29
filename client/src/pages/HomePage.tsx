@@ -246,13 +246,21 @@ export default function HomePage() {
             TaskScout
           </h1>
         </div>
+        <div className="hidden md:flex items-center space-x-6 text-gray-300">
+          <Link href="/blogs" className="hover:text-white transition-colors">
+            Blog
+          </Link>
+          <Link href="/contact" className="hover:text-white transition-colors">
+            Contact
+          </Link>
+        </div>
         <div className="flex items-center space-x-4">
           <Link href="/login">
             <Button variant="outline" className="border-white/20 text-white hover:bg-white/10">
               Login
             </Button>
           </Link>
-          <Link href="/register">
+          <Link href="/contact">
             <Button className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">
               Get Started
             </Button>
@@ -277,7 +285,7 @@ export default function HomePage() {
           </h1>
           
           <p className="text-xl md:text-2xl text-gray-300 mb-12 max-w-4xl mx-auto leading-relaxed">
-            Revolutionize your property maintenance with AI-powered automation, 
+            Revolutionize your business maintenance with AI-powered automation, marketplace bidding for commercial and residential customers, 
             real-time collaboration, and seamless mobile experiences across web and native apps.
           </p>
 

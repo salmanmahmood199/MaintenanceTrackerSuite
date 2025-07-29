@@ -30,6 +30,7 @@ export default function ContactPage() {
     website: '',
     companySize: '',
     useCase: '',
+    userType: '',
     details: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,12 +42,60 @@ export default function ContactPage() {
     setIsSubmitting(true);
 
     try {
+      // Validate required fields
+      if (!formData.name || !formData.email || !formData.phone || !formData.company || !formData.companySize || !formData.useCase || !formData.userType) {
+        toast({
+          title: "Error",
+          description: "Please fill in all required fields.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        toast({
+          title: "Error",
+          description: "Please enter a valid email address.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Validate website URL if provided (allow simple domain names)
+      let submitData = { ...formData };
+      if (formData.website && formData.website.trim()) {
+        let websiteUrl = formData.website.trim();
+        
+        // Add https:// if no protocol specified
+        if (!websiteUrl.startsWith('http://') && !websiteUrl.startsWith('https://')) {
+          websiteUrl = 'https://' + websiteUrl;
+        }
+        
+        try {
+          new URL(websiteUrl);
+          // Update submitData with the corrected URL
+          submitData.website = websiteUrl;
+        } catch {
+          toast({
+            title: "Error",
+            description: "Please enter a valid website (e.g., taskscout.ai or https://taskscout.ai).",
+            variant: "destructive",
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       const response = await fetch('/api/contact/trial-request', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(submitData),
       });
 
       if (response.ok) {
@@ -56,12 +105,13 @@ export default function ContactPage() {
           description: "We'll get back to you within 24 hours to set up your free trial.",
         });
       } else {
-        throw new Error('Failed to submit request');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to submit request');
       }
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to submit your request. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to submit your request. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -219,11 +269,11 @@ export default function ContactPage() {
                         <Label htmlFor="website" className="text-white">Company Website</Label>
                         <Input
                           id="website"
-                          type="url"
+                          type="text"
                           value={formData.website}
                           onChange={(e) => handleInputChange('website', e.target.value)}
                           className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
-                          placeholder="https://company.com"
+                          placeholder="taskscout.ai or https://taskscout.ai"
                         />
                       </div>
                       <div className="space-y-2">
@@ -244,17 +294,40 @@ export default function ContactPage() {
                     </div>
 
                     <div className="space-y-2">
+                      <Label htmlFor="userType" className="text-white">I am a *</Label>
+                      <Select value={formData.userType} onValueChange={(value) => handleInputChange('userType', value)}>
+                        <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                          <SelectValue placeholder="Select your role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="commercial-business">Commercial Business Owner/Manager</SelectItem>
+                          <SelectItem value="maintenance-vendor">Maintenance Vendor/Service Provider</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <div className="mt-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                        <div className="text-sm text-blue-300">
+                          <div className="font-medium mb-1">ℹ️ Role Explanations:</div>
+                          <div className="space-y-1 text-xs">
+                            <div><strong>Commercial Business:</strong> Restaurant, gas station, hotel, retail store, or any business needing maintenance services through our marketplace</div>
+                            <div><strong>Maintenance Vendor:</strong> HVAC, plumbing, electrical, cleaning, or other service providers who want to find new customers through bidding</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
                       <Label htmlFor="useCase" className="text-white">Primary Use Case *</Label>
                       <Select value={formData.useCase} onValueChange={(value) => handleInputChange('useCase', value)}>
                         <SelectTrigger className="bg-white/10 border-white/20 text-white">
                           <SelectValue placeholder="What will you primarily use TaskScout for?" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="property-management">Property Management</SelectItem>
-                          <SelectItem value="facilities-management">Facilities Management</SelectItem>
-                          <SelectItem value="vendor-coordination">Vendor Coordination</SelectItem>
-                          <SelectItem value="maintenance-tracking">Maintenance Tracking</SelectItem>
-                          <SelectItem value="residential-services">Residential Services</SelectItem>
+                          <SelectItem value="business-maintenance">Manage my business maintenance needs</SelectItem>
+                          <SelectItem value="marketplace-bidding">Find maintenance work through marketplace bidding</SelectItem>
+                          <SelectItem value="vendor-management">Manage my service provider network</SelectItem>
+                          <SelectItem value="cost-tracking">Track maintenance costs and invoicing</SelectItem>
+                          <SelectItem value="mobile-operations">Mobile field operations and work orders</SelectItem>
+                          <SelectItem value="residential-services">Provide services to residential customers</SelectItem>
                           <SelectItem value="other">Other</SelectItem>
                         </SelectContent>
                       </Select>

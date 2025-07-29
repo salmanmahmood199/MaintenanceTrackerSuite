@@ -4141,16 +4141,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Contact form submission for free trial requests
   app.post('/api/contact/trial-request', async (req, res) => {
     try {
-      const { name, email, phone, company, website, companySize, useCase, details } = req.body;
+      const { name, email, phone, company, website, companySize, useCase, userType, details } = req.body;
 
       // Validate required fields
-      if (!name || !email || !phone || !company || !companySize || !useCase) {
+      if (!name || !email || !phone || !company || !companySize || !useCase || !userType) {
         return res.status(400).json({ error: 'Missing required fields' });
       }
 
       // Send email notification
       const nodemailer = await import('nodemailer');
-      const transporter = nodemailer.default.createTransporter({
+      const transporter = nodemailer.createTransporter({
         service: 'gmail',
         auth: {
           user: process.env.GMAIL_USER,
@@ -4200,6 +4200,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 <td style="padding: 8px 0; color: #1e293b;">${companySize}</td>
               </tr>
               <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #475569;">User Type:</td>
+                <td style="padding: 8px 0; color: #1e293b;">${userType}</td>
+              </tr>
+              <tr>
                 <td style="padding: 8px 0; font-weight: bold; color: #475569;">Use Case:</td>
                 <td style="padding: 8px 0; color: #1e293b;">${useCase}</td>
               </tr>
@@ -4234,7 +4238,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             <p style="color: #1e293b; font-size: 16px; line-height: 1.6;">Hi ${name},</p>
             
             <p style="color: #1e293b; font-size: 16px; line-height: 1.6;">
-              Thank you for requesting a free trial of TaskScout! We're excited to show you how our platform can transform your property maintenance operations.
+              Thank you for requesting a free trial of TaskScout! We're excited to show you how our platform can transform your maintenance operations with our marketplace system that connects businesses and service providers.
             </p>
 
             <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10B981;">
