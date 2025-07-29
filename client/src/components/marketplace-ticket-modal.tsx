@@ -68,7 +68,7 @@ interface MarketplaceTicketModalProps {
 
 
 export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceTicketModalProps) {
-  const [totalAmount, setTotalAmount] = useState("");
+  const [hourlyRate, setHourlyRate] = useState("");
   const [responseTimeValue, setResponseTimeValue] = useState("");
   const [responseTimeUnit, setResponseTimeUnit] = useState("hours");
   const [responseDate, setResponseDate] = useState<Date | undefined>(undefined);
@@ -147,7 +147,7 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
   // Pre-populate form when existingBid changes
   useEffect(() => {
     if (existingBid && isOpen) {
-      setTotalAmount(existingBid.totalAmount || "");
+      setHourlyRate(existingBid.hourlyRate || "");
       setAdditionalNotes(existingBid.additionalNotes || "");
       
       // Parse response time to extract value and unit
@@ -189,7 +189,7 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
   }, [responseTimeValue, responseTimeUnit, responseDate]);
 
   const resetForm = () => {
-    setTotalAmount("");
+    setHourlyRate("");
     setResponseTimeValue("");
     setResponseTimeUnit("hours");
     setResponseDate(undefined);
@@ -201,10 +201,10 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
 
 
   const handleSubmitBid = () => {
-    if (!ticket || !totalAmount || !responseTimeValue || !responseTimeUnit) {
+    if (!ticket || !hourlyRate || !responseTimeValue || !responseTimeUnit) {
       toast({
         title: "Missing Information",
-        description: "Please provide total bid amount and response time.",
+        description: "Please provide hourly rate and response time.",
         variant: "destructive",
       });
       return;
@@ -212,11 +212,11 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
 
     const bidData = {
       ticketId: ticket.id,
-      hourlyRate: 0, // Not used in simplified form
-      estimatedHours: 0, // Not used in simplified form
+      hourlyRate: parseFloat(hourlyRate),
+      estimatedHours: 0, // Not required in simplified form
       responseTime,
       parts: [], // Not used in simplified form
-      totalAmount: parseFloat(totalAmount),
+      totalAmount: parseFloat(hourlyRate), // Use hourly rate as base amount
       additionalNotes,
     };
 
@@ -372,20 +372,20 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {/* Total Bid Amount */}
+                    {/* Hourly Rate */}
                     <div>
-                      <Label htmlFor="totalAmount">Total Bid Amount ($)</Label>
+                      <Label htmlFor="hourlyRate">Hourly Rate ($)</Label>
                       <Input
-                        id="totalAmount"
+                        id="hourlyRate"
                         type="number"
                         step="0.01"
-                        placeholder="150.00"
-                        value={totalAmount}
-                        onChange={(e) => setTotalAmount(e.target.value)}
+                        placeholder="35.00"
+                        value={hourlyRate}
+                        onChange={(e) => setHourlyRate(e.target.value)}
                         className="text-lg font-semibold"
                       />
                       <p className="text-xs text-muted-foreground mt-1">
-                        Enter your total quote for this job including labor and materials
+                        Enter your hourly rate for this type of work
                       </p>
                     </div>
 
@@ -492,7 +492,7 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
                       ) : (
                         <Button
                           onClick={handleSubmitBid}
-                          disabled={(placeBidMutation.isPending || updateBidMutation.isPending) || !totalAmount || !responseTimeValue || !responseTimeUnit}
+                          disabled={(placeBidMutation.isPending || updateBidMutation.isPending) || !hourlyRate || !responseTimeValue || !responseTimeUnit}
                           className="flex-1"
                         >
                           {(placeBidMutation.isPending || updateBidMutation.isPending) ? 

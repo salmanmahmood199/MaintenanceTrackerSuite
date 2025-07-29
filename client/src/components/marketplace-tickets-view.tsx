@@ -78,8 +78,8 @@ function BidDetailsModal({ bid, isOpen, onClose }: { bid: VendorBid | null; isOp
           
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Total Bid Amount</label>
-              <p className="text-foreground font-bold text-2xl">${bid.totalAmount}</p>
+              <label className="text-sm font-medium text-muted-foreground">Hourly Rate</label>
+              <p className="text-foreground font-bold text-2xl">${bid.hourlyRate}/hr</p>
             </div>
             <div>
               <label className="text-sm font-medium text-muted-foreground">Response Time</label>
@@ -336,8 +336,8 @@ export function MarketplaceTicketsView() {
                         
                         <div className="grid grid-cols-2 gap-4 mb-3">
                           <div>
-                            <span className="text-xs text-muted-foreground">Your Bid</span>
-                            <p className="font-semibold text-lg text-foreground">${bid.totalAmount}</p>
+                            <span className="text-xs text-muted-foreground">Hourly Rate</span>
+                            <p className="font-semibold text-lg text-foreground">${bid.hourlyRate}/hr</p>
                           </div>
                           <div>
                             <span className="text-xs text-muted-foreground">Response Time</span>
