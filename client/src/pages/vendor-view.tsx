@@ -9,6 +9,8 @@ import { EnhancedInvoiceCreator } from "@/components/enhanced-invoice-creator";
 import { InvoicesView } from "@/components/invoices-view";
 import { VendorTicketActionModal } from "@/components/vendor-ticket-action-modal";
 import { MarketplaceTicketsView } from "@/components/marketplace-tickets-view";
+import { CreateTechnicianModal } from "@/components/create-technician-modal";
+import { EditTechnicianModal } from "@/components/edit-technician-modal";
 
 import PartsManagement from "./parts-management";
 import { apiRequest } from "@/lib/queryClient";
@@ -24,7 +26,7 @@ export function VendorView() {
   const [, routeParams] = useRoute("/vendor/:id");
   const routeVendorId = routeParams?.id ? parseInt(routeParams.id) : undefined;
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [activeTab, setActiveTab] = useState<"tickets" | "marketplace" | "invoices" | "parts">("tickets");
+  const [activeTab, setActiveTab] = useState<"tickets" | "marketplace" | "invoices" | "parts" | "technicians">("tickets");
   const [filters, setFilters] = useState<FilterState>({
     search: "",
     status: "all",
@@ -42,6 +44,9 @@ export function VendorView() {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(null);
   const [isTicketDetailsModalOpen, setIsTicketDetailsModalOpen] = useState(false);
+  const [isCreateTechnicianModalOpen, setIsCreateTechnicianModalOpen] = useState(false);
+  const [isEditTechnicianModalOpen, setIsEditTechnicianModalOpen] = useState(false);
+  const [selectedTechnicianForEdit, setSelectedTechnicianForEdit] = useState<User | null>(null);
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -298,6 +303,86 @@ export function VendorView() {
     forceCloseMutation.mutate({ id, reason });
   };
 
+  // Create technician mutation
+  const createTechnicianMutation = useMutation({
+    mutationFn: async (technicianData: any) => {
+      const response = await apiRequest("POST", `/api/maintenance-vendors/${vendorId}/technicians`, technicianData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/technicians", vendorId] });
+      setIsCreateTechnicianModalOpen(false);
+      toast({
+        title: "Success",
+        description: "Technician created successfully!",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: "Failed to create technician",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update technician mutation
+  const updateTechnicianMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      const response = await apiRequest("PATCH", `/api/maintenance-vendors/${vendorId}/technicians/${id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/technicians", vendorId] });
+      setIsEditTechnicianModalOpen(false);
+      setSelectedTechnicianForEdit(null);
+      toast({
+        title: "Success",
+        description: "Technician updated successfully!",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: "Failed to update technician",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete technician mutation
+  const deleteTechnicianMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest("DELETE", `/api/maintenance-vendors/${vendorId}/technicians/${id}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/technicians", vendorId] });
+      toast({
+        title: "Success",
+        description: "Technician deleted successfully!",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete technician",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleEditTechnician = (technician: User) => {
+    setSelectedTechnicianForEdit(technician);
+    setIsEditTechnicianModalOpen(true);
+  };
+
+  const handleDeleteTechnician = (id: number) => {
+    if (confirm("Are you sure you want to delete this technician?")) {
+      deleteTechnicianMutation.mutate(id);
+    }
+  };
+
   if (!vendor) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -413,6 +498,16 @@ export function VendorView() {
                 }`}
               >
                 Parts
+              </button>
+              <button
+                onClick={() => setActiveTab("technicians")}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "technicians"
+                    ? "border-blue-500 text-blue-500"
+                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted"
+                }`}
+              >
+                Technicians
               </button>
             </nav>
           </div>
@@ -553,6 +648,80 @@ export function VendorView() {
           <PartsManagement />
         )}
 
+        {activeTab === "technicians" && (
+          <div>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold text-foreground">Technician Management</h2>
+              <Button onClick={() => setIsCreateTechnicianModalOpen(true)}>
+                Add Technician
+              </Button>
+            </div>
+
+            <div className="bg-card rounded-lg border border-border">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left p-4 font-medium text-muted-foreground">Name</th>
+                      <th className="text-left p-4 font-medium text-muted-foreground">Email</th>
+                      <th className="text-left p-4 font-medium text-muted-foreground">Phone</th>
+                      <th className="text-left p-4 font-medium text-muted-foreground">Status</th>
+                      <th className="text-left p-4 font-medium text-muted-foreground">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {technicians.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                          No technicians found. Add your first technician to get started.
+                        </td>
+                      </tr>
+                    ) : (
+                      technicians.map((technician) => (
+                        <tr key={technician.id} className="border-b border-border last:border-b-0">
+                          <td className="p-4">
+                            <div>
+                              <p className="font-medium text-foreground">
+                                {technician.firstName} {technician.lastName}
+                              </p>
+                            </div>
+                          </td>
+                          <td className="p-4 text-foreground">{technician.email}</td>
+                          <td className="p-4 text-foreground">{technician.phone}</td>
+                          <td className="p-4">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
+                              Active
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditTechnician(technician)}
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteTechnician(technician.id)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Modals */}
         <EnhancedInvoiceCreator
           open={isCreateInvoiceModalOpen}
@@ -574,6 +743,21 @@ export function VendorView() {
           onAccept={handleAcceptTicket}
           onReject={handleRejectTicket}
           isLoading={acceptTicketMutation.isPending || rejectTicketMutation.isPending}
+        />
+
+        <CreateTechnicianModal
+          open={isCreateTechnicianModalOpen}
+          onOpenChange={setIsCreateTechnicianModalOpen}
+          onSubmit={createTechnicianMutation.mutate}
+          isLoading={createTechnicianMutation.isPending}
+        />
+
+        <EditTechnicianModal
+          open={isEditTechnicianModalOpen}
+          onOpenChange={setIsEditTechnicianModalOpen}
+          technician={selectedTechnicianForEdit}
+          onSubmit={(data) => updateTechnicianMutation.mutate({ id: selectedTechnicianForEdit!.id, data })}
+          isLoading={updateTechnicianMutation.isPending}
         />
       </div>
     </div>
