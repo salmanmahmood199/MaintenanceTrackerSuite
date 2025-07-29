@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { TextInput, Button, Card, Title, Paragraph, Menu, Divider } from 'react-native-paper';
 import { Picker } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
+import WebImagePicker from '../components/WebImagePicker';
 import { useAuth } from '../contexts/AuthContext';
 
 const CreateTicketScreen = ({ navigation }: any) => {
@@ -22,29 +22,8 @@ const CreateTicketScreen = ({ navigation }: any) => {
   
   const { user } = useAuth();
 
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      setImages([...images, result.assets[0].uri]);
-    }
-  };
-
-  const takePhoto = async () => {
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      setImages([...images, result.assets[0].uri]);
-    }
+  const handleImageSelected = (imageUri: string) => {
+    setImages([...images, imageUri]);
   };
 
   const handleSubmit = async () => {
