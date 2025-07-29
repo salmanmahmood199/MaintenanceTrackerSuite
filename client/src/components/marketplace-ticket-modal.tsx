@@ -317,9 +317,24 @@ export function MarketplaceTicketModal({ ticket, isOpen, onClose }: MarketplaceT
                       Created: {new Date(ticket.createdAt).toLocaleDateString()}
                     </div>
 
-                    {ticket.locationId && (
+                    {ticket.locationId ? (
                       <LocationInfo locationId={ticket.locationId} />
-                    )}
+                    ) : ticket.residentialCity && ticket.residentialState && ticket.residentialZip ? (
+                      <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <div className="flex items-center gap-2 mb-1">
+                          <MapPin className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                          <span className="text-sm font-medium text-blue-900 dark:text-blue-100">Service Location</span>
+                        </div>
+                        <div className="ml-6">
+                          <p className="text-sm text-blue-700 dark:text-blue-300">
+                            {ticket.residentialCity}, {ticket.residentialState} {ticket.residentialZip}
+                          </p>
+                          <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                            Full address available after bid acceptance
+                          </p>
+                        </div>
+                      </div>
+                    ) : null}
                   </CardContent>
                 </Card>
 

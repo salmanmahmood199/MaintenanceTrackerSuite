@@ -418,6 +418,9 @@ Changelog:
 - July 29, 2025. Implemented comprehensive email and phone validation across entire platform preventing duplicates across users, organizations, and vendors
 - July 29, 2025. Updated all API routes with validation functions ensuring unique emails and 10-digit phone numbers with proper format validation
 - July 29, 2025. Created dedicated residential ticket modal with address selection and full service address input fields including apartment/unit support
+- July 29, 2025. Implemented marketplace privacy protection - vendors only see city, state, and ZIP code until bid acceptance
+- July 29, 2025. Enhanced address privacy system: full street addresses hidden from marketplace vendors, revealed only after successful bid acceptance
+- July 29, 2025. Updated marketplace ticket displays and vendor bid views to show limited location information for residential user privacy
 ```
 
 ## User Preferences

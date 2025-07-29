@@ -287,7 +287,10 @@ export function MarketplaceTicketsView() {
                             </div>
                             <div className="flex items-center gap-1">
                               <MapPin className="h-4 w-4" />
-                              Organization ticket
+                              {ticket.residentialCity && ticket.residentialState && ticket.residentialZip 
+                                ? `${ticket.residentialCity}, ${ticket.residentialState} ${ticket.residentialZip}`
+                                : "Organization ticket"
+                              }
                             </div>
                           </div>
                         </div>

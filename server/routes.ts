@@ -1700,7 +1700,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req: AuthenticatedRequest, res) => {
       try {
         const tickets = await storage.getMarketplaceTickets();
-        res.json(tickets);
+        
+        // Filter out sensitive address information for privacy
+        // Only show city, state, and ZIP code until bid is accepted
+        const sanitizedTickets = tickets.map(ticket => ({
+          ...ticket,
+          // Hide full residential address, only show city, state, zip
+          residentialAddress: undefined, // Hide street address
+          // Keep city, state, zip for general location context
+          residentialCity: ticket.residentialCity,
+          residentialState: ticket.residentialState,
+          residentialZip: ticket.residentialZip,
+        }));
+        
+        res.json(sanitizedTickets);
       } catch (error) {
         res
           .status(500)
@@ -1726,7 +1739,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const bids = await storage.getVendorBids(vendorId);
-        res.json(bids);
+        
+        // For accepted bids, include full address information
+        // For pending/rejected bids, keep only city, state, zip for privacy
+        const sanitizedBids = bids.map(bid => {
+          if (bid.status === 'accepted') {
+            // Show full address for accepted bids
+            return bid;
+          } else {
+            // Hide full address for non-accepted bids
+            return {
+              ...bid,
+              ticket: bid.ticket ? {
+                ...bid.ticket,
+                residentialAddress: undefined, // Hide street address
+                // Keep city, state, zip for location context
+                residentialCity: bid.ticket.residentialCity,
+                residentialState: bid.ticket.residentialState,
+                residentialZip: bid.ticket.residentialZip,
+              } : bid.ticket
+            };
+          }
+        });
+        
+        res.json(sanitizedBids);
       } catch (error) {
         console.error("Get vendor bids error:", error);
         res.status(500).json({ message: "Failed to fetch vendor bids" });
