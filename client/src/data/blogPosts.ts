@@ -50,7 +50,7 @@ By embracing ML-driven maintenance, organizations transform reactive break-fix w
     author: "TaskScout Team",
     category: "AI Technology",
     readTime: "6 min read",
-    image: "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=600&h=300&fit=crop&auto=format"
+    image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=600&h=300&fit=crop&auto=format"
   },
   {
     id: 2,
@@ -100,11 +100,15 @@ With robust market momentum, verified cost savings, and a clear path to ROI, pre
 Fortune Business Insights. (2024). Predictive Maintenance Market Size Report, 2021–2028.
 
 MarketsandMarkets. (2024). Predictive Maintenance Market Global Forecast to 2029.`,
+    references: [
+      '[1] Fortune Business Insights. (2024). Predictive Maintenance Market Size Report, 2021–2028.',
+      '[2] MarketsandMarkets. (2024). Predictive Maintenance Market Global Forecast to 2029.'
+    ],
     date: "February 10, 2025",
     author: "TaskScout Team",
     category: "Business Solutions",
     readTime: "5 min read",
-    image: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=600&h=300&fit=crop&auto=format"
+    image: "https://images.unsplash.com/photo-1664575602554-2087b04935a5?w=600&h=300&fit=crop&auto=format"
   },
   {
     id: 3,
@@ -142,7 +146,7 @@ By adhering to a structured maintenance regimen—bolstered by data-driven insig
     author: "TaskScout Team", 
     category: "HVAC Systems",
     readTime: "7 min read",
-    image: "https://images.unsplash.com/photo-1581092921461-eab62e97a780?w=600&h=300&fit=crop&auto=format"
+    image: "https://images.unsplash.com/photo-1558618666-fbd6c327e0fc?w=600&h=300&fit=crop&auto=format"
   },
   {
     id: 4,
@@ -175,7 +179,7 @@ By embedding these preventive strategies into your maintenance workflow, you mit
     author: "TaskScout Team",
     category: "Electrical Systems", 
     readTime: "6 min read",
-    image: "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=600&h=300&fit=crop&auto=format"
+    image: "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=600&h=300&fit=crop&auto=format"
   },
   {
     id: 5,

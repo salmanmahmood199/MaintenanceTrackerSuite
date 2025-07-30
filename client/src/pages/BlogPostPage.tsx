@@ -15,21 +15,21 @@ import {
 const getPostImage = (category: string) => {
   switch (category) {
     case 'AI Technology':
-      return 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=800&h=400&fit=crop&auto=format';
+      return 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&h=400&fit=crop&auto=format';
     case 'Business Solutions':
-      return 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=400&fit=crop&auto=format';
+      return 'https://images.unsplash.com/photo-1664575602554-2087b04935a5?w=800&h=400&fit=crop&auto=format';
     case 'HVAC Systems':
-      return 'https://images.unsplash.com/photo-1581092921461-eab62e97a780?w=800&h=400&fit=crop&auto=format';
+      return 'https://images.unsplash.com/photo-1558618666-fbd6c327e0fc?w=800&h=400&fit=crop&auto=format';
     case 'Electrical Systems':
-      return 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=800&h=400&fit=crop&auto=format';
+      return 'https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=800&h=400&fit=crop&auto=format';
     case 'IoT Technology':
       return 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=800&h=400&fit=crop&auto=format';
     case 'Industry Trends':
-      return 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=800&h=400&fit=crop&auto=format';
+      return 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=400&fit=crop&auto=format';
     case 'Plumbing Solutions':
-      return 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=800&h=400&fit=crop&auto=format';
+      return 'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?w=800&h=400&fit=crop&auto=format';
     default:
-      return 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=400&fit=crop&auto=format';
+      return 'https://images.unsplash.com/photo-1664575602554-2087b04935a5?w=800&h=400&fit=crop&auto=format';
   }
 };
 
@@ -213,8 +213,8 @@ export default function BlogPostPage() {
 
       {/* Background Effects */}
       <div className="fixed inset-0 opacity-20 pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 animate-pulse"></div>
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-bounce"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-teal-600/20 to-purple-600/20 animate-pulse"></div>
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl animate-bounce"></div>
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-bounce delay-1000"></div>
       </div>
     </div>
