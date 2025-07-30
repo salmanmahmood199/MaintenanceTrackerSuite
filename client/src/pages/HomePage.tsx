@@ -175,12 +175,60 @@ export default function HomePage() {
   ];
 
   const integrations = [
-    { name: "Google Calendar", icon: <Calendar className="w-8 h-8" />, status: "Connected" },
-    { name: "Stripe Payments", icon: <CreditCard className="w-8 h-8" />, status: "Active" },
-    { name: "Email Notifications", icon: <MessageSquare className="w-8 h-8" />, status: "Live" },
-    { name: "Mobile Push", icon: <Smartphone className="w-8 h-8" />, status: "Enabled" },
-    { name: "Cloud Storage", icon: <Cloud className="w-8 h-8" />, status: "Synced" },
-    { name: "Analytics API", icon: <BarChart3 className="w-8 h-8" />, status: "Running" }
+    { 
+      name: "Google Calendar", 
+      icon: <Calendar className="w-8 h-8" />, 
+      status: "Connected",
+      description: "Sync schedules & appointments"
+    },
+    { 
+      name: "Stripe Payments", 
+      icon: <CreditCard className="w-8 h-8" />, 
+      status: "Active",
+      description: "Secure payment processing"
+    },
+    { 
+      name: "QuickBooks", 
+      icon: <BarChart3 className="w-8 h-8" />, 
+      status: "Synced",
+      description: "Accounting & invoicing sync"
+    },
+    { 
+      name: "Slack", 
+      icon: <Users className="w-8 h-8" />, 
+      status: "Live",
+      description: "Team communication hub"
+    },
+    { 
+      name: "WhatsApp", 
+      icon: <MessageSquare className="w-8 h-8" />, 
+      status: "Active",
+      description: "Customer messaging platform"
+    },
+    { 
+      name: "Email System", 
+      icon: <MessageSquare className="w-8 h-8" />, 
+      status: "Live",
+      description: "Automated notifications"
+    },
+    { 
+      name: "Mobile Push", 
+      icon: <Smartphone className="w-8 h-8" />, 
+      status: "Enabled",
+      description: "Real-time mobile alerts"
+    },
+    { 
+      name: "Cloud Storage", 
+      icon: <Cloud className="w-8 h-8" />, 
+      status: "Synced",
+      description: "Secure file management"
+    },
+    { 
+      name: "Analytics API", 
+      icon: <Database className="w-8 h-8" />, 
+      status: "Running",
+      description: "Performance insights"
+    }
   ];
 
   const testimonials = [
@@ -1037,7 +1085,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
             {integrations.map((integration, index) => (
               <div 
                 key={index}
@@ -1052,6 +1100,9 @@ export default function HomePage() {
                   <h3 className="text-sm font-bold text-white mb-2 group-hover:text-blue-300 transition-colors">
                     {integration.name}
                   </h3>
+                  <p className="text-xs text-gray-400 mb-3">
+                    {integration.description}
+                  </p>
                   <Badge className={`text-xs ${
                     integration.status === 'Connected' ? 'bg-green-500/20 text-green-300 border-green-500/30' :
                     integration.status === 'Active' ? 'bg-blue-500/20 text-blue-300 border-blue-500/30' :
