@@ -74,7 +74,7 @@ Fortune Business Insights. (2024). Predictive Maintenance Market Size, Share & I
       author: "TaskScout Team",
       category: "AI Technology",
       readTime: "6 min read",
-      image: "/api/placeholder/600/300"
+      image: "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=600&h=300&fit=crop&auto=format"
     },
     {
       id: 2,
@@ -129,7 +129,7 @@ MarketsandMarkets. (2024). Predictive Maintenance Market Global Forecast to 2029
       author: "TaskScout Team",
       category: "Business Solutions",
       readTime: "5 min read",
-      image: "/api/placeholder/600/300"
+      image: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=600&h=300&fit=crop&auto=format"
     },
     {
       id: 3,
@@ -181,7 +181,7 @@ Grand View Research. (2024). HVAC Systems Market Size, Share & Trends Analysis R
       author: "TaskScout Team", 
       category: "HVAC Systems",
       readTime: "7 min read",
-      image: "/api/placeholder/600/300"
+      image: "https://images.unsplash.com/photo-1581092921461-eab62e97a780?w=600&h=300&fit=crop&auto=format"
     },
     {
       id: 4,
@@ -226,7 +226,7 @@ Associated Builders and Contractors. (2023). Construction Employment Report.`,
       author: "TaskScout Team",
       category: "Electrical Systems", 
       readTime: "6 min read",
-      image: "/api/placeholder/600/300"
+      image: "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=600&h=300&fit=crop&auto=format"
     },
     {
       id: 5,
@@ -278,7 +278,7 @@ IDC. (2023). IoT in Manufacturing: A European Perspective.`,
       author: "TaskScout Team",
       category: "IoT Technology",
       readTime: "8 min read", 
-      image: "/api/placeholder/600/300"
+      image: "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=600&h=300&fit=crop&auto=format"
     }
   ];
 
@@ -407,15 +407,39 @@ IDC. (2023). IoT in Manufacturing: A European Perspective.`,
 }
 
 function BlogPostCard({ post }: { post: any }) {
+  const getCardImage = (category: string) => {
+    switch (category) {
+      case 'AI Technology':
+        return 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=400&h=200&fit=crop&auto=format';
+      case 'Business Solutions':
+        return 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=200&fit=crop&auto=format';
+      case 'HVAC Systems':
+        return 'https://images.unsplash.com/photo-1581092921461-eab62e97a780?w=400&h=200&fit=crop&auto=format';
+      case 'Electrical Systems':
+        return 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=400&h=200&fit=crop&auto=format';
+      case 'IoT Technology':
+        return 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=400&h=200&fit=crop&auto=format';
+      default:
+        return 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=200&fit=crop&auto=format';
+    }
+  };
 
   return (
-    <Card className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border-white/10 hover:border-teal-500/30 transition-all duration-300 group cursor-pointer">
-      <CardContent className="p-6">
+    <Card className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border-white/10 hover:border-teal-500/30 transition-all duration-300 group cursor-pointer overflow-hidden">
+      <div className="relative">
+        <img 
+          src={getCardImage(post.category)} 
+          alt={post.title}
+          className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent"></div>
+      </div>
+      <CardContent className="p-5">
         <div className="mb-4">
           <Badge variant="outline" className="border-teal-500/30 text-teal-300 mb-3">
             {post.category}
           </Badge>
-          <h3 className="text-lg font-semibold text-white mb-3 group-hover:text-teal-300 transition-colors line-clamp-2">
+          <h3 className="text-base font-semibold text-white mb-3 group-hover:text-teal-300 transition-colors line-clamp-2 leading-tight">
             {post.title}
           </h3>
           <p className="text-gray-400 text-sm line-clamp-3 mb-4 leading-relaxed">

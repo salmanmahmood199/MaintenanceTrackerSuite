@@ -58,7 +58,7 @@ Fortune Business Insights. (2024). Predictive Maintenance Market Size, Share & I
     author: "TaskScout Team",
     category: "AI Technology",
     readTime: "6 min read",
-    image: "/api/placeholder/600/300"
+    image: "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=600&h=300&fit=crop&auto=format"
   },
   {
     id: 2,
@@ -111,7 +111,7 @@ MarketsandMarkets. (2024). Predictive Maintenance Market Global Forecast to 2029
     author: "TaskScout Team",
     category: "Business Solutions",
     readTime: "5 min read",
-    image: "/api/placeholder/600/300"
+    image: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=600&h=300&fit=crop&auto=format"
   },
   {
     id: 3,
@@ -161,7 +161,7 @@ Grand View Research. (2024). HVAC Systems Market Size, Share & Trends Analysis R
     author: "TaskScout Team", 
     category: "HVAC Systems",
     readTime: "7 min read",
-    image: "/api/placeholder/600/300"
+    image: "https://images.unsplash.com/photo-1581092921461-eab62e97a780?w=600&h=300&fit=crop&auto=format"
   },
   {
     id: 4,
@@ -204,7 +204,7 @@ Associated Builders and Contractors. (2023). Construction Employment Report.`,
     author: "TaskScout Team",
     category: "Electrical Systems", 
     readTime: "6 min read",
-    image: "/api/placeholder/600/300"
+    image: "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=600&h=300&fit=crop&auto=format"
   },
   {
     id: 5,
@@ -254,9 +254,27 @@ IDC. (2023). IoT in Manufacturing: A European Perspective.`,
     author: "TaskScout Team",
     category: "IoT Technology",
     readTime: "8 min read", 
-    image: "/api/placeholder/600/300"
+    image: "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=600&h=300&fit=crop&auto=format"
   }
 ];
+
+// Helper function to get appropriate images for each category
+const getPostImage = (category: string) => {
+  switch (category) {
+    case 'AI Technology':
+      return 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=800&h=400&fit=crop&auto=format';
+    case 'Business Solutions':
+      return 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=400&fit=crop&auto=format';
+    case 'HVAC Systems':
+      return 'https://images.unsplash.com/photo-1581092921461-eab62e97a780?w=800&h=400&fit=crop&auto=format';
+    case 'Electrical Systems':
+      return 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=800&h=400&fit=crop&auto=format';
+    case 'IoT Technology':
+      return 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=800&h=400&fit=crop&auto=format';
+    default:
+      return 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=400&fit=crop&auto=format';
+  }
+};
 
 export default function BlogPostPage() {
   const [match, params] = useRoute('/blog/:id');
@@ -276,28 +294,28 @@ export default function BlogPostPage() {
       .split('\n\n')
       .map((paragraph, index) => {
         if (paragraph.startsWith('## ')) {
-          return <h2 key={index} className="text-2xl font-semibold text-white mb-4 mt-8">{paragraph.replace('## ', '')}</h2>;
+          return <h2 key={index} className="text-xl font-semibold text-white mb-4 mt-6">{paragraph.replace('## ', '')}</h2>;
         } else if (paragraph.startsWith('### ')) {
-          return <h3 key={index} className="text-xl font-semibold text-white mb-3 mt-6">{paragraph.replace('### ', '')}</h3>;
+          return <h3 key={index} className="text-lg font-semibold text-white mb-3 mt-5">{paragraph.replace('### ', '')}</h3>;
         } else if (paragraph.startsWith('- ')) {
           const listItems = paragraph.split('\n- ').map(item => item.replace(/^- /, ''));
           return (
-            <ul key={index} className="list-disc list-inside text-gray-300 mb-6 space-y-2 ml-4">
-              {listItems.map((item, i) => <li key={i}>{item}</li>)}
+            <ul key={index} className="list-disc list-inside text-gray-300 mb-4 space-y-1 ml-4 text-sm">
+              {listItems.map((item, i) => <li key={i} className="leading-relaxed">{item}</li>)}
             </ul>
           );
         } else if (paragraph.includes('**') && paragraph.includes(':**')) {
           // Handle definition-style paragraphs
           const parts = paragraph.split('**');
           return (
-            <p key={index} className="text-gray-300 mb-4 leading-relaxed">
+            <p key={index} className="text-gray-300 mb-4 leading-relaxed text-sm">
               {parts.map((part, i) => 
-                i % 2 === 1 ? <strong key={i} className="text-white font-semibold">{part}</strong> : part
+                i % 2 === 1 ? <strong key={i} className="text-white font-medium">{part}</strong> : part
               )}
             </p>
           );
         } else {
-          return <p key={index} className="text-gray-300 mb-4 leading-relaxed">{paragraph}</p>;
+          return <p key={index} className="text-gray-300 mb-4 leading-relaxed text-sm">{paragraph}</p>;
         }
       });
   };
@@ -322,7 +340,7 @@ export default function BlogPostPage() {
               {post.category}
             </Badge>
             
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-6 leading-tight">
+            <h1 className="text-2xl md:text-3xl font-bold text-white mb-6 leading-tight">
               {post.title}
             </h1>
             
@@ -341,7 +359,7 @@ export default function BlogPostPage() {
               </div>
             </div>
 
-            <p className="text-lg text-gray-300 leading-relaxed">
+            <p className="text-base text-gray-300 leading-relaxed">
               {post.excerpt}
             </p>
           </div>
@@ -351,8 +369,17 @@ export default function BlogPostPage() {
       {/* Article Content */}
       <div className="relative z-10 px-6 pb-20">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-white/10 rounded-xl p-8">
-            <article className="prose prose-lg max-w-none">
+          {/* Hero Image */}
+          <div className="mb-8">
+            <img 
+              src={getPostImage(post.category)} 
+              alt={post.title}
+              className="w-full h-64 md:h-80 object-cover rounded-xl border border-white/10"
+            />
+          </div>
+
+          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-white/10 rounded-xl p-6 md:p-8">
+            <article className="prose max-w-none">
               {formatContent(post.content)}
             </article>
           </div>
@@ -370,7 +397,7 @@ export default function BlogPostPage() {
                       <Badge variant="outline" className="border-teal-500/30 text-teal-300 mb-3">
                         {relatedPost.category}
                       </Badge>
-                      <h4 className="text-lg font-semibold text-white mb-2 line-clamp-2">
+                      <h4 className="text-base font-semibold text-white mb-2 line-clamp-2">
                         {relatedPost.title}
                       </h4>
                       <p className="text-gray-400 text-sm line-clamp-3">

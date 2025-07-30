@@ -494,6 +494,8 @@ Changelog:
 - July 30, 2025. Replaced blog posts with comprehensive AI and maintenance content covering predictive maintenance, IoT integration, HVAC best practices, electrical system strategies, and ML-driven maintenance solutions
 - July 30, 2025. Updated blog categories to reflect new technical focus: AI Technology, Business Solutions, HVAC Systems, Electrical Systems, IoT Technology
 - July 30, 2025. Blog content now features authentic industry statistics, case studies, and technical insights from McKinsey, Fortune Business Insights, and Department of Energy
+- July 30, 2025. Fixed blog design issues: reduced font sizes, added professional styling, and included proper references to all blog posts
+- July 30, 2025. Created dedicated BlogPostPage.tsx component and updated routing to navigate to separate professional blog post pages instead of popups
 ```
 
 ## User Preferences
