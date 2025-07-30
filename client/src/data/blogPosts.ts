@@ -146,7 +146,7 @@ By adhering to a structured maintenance regimen—bolstered by data-driven insig
     author: "TaskScout Team", 
     category: "HVAC Systems",
     readTime: "7 min read",
-    image: "https://images.unsplash.com/photo-1558618666-fbd6c327e0fc?w=600&h=300&fit=crop&auto=format"
+    image: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&h=300&fit=crop&auto=format"
   },
   {
     id: 4,
@@ -563,7 +563,7 @@ Strategic plumbing system optimization delivers significant cost savings while s
     author: "TaskScout Team",
     category: "HVAC Systems",
     readTime: "6 min read",
-    image: "https://images.unsplash.com/photo-1582656975064-04e9452fc60a?w=600&h=300&fit=crop&auto=format"
+    image: "https://images.unsplash.com/photo-1607472586893-edb57bdc0e39?w=600&h=300&fit=crop&auto=format"
   },
   {
     id: 14,
