@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useLocationContent } from '@/hooks/useLocationContent';
+import LocationSearchOptimizer from '@/components/LocationSearchOptimizer';
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -46,6 +48,7 @@ export default function HomePage() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [activeFeature, setActiveFeature] = useState(0);
   const heroRef = useRef<HTMLDivElement>(null);
+  const { location, service, content, isLoading } = useLocationContent();
 
   useEffect(() => {
     setIsVisible(true);
@@ -196,13 +199,18 @@ export default function HomePage() {
 
   const stats = [
     { number: "50K+", label: "Tickets Processed", icon: <CheckCircle className="w-6 h-6" /> },
-    { number: "2,400+", label: "Active Businesses", icon: <Users className="w-6 h-6" /> },
+    { 
+      number: "2,400+", 
+      label: location ? `Businesses in ${location.region}` : "Active Businesses", 
+      icon: <Users className="w-6 h-6" /> 
+    },
     { number: "99.9%", label: "Uptime", icon: <Shield className="w-6 h-6" /> },
     { number: "24/7", label: "Support", icon: <Clock className="w-6 h-6" /> }
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white overflow-hidden">
+      <LocationSearchOptimizer />
       {/* Advanced Animated Background */}
       <div className="fixed inset-0 opacity-30">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 animate-pulse"></div>
@@ -294,10 +302,27 @@ export default function HomePage() {
             </span>
           </h1>
           
-          <p className="text-xl md:text-2xl text-gray-300 mb-12 max-w-4xl mx-auto leading-relaxed">
-            Revolutionary maintenance management with two game-changing solutions: AI-powered full-cycle ticketing 
-            from creation to completion, and an Uber-like marketplace connecting you with top-rated service providers instantly.
+          <p className="text-xl md:text-2xl text-gray-300 mb-6 max-w-4xl mx-auto leading-relaxed">
+            {isLoading 
+              ? 'Revolutionary maintenance management with two game-changing solutions: AI-powered full-cycle ticketing from creation to completion, and an Uber-like marketplace connecting you with top-rated service providers instantly.'
+              : `${service.description} Featuring AI-powered ticketing and an Uber-like marketplace for ${service.services.join(', ').toLowerCase()}.`
+            }
           </p>
+          
+          {location && (
+            <div className="flex items-center justify-center space-x-3 text-teal-300 mb-8">
+              <MapPin className="w-5 h-5" />
+              <span className="text-lg font-medium">{content.locationText}</span>
+            </div>
+          )}
+          
+          <div className="flex flex-wrap justify-center gap-2 mb-12">
+            {service.services.slice(0, 4).map((serviceItem, index) => (
+              <Badge key={index} variant="outline" className="border-teal-500/30 text-teal-300 px-3 py-1">
+                {serviceItem}
+              </Badge>
+            ))}
+          </div>
 
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
             <Link href="/contact">

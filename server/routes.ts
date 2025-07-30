@@ -36,6 +36,7 @@ import bcrypt from "bcrypt";
 import path from "path";
 import fs from "fs";
 import nodemailer from "nodemailer";
+import { getLocationFromIP, getServiceContent, generateLocationSpecificContent } from './utils/locationService';
 import { db } from "./db";
 import { and, eq, desc, inArray } from "drizzle-orm";
 import { invoices, tickets } from "@shared/schema";
@@ -4434,6 +4435,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         error: 'Failed to send support request. Please try again.' 
       });
+    }
+  });
+
+  // Location and content optimization API
+  app.get('/api/location-content', (req, res) => {
+    try {
+      // Get client IP address
+      const clientIP = req.headers['x-forwarded-for'] as string || 
+                      req.headers['x-real-ip'] as string ||
+                      req.connection.remoteAddress || 
+                      req.socket.remoteAddress ||
+                      (req.connection as any)?.socket?.remoteAddress ||
+                      req.ip;
+
+      // Get search term from query parameters
+      const searchTerm = req.query.search as string;
+      
+      // Get location data from IP
+      const locationData = getLocationFromIP(clientIP);
+      
+      // Get service-specific content
+      const serviceContent = getServiceContent(searchTerm);
+      
+      // Generate location-specific content
+      const content = locationData ? 
+        generateLocationSpecificContent(locationData, serviceContent) : 
+        {
+          metaTitle: `${serviceContent.title} | TaskScout`,
+          metaDescription: serviceContent.description,
+          heroTitle: 'Professional Maintenance Services',
+          heroSubtitle: 'Connect with certified maintenance professionals',
+          locationText: 'Serving businesses nationwide',
+          serviceArea: 'Nationwide Service',
+          timezone: 'America/New_York'
+        };
+
+      res.json({
+        location: locationData,
+        service: serviceContent,
+        content: content,
+        ip: clientIP // For debugging
+      });
+    } catch (error) {
+      console.error('Location content error:', error);
+      res.status(500).json({ error: 'Failed to get location content' });
     }
   });
 
