@@ -298,7 +298,7 @@ export default function BlogPostPage() {
         } else if (paragraph.startsWith('### ')) {
           return <h3 key={index} className="text-base font-semibold text-white mb-3 mt-5">{paragraph.replace('### ', '')}</h3>;
         } else if (paragraph.startsWith('#### ')) {
-          return <h4 key={index} className="text-sm font-semibold text-teal-300 mb-2 mt-4">{paragraph.replace('#### ', '')}</h4>;
+          return <h4 key={index} className="text-base font-semibold text-teal-300 mb-3 mt-5">{paragraph.replace('#### ', '')}</h4>;
         } else if (paragraph.startsWith('**') && paragraph.endsWith('**') && !paragraph.includes(':**')) {
           // Handle standalone bold headings
           return <h4 key={index} className="text-sm font-semibold text-teal-300 mb-2 mt-4">{paragraph.replace(/\*\*/g, '')}</h4>;
@@ -320,14 +320,20 @@ export default function BlogPostPage() {
               {listItems.map((item, i) => <li key={i} className="leading-relaxed">{item}</li>)}
             </ul>
           );
-        } else if (paragraph.includes('**') && paragraph.includes(':**')) {
-          // Handle definition-style paragraphs
-          const parts = paragraph.split('**');
+        } else if (paragraph.includes('**') && (paragraph.includes(':**') || paragraph.includes('**'))) {
+          // Handle definition-style paragraphs and inline citations
+          const parts = paragraph.split(/(\*\*[^*]+\*\*|\[\d+\])/);
           return (
             <p key={index} className="text-gray-300 mb-3 leading-relaxed text-sm">
-              {parts.map((part, i) => 
-                i % 2 === 1 ? <strong key={i} className="text-white font-medium">{part}</strong> : part
-              )}
+              {parts.map((part, i) => {
+                if (part.startsWith('**') && part.endsWith('**')) {
+                  return <strong key={i} className="text-white font-medium">{part.replace(/\*\*/g, '')}</strong>;
+                } else if (part.match(/^\[\d+\]$/)) {
+                  return <span key={i} className="text-teal-300 font-medium">{part}</span>;
+                } else {
+                  return part;
+                }
+              })}
             </p>
           );
         } else if (paragraph.trim().length === 0) {
@@ -400,6 +406,20 @@ export default function BlogPostPage() {
           <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-white/10 rounded-xl p-5 md:p-6">
             <article className="max-w-none">
               {formatContent(post.content)}
+              
+              {/* References Section */}
+              {post.references && post.references.length > 0 && (
+                <div className="mt-8 pt-6 border-t border-white/20">
+                  <h4 className="text-base font-semibold text-white mb-4">References</h4>
+                  <div className="space-y-2">
+                    {post.references.map((ref, index) => (
+                      <p key={index} className="text-xs text-gray-400 leading-relaxed">
+                        {ref}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
             </article>
           </div>
 
