@@ -1,38 +1,22 @@
-import React, { useState } from 'react';
-import { Link } from 'wouter';
+import React from 'react';
+import { Link, useRoute } from 'wouter';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { 
-  Search,
   Calendar,
   Clock,
-  ArrowRight,
-  Building,
-  MapPin,
   Users,
-  Wrench,
-  TrendingUp,
-  Shield,
-  Smartphone,
-  Star,
-  Rocket,
-  ArrowLeft
+  ArrowLeft,
+  BookOpen
 } from 'lucide-react';
 
-export default function BlogsPage() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-
-  const blogPosts = [
-    {
-      id: 1,
-      title: "Harnessing AI for Proactive Maintenance: How Machine Learning Reduces Downtime",
-      excerpt: "In today's hyper-competitive industrial landscape, unplanned equipment failures can halt production lines and erode profit margins. Machine learning-driven maintenance platforms address this challenge by continuously analyzing sensor and operational data to predict failures before they occur.",
-      content: `
-# Harnessing AI for Proactive Maintenance: How Machine Learning Reduces Downtime
-
+// Blog posts data (same as in BlogsPage but we'll extract this later)
+const blogPosts = [
+  {
+    id: 1,
+    title: "Harnessing AI for Proactive Maintenance: How Machine Learning Reduces Downtime",
+    excerpt: "In today's hyper-competitive industrial landscape, unplanned equipment failures can halt production lines and erode profit margins. Machine learning-driven maintenance platforms address this challenge by continuously analyzing sensor and operational data to predict failures before they occur.",
+    content: `
 In today's hyper-competitive industrial landscape, unplanned equipment failures can halt production lines and erode profit margins. Machine learning (ML)-driven maintenance platforms address this challenge by continuously analyzing sensor and operational data to predict failures before they occur. By applying advanced algorithms—such as random forests, neural networks, and anomaly detection—these systems flag subtle deviations in vibration, temperature, or pressure that precede catastrophic breakdowns.
 
 A 2024 McKinsey Global Survey found that 65 percent of enterprises report regular use of generative AI across one or more business functions, including operations and maintenance. Similarly, Menlo Ventures reports that 60 percent of generative AI investments now come from core innovation budgets, signaling widespread organizational commitment to ML-based solutions.
@@ -70,19 +54,17 @@ McKinsey & Company. (2024). The Economic Potential of Generative AI: The Next Pr
 Menlo Ventures. (2024). The State of Generative AI in the Enterprise 2024.
 
 Fortune Business Insights. (2024). Predictive Maintenance Market Size, Share & Industry Analysis.`,
-      date: "January 5, 2025",
-      author: "TaskScout Team",
-      category: "AI Technology",
-      readTime: "6 min read",
-      image: "/api/placeholder/600/300"
-    },
-    {
-      id: 2,
-      title: "The Rise of Predictive Maintenance: Market Trends and ROI",
-      excerpt: "Predictive maintenance has shifted from niche pilot programs to mainstream operational strategy. By leveraging real-time analytics and AI, organizations forecast equipment health and schedule repairs just in time—avoiding both costly breakdowns and unnecessary servicing.",
-      content: `
-# The Rise of Predictive Maintenance: Market Trends and ROI
-
+    date: "January 5, 2025",
+    author: "TaskScout Team",
+    category: "AI Technology",
+    readTime: "6 min read",
+    image: "/api/placeholder/600/300"
+  },
+  {
+    id: 2,
+    title: "The Rise of Predictive Maintenance: Market Trends and ROI",
+    excerpt: "Predictive maintenance has shifted from niche pilot programs to mainstream operational strategy. By leveraging real-time analytics and AI, organizations forecast equipment health and schedule repairs just in time—avoiding both costly breakdowns and unnecessary servicing.",
+    content: `
 Predictive maintenance (PdM) has shifted from niche pilot programs to mainstream operational strategy. By leveraging real-time analytics and AI, organizations forecast equipment health and schedule repairs just in time—avoiding both costly breakdowns and unnecessary servicing.
 
 ## Explosive Market Growth
@@ -125,19 +107,17 @@ With robust market momentum, verified cost savings, and a clear path to ROI, pre
 Fortune Business Insights. (2024). Predictive Maintenance Market Size Report, 2021–2028.
 
 MarketsandMarkets. (2024). Predictive Maintenance Market Global Forecast to 2029.`,
-      date: "February 10, 2025",
-      author: "TaskScout Team",
-      category: "Business Solutions",
-      readTime: "5 min read",
-      image: "/api/placeholder/600/300"
-    },
-    {
-      id: 3,
-      title: "HVAC Maintenance Best Practices: Ensuring Comfort and Efficiency",
-      excerpt: "Heating, ventilation, and air-conditioning (HVAC) systems account for nearly 40 percent of total building energy consumption. As energy costs climb and sustainability mandates tighten, effective HVAC maintenance has become vital for both operational performance and environmental stewardship.",
-      content: `
-# HVAC Maintenance Best Practices: Ensuring Comfort and Efficiency
-
+    date: "February 10, 2025",
+    author: "TaskScout Team",
+    category: "Business Solutions",
+    readTime: "5 min read",
+    image: "/api/placeholder/600/300"
+  },
+  {
+    id: 3,
+    title: "HVAC Maintenance Best Practices: Ensuring Comfort and Efficiency",
+    excerpt: "Heating, ventilation, and air-conditioning (HVAC) systems account for nearly 40 percent of total building energy consumption. As energy costs climb and sustainability mandates tighten, effective HVAC maintenance has become vital for both operational performance and environmental stewardship.",
+    content: `
 Heating, ventilation, and air-conditioning (HVAC) systems account for nearly 40 percent of total building energy consumption. As energy costs climb and sustainability mandates tighten, effective HVAC maintenance has become vital for both operational performance and environmental stewardship.
 
 ## Market Context
@@ -177,19 +157,17 @@ By adhering to a structured maintenance regimen—bolstered by data-driven insig
 U.S. Department of Energy. (2024). Commercial Building Energy Consumption Survey.
 
 Grand View Research. (2024). HVAC Systems Market Size, Share & Trends Analysis Report.`,
-      date: "March 3, 2025",
-      author: "TaskScout Team", 
-      category: "HVAC Systems",
-      readTime: "7 min read",
-      image: "/api/placeholder/600/300"
-    },
-    {
-      id: 4,
-      title: "Electrical Systems: Preventive Strategies to Avoid Costly Failures",
-      excerpt: "Electrical infrastructure underpins every aspect of modern operations. From power distribution panels to motors and circuit breakers, undetected faults can cascade into safety hazards and prolonged downtime. Implementing preventive maintenance strategies is essential to safeguard assets and personnel.",
-      content: `
-# Electrical Systems: Preventive Strategies to Avoid Costly Failures
-
+    date: "March 3, 2025",
+    author: "TaskScout Team", 
+    category: "HVAC Systems",
+    readTime: "7 min read",
+    image: "/api/placeholder/600/300"
+  },
+  {
+    id: 4,
+    title: "Electrical Systems: Preventive Strategies to Avoid Costly Failures",
+    excerpt: "Electrical infrastructure underpins every aspect of modern operations. From power distribution panels to motors and circuit breakers, undetected faults can cascade into safety hazards and prolonged downtime. Implementing preventive maintenance strategies is essential to safeguard assets and personnel.",
+    content: `
 Electrical infrastructure underpins every aspect of modern operations. From power distribution panels to motors and circuit breakers, undetected faults can cascade into safety hazards and prolonged downtime. Implementing preventive maintenance (PM) strategies is essential to safeguard assets and personnel.
 
 ## The Value Proposition of Preventive Maintenance
@@ -222,19 +200,17 @@ By embedding these preventive strategies into your maintenance workflow, you mit
 International Facility Management Association. (2023). Preventive Maintenance Best Practices.
 
 Associated Builders and Contractors. (2023). Construction Employment Report.`,
-      date: "April 12, 2025",
-      author: "TaskScout Team",
-      category: "Electrical Systems", 
-      readTime: "6 min read",
-      image: "/api/placeholder/600/300"
-    },
-    {
-      id: 5,
-      title: "IoT in Maintenance: Connecting Devices for Real-Time Insights",
-      excerpt: "The Internet of Things (IoT) revolution has transformed maintenance from periodic checklists into continuous, data-driven processes. By wiring equipment with smart sensors, organizations gain unprecedented visibility into asset health—fueling proactive repairs and efficiency gains.",
-      content: `
-# IoT in Maintenance: Connecting Devices for Real-Time Insights
-
+    date: "April 12, 2025",
+    author: "TaskScout Team",
+    category: "Electrical Systems", 
+    readTime: "6 min read",
+    image: "/api/placeholder/600/300"
+  },
+  {
+    id: 5,
+    title: "IoT in Maintenance: Connecting Devices for Real-Time Insights",
+    excerpt: "The Internet of Things (IoT) revolution has transformed maintenance from periodic checklists into continuous, data-driven processes. By wiring equipment with smart sensors, organizations gain unprecedented visibility into asset health—fueling proactive repairs and efficiency gains.",
+    content: `
 The Internet of Things (IoT) revolution has transformed maintenance from periodic checklists into continuous, data-driven processes. By wiring equipment with smart sensors, organizations gain unprecedented visibility into asset health—fueling proactive repairs and efficiency gains.
 
 ## Market Growth & Adoption Rates
@@ -274,178 +250,150 @@ By weaving IoT sensors into every level of your maintenance strategy, you create
 Grand View Research. (2024). Predictive Maintenance Market Size Report, 2021–2028.
 
 IDC. (2023). IoT in Manufacturing: A European Perspective.`,
-      date: "May 20, 2025",
-      author: "TaskScout Team",
-      category: "IoT Technology",
-      readTime: "8 min read", 
-      image: "/api/placeholder/600/300"
-    }
-  ];
+    date: "May 20, 2025",
+    author: "TaskScout Team",
+    category: "IoT Technology",
+    readTime: "8 min read", 
+    image: "/api/placeholder/600/300"
+  }
+];
 
-  const categories = ['all', 'AI Technology', 'Business Solutions', 'HVAC Systems', 'Electrical Systems', 'IoT Technology', 'Industry Trends'];
+export default function BlogPostPage() {
+  const [match, params] = useRoute('/blog/:id');
+  
+  if (!match || !params?.id) {
+    return <div>Blog post not found</div>;
+  }
 
-  // Filter posts based on search term and category
-  const filteredPosts = blogPosts.filter(post => {
-    const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         post.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         post.category.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || post.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const post = blogPosts.find(p => p.id === parseInt(params.id));
+  
+  if (!post) {
+    return <div>Blog post not found</div>;
+  }
+
+  const formatContent = (content: string) => {
+    return content
+      .split('\n\n')
+      .map((paragraph, index) => {
+        if (paragraph.startsWith('## ')) {
+          return <h2 key={index} className="text-2xl font-semibold text-white mb-4 mt-8">{paragraph.replace('## ', '')}</h2>;
+        } else if (paragraph.startsWith('### ')) {
+          return <h3 key={index} className="text-xl font-semibold text-white mb-3 mt-6">{paragraph.replace('### ', '')}</h3>;
+        } else if (paragraph.startsWith('- ')) {
+          const listItems = paragraph.split('\n- ').map(item => item.replace(/^- /, ''));
+          return (
+            <ul key={index} className="list-disc list-inside text-gray-300 mb-6 space-y-2 ml-4">
+              {listItems.map((item, i) => <li key={i}>{item}</li>)}
+            </ul>
+          );
+        } else if (paragraph.includes('**') && paragraph.includes(':**')) {
+          // Handle definition-style paragraphs
+          const parts = paragraph.split('**');
+          return (
+            <p key={index} className="text-gray-300 mb-4 leading-relaxed">
+              {parts.map((part, i) => 
+                i % 2 === 1 ? <strong key={i} className="text-white font-semibold">{part}</strong> : part
+              )}
+            </p>
+          );
+        } else {
+          return <p key={index} className="text-gray-300 mb-4 leading-relaxed">{paragraph}</p>;
+        }
+      });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
-      {/* Header Section */}
-      <div className="relative z-10 px-6 pt-24 pb-16">
-        <div className="max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="relative z-10 px-6 pt-24 pb-8">
+        <div className="max-w-4xl mx-auto">
           {/* Back Button */}
-          <Link href="/">
+          <Link href="/blogs">
             <Button variant="ghost" className="mb-8 text-gray-300 hover:text-white">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Home
+              Back to Blog
             </Button>
           </Link>
 
-          {/* Hero Section */}
-          <div className="text-center mb-16">
-            <Badge className="mb-4 bg-gradient-to-r from-teal-500/20 to-cyan-500/20 text-teal-300 border-teal-500/30">
-              <Rocket className="w-4 h-4 mr-2" />
-              Commercial Maintenance Industry Insights
+          {/* Article Header */}
+          <div className="mb-8">
+            <Badge variant="outline" className="border-teal-500/30 text-teal-300 mb-4">
+              <BookOpen className="w-4 h-4 mr-2" />
+              {post.category}
             </Badge>
             
-            <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-white via-teal-200 to-cyan-200 bg-clip-text text-transparent">
-              Maintenance Insights
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-6 leading-tight">
+              {post.title}
             </h1>
             
-            <p className="text-lg text-gray-300 max-w-3xl mx-auto mb-8">
-              Expert insights on HVAC systems, plumbing solutions, AI technology, and business solutions. 
-              Stay ahead with industry trends and proven strategies.
-            </p>
-
-            {/* Search and Filter Section */}
-            <div className="max-w-4xl mx-auto space-y-6">
-              {/* Search Bar */}
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <Input
-                  type="text"
-                  placeholder="Search articles, topics, or categories..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-12 pr-4 py-4 text-lg bg-white/10 border-white/20 text-white placeholder-gray-400 focus:border-teal-500"
-                />
+            <div className="flex items-center space-x-6 text-gray-400 text-sm mb-6">
+              <div className="flex items-center">
+                <Calendar className="w-4 h-4 mr-2" />
+                {post.date}
               </div>
-
-              {/* Category Filter */}
-              <div className="flex flex-wrap gap-3 justify-center">
-                {categories.map((category) => (
-                  <Button
-                    key={category}
-                    variant={selectedCategory === category ? "default" : "outline"}
-                    onClick={() => setSelectedCategory(category)}
-                    className={`capitalize ${
-                      selectedCategory === category
-                        ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white'
-                        : 'border-white/20 text-white hover:bg-white/10'
-                    }`}
-                  >
-                    {category}
-                  </Button>
-                ))}
+              <div className="flex items-center">
+                <Users className="w-4 h-4 mr-2" />
+                {post.author}
               </div>
-
-              {/* Results Summary */}
-              <p className="text-gray-400 text-center">
-                {filteredPosts.length} article{filteredPosts.length !== 1 ? 's' : ''} found
-                {searchTerm && ` for "${searchTerm}"`}
-                {selectedCategory !== 'all' && ` in ${selectedCategory}`}
-              </p>
+              <div className="flex items-center">
+                <Clock className="w-4 h-4 mr-2" />
+                {post.readTime}
+              </div>
             </div>
+
+            <p className="text-lg text-gray-300 leading-relaxed">
+              {post.excerpt}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Blog Posts Grid */}
+      {/* Article Content */}
       <div className="relative z-10 px-6 pb-20">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredPosts.map((post) => (
-              <BlogPostCard key={post.id} post={post} />
-            ))}
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-white/10 rounded-xl p-8">
+            <article className="prose prose-lg max-w-none">
+              {formatContent(post.content)}
+            </article>
           </div>
 
-          {filteredPosts.length === 0 && (
-            <div className="text-center py-16">
-              <Building className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-2xl font-semibold text-gray-300 mb-2">No articles found</h3>
-              <p className="text-gray-400 mb-6">
-                Try adjusting your search terms or category filter
-              </p>
-              <Button
-                onClick={() => {
-                  setSearchTerm('');
-                  setSelectedCategory('all');
-                }}
-                variant="outline"
-                className="border-white/20 text-white hover:bg-white/10"
-              >
-                Clear Filters
-              </Button>
+          {/* Related Articles */}
+          <div className="mt-12">
+            <h3 className="text-2xl font-semibold text-white mb-6">Related Articles</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {blogPosts
+                .filter(p => p.id !== post.id && p.category === post.category)
+                .slice(0, 2)
+                .map((relatedPost) => (
+                  <Link key={relatedPost.id} href={`/blog/${relatedPost.id}`}>
+                    <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-white/10 rounded-lg p-6 hover:border-teal-500/30 transition-all duration-300 cursor-pointer">
+                      <Badge variant="outline" className="border-teal-500/30 text-teal-300 mb-3">
+                        {relatedPost.category}
+                      </Badge>
+                      <h4 className="text-lg font-semibold text-white mb-2 line-clamp-2">
+                        {relatedPost.title}
+                      </h4>
+                      <p className="text-gray-400 text-sm line-clamp-3">
+                        {relatedPost.excerpt}
+                      </p>
+                      <div className="flex items-center text-xs text-gray-500 mt-4">
+                        <Clock className="w-3 h-3 mr-1" />
+                        {relatedPost.readTime}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
             </div>
-          )}
+          </div>
         </div>
       </div>
 
       {/* Background Effects */}
-      <div className="fixed inset-0 opacity-30 pointer-events-none">
+      <div className="fixed inset-0 opacity-20 pointer-events-none">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 animate-pulse"></div>
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-bounce"></div>
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-bounce delay-1000"></div>
       </div>
     </div>
-  );
-}
-
-function BlogPostCard({ post }: { post: any }) {
-
-  return (
-    <Card className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border-white/10 hover:border-teal-500/30 transition-all duration-300 group cursor-pointer">
-      <CardContent className="p-6">
-        <div className="mb-4">
-          <Badge variant="outline" className="border-teal-500/30 text-teal-300 mb-3">
-            {post.category}
-          </Badge>
-          <h3 className="text-lg font-semibold text-white mb-3 group-hover:text-teal-300 transition-colors line-clamp-2">
-            {post.title}
-          </h3>
-          <p className="text-gray-400 text-sm line-clamp-3 mb-4 leading-relaxed">
-            {post.excerpt}
-          </p>
-        </div>
-
-        <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center">
-              <Calendar className="w-3 h-3 mr-1" />
-              <span className="text-xs">{post.date}</span>
-            </div>
-            <div className="flex items-center">
-              <Clock className="w-3 h-3 mr-1" />
-              <span className="text-xs">{post.readTime}</span>
-            </div>
-          </div>
-        </div>
-
-        <Link href={`/blog/${post.id}`}>
-          <Button
-            variant="ghost"
-            className="w-full justify-between text-teal-300 hover:text-white hover:bg-teal-500/10"
-          >
-            Read Full Article
-            <ArrowRight className="w-4 h-4" />
-          </Button>
-        </Link>
-      </CardContent>
-    </Card>
   );
 }
