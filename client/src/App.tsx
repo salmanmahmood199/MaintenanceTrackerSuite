@@ -7,6 +7,8 @@ import { useAuth } from "@/hooks/useAuth";
 import HomePage from "@/pages/HomePage";
 import ContactPage from "@/pages/ContactPage";
 import BlogsPage from "@/pages/BlogsPage";
+import PrivacyPolicyPage from "@/pages/PrivacyPolicyPage";
+import TermsOfServicePage from "@/pages/TermsOfServicePage";
 import Dashboard from "@/pages/dashboard";
 import Login from "@/pages/login";
 import AdminDashboard from "@/pages/admin-dashboard";
@@ -38,6 +40,8 @@ function Router() {
         <Route path="/home" component={HomePage} />
         <Route path="/contact" component={ContactPage} />
         <Route path="/blogs" component={BlogsPage} />
+        <Route path="/privacy" component={PrivacyPolicyPage} />
+        <Route path="/terms" component={TermsOfServicePage} />
         <Route path="/login" component={Login} />
         <Route path="/register" component={HomePage} />
         <Route path="/register/residential" component={ResidentialRegisterPage} />

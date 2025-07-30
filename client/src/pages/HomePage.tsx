@@ -173,23 +173,23 @@ export default function HomePage() {
   const testimonials = [
     {
       name: "Sarah Johnson",
-      role: "Property Manager",
-      company: "Metro Properties",
-      quote: "TaskScout transformed our maintenance operations. 50% faster response times!",
+      role: "Operations Manager",
+      company: "Metro Restaurant Group",
+      quote: "TaskScout transformed our maintenance operations. 50% faster response times across all locations!",
       rating: 5
     },
     {
       name: "Mike Chen",
-      role: "Maintenance Director",
-      company: "TechCorp Facilities",
-      quote: "The marketplace bidding system saved us 30% on maintenance costs.",
+      role: "Facilities Director",
+      company: "TechCorp Hotels",
+      quote: "The marketplace bidding system saved us 30% on maintenance costs while improving service quality.",
       rating: 5
     },
     {
       name: "Lisa Rodriguez",
-      role: "Operations Manager",
-      company: "Urban Living",
-      quote: "Residents love the mobile app. Satisfaction scores increased dramatically.",
+      role: "Store Manager",
+      company: "Urban Retail Chain",
+      quote: "Customers notice the difference. Our facilities are always pristine thanks to TaskScout's efficiency.",
       rating: 5
     }
   ];
@@ -1188,9 +1188,9 @@ export default function HomePage() {
               </span>
             </div>
             <div className="flex space-x-6 text-sm">
-              <a href="#" className="text-gray-400 hover:text-teal-300 transition-colors">Privacy Policy</a>
-              <a href="#" className="text-gray-400 hover:text-teal-300 transition-colors">Terms of Service</a>
-              <a href="#" className="text-gray-400 hover:text-teal-300 transition-colors">Support</a>
+              <Link href="/privacy" className="text-gray-400 hover:text-teal-300 transition-colors">Privacy Policy</Link>
+              <Link href="/terms" className="text-gray-400 hover:text-teal-300 transition-colors">Terms of Service</Link>
+              <Link href="/contact" className="text-gray-400 hover:text-teal-300 transition-colors">Support</Link>
               <span className="text-gray-400">© 2025 TaskScout. All rights reserved.</span>
             </div>
           </div>
