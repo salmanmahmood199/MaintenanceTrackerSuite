@@ -294,14 +294,30 @@ export default function BlogPostPage() {
       .split('\n\n')
       .map((paragraph, index) => {
         if (paragraph.startsWith('## ')) {
-          return <h2 key={index} className="text-lg font-semibold text-white mb-3 mt-5">{paragraph.replace('## ', '')}</h2>;
+          return <h2 key={index} className="text-lg font-semibold text-white mb-4 mt-6 border-b border-white/20 pb-2">{paragraph.replace('## ', '')}</h2>;
         } else if (paragraph.startsWith('### ')) {
-          return <h3 key={index} className="text-base font-semibold text-white mb-2 mt-4">{paragraph.replace('### ', '')}</h3>;
+          return <h3 key={index} className="text-base font-semibold text-white mb-3 mt-5">{paragraph.replace('### ', '')}</h3>;
+        } else if (paragraph.startsWith('#### ')) {
+          return <h4 key={index} className="text-sm font-semibold text-teal-300 mb-2 mt-4">{paragraph.replace('#### ', '')}</h4>;
+        } else if (paragraph.startsWith('**') && paragraph.endsWith('**') && !paragraph.includes(':**')) {
+          // Handle standalone bold headings
+          return <h4 key={index} className="text-sm font-semibold text-teal-300 mb-2 mt-4">{paragraph.replace(/\*\*/g, '')}</h4>;
+        } else if (paragraph.match(/^\d+\.\s/)) {
+          // Handle numbered lists
+          const listItems = paragraph.split(/\n\d+\.\s/).filter(item => item.trim());
+          const firstItem = paragraph.match(/^\d+\.\s(.+)/)?.[1];
+          if (firstItem) listItems.unshift(firstItem);
+          return (
+            <ol key={index} className="list-decimal list-inside text-gray-300 mb-4 space-y-2 ml-4 text-sm">
+              {listItems.map((item, i) => <li key={i} className="leading-relaxed">{item.trim()}</li>)}
+            </ol>
+          );
         } else if (paragraph.startsWith('- ')) {
+          // Handle bullet lists
           const listItems = paragraph.split('\n- ').map(item => item.replace(/^- /, ''));
           return (
-            <ul key={index} className="list-disc list-inside text-gray-300 mb-3 space-y-1 ml-4 text-sm">
-              {listItems.map((item, i) => <li key={i} className="leading-relaxed text-sm">{item}</li>)}
+            <ul key={index} className="list-disc list-inside text-gray-300 mb-4 space-y-2 ml-4 text-sm">
+              {listItems.map((item, i) => <li key={i} className="leading-relaxed">{item}</li>)}
             </ul>
           );
         } else if (paragraph.includes('**') && paragraph.includes(':**')) {
@@ -310,14 +326,17 @@ export default function BlogPostPage() {
           return (
             <p key={index} className="text-gray-300 mb-3 leading-relaxed text-sm">
               {parts.map((part, i) => 
-                i % 2 === 1 ? <strong key={i} className="text-white font-medium text-sm">{part}</strong> : part
+                i % 2 === 1 ? <strong key={i} className="text-white font-medium">{part}</strong> : part
               )}
             </p>
           );
+        } else if (paragraph.trim().length === 0) {
+          return null; // Skip empty paragraphs
         } else {
           return <p key={index} className="text-gray-300 mb-3 leading-relaxed text-sm">{paragraph}</p>;
         }
-      });
+      })
+      .filter(element => element !== null); // Remove null elements
   };
 
   return (
