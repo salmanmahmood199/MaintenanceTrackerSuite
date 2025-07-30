@@ -291,7 +291,7 @@ By weaving AR into maintenance workflows, organizations future-proof their field
     author: "TaskScout Team",
     category: "AI Technology", 
     readTime: "6 min read",
-    image: "https://images.unsplash.com/photo-1592478411213-6153e4ebc696?w=600&h=300&fit=crop&auto=format"
+    image: "https://images.unsplash.com/photo-1567359781514-3b964e2b04d6?w=600&h=300&fit=crop&auto=format"
   },
   {
     id: 8,
@@ -457,7 +457,7 @@ By prioritizing HVAC energy efficiency, commercial buildings achieve significant
     author: "TaskScout Team",
     category: "HVAC Systems",
     readTime: "7 min read",
-    image: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600&h=300&fit=crop&auto=format"
+    image: "https://images.unsplash.com/photo-1563453392212-326f5e854473?w=600&h=300&fit=crop&auto=format"
   },
   {
     id: 12,
