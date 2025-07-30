@@ -1,0 +1,223 @@
+1. Page Container
+Max‑width: 800 px
+
+Padding: 20 px on left/right, 40 px top/bottom
+
+Font family: Sans‑serif (e.g. Roboto, Open Sans)
+
+Line height: 1.6
+
+2. Title
+css
+Copy
+Edit
+h1.article‑title {
+  font-size: 36px;
+  font-weight: 700;        /* Bold */
+  margin: 0 0 10px 0;       /* 10px below */
+  line-height: 1.2;
+}
+Usage: The article’s main headline
+
+3. Date & Byline
+css
+Copy
+Edit
+p.article‑meta {
+  font-size: 14px;
+  font-style: italic;
+  color: #666666;
+  margin: 0 0 30px 0;
+}
+Usage:
+
+January 5, 2025 · by Your Name
+
+Position: Directly under the H1
+
+4. Section Headings
+4.1 Primary Sections (e.g. “Introduction,” “Key Techniques”)
+css
+Copy
+Edit
+h2.section‑heading {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 40px 0 20px 0;
+}
+4.2 Sub‑Sections (e.g. numbered lists titles)
+css
+Copy
+Edit
+h3.subsection‑heading {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 30px 0 15px 0;
+}
+5. Body Text
+css
+Copy
+Edit
+p, li {
+  font-size: 16px;
+  font-weight: 400;
+  margin: 0 0 15px 0;
+}
+Paragraph spacing: 15 px below each <p>
+
+Bullet lists:
+
+css
+Copy
+Edit
+ul, ol {
+  margin: 0 0 20px 20px;
+}
+li {
+  margin: 5px 0;
+}
+6. Emphasis & Bold
+Bold (<strong>): use for key terms and statistics
+
+Italic (<em>): for subtle emphasis, quotes, or case‑study callouts
+
+7. Blockquotes
+css
+Copy
+Edit
+blockquote {
+  border-left: 4px solid #cccccc;
+  padding-left: 16px;
+  font-size: 16px;
+  font-style: italic;
+  color: #333333;
+  margin: 20px 0;
+}
+Usage: Pull‑out quotes or key insights
+
+8. Numbered & Bulleted Lists
+Numbered lists (<ol>): use for step‑by‑step sections
+
+Unordered lists (<ul>): use for features, best‑practice checklists
+
+9. Case Studies & Call‑Out Boxes
+css
+Copy
+Edit
+div.case‑study {
+  background: #f9f9f9;
+  border-left: 6px solid #0073e6;
+  padding: 20px;
+  margin: 30px 0;
+  font-size: 15px;
+}
+div.case‑study h4 {
+  font-size: 18px;
+  margin-top: 0;
+}
+Usage: Highlight real‑world examples
+
+10. Conclusion
+css
+Copy
+Edit
+h2.conclusion {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 40px 0 20px 0;
+}
+Summarize key takeaways or next steps
+
+11. Citations (In‑Text)
+Format as bracketed superscript: …strategy [1]
+
+Use font‑size 14px, normal weight
+
+css
+Copy
+Edit
+sup.citation {
+  font-size: 14px;
+  vertical-align: super;
+  font-weight: 400;
+}
+12. References List
+css
+Copy
+Edit
+ol.references {
+  font-size: 14px;
+  margin: 40px 0;
+  padding-left: 20px;
+}
+ol.references li {
+  margin: 8px 0;
+}
+Heading:
+
+html
+Copy
+Edit
+<h2 class="section‑heading">References</h2>
+List items:
+
+html
+Copy
+Edit
+<li>[1] Author. (Year). Title. Source.</li>
+13. Code Snippets (if any)
+css
+Copy
+Edit
+pre, code {
+  background: #272822;
+  color: #f8f8f2;
+  padding: 10px;
+  font-family: Menlo, monospace;
+  font-size: 14px;
+  overflow-x: auto;
+  border-radius: 4px;
+}
+14. Responsive Adjustments
+css
+Copy
+Edit
+@media (max-width: 600px) {
+  h1.article‑title { font-size: 28px; }
+  h2.section‑heading { font-size: 20px; }
+  p, li { font-size: 15px; }
+  p.article‑meta { font-size: 12px; }
+}
+Putting It All Together
+Each article’s HTML structure should look roughly like this:
+
+html
+Copy
+Edit
+<article class="page-container">
+  <h1 class="article-title">[Article Title]</h1>
+  <p class="article-meta">[Date] · by [Author]</p>
+
+  <h2 class="section-heading">Introduction</h2>
+  <p>…introductory text…</p>
+
+  <h2 class="section-heading">Key Techniques in ML‑Driven Maintenance</h2>
+  <h3 class="subsection-heading">1. Time‑Series Analysis & Forecasting</h3>
+  <p>…details…</p>
+  <!-- more subsections -->
+
+  <div class="case-study">
+    <h4>Case Study: Automotive Manufacturing</h4>
+    <p>…case details…</p>
+  </div>
+
+  <h2 class="conclusion">Conclusion</h2>
+  <p>…summary…</p>
+
+  <h2 class="section-heading">References</h2>
+  <ol class="references">
+    <li>[1] McKinsey & Company. (2024). The state of AI in 2023…</li>
+    <!-- more references -->
+  </ol>
+</article>
+Use this template for all 15 articles—just swap out titles, dates, section headings, and content. This ensures a consistent, professional, and high‑impact presentation across your blog.
