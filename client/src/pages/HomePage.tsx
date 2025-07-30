@@ -126,41 +126,51 @@ export default function HomePage() {
     }
   ];
 
-  const workflows = [
+  const userTypes = [
     {
-      step: 1,
-      title: "Ticket Creation",
-      description: "Residents create tickets with photos/videos",
-      icon: <Camera className="w-6 h-6" />,
+      type: "Commercial Businesses",
+      description: "Restaurants, hotels, retail stores",
+      icon: <Building className="w-8 h-8" />,
+      color: "from-blue-500 to-cyan-500",
+      features: ["Direct vendor assignment", "Organization management", "Multi-location support"]
+    },
+    {
+      type: "Residential Users", 
+      description: "Homeowners and renters",
+      icon: <Home className="w-8 h-8" />,
+      color: "from-green-500 to-emerald-500",
+      features: ["Marketplace bidding", "Address privacy", "Instant quotes"]
+    },
+    {
+      type: "Maintenance Vendors",
+      description: "HVAC, plumbing, electrical contractors", 
+      icon: <Users className="w-8 h-8" />,
+      color: "from-purple-500 to-pink-500",
+      features: ["Bid on jobs", "Technician management", "Invoice generation"]
+    }
+  ];
+
+  const workflowPaths = [
+    {
+      title: "Direct Assignment",
+      description: "Commercial businesses assign maintenance directly to trusted vendors",
+      steps: ["Create Ticket", "Assign Vendor", "Work Completion", "Payment"],
+      icon: <ArrowRight className="w-6 h-6" />,
       color: "from-blue-500 to-purple-500"
     },
     {
-      step: 2,
-      title: "AI Assignment",
-      description: "Smart routing to qualified vendors",
-      icon: <Target className="w-6 h-6" />,
-      color: "from-purple-500 to-pink-500"
-    },
-    {
-      step: 3,
       title: "Marketplace Bidding",
-      description: "Vendors compete with competitive bids",
+      description: "Open marketplace where vendors compete for residential and commercial jobs",
+      steps: ["Post Request", "Vendor Bids", "Accept Best Offer", "Service Delivery"],
       icon: <TrendingUp className="w-6 h-6" />,
-      color: "from-pink-500 to-red-500"
+      color: "from-green-500 to-teal-500"
     },
     {
-      step: 4,
-      title: "Work Execution",
-      description: "Technicians complete with photo documentation",
-      icon: <Wrench className="w-6 h-6" />,
+      title: "Emergency Response",
+      description: "Urgent issues get priority routing to available technicians",
+      steps: ["Emergency Alert", "Instant Match", "Rapid Response", "Same-Day Fix"],
+      icon: <Zap className="w-6 h-6" />,
       color: "from-red-500 to-orange-500"
-    },
-    {
-      step: 5,
-      title: "Billing & Payment",
-      description: "Automated invoicing and secure payments",
-      icon: <CreditCard className="w-6 h-6" />,
-      color: "from-orange-500 to-yellow-500"
     }
   ];
 
@@ -924,7 +934,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Workflow Visualization */}
+      {/* Workflow Tree Visualization */}
       <section className="relative z-10 px-6 py-20">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
@@ -932,57 +942,84 @@ export default function HomePage() {
               How TaskScout Works
             </h2>
             <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-              From ticket creation to payment completion, experience the seamless workflow 
-              that revolutionizes maintenance management.
+              Multiple pathways serve every user type - from commercial businesses to residential users and maintenance vendors.
             </p>
           </div>
 
-          <div className="relative">
-            {/* Workflow Steps */}
-            <div className="flex flex-col lg:flex-row items-center justify-between space-y-8 lg:space-y-0 lg:space-x-8">
-              {workflows.map((step, index) => (
-                <div key={index} className="flex-1 relative">
-                  <div className={`group cursor-pointer transform transition-all duration-500 hover:scale-110 ${
-                    currentSlide === index ? 'scale-110' : ''
-                  }`}>
-                    {/* Step Number */}
-                    <div className={`w-16 h-16 bg-gradient-to-r ${step.color} rounded-full flex items-center justify-center mx-auto mb-4 text-white font-bold text-xl shadow-2xl ${
-                      currentSlide === index ? 'animate-pulse' : ''
-                    }`}>
-                      {step.step}
+          {/* User Types Tree */}
+          <div className="mb-16">
+            <div className="grid md:grid-cols-3 gap-8 mb-12">
+              {userTypes.map((userType, index) => (
+                <div key={index} className="group">
+                  <div className={`bg-gradient-to-br ${userType.color.replace('to-', 'to-')}10 border ${userType.color.replace('from-', 'border-').replace(' to-cyan-500', '').replace(' to-emerald-500', '').replace(' to-pink-500', '')}/20 rounded-3xl p-8 backdrop-blur-sm hover:scale-105 transition-all duration-500 text-center`}>
+                    <div className={`w-16 h-16 bg-gradient-to-r ${userType.color} rounded-2xl flex items-center justify-center mb-6 mx-auto group-hover:scale-110 transition-transform duration-300`}>
+                      {userType.icon}
                     </div>
-                    
-                    {/* Step Icon */}
-                    <div className={`w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm border border-white/20 group-hover:bg-white/20 transition-all duration-300 ${
-                      currentSlide === index ? 'bg-white/20 scale-110' : ''
-                    }`}>
-                      {step.icon}
-                    </div>
-                    
-                    {/* Step Content */}
-                    <div className="text-center">
-                      <h3 className={`text-lg font-bold mb-2 transition-colors duration-300 ${
-                        currentSlide === index ? 'text-blue-300' : 'text-white'
-                      }`}>
-                        {step.title}
-                      </h3>
-                      <p className="text-gray-400 text-sm leading-relaxed max-w-xs mx-auto">
-                        {step.description}
-                      </p>
+                    <h3 className="text-2xl font-bold text-white mb-2">
+                      {userType.type}
+                    </h3>
+                    <p className="text-gray-400 mb-6">
+                      {userType.description}
+                    </p>
+                    <div className="space-y-2">
+                      {userType.features.map((feature, featureIndex) => (
+                        <div key={featureIndex} className="flex items-center space-x-2 text-sm">
+                          <CheckCircle className="w-4 h-4 text-teal-400 flex-shrink-0" />
+                          <span className="text-gray-300">{feature}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                  
-                  {/* Connection Line */}
-                  {index < workflows.length - 1 && (
-                    <div className="hidden lg:block absolute top-8 left-full w-8 h-0.5 bg-gradient-to-r from-white/30 to-transparent transform translate-x-4"></div>
-                  )}
                 </div>
               ))}
             </div>
-            
-            {/* Animated Flow Line */}
-            <div className="hidden lg:block absolute top-8 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500/30 via-purple-500/30 to-pink-500/30 overflow-hidden">
-              <div className="w-full h-full bg-gradient-to-r from-transparent via-white to-transparent animate-pulse"></div>
+          </div>
+
+          {/* Workflow Paths */}
+          <div className="grid md:grid-cols-3 gap-8">
+            {workflowPaths.map((path, index) => (
+              <div key={index} className="group">
+                <div className={`bg-gradient-to-br ${path.color.replace('to-', 'to-')}10 border ${path.color.replace('from-', 'border-').replace(' to-purple-500', '').replace(' to-teal-500', '').replace(' to-orange-500', '')}/20 rounded-3xl p-8 backdrop-blur-sm hover:scale-105 transition-all duration-500`}>
+                  {/* Path Icon */}
+                  <div className={`w-16 h-16 bg-gradient-to-r ${path.color} rounded-2xl flex items-center justify-center mb-6 mx-auto group-hover:scale-110 transition-transform duration-300`}>
+                    {path.icon}
+                  </div>
+                  
+                  {/* Path Content */}
+                  <div className="text-center mb-6">
+                    <h3 className="text-2xl font-bold text-white mb-2">
+                      {path.title}
+                    </h3>
+                    <p className="text-gray-400 text-sm leading-relaxed">
+                      {path.description}
+                    </p>
+                  </div>
+                  
+                  {/* Process Steps */}
+                  <div className="space-y-3">
+                    {path.steps.map((step, stepIndex) => (
+                      <div key={stepIndex} className="flex items-center space-x-3">
+                        <div className={`w-6 h-6 bg-gradient-to-r ${path.color} rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0`}>
+                          {stepIndex + 1}
+                        </div>
+                        <span className="text-gray-300 text-sm">{step}</span>
+                        {stepIndex < path.steps.length - 1 && (
+                          <div className="flex-1 border-t border-gray-600/30"></div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Central Connection Visual */}
+          <div className="mt-16 text-center">
+            <div className="inline-flex items-center space-x-4 bg-gradient-to-r from-teal-500/10 to-cyan-500/10 border border-teal-500/20 rounded-full px-8 py-4 backdrop-blur-sm">
+              <Zap className="w-6 h-6 text-teal-400" />
+              <span className="text-white font-semibold">All paths lead to the same powerful platform</span>
+              <Users className="w-6 h-6 text-cyan-400" />
             </div>
           </div>
         </div>
