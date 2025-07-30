@@ -148,7 +148,7 @@ export default function BlogsPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-400">By {post.author}</span>
                     <Link href={`/blog/${post.id}`}>
-                      <Button variant="ghost" size="sm" className="text-teal-400 hover:text-teal-300 hover:bg-teal-500/10">
+                      <Button variant="ghost" size="sm" className="text-teal-300 hover:text-teal-200 hover:bg-teal-500/10">
                         Read More
                         <ArrowRight className="w-4 h-4 ml-2" />
                       </Button>

@@ -218,7 +218,7 @@ By weaving IoT sensors into every level of your maintenance strategy, you create
     author: "TaskScout Team",
     category: "IoT Technology",
     readTime: "8 min read", 
-    image: "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=600&h=300&fit=crop&auto=format"
+    image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600&h=300&fit=crop&auto=format"
   },
   {
     id: 6,
@@ -697,6 +697,6 @@ The future of maintenance is intelligent, connected, and autonomous. Companies i
     author: "TaskScout Team",
     category: "Industry Trends",
     readTime: "8 min read",
-    image: "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=600&h=300&fit=crop&auto=format"
+    image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&h=300&fit=crop&auto=format"
   }
 ];
