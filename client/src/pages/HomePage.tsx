@@ -196,7 +196,7 @@ export default function HomePage() {
 
   const stats = [
     { number: "50K+", label: "Tickets Processed", icon: <CheckCircle className="w-6 h-6" /> },
-    { number: "1,200+", label: "Active Users", icon: <Users className="w-6 h-6" /> },
+    { number: "2,400+", label: "Active Businesses", icon: <Users className="w-6 h-6" /> },
     { number: "99.9%", label: "Uptime", icon: <Shield className="w-6 h-6" /> },
     { number: "24/7", label: "Support", icon: <Clock className="w-6 h-6" /> }
   ];
@@ -1151,10 +1151,10 @@ export default function HomePage() {
               Ready to Transform Your Maintenance Operations?
             </h2>
             <p className="text-xl text-gray-300 mb-8 leading-relaxed">
-              Join thousands of property managers who've revolutionized their maintenance workflow with TaskScout
+              Join thousands of businesses who've revolutionized their maintenance operations with TaskScout's AI-powered platform and marketplace
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center">
-              <Link href="/register">
+              <Link href="/contact">
                 <Button size="lg" className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-lg px-12 py-4 rounded-full shadow-2xl transform hover:scale-105 transition-all duration-300">
                   Start Your Free Trial
                   <ArrowRight className="ml-2 w-5 h-5" />
@@ -1190,7 +1190,7 @@ export default function HomePage() {
             <div className="flex space-x-6 text-sm">
               <Link href="/privacy" className="text-gray-400 hover:text-teal-300 transition-colors">Privacy Policy</Link>
               <Link href="/terms" className="text-gray-400 hover:text-teal-300 transition-colors">Terms of Service</Link>
-              <Link href="/contact" className="text-gray-400 hover:text-teal-300 transition-colors">Support</Link>
+              <Link href="/support" className="text-gray-400 hover:text-teal-300 transition-colors">Support</Link>
               <span className="text-gray-400">© 2025 TaskScout. All rights reserved.</span>
             </div>
           </div>

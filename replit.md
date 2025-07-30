@@ -478,6 +478,12 @@ Changelog:
 - July 30, 2025. Support link now redirects to contact form (/contact) for information entry as requested
 - July 30, 2025. Updated blog page description to "Commercial Maintenance Industry Insights" focusing on HVAC, plumbing, AI, and business solutions
 - July 30, 2025. Enhanced blog categories to reflect new industry focus: HVAC Systems, Plumbing Solutions, AI Technology, Business Solutions, Industry Trends
+- July 30, 2025. Created separate SupportPage.tsx for general support inquiries with comprehensive form, FAQ section, and professional styling
+- July 30, 2025. Fixed "Start Free Trial" button to properly redirect to /contact page and updated all property manager references
+- July 30, 2025. Updated homepage statistics from "1,200+ Active Users" to "2,400+ Active Businesses" reflecting broader business focus
+- July 30, 2025. Added support contact API endpoint (/api/support-contact) with professional email templates and priority handling
+- July 30, 2025. Updated all legal page buttons to redirect to /support page instead of /contact for appropriate routing
+- July 30, 2025. Footer navigation now properly separates free trial signups (/contact) from general support (/support)
 ```
 
 ## User Preferences

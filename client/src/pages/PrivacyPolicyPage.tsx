@@ -213,7 +213,7 @@ export default function PrivacyPolicyPage() {
 
             {/* Call to Action */}
             <div className="mt-12 text-center">
-              <Link href="/contact">
+              <Link href="/support">
                 <Button className="bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-500 hover:from-teal-600 hover:via-cyan-600 hover:to-blue-600 text-lg px-8 py-4">
                   Have Questions? Contact Us
                 </Button>

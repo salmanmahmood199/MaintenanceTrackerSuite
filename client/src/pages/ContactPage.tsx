@@ -201,7 +201,7 @@ export default function ContactPage() {
               Start Your Free Trial
             </h2>
             <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
-              Join thousands of property managers who've revolutionized their maintenance operations. 
+              Join thousands of businesses who've revolutionized their maintenance operations with TaskScout's AI-powered platform. 
               Tell us about your needs and we'll set up a personalized demo.
             </p>
           </div>
@@ -407,7 +407,7 @@ export default function ContactPage() {
                   <ul className="space-y-3 text-sm">
                     <li className="flex items-start space-x-3">
                       <Users className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-300">Trusted by 1,200+ property managers</span>
+                      <span className="text-gray-300">Trusted by 2,400+ businesses nationwide</span>
                     </li>
                     <li className="flex items-start space-x-3">
                       <Zap className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />

@@ -4279,5 +4279,163 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Support contact form submission
+  app.post('/api/support-contact', async (req, res) => {
+    try {
+      const {
+        firstName,
+        lastName,
+        email,
+        phone,
+        company,
+        role,
+        subject,
+        priority,
+        description
+      } = req.body;
+
+      const priorityLabel = {
+        'low': 'Low - General question',
+        'medium': 'Medium - Feature issue', 
+        'high': 'High - System problem',
+        'urgent': 'Urgent - Service outage'
+      }[priority] || priority;
+
+      // Create transporter for this specific request
+      const transporter = nodemailer.createTransporter({
+        service: 'gmail',
+        auth: {
+          user: process.env.GMAIL_USER,
+          pass: process.env.GMAIL_APP_PASSWORD
+        }
+      });
+
+      // Email content for support team
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #14B8A6, #06B6D4); padding: 20px; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0; text-align: center;">TaskScout Support Request</h1>
+          </div>
+          
+          <div style="padding: 30px; background: #f8f9fa; border-radius: 0 0 10px 10px;">
+            <h2 style="color: #1e293b; margin-top: 0;">Contact Information</h2>
+            <table style="width: 100%; margin-bottom: 20px;">
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #475569;">Name:</td>
+                <td style="padding: 8px 0; color: #1e293b;">${firstName} ${lastName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #475569;">Email:</td>
+                <td style="padding: 8px 0; color: #1e293b;">${email}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #475569;">Phone:</td>
+                <td style="padding: 8px 0; color: #1e293b;">${phone}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #475569;">Company:</td>
+                <td style="padding: 8px 0; color: #1e293b;">${company}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #475569;">Role:</td>
+                <td style="padding: 8px 0; color: #1e293b;">${role}</td>
+              </tr>
+            </table>
+
+            <h2 style="color: #1e293b;">Request Details</h2>
+            <table style="width: 100%; margin-bottom: 20px;">
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #475569;">Subject:</td>
+                <td style="padding: 8px 0; color: #1e293b;">${subject}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #475569;">Priority:</td>
+                <td style="padding: 8px 0; color: #1e293b;"><span style="background: ${priority === 'urgent' ? '#EF4444' : priority === 'high' ? '#F59E0B' : priority === 'medium' ? '#3B82F6' : '#10B981'}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${priorityLabel}</span></td>
+              </tr>
+            </table>
+
+            <h2 style="color: #1e293b;">Description</h2>
+            <div style="background: white; padding: 15px; border-radius: 5px; border-left: 4px solid #14B8A6;">
+              <p style="margin: 0; color: #1e293b; line-height: 1.6;">${description}</p>
+            </div>
+            
+            <div style="margin-top: 20px; padding: 15px; background: #E0F2FE; border-radius: 5px;">
+              <p style="margin: 0; color: #0C4A6E; font-size: 14px;">
+                <strong>Submitted:</strong> ${new Date().toLocaleString()}
+              </p>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Send email to support team
+      await transporter.sendMail({
+        from: `"TaskScout Support" <${process.env.GMAIL_USER}>`,
+        to: 'hello@taskscout.ai',
+        subject: `[${priority?.toUpperCase() || 'SUPPORT'}] ${subject}`,
+        html: emailHtml,
+      });
+
+      // Send confirmation email to user
+      const confirmationHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #14B8A6, #06B6D4); padding: 20px; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0; text-align: center;">Support Request Received</h1>
+          </div>
+          
+          <div style="padding: 30px; background: #f8f9fa; border-radius: 0 0 10px 10px;">
+            <h2 style="color: #1e293b; margin-top: 0;">Hello ${firstName},</h2>
+            
+            <p style="color: #1e293b; font-size: 16px; line-height: 1.6;">
+              Thank you for contacting TaskScout support! We've received your support request and our team will respond within 24 hours.
+            </p>
+
+            <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #14B8A6;">
+              <h3 style="color: #1e293b; margin-top: 0;">Your Request Details</h3>
+              <ul style="color: #475569; line-height: 1.8;">
+                <li><strong>Subject:</strong> ${subject}</li>
+                <li><strong>Priority:</strong> ${priorityLabel}</li>
+                <li><strong>Reference ID:</strong> #${Date.now().toString().slice(-6)}</li>
+              </ul>
+            </div>
+
+            <p style="color: #1e293b; font-size: 16px; line-height: 1.6;">
+              Our support team will review your request and get back to you at ${email}. For urgent issues, you can also reach us directly at 
+              <a href="mailto:hello@taskscout.ai" style="color: #14B8A6;">hello@taskscout.ai</a>.
+            </p>
+
+            <p style="color: #1e293b; font-size: 16px; line-height: 1.6;">
+              Best regards,<br>
+              <strong>TaskScout Support Team</strong>
+            </p>
+          </div>
+          
+          <div style="text-align: center; padding: 20px; color: #64748b; font-size: 14px;">
+            <p>TaskScout - AI-Powered Maintenance Management</p>
+            <p>Support: hello@taskscout.ai</p>
+          </div>
+        </div>
+      `;
+
+      await transporter.sendMail({
+        from: `"TaskScout Support" <${process.env.GMAIL_USER}>`,
+        to: email,
+        subject: 'TaskScout Support - Request Received',
+        html: confirmationHtml,
+      });
+
+      res.status(200).json({ 
+        success: true, 
+        message: 'Support request submitted successfully' 
+      });
+
+    } catch (error) {
+      console.error('Support contact form error:', error);
+      res.status(500).json({ 
+        error: 'Failed to send support request. Please try again.' 
+      });
+    }
+  });
+
   return httpServer;
 }

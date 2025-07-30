@@ -9,6 +9,7 @@ import ContactPage from "@/pages/ContactPage";
 import BlogsPage from "@/pages/BlogsPage";
 import PrivacyPolicyPage from "@/pages/PrivacyPolicyPage";
 import TermsOfServicePage from "@/pages/TermsOfServicePage";
+import SupportPage from "@/pages/SupportPage";
 import Dashboard from "@/pages/dashboard";
 import Login from "@/pages/login";
 import AdminDashboard from "@/pages/admin-dashboard";
@@ -42,6 +43,7 @@ function Router() {
         <Route path="/blogs" component={BlogsPage} />
         <Route path="/privacy" component={PrivacyPolicyPage} />
         <Route path="/terms" component={TermsOfServicePage} />
+        <Route path="/support" component={SupportPage} />
         <Route path="/login" component={Login} />
         <Route path="/register" component={HomePage} />
         <Route path="/register/residential" component={ResidentialRegisterPage} />
