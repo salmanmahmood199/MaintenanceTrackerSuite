@@ -313,11 +313,11 @@ IDC. (2023). IoT in Manufacturing: A European Perspective.`,
               Commercial Maintenance Industry Insights
             </Badge>
             
-            <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-white via-teal-200 to-cyan-200 bg-clip-text text-transparent">
+            <h1 className="text-3xl md:text-4xl font-bold mb-6 bg-gradient-to-r from-white via-teal-200 to-cyan-200 bg-clip-text text-transparent">
               Maintenance Insights
             </h1>
             
-            <p className="text-lg text-gray-300 max-w-3xl mx-auto mb-8">
+            <p className="text-base text-gray-300 max-w-3xl mx-auto mb-8">
               Expert insights on HVAC systems, plumbing solutions, AI technology, and business solutions. 
               Stay ahead with industry trends and proven strategies.
             </p>
@@ -439,10 +439,10 @@ function BlogPostCard({ post }: { post: any }) {
           <Badge variant="outline" className="border-teal-500/30 text-teal-300 mb-3">
             {post.category}
           </Badge>
-          <h3 className="text-base font-semibold text-white mb-3 group-hover:text-teal-300 transition-colors line-clamp-2 leading-tight">
+          <h3 className="text-sm font-semibold text-white mb-3 group-hover:text-teal-300 transition-colors line-clamp-2 leading-tight">
             {post.title}
           </h3>
-          <p className="text-gray-400 text-sm line-clamp-3 mb-4 leading-relaxed">
+          <p className="text-gray-400 text-xs line-clamp-3 mb-4 leading-relaxed">
             {post.excerpt}
           </p>
         </div>

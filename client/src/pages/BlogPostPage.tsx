@@ -294,28 +294,28 @@ export default function BlogPostPage() {
       .split('\n\n')
       .map((paragraph, index) => {
         if (paragraph.startsWith('## ')) {
-          return <h2 key={index} className="text-xl font-semibold text-white mb-4 mt-6">{paragraph.replace('## ', '')}</h2>;
+          return <h2 key={index} className="text-lg font-semibold text-white mb-3 mt-5">{paragraph.replace('## ', '')}</h2>;
         } else if (paragraph.startsWith('### ')) {
-          return <h3 key={index} className="text-lg font-semibold text-white mb-3 mt-5">{paragraph.replace('### ', '')}</h3>;
+          return <h3 key={index} className="text-base font-semibold text-white mb-2 mt-4">{paragraph.replace('### ', '')}</h3>;
         } else if (paragraph.startsWith('- ')) {
           const listItems = paragraph.split('\n- ').map(item => item.replace(/^- /, ''));
           return (
-            <ul key={index} className="list-disc list-inside text-gray-300 mb-4 space-y-1 ml-4 text-sm">
-              {listItems.map((item, i) => <li key={i} className="leading-relaxed">{item}</li>)}
+            <ul key={index} className="list-disc list-inside text-gray-300 mb-3 space-y-1 ml-4 text-sm">
+              {listItems.map((item, i) => <li key={i} className="leading-relaxed text-sm">{item}</li>)}
             </ul>
           );
         } else if (paragraph.includes('**') && paragraph.includes(':**')) {
           // Handle definition-style paragraphs
           const parts = paragraph.split('**');
           return (
-            <p key={index} className="text-gray-300 mb-4 leading-relaxed text-sm">
+            <p key={index} className="text-gray-300 mb-3 leading-relaxed text-sm">
               {parts.map((part, i) => 
-                i % 2 === 1 ? <strong key={i} className="text-white font-medium">{part}</strong> : part
+                i % 2 === 1 ? <strong key={i} className="text-white font-medium text-sm">{part}</strong> : part
               )}
             </p>
           );
         } else {
-          return <p key={index} className="text-gray-300 mb-4 leading-relaxed text-sm">{paragraph}</p>;
+          return <p key={index} className="text-gray-300 mb-3 leading-relaxed text-sm">{paragraph}</p>;
         }
       });
   };
@@ -340,11 +340,11 @@ export default function BlogPostPage() {
               {post.category}
             </Badge>
             
-            <h1 className="text-2xl md:text-3xl font-bold text-white mb-6 leading-tight">
+            <h1 className="text-xl md:text-2xl font-bold text-white mb-4 leading-tight">
               {post.title}
             </h1>
             
-            <div className="flex items-center space-x-6 text-gray-400 text-sm mb-6">
+            <div className="flex items-center space-x-6 text-gray-400 text-xs mb-4">
               <div className="flex items-center">
                 <Calendar className="w-4 h-4 mr-2" />
                 {post.date}
@@ -359,7 +359,7 @@ export default function BlogPostPage() {
               </div>
             </div>
 
-            <p className="text-base text-gray-300 leading-relaxed">
+            <p className="text-sm text-gray-300 leading-relaxed">
               {post.excerpt}
             </p>
           </div>
@@ -378,15 +378,15 @@ export default function BlogPostPage() {
             />
           </div>
 
-          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-white/10 rounded-xl p-6 md:p-8">
-            <article className="prose max-w-none">
+          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-white/10 rounded-xl p-5 md:p-6">
+            <article className="max-w-none">
               {formatContent(post.content)}
             </article>
           </div>
 
           {/* Related Articles */}
           <div className="mt-12">
-            <h3 className="text-2xl font-semibold text-white mb-6">Related Articles</h3>
+            <h3 className="text-lg font-semibold text-white mb-4">Related Articles</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {blogPosts
                 .filter(p => p.id !== post.id && p.category === post.category)
@@ -397,10 +397,10 @@ export default function BlogPostPage() {
                       <Badge variant="outline" className="border-teal-500/30 text-teal-300 mb-3">
                         {relatedPost.category}
                       </Badge>
-                      <h4 className="text-base font-semibold text-white mb-2 line-clamp-2">
+                      <h4 className="text-sm font-semibold text-white mb-2 line-clamp-2">
                         {relatedPost.title}
                       </h4>
-                      <p className="text-gray-400 text-sm line-clamp-3">
+                      <p className="text-gray-400 text-xs line-clamp-3">
                         {relatedPost.excerpt}
                       </p>
                       <div className="flex items-center text-xs text-gray-500 mt-4">
