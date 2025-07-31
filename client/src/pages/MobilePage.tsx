@@ -16,8 +16,8 @@ import {
 } from 'lucide-react';
 
 const MobilePage = () => {
-  const [email, setEmail] = useState('placeticket@nsrpetro.com');
-  const [password, setPassword] = useState('password');
+  const [email, setEmail] = useState('root@mail.com');
+  const [password, setPassword] = useState('admin');
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
@@ -106,7 +106,9 @@ const MobilePage = () => {
         // Reload page after successful login to re-check auth
         window.location.reload();
       } else {
-        console.error('Login failed');
+        const errorData = await response.json();
+        console.error('Login failed:', errorData.message);
+        alert('Login failed: ' + errorData.message);
       }
     } catch (error) {
       console.error('Login failed:', error);
@@ -127,6 +129,14 @@ const MobilePage = () => {
             <CardDescription>
               Sign in to manage your maintenance tickets
             </CardDescription>
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-xs text-blue-600 font-medium mb-2">Quick Login Options:</p>
+              <div className="space-y-1 text-xs text-blue-800">
+                <div><strong>Root Admin:</strong> root@mail.com / admin</div>
+                <div><strong>Org Admin:</strong> admin@nsrpetroservices.org / password</div>
+                <div><strong>Sub Admin:</strong> placeticket@nsrpetro.com / password</div>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
@@ -152,6 +162,43 @@ const MobilePage = () => {
                   className="text-base"
                 />
               </div>
+              
+              <div className="flex space-x-2">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="flex-1 text-xs p-2 h-8"
+                  onClick={() => {
+                    setEmail('root@mail.com');
+                    setPassword('admin');
+                  }}
+                >
+                  Root
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="flex-1 text-xs p-2 h-8"
+                  onClick={() => {
+                    setEmail('placeticket@nsrpetro.com');
+                    setPassword('password');
+                  }}
+                >
+                  Sub-Admin
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="flex-1 text-xs p-2 h-8"
+                  onClick={() => {
+                    setEmail('admin@nsrpetroservices.org');
+                    setPassword('password');
+                  }}
+                >
+                  Org Admin
+                </Button>
+              </div>
+              
               <Button 
                 type="submit" 
                 className="w-full text-base py-6"
@@ -159,9 +206,6 @@ const MobilePage = () => {
               >
                 {loading ? 'Signing In...' : 'Sign In'}
               </Button>
-              <div className="text-center text-sm text-gray-500">
-                Demo: root@mail.com / admin
-              </div>
             </form>
           </CardContent>
         </Card>
