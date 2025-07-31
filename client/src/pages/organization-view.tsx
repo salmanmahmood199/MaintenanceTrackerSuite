@@ -57,7 +57,7 @@ interface TicketStats {
 export default function OrganizationView() {
   const [match, params] = useRoute("/organization/:id");
 
-  const routeOrgId = params.id;
+  const routeOrgId = params?.id;
   console.log(routeOrgId, "orgiddd");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreateSubAdminOpen, setIsCreateSubAdminOpen] = useState(false);
