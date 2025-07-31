@@ -24,6 +24,9 @@ import { TicketActionModal } from "@/components/ticket-action-modal";
 import { ConfirmCompletionModal } from "@/components/confirm-completion-modal";
 import { MarketplaceBidsModal } from "@/components/marketplace-bids-modal";
 import { EnhancedInvoiceCreator } from "@/components/enhanced-invoice-creator";
+import { TicketComments } from "@/components/ticket-comments";
+import { ProgressTrackerEmbedded } from "@/components/progress-tracker";
+import { WorkOrdersHistory } from "@/components/work-orders-history";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { 
@@ -56,6 +59,7 @@ const MobilePage = () => {
   const [ticketDateFilter, setTicketDateFilter] = useState<'all' | 'last30' | 'last7' | 'today'>('last30');
   const [selectedTicketForDetails, setSelectedTicketForDetails] = useState<Ticket | null>(null);
   const [isTicketDetailModalOpen, setIsTicketDetailModalOpen] = useState(false);
+  const [isWorkOrderHistoryOpen, setIsWorkOrderHistoryOpen] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -1042,40 +1046,54 @@ const MobilePage = () => {
 
               {/* Comments Tab */}
               <TabsContent value="comments" className="flex-1 overflow-y-auto p-4">
-                <div className="text-center py-8">
-                  <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">Comments feature coming soon!</p>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    View and add comments to track ticket progress and communication.
-                  </p>
-                </div>
+                {selectedTicketForDetails && (
+                  <TicketComments 
+                    ticket={selectedTicketForDetails} 
+                    userRole={user?.role}
+                    userId={user?.id}
+                  />
+                )}
               </TabsContent>
 
               {/* Progress Tab */}
               <TabsContent value="progress" className="flex-1 overflow-y-auto p-4">
-                <div className="text-center py-8">
-                  <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">Progress tracking coming soon!</p>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Track ticket journey from creation to completion with detailed timeline.
-                  </p>
-                </div>
+                {selectedTicketForDetails && (
+                  <ProgressTrackerEmbedded 
+                    ticket={selectedTicketForDetails} 
+                    canUpdate={user?.role === 'org_admin' || user?.role === 'maintenance_admin'}
+                  />
+                )}
               </TabsContent>
 
               {/* Work Orders Tab */}
               <TabsContent value="work-orders" className="flex-1 overflow-y-auto p-4">
-                <div className="text-center py-8">
-                  <Wrench className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">Work orders coming soon!</p>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    View detailed work orders with parts, labor, and completion notes.
-                  </p>
-                </div>
+                {selectedTicketForDetails && (
+                  <div className="space-y-4">
+                    <Button
+                      onClick={() => setIsWorkOrderHistoryOpen(true)}
+                      className="w-full"
+                      variant="outline"
+                    >
+                      <Wrench className="h-4 w-4 mr-2" />
+                      View All Work Orders
+                    </Button>
+                    <p className="text-sm text-muted-foreground text-center">
+                      Click above to view detailed work order history with parts, labor, and completion notes.
+                    </p>
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Work Orders History Modal */}
+      <WorkOrdersHistory
+        open={isWorkOrderHistoryOpen}
+        onOpenChange={setIsWorkOrderHistoryOpen}
+        ticketId={selectedTicketForDetails?.id || null}
+      />
 
       {/* Modals */}
       <CreateTicketModal
