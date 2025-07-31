@@ -1,22 +1,69 @@
-import React, { useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Smartphone, User, Settings, Plus, List } from 'lucide-react';
+import { Smartphone, User, Settings, Plus, List, CheckCircle } from 'lucide-react';
 
 const MobilePage = () => {
-  const { user, login, logout } = useAuth();
   const [email, setEmail] = useState('root@mail.com');
   const [password, setPassword] = useState('admin');
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  // Check authentication on load
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/user', {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  // Show loading state while checking auth
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading TaskScout Mobile...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await login(email, password);
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (response.ok) {
+        // Reload page after successful login to re-check auth
+        window.location.reload();
+      } else {
+        console.error('Login failed');
+      }
     } catch (error) {
       console.error('Login failed:', error);
     } finally {
@@ -90,7 +137,10 @@ const MobilePage = () => {
           <Button 
             variant="ghost" 
             size="sm"
-            onClick={logout}
+            onClick={() => {
+              fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+              setUser(null);
+            }}
           >
             Logout
           </Button>
