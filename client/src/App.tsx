@@ -23,6 +23,7 @@ import { ResidentialRegisterPage } from "@/pages/residential-register";
 import ResidentialDashboard from "@/pages/residential-dashboard";
 import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
+import MobilePage from "@/pages/MobilePage";
 
 function Router() {
   const { user, isAuthenticated, isLoading, isRoot } = useAuth();
@@ -51,6 +52,7 @@ function Router() {
         <Route path="/register/residential" component={ResidentialRegisterPage} />
         <Route path="/forgot-password" component={ForgotPasswordPage} />
         <Route path="/reset-password" component={ResetPasswordPage} />
+        <Route path="/mobile" component={MobilePage} />
         <Route component={HomePage} />
       </Switch>
     );
@@ -60,6 +62,7 @@ function Router() {
   if (user?.role === "root") {
     return (
       <Switch>
+        <Route path="/mobile" component={MobilePage} />
         <Route path="/organization/:id" component={OrganizationView} />
         <Route path="/vendor/:id" component={VendorView} />
         <Route path="/calendar" component={Calendar} />

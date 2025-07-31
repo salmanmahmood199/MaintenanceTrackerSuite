@@ -39,5 +39,9 @@ externalPort = 3001
 localPort = 5000
 externalPort = 80
 
+[[ports]]
+localPort = 19006
+externalPort = 3000
+
 [agent]
 integrations = ["javascript_slack==1.0.0", "javascript_sendgrid==1.0.0"]
