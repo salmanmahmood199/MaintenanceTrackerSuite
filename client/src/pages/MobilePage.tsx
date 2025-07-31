@@ -16,8 +16,8 @@ import {
 } from 'lucide-react';
 
 const MobilePage = () => {
-  const [email, setEmail] = useState('root@mail.com');
-  const [password, setPassword] = useState('admin');
+  const [email, setEmail] = useState('placeticket@nsrpetro.com');
+  const [password, setPassword] = useState('password');
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
@@ -227,12 +227,12 @@ const MobilePage = () => {
         <div className="flex items-center space-x-3">
           <Avatar className="h-12 w-12 border-2 border-white/20 bg-white/10">
             <AvatarFallback className="bg-white/10 text-white font-bold backdrop-blur-sm">
-              {user.firstName?.[0]}{user.lastName?.[0] || user.email[0].toUpperCase()}
+              {(user.first_name || user.firstName)?.[0] || user.email[0].toUpperCase()}{(user.last_name || user.lastName)?.[0] || ''}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1">
             <h2 className="font-semibold text-lg text-white">
-              {user.firstName} {user.lastName || ''}
+              {user.first_name || user.firstName} {user.last_name || user.lastName || ''}
             </h2>
             <p className="text-blue-100 text-sm capitalize">{user.role.replace('_', ' ')}</p>
             <div className="flex items-center space-x-2 mt-1">
