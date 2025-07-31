@@ -1,19 +1,38 @@
 import React, { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { 
-  Smartphone, User, Settings, Plus, List, CheckCircle, 
-  Home, Ticket, Calendar, Building, Wrench, Bell,
-  Search, Filter, Camera, MapPin, Clock, AlertCircle,
-  Star, TrendingUp, Users, DollarSign, Eye, Edit,
-  MessageSquare, Image, Video, FileText, Phone, Mail
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+  Smartphone, Calendar, Settings, Bell, LogOut, CheckCircle, Ticket as TicketIcon, 
+  AlertCircle, TrendingUp, Plus, Clock, User as UserIcon, MapPin, Filter, Search,
+  MessageSquare, Image, Video, FileText, Phone, Mail, Users, Building2,
+  Wrench, Edit, Eye, ArrowLeft, ChevronDown, MoreVertical, Home,
+  DollarSign, Star, Camera, List
 } from 'lucide-react';
+import { CreateTicketModal } from "@/components/create-ticket-modal";
+import { TicketActionModal } from "@/components/ticket-action-modal";
+import { ConfirmCompletionModal } from "@/components/confirm-completion-modal";
+import { MarketplaceBidsModal } from "@/components/marketplace-bids-modal";
+import { EnhancedInvoiceCreator } from "@/components/enhanced-invoice-creator";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import type { 
+  Ticket,
+  InsertTicket,
+  Organization, 
+  MaintenanceVendor, 
+  User 
+} from "@shared/schema";
 
 const MobilePage = () => {
   const [email, setEmail] = useState('root@mail.com');
@@ -22,10 +41,37 @@ const MobilePage = () => {
   const [user, setUser] = useState<any>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [tickets, setTickets] = useState([]);
-  const [organizations, setOrganizations] = useState([]);
-  const [vendors, setVendors] = useState([]);
-  const [showCreateTicket, setShowCreateTicket] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
+  const [selectedVendor, setSelectedVendor] = useState<MaintenanceVendor | null>(null);
+  const [isCreateTicketOpen, setIsCreateTicketOpen] = useState(false);
+  const [isTicketActionOpen, setIsTicketActionOpen] = useState(false);
+  const [isConfirmCompletionOpen, setIsConfirmCompletionOpen] = useState(false);
+  const [isMarketplaceBidsOpen, setIsMarketplaceBidsOpen] = useState(false);
+  const [isTicketDetailsOpen, setIsTicketDetailsOpen] = useState(false);
+  const [isWorkOrderOpen, setIsWorkOrderOpen] = useState(false);
+  const [isInvoiceCreatorOpen, setIsInvoiceCreatorOpen] = useState(false);
+  const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(null);
+  const [currentView, setCurrentView] = useState<'dashboard' | 'organization' | 'vendor' | 'calendar'>('dashboard');
+  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Queries for data
+  const { data: tickets = [], isLoading: ticketsLoading, refetch: refetchTickets } = useQuery<Ticket[]>({
+    queryKey: ["/api/tickets"],
+    enabled: !!user,
+  });
+
+  const { data: organizations = [], isLoading: orgsLoading } = useQuery<Organization[]>({
+    queryKey: ["/api/organizations"],
+    enabled: !!user && (user.role === "root" || user.role === "org_admin"),
+  });
+
+  const { data: vendors = [], isLoading: vendorsLoading } = useQuery<MaintenanceVendor[]>({
+    queryKey: ["/api/maintenance-vendors"],
+    enabled: !!user && (user.role === "root" || user.role === "maintenance_admin"),
+  });
 
   // Check authentication and load data
   useEffect(() => {
@@ -37,7 +83,6 @@ const MobilePage = () => {
         if (response.ok) {
           const userData = await response.json();
           setUser(userData);
-          await loadData(userData);
         }
       } catch (error) {
         console.error('Auth check failed:', error);
@@ -48,34 +93,6 @@ const MobilePage = () => {
 
     checkAuth();
   }, []);
-
-  const loadData = async (userData: any) => {
-    try {
-      // Load tickets
-      const ticketsRes = await fetch('/api/tickets', { credentials: 'include' });
-      if (ticketsRes.ok) {
-        const ticketsData = await ticketsRes.json();
-        setTickets(ticketsData);
-      }
-
-      // Load organizations (for root admin)
-      if (userData.role === 'root') {
-        const orgsRes = await fetch('/api/organizations', { credentials: 'include' });
-        if (orgsRes.ok) {
-          const orgsData = await orgsRes.json();
-          setOrganizations(orgsData);
-        }
-
-        const vendorsRes = await fetch('/api/maintenance-vendors', { credentials: 'include' });
-        if (vendorsRes.ok) {
-          const vendorsData = await vendorsRes.json();
-          setVendors(vendorsData);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load data:', error);
-    }
-  };
 
   // Show loading state while checking auth
   if (isCheckingAuth) {
@@ -108,20 +125,36 @@ const MobilePage = () => {
         if (userResponse.ok) {
           const userData = await userResponse.json();
           setUser(userData);
-          await loadData(userData);
+          queryClient.invalidateQueries();
         }
       } else {
         const errorData = await response.json();
         console.error('Login failed:', errorData.message);
-        alert('Login failed: ' + errorData.message);
+        toast({
+          title: "Login Failed",
+          description: errorData.message,
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Login failed:', error);
+      toast({
+        title: "Login Failed",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    setUser(null);
+    queryClient.clear();
+  };
+
+  // Login screen for unauthenticated users
   if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
@@ -220,27 +253,444 @@ const MobilePage = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'open': return 'bg-blue-100 text-blue-800';
-      case 'in-progress': return 'bg-yellow-100 text-yellow-800';
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'pending_confirmation': return 'bg-purple-100 text-purple-800';
-      case 'ready_for_billing': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'open': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+      case 'accepted': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+      case 'in-progress': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300';
+      case 'completed': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+      case 'pending_confirmation': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
+      case 'ready_for_billing': return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300';
+      case 'billed': return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'text-red-600';
-      case 'medium': return 'text-yellow-600';
-      case 'low': return 'text-green-600';
-      default: return 'text-gray-600';
+      case 'high': return 'text-red-600 dark:text-red-400';
+      case 'medium': return 'text-yellow-600 dark:text-yellow-400';
+      case 'low': return 'text-green-600 dark:text-green-400';
+      default: return 'text-gray-600 dark:text-gray-400';
+    }
+  };
+
+  const handleTicketAction = (ticket: Ticket, action: "accept" | "reject") => {
+    setSelectedTicket(ticket);
+    setTicketAction(action);
+    setIsTicketActionOpen(true);
+  };
+
+  const handleViewTicketDetails = (ticket: Ticket) => {
+    setSelectedTicket(ticket);
+    setIsTicketDetailsOpen(true);
+  };
+
+  const handleCreateWorkOrder = (ticket: Ticket) => {
+    setSelectedTicket(ticket);
+    setIsWorkOrderOpen(true);
+  };
+
+  const handleViewBids = (ticket: Ticket) => {
+    setSelectedTicket(ticket);
+    setIsMarketplaceBidsOpen(true);
+  };
+
+  const handleCreateInvoice = (ticket: Ticket) => {
+    setSelectedTicket(ticket);
+    setIsInvoiceCreatorOpen(true);
+  };
+
+  const getDashboardView = () => {
+    if (user.role === 'root') {
+      return (
+        <div className="space-y-6">
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-2 gap-4">
+            <Card className="bg-card border-border">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Organizations</p>
+                    <p className="text-2xl font-bold text-foreground mt-1">{organizations.length}</p>
+                  </div>
+                  <div className="bg-blue-500/10 p-2.5 rounded-lg">
+                    <Building2 className="h-5 w-5 text-blue-500" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-card border-border">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Vendors</p>
+                    <p className="text-2xl font-bold text-foreground mt-1">{vendors.length}</p>
+                  </div>
+                  <div className="bg-green-500/10 p-2.5 rounded-lg">
+                    <Wrench className="h-5 w-5 text-green-500" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Organizations List */}
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Building2 className="h-5 w-5" />
+                Organizations
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-64">
+                <div className="space-y-3">
+                  {organizations.map((org) => (
+                    <div
+                      key={org.id}
+                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted"
+                      onClick={() => {
+                        setSelectedOrganization(org);
+                        setCurrentView('organization');
+                      }}
+                    >
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground">{org.name}</p>
+                        <p className="text-sm text-muted-foreground">{org.email}</p>
+                      </div>
+                      <ChevronDown className="h-4 w-4 text-muted-foreground rotate-[-90deg]" />
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+
+          {/* Vendors List */}
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Wrench className="h-5 w-5" />
+                Maintenance Vendors
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-64">
+                <div className="space-y-3">
+                  {vendors.map((vendor) => (
+                    <div
+                      key={vendor.id}
+                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted"
+                      onClick={() => {
+                        setSelectedVendor(vendor);
+                        setCurrentView('vendor');
+                      }}
+                    >
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground">{vendor.name}</p>
+                        <p className="text-sm text-muted-foreground">{vendor.email}</p>
+                      </div>
+                      <ChevronDown className="h-4 w-4 text-muted-foreground rotate-[-90deg]" />
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    // Default ticket dashboard for other roles
+    return (
+      <div className="space-y-6">
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-2 gap-4">
+          <Card className="bg-card border-border">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Total Tickets</p>
+                  <p className="text-2xl font-bold text-foreground mt-1">{tickets.length}</p>
+                </div>
+                <div className="bg-blue-500/10 p-2.5 rounded-lg">
+                  <TicketIcon className="h-5 w-5 text-blue-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-card border-border">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Open</p>
+                  <p className="text-2xl font-bold text-foreground mt-1">
+                    {tickets.filter((t: any) => t.status === 'open').length}
+                  </p>
+                </div>
+                <div className="bg-yellow-500/10 p-2.5 rounded-lg">
+                  <AlertCircle className="h-5 w-5 text-yellow-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Tickets */}
+        <Card className="bg-card border-border">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <List className="h-5 w-5" />
+              Recent Tickets
+            </CardTitle>
+            <Button 
+              size="sm" 
+              onClick={() => setIsCreateTicketOpen(true)}
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              New
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-96">
+              <div className="space-y-3">
+                {tickets.slice(0, 10).map((ticket: any) => (
+                  <div
+                    key={ticket.id}
+                    className="p-4 bg-muted/50 rounded-lg border border-border"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <h4 className="font-medium text-foreground mb-1">
+                          {ticket.title || 'Untitled Ticket'}
+                        </h4>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {ticket.ticketNumber || `#${ticket.id}`}
+                        </p>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleViewTicketDetails(ticket)}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Details
+                          </DropdownMenuItem>
+                          {user.role === 'org_admin' && ticket.status === 'open' && (
+                            <>
+                              <DropdownMenuItem onClick={() => handleTicketAction(ticket, 'accept')}>
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                Accept
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleTicketAction(ticket, 'reject')}>
+                                <AlertCircle className="h-4 w-4 mr-2" />
+                                Reject
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                          {user.role === 'technician' && ticket.status === 'accepted' && (
+                            <DropdownMenuItem onClick={() => handleCreateWorkOrder(ticket)}>
+                              <Wrench className="h-4 w-4 mr-2" />
+                              Start Work
+                            </DropdownMenuItem>
+                          )}
+                          {ticket.assignedToMarketplace && (
+                            <DropdownMenuItem onClick={() => handleViewBids(ticket)}>
+                              <DollarSign className="h-4 w-4 mr-2" />
+                              View Bids
+                            </DropdownMenuItem>
+                          )}
+                          {user.role === 'maintenance_admin' && ticket.status === 'ready_for_billing' && (
+                            <DropdownMenuItem onClick={() => handleCreateInvoice(ticket)}>
+                              <FileText className="h-4 w-4 mr-2" />
+                              Create Invoice
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge className={getStatusColor(ticket.status)} variant="secondary">
+                        {ticket.status?.replace('_', ' ').replace('-', ' ')}
+                      </Badge>
+                      <Badge variant="outline" className={getPriorityColor(ticket.priority)}>
+                        {ticket.priority}
+                      </Badge>
+                    </div>
+                    
+                    {ticket.description && (
+                      <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                        {ticket.description}
+                      </p>
+                    )}
+                    
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>
+                        {ticket.createdAt && new Date(ticket.createdAt).toLocaleDateString()}
+                      </span>
+                      {ticket.images && ticket.images.length > 0 && (
+                        <div className="flex items-center gap-1">
+                          <Image className="h-3 w-3" />
+                          <span>{ticket.images.length}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
+  const getOrganizationView = () => {
+    if (!selectedOrganization) return null;
+    
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-3 mb-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setCurrentView('dashboard')}
+            className="p-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h2 className="text-xl font-bold text-foreground">{selectedOrganization.name}</h2>
+            <p className="text-sm text-muted-foreground">Organization Dashboard</p>
+          </div>
+        </div>
+
+        {/* Organization stats and content would go here */}
+        <div className="grid grid-cols-2 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground">Active Tickets</p>
+                  <p className="text-2xl font-bold">
+                    {tickets.filter(t => t.organizationId === selectedOrganization.id).length}
+                  </p>
+                </div>
+                <TicketIcon className="h-5 w-5 text-blue-500" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground">Users</p>
+                  <p className="text-2xl font-bold">5</p>
+                </div>
+                <Users className="h-5 w-5 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  };
+
+  const getVendorView = () => {
+    if (!selectedVendor) return null;
+    
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-3 mb-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setCurrentView('dashboard')}
+            className="p-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h2 className="text-xl font-bold text-foreground">{selectedVendor.name}</h2>
+            <p className="text-sm text-muted-foreground">Vendor Dashboard</p>
+          </div>
+        </div>
+
+        {/* Vendor stats and content would go here */}
+        <div className="grid grid-cols-2 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground">Assigned Tickets</p>
+                  <p className="text-2xl font-bold">
+                    {tickets.filter(t => t.maintenanceVendorId === selectedVendor.id).length}
+                  </p>
+                </div>
+                <TicketIcon className="h-5 w-5 text-blue-500" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground">Technicians</p>
+                  <p className="text-2xl font-bold">3</p>
+                </div>
+                <Users className="h-5 w-5 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  };
+
+  const getCalendarView = () => {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Calendar View
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8">
+              <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">Mobile calendar view coming soon!</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Full calendar integration with scheduling and availability management.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
+  const getCurrentView = () => {
+    switch (currentView) {
+      case 'organization':
+        return getOrganizationView();
+      case 'vendor':
+        return getVendorView();
+      case 'calendar':
+        return getCalendarView();
+      default:
+        return getDashboardView();
     }
   };
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Mobile Header - Dark Theme */}
+      {/* Mobile Header */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white sticky top-0 z-50">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center space-x-3">
@@ -259,10 +709,7 @@ const MobilePage = () => {
             <Button 
               variant="ghost" 
               size="sm"
-              onClick={() => {
-                fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-                setUser(null);
-              }}
+              onClick={handleLogout}
               className="text-xs text-white hover:bg-white/10"
             >
               Logout
@@ -283,7 +730,7 @@ const MobilePage = () => {
             <h2 className="font-semibold text-lg text-white">
               {user.first_name || user.firstName} {user.last_name || user.lastName || ''}
             </h2>
-            <p className="text-blue-100 text-sm capitalize">{user.role.replace('_', ' ')}</p>
+            <p className="text-blue-100 text-sm capitalize">{user.role?.replace('_', ' ')}</p>
             <div className="flex items-center space-x-2 mt-1">
               <CheckCircle className="h-3 w-3 text-green-400" />
               <span className="text-xs text-blue-100">Online</span>
@@ -295,359 +742,207 @@ const MobilePage = () => {
         </div>
       </div>
 
-      {/* Stats Cards - Matching Web Style */}
-      <div className="px-4 -mt-8 mb-6">
-        <div className="grid grid-cols-2 gap-4">
-          <Card className="bg-card border-border shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Total Tickets</p>
-                  <p className="text-2xl font-bold text-foreground mt-1">{tickets.length}</p>
-                </div>
-                <div className="bg-blue-500/10 p-2.5 rounded-lg">
-                  <Ticket className="h-5 w-5 text-blue-500" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-card border-border shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Open</p>
-                  <p className="text-2xl font-bold text-foreground mt-1">
-                    {tickets.filter((t: any) => t.status === 'open').length}
-                  </p>
-                </div>
-                <div className="bg-yellow-500/10 p-2.5 rounded-lg">
-                  <AlertCircle className="h-5 w-5 text-yellow-500" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="px-4">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-muted/50 backdrop-blur-sm border border-border rounded-lg p-1">
-            <TabsTrigger value="dashboard" className="flex items-center space-x-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <Home className="h-4 w-4" />
-              <span className="text-xs font-medium">Home</span>
+      {/* Navigation Tabs */}
+      <div className="bg-background border-b border-border px-4 -mt-2">
+        <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as any)} className="w-full">
+          <TabsList className="w-full grid grid-cols-4 bg-muted">
+            <TabsTrigger value="dashboard" className="text-xs">
+              <Home className="h-4 w-4 mr-1" />
+              Home
             </TabsTrigger>
-            <TabsTrigger value="tickets" className="flex items-center space-x-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <Ticket className="h-4 w-4" />
-              <span className="text-xs font-medium">Tickets</span>
-            </TabsTrigger>
-            <TabsTrigger value="calendar" className="flex items-center space-x-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <Calendar className="h-4 w-4" />
-              <span className="text-xs font-medium">Calendar</span>
-            </TabsTrigger>
-            <TabsTrigger value="more" className="flex items-center space-x-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <List className="h-4 w-4" />
-              <span className="text-xs font-medium">More</span>
+            {user.role === 'root' && (
+              <>
+                <TabsTrigger value="organization" className="text-xs">
+                  <Building2 className="h-4 w-4 mr-1" />
+                  Orgs
+                </TabsTrigger>
+                <TabsTrigger value="vendor" className="text-xs">
+                  <Wrench className="h-4 w-4 mr-1" />
+                  Vendors
+                </TabsTrigger>
+              </>
+            )}
+            <TabsTrigger value="calendar" className="text-xs">
+              <Calendar className="h-4 w-4 mr-1" />
+              Calendar
             </TabsTrigger>
           </TabsList>
-
-          <TabsContent value="dashboard" className="space-y-6">
-            {/* Quick Actions - Dark Theme Style */}
-            <Card className="bg-card border-border">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center space-x-2 text-foreground">
-                  <Star className="h-5 w-5 text-yellow-500" />
-                  <span>Quick Actions</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="grid grid-cols-2 gap-4">
-                  <Button 
-                    className="h-20 flex flex-col space-y-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg"
-                    onClick={() => setShowCreateTicket(true)}
-                  >
-                    <Plus className="h-6 w-6" />
-                    <span className="text-sm font-medium">Create Ticket</span>
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="h-20 flex flex-col space-y-2 border-border hover:bg-muted"
-                    onClick={() => setActiveTab('tickets')}
-                  >
-                    <Search className="h-6 w-6" />
-                    <span className="text-sm font-medium">Search</span>
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="h-20 flex flex-col space-y-2 border-border hover:bg-muted"
-                    onClick={() => setActiveTab('calendar')}
-                  >
-                    <Calendar className="h-6 w-6" />
-                    <span className="text-sm font-medium">Schedule</span>
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="h-20 flex flex-col space-y-2 border-border hover:bg-muted"
-                  >
-                    <Camera className="h-6 w-6" />
-                    <span className="text-sm font-medium">Quick Photo</span>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recent Tickets - Styled like Web */}
-            <Card className="bg-card border-border">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg flex items-center space-x-2 text-foreground">
-                    <Clock className="h-5 w-5 text-blue-500" />
-                    <span>Recent Tickets</span>
-                  </CardTitle>
-                  <Button variant="ghost" size="sm" onClick={() => setActiveTab('tickets')} className="text-muted-foreground hover:text-foreground">
-                    <span className="text-sm">View All</span>
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0 space-y-3">
-                {tickets.slice(0, 3).map((ticket: any) => (
-                  <div key={ticket.id} className="flex items-center space-x-4 p-4 bg-muted/30 rounded-lg border border-border hover:bg-muted/50 transition-colors">
-                    <div className="bg-primary/10 p-2.5 rounded-lg">
-                      <Wrench className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm text-foreground truncate">
-                        {ticket.title}
-                      </p>
-                      <div className="flex items-center space-x-3 mt-2">
-                        <Badge className={`text-xs px-2.5 py-1 ${getStatusColor(ticket.status)}`}>
-                          {ticket.status.replace('_', ' ')}
-                        </Badge>
-                        <span className={`text-xs font-medium ${getPriorityColor(ticket.priority)}`}>
-                          {ticket.priority}
-                        </span>
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="sm" className="p-2 hover:bg-muted">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-                {tickets.length === 0 && (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Ticket className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                    <p className="text-base mb-4">No tickets yet</p>
-                    <Button 
-                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                      onClick={() => setShowCreateTicket(true)}
-                    >
-                      Create First Ticket
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="tickets" className="space-y-6">
-            {/* Search Bar - Dark Theme */}
-            <div className="flex space-x-3">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  placeholder="Search tickets..." 
-                  className="pl-10 bg-background border-border text-foreground"
-                />
-              </div>
-              <Button variant="outline" size="icon" className="border-border hover:bg-muted">
-                <Filter className="h-4 w-4" />
-              </Button>
-            </div>
-
-            {/* Tickets List - Web Style */}
-            <ScrollArea className="h-[65vh]">
-              <div className="space-y-4">
-                {tickets.map((ticket: any) => (
-                  <Card key={ticket.id} className="bg-card border-border hover:bg-muted/20 transition-colors">
-                    <CardContent className="p-5">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-foreground text-base mb-2">
-                            {ticket.title}
-                          </h4>
-                          <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
-                            {ticket.description}
-                          </p>
-                        </div>
-                        <div className="ml-3 flex flex-col items-end space-y-2">
-                          <Badge className={`text-xs px-3 py-1 ${getStatusColor(ticket.status)}`}>
-                            {ticket.status.replace('_', ' ')}
-                          </Badge>
-                          <span className={`text-xs font-medium ${getPriorityColor(ticket.priority)}`}>
-                            {ticket.priority} priority
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center justify-between text-sm text-muted-foreground mt-4 pt-3 border-t border-border">
-                        <div className="flex items-center space-x-3">
-                          <div className="flex items-center space-x-1">
-                            <MapPin className="h-3 w-3" />
-                            <span>#{ticket.id}</span>
-                          </div>
-                          {ticket.images && ticket.images.length > 0 && (
-                            <div className="flex items-center space-x-1">
-                              <Image className="h-3 w-3" />
-                              <span>{ticket.images.length}</span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Clock className="h-3 w-3" />
-                          <span>{new Date(ticket.createdAt).toLocaleDateString()}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2 mt-4">
-                        <Button variant="ghost" size="sm" className="h-8 px-3 hover:bg-muted">
-                          <Eye className="h-3 w-3 mr-1.5" />
-                          <span className="text-xs">View</span>
-                        </Button>
-                        <Button variant="ghost" size="sm" className="h-8 px-3 hover:bg-muted">
-                          <MessageSquare className="h-3 w-3 mr-1.5" />
-                          <span className="text-xs">Comment</span>
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-                
-                {tickets.length === 0 && (
-                  <Card className="bg-card border-border">
-                    <CardContent className="p-12 text-center">
-                      <Ticket className="h-16 w-16 mx-auto mb-6 text-muted-foreground/30" />
-                      <h3 className="font-semibold text-foreground mb-3 text-lg">No tickets found</h3>
-                      <p className="text-muted-foreground mb-6">Get started by creating your first maintenance ticket</p>
-                      <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700" onClick={() => setShowCreateTicket(true)}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Create Ticket
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </ScrollArea>
-          </TabsContent>
-
-          <TabsContent value="calendar" className="space-y-6">
-            <Card className="bg-card border-border">
-              <CardContent className="p-12 text-center">
-                <Calendar className="h-16 w-16 mx-auto mb-6 text-muted-foreground/30" />
-                <h3 className="font-semibold text-foreground mb-3 text-lg">Calendar View</h3>
-                <p className="text-muted-foreground mb-6">Schedule and manage your maintenance appointments</p>
-                <Button variant="outline" className="border-border hover:bg-muted" asChild>
-                  <a href="/calendar">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Open Calendar
-                  </a>
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="more" className="space-y-4">
-            <div className="grid grid-cols-1 gap-4">
-              {user.role === 'root' && (
-                <>
-                  <Card className="bg-card border-border">
-                    <CardContent className="p-5">
-                      <div className="flex items-center space-x-4">
-                        <div className="bg-blue-500/10 p-3 rounded-lg">
-                          <Building className="h-6 w-6 text-blue-500" />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-foreground">Organizations</h4>
-                          <p className="text-sm text-muted-foreground">{organizations.length} organizations</p>
-                        </div>
-                        <Button variant="ghost" size="sm" className="hover:bg-muted">
-                          <span className="text-sm">Manage</span>
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className="bg-card border-border">
-                    <CardContent className="p-5">
-                      <div className="flex items-center space-x-4">
-                        <div className="bg-purple-500/10 p-3 rounded-lg">
-                          <Users className="h-6 w-6 text-purple-500" />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-foreground">Vendors</h4>
-                          <p className="text-sm text-muted-foreground">{vendors.length} vendors</p>
-                        </div>
-                        <Button variant="ghost" size="sm" className="hover:bg-muted">
-                          <span className="text-sm">Manage</span>
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </>
-              )}
-              
-              <Card className="bg-card border-border">
-                <CardContent className="p-5">
-                  <div className="flex items-center space-x-4">
-                    <div className="bg-green-500/10 p-3 rounded-lg">
-                      <Settings className="h-6 w-6 text-green-500" />
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-foreground">Settings</h4>
-                      <p className="text-sm text-muted-foreground">App preferences</p>
-                    </div>
-                    <Button variant="ghost" size="sm" className="hover:bg-muted">
-                      <span className="text-sm">Open</span>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-card border-border">
-                <CardContent className="p-5">
-                  <div className="flex items-center space-x-4">
-                    <div className="bg-orange-500/10 p-3 rounded-lg">
-                      <Smartphone className="h-6 w-6 text-orange-500" />
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-foreground">Desktop Version</h4>
-                      <p className="text-sm text-muted-foreground">Full web interface</p>
-                    </div>
-                    <Button variant="ghost" size="sm" className="hover:bg-muted" asChild>
-                      <a href="/">
-                        <span className="text-sm">Open</span>
-                      </a>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
         </Tabs>
       </div>
 
-      {/* Floating Action Button - Web Style */}
-      <div className="fixed bottom-8 right-6 z-50">
-        <Button 
-          size="lg"
-          className="h-16 w-16 rounded-full shadow-2xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 border-2 border-background/20 backdrop-blur-sm"
-          onClick={() => setShowCreateTicket(true)}
-        >
-          <Plus className="h-7 w-7" />
-        </Button>
+      {/* Main Content */}
+      <div className="p-4">
+        {getCurrentView()}
       </div>
 
-      {/* Bottom Padding for Floating Button */}
-      <div className="h-24"></div>
+      {/* Modals */}
+      <CreateTicketModal
+        isOpen={isCreateTicketOpen}
+        onClose={() => setIsCreateTicketOpen(false)}
+        onSuccess={() => {
+          setIsCreateTicketOpen(false);
+          refetchTickets();
+        }}
+      />
+
+      {selectedTicket && (
+        <>
+          <TicketActionModal
+            isOpen={isTicketActionOpen}
+            onClose={() => {
+              setIsTicketActionOpen(false);
+              setSelectedTicket(null);
+              setTicketAction(null);
+            }}
+            ticket={selectedTicket}
+            action={ticketAction}
+            onSuccess={() => {
+              setIsTicketActionOpen(false);
+              setSelectedTicket(null);
+              setTicketAction(null);
+              refetchTickets();
+            }}
+          />
+
+          <ConfirmCompletionModal
+            isOpen={isConfirmCompletionOpen}
+            onClose={() => {
+              setIsConfirmCompletionOpen(false);
+              setSelectedTicket(null);
+            }}
+            ticket={selectedTicket}
+            onSuccess={() => {
+              setIsConfirmCompletionOpen(false);
+              setSelectedTicket(null);
+              refetchTickets();
+            }}
+          />
+
+          <MarketplaceBidsModal
+            isOpen={isMarketplaceBidsOpen}
+            onClose={() => {
+              setIsMarketplaceBidsOpen(false);
+              setSelectedTicket(null);
+            }}
+            ticket={selectedTicket}
+            onSuccess={() => {
+              setIsMarketplaceBidsOpen(false);
+              setSelectedTicket(null);
+              refetchTickets();
+            }}
+          />
+
+          {/* Ticket Details Modal - Using Dialog for basic details view */}
+          <Dialog open={isTicketDetailsOpen} onOpenChange={setIsTicketDetailsOpen}>
+            <DialogContent className="w-[95vw] max-w-md">
+              <DialogHeader>
+                <DialogTitle>Ticket Details</DialogTitle>
+              </DialogHeader>
+              {selectedTicket && (
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold">{selectedTicket.title}</h3>
+                    <p className="text-sm text-muted-foreground">{selectedTicket.ticketNumber}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm">{selectedTicket.description}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Badge className={getStatusColor(selectedTicket.status)}>
+                      {selectedTicket.status?.replace('_', ' ')}
+                    </Badge>
+                    <Badge variant="outline" className={getPriorityColor(selectedTicket.priority)}>
+                      {selectedTicket.priority}
+                    </Badge>
+                  </div>
+                  {selectedTicket.images && selectedTicket.images.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium mb-2">Attachments</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {selectedTicket.images.slice(0, 4).map((image, index) => (
+                          <div key={index} className="aspect-square bg-muted rounded-lg flex items-center justify-center">
+                            <Image className="h-8 w-8 text-muted-foreground" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+
+          {/* Work Order Modal - Using Dialog for basic work order creation */}
+          <Dialog open={isWorkOrderOpen} onOpenChange={setIsWorkOrderOpen}>
+            <DialogContent className="w-[95vw] max-w-md">
+              <DialogHeader>
+                <DialogTitle>Create Work Order</DialogTitle>
+              </DialogHeader>
+              {selectedTicket && (
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm font-medium">Ticket: {selectedTicket.title}</p>
+                    <p className="text-xs text-muted-foreground">{selectedTicket.ticketNumber}</p>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium">Work Description</label>
+                      <Textarea
+                        placeholder="Describe the work performed..."
+                        className="mt-1"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-sm font-medium">Hours Worked</label>
+                        <Input type="number" placeholder="0" className="mt-1" />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Status</label>
+                        <Select>
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="completed">Completed</SelectItem>
+                            <SelectItem value="partial">Partial</SelectItem>
+                            <SelectItem value="return_needed">Return Needed</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2 mt-4">
+                      <Button variant="outline" onClick={() => setIsWorkOrderOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={() => {
+                        setIsWorkOrderOpen(false);
+                        refetchTickets();
+                      }}>
+                        Create Work Order
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+
+          <EnhancedInvoiceCreator
+            isOpen={isInvoiceCreatorOpen}
+            onClose={() => {
+              setIsInvoiceCreatorOpen(false);
+              setSelectedTicket(null);
+            }}
+            ticket={selectedTicket}
+            onSuccess={() => {
+              setIsInvoiceCreatorOpen(false);
+              setSelectedTicket(null);
+              refetchTickets();
+            }}
+          />
+        </>
+      )}
     </div>
   );
 };
