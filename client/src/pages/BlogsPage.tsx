@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { Link } from 'wouter';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { blogPosts } from '@/data/blogPosts';
-import { 
+import React, { useState } from "react";
+import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { blogPosts } from "@/data/blogPosts";
+import {
   Search,
   Calendar,
   Clock,
@@ -19,21 +19,31 @@ import {
   Smartphone,
   Star,
   Rocket,
-  ArrowLeft
-} from 'lucide-react';
+  ArrowLeft,
+} from "lucide-react";
 
 export default function BlogsPage() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
 
-  const categories = ['all', 'AI Technology', 'Business Solutions', 'HVAC Systems', 'Electrical Systems', 'IoT Technology', 'Industry Trends'];
+  const categories = [
+    "all",
+    "AI Technology",
+    "Business Solutions",
+    "HVAC Systems",
+    "Electrical Systems",
+    "IoT Technology",
+    "Industry Trends",
+  ];
 
   // Filter posts based on search term and category
-  const filteredPosts = blogPosts.filter(post => {
-    const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         post.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         post.category.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || post.category === selectedCategory;
+  const filteredPosts = blogPosts.filter((post) => {
+    const matchesSearch =
+      post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      post.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      post.category.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory =
+      selectedCategory === "all" || post.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -44,7 +54,10 @@ export default function BlogsPage() {
         <div className="max-w-7xl mx-auto">
           {/* Back Button */}
           <Link href="/">
-            <Button variant="ghost" className="mb-8 text-gray-300 hover:text-white">
+            <Button
+              variant="ghost"
+              className="mb-8 text-gray-300 hover:text-white"
+            >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Home
             </Button>
@@ -56,13 +69,15 @@ export default function BlogsPage() {
               <Rocket className="w-4 h-4 mr-2" />
               Commercial Maintenance Industry Insights
             </Badge>
-            
+
             <h1 className="text-3xl md:text-4xl font-bold mb-6 bg-gradient-to-r from-white via-teal-200 to-cyan-200 bg-clip-text text-transparent">
               Maintenance Insights
             </h1>
-            
+
             <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-              Discover the latest trends in HVAC, plumbing, AI technology, and business solutions that are transforming commercial maintenance operations across industries.
+              Discover the latest trends in HVAC, plumbing, AI technology, and
+              business solutions that are transforming commercial maintenance
+              operations across industries.
             </p>
           </div>
 
@@ -78,30 +93,34 @@ export default function BlogsPage() {
               />
             </div>
             <div className="flex flex-wrap gap-2">
-              {categories.map(category => (
+              {categories.map((category) => (
                 <Button
                   key={category}
-                  variant={selectedCategory === category ? "default" : "outline"}
+                  variant={
+                    selectedCategory === category ? "default" : "outline"
+                  }
                   size="sm"
                   onClick={() => setSelectedCategory(category)}
-                  className={selectedCategory === category 
-                    ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white border-none" 
-                    : "border-white/20 text-gray-300 hover:text-white hover:bg-white/10"
+                  className={
+                    selectedCategory === category
+                      ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white border-none"
+                      : "border-white/20 text-gray-300 hover:text-white hover:bg-white/10"
                   }
                 >
-                  {category === 'all' ? 'All Categories' : category}
+                  {category === "all" ? "All Categories" : category}
                 </Button>
               ))}
             </div>
           </div>
 
           {/* Results Summary */}
-          {(searchTerm || selectedCategory !== 'all') && (
+          {(searchTerm || selectedCategory !== "all") && (
             <div className="mb-8">
               <p className="text-gray-300">
-                Found {filteredPosts.length} article{filteredPosts.length !== 1 ? 's' : ''}
+                Found {filteredPosts.length} article
+                {filteredPosts.length !== 1 ? "s" : ""}
                 {searchTerm && ` matching "${searchTerm}"`}
-                {selectedCategory !== 'all' && ` in ${selectedCategory}`}
+                {selectedCategory !== "all" && ` in ${selectedCategory}`}
               </p>
             </div>
           )}
@@ -113,10 +132,13 @@ export default function BlogsPage() {
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredPosts.map((post) => (
-              <Card key={post.id} className="bg-white/5 backdrop-blur-sm border-white/10 hover:bg-white/10 transition-colors group">
+              <Card
+                key={post.id}
+                className="bg-white/5 backdrop-blur-sm border-white/10 hover:bg-white/10 transition-colors group"
+              >
                 <div className="aspect-video overflow-hidden rounded-t-lg">
-                  <img 
-                    src={post.image} 
+                  <img
+                    src={post.image}
                     alt={post.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
@@ -132,23 +154,29 @@ export default function BlogsPage() {
                       {post.readTime}
                     </div>
                   </div>
-                  
+
                   <Badge className="mb-3 bg-gradient-to-r from-teal-500/20 to-cyan-500/20 text-teal-300 border-teal-500/30">
                     {post.category}
                   </Badge>
-                  
-                  <h3 className="text-xl font-bold mb-3 text-white group-hover:text-teal-300 transition-colors line-clamp-2">
+
+                  <h3 className="text-xl mb-3 text-white group-hover:text-teal-300 transition-colors line-clamp-2">
                     {post.title}
                   </h3>
-                  
+
                   <p className="text-gray-300 mb-4 line-clamp-3 leading-relaxed">
                     {post.excerpt}
                   </p>
-                  
+
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-400">By {post.author}</span>
+                    <span className="text-sm text-gray-400">
+                      By {post.author}
+                    </span>
                     <Link href={`/blog/${post.id}`}>
-                      <Button variant="ghost" size="sm" className="text-teal-300 hover:text-teal-200 hover:bg-teal-500/10">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-teal-300 hover:text-teal-200 hover:bg-teal-500/10"
+                      >
                         Read More
                         <ArrowRight className="w-4 h-4 ml-2" />
                       </Button>
@@ -163,14 +191,16 @@ export default function BlogsPage() {
             <div className="text-center py-16">
               <div className="text-gray-400 mb-4">
                 <Search className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <h3 className="text-xl font-semibold mb-2">No articles found</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  No articles found
+                </h3>
                 <p>Try adjusting your search terms or category filter.</p>
               </div>
               <Button
                 variant="outline"
                 onClick={() => {
-                  setSearchTerm('');
-                  setSelectedCategory('all');
+                  setSearchTerm("");
+                  setSelectedCategory("all");
                 }}
                 className="border-white/20 text-gray-300 hover:text-white"
               >
@@ -189,17 +219,26 @@ export default function BlogsPage() {
               Ready to Transform Your Maintenance Operations?
             </h2>
             <p className="text-xl text-gray-300 mb-8 leading-relaxed">
-              Join thousands of businesses using TaskScout's AI-powered maintenance platform to reduce costs, improve efficiency, and prevent downtime.
+              Join thousands of businesses using TaskScout's AI-powered
+              maintenance platform to reduce costs, improve efficiency, and
+              prevent downtime.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/contact">
-                <Button size="lg" className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white border-none px-8">
+                <Button
+                  size="lg"
+                  className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white border-none px-8"
+                >
                   Start Free Trial
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </Link>
               <Link href="/">
-                <Button variant="outline" size="lg" className="border-white/20 text-gray-300 hover:text-white hover:bg-white/10 px-8">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="border-white/20 text-gray-300 hover:text-white hover:bg-white/10 px-8"
+                >
                   Learn More
                 </Button>
               </Link>

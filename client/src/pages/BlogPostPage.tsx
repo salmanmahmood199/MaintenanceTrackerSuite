@@ -52,13 +52,13 @@ export default function BlogPostPage() {
           );
         } else if (paragraph.startsWith("### ")) {
           return (
-            <h3 key={index} className="text-base  text-white mb-3 mt-5">
+            <h3 key={index} className="text-base  text-white mb-3 mt-10">
               {paragraph.replace("### ", "")}
             </h3>
           );
         } else if (paragraph.startsWith("#### ")) {
           return (
-            <h4 key={index} className="text-base  text-md mb-3 mt-5">
+            <h4 key={index} className="text-base  text-md mb-3 mt-10">
               {paragraph.replace("#### ", "")}
             </h4>
           );
@@ -69,7 +69,7 @@ export default function BlogPostPage() {
         ) {
           // Handle standalone bold headings
           return (
-            <h4 key={index} className="    mb-2 mt-4">
+            <h4 key={index} className="    mb-2 mt-10">
               {paragraph.replace(/\*\*/g, "")}
             </h4>
           );
@@ -83,7 +83,7 @@ export default function BlogPostPage() {
           return (
             <ol
               key={index}
-              className="list-decimal list-inside text- mb-4 space-y-2"
+              className="list-decimal list-inside text- mb-4 space-y-2 mt-10"
             >
               {listItems.map((item, i) => (
                 <li key={i} className="leading-relaxed  ">
@@ -100,10 +100,10 @@ export default function BlogPostPage() {
           return (
             <ul
               key={index}
-              className="list-disc list-inside text- mb-4 space-y-2 "
+              className="list-disc list-inside text- mb-4 space-y-2 mt-10"
             >
               {listItems.map((item, i) => (
-                <li key={i} className="leading-relaxed text-lg">
+                <li key={i} className="leading-relaxed text-lg mt-10">
                   {item}
                 </li>
               ))}
@@ -116,7 +116,7 @@ export default function BlogPostPage() {
           // Handle definition-style paragraphs and inline citations
           const parts = paragraph.split(/(\*\*[^*]+\*\*|\[\d+\])/);
           return (
-            <p key={index} className="mb-3 leading-relaxed  ">
+            <p key={index} className="mb-3 leading-relaxed  mt-10">
               {parts.map((part, i) => {
                 if (part.startsWith("**") && part.endsWith("**")) {
                   return (
@@ -140,7 +140,7 @@ export default function BlogPostPage() {
           return null; // Skip empty paragraphs
         } else {
           return (
-            <p key={index} className=" mb-3 leading-relaxed">
+            <p key={index} className=" mb-3 leading-relaxed mt-10">
               {paragraph}
             </p>
           );
@@ -220,9 +220,7 @@ export default function BlogPostPage() {
               {/* References Section */}
               {post.references && post.references.length > 0 && (
                 <div className="mt-8 pt-6 border-t border-white/20">
-                  <h4 className="text-base font-semibold text-white mb-4">
-                    References
-                  </h4>
+                  <h4 className="text-base  text-white mb-4">References</h4>
                   <div className="space-y-2">
                     {post.references.map((ref, index) => (
                       <p
@@ -240,9 +238,7 @@ export default function BlogPostPage() {
 
           {/* Related Articles */}
           <div className="mt-12">
-            <h3 className="text-lg font-semibold text-white mb-4">
-              Related Articles
-            </h3>
+            <h3 className="text-lg text-white mb-4">Related Articles</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {blogPosts
                 .filter((p) => p.id !== post.id && p.category === post.category)
@@ -256,7 +252,7 @@ export default function BlogPostPage() {
                       >
                         {relatedPost.category}
                       </Badge>
-                      <h4 className="text-sm font-semibold text-white mb-2 line-clamp-2">
+                      <h4 className="text-sm   text-white mb-2 line-clamp-2">
                         {relatedPost.title}
                       </h4>
                       <p className="text-gray-400 text-xs line-clamp-3">
