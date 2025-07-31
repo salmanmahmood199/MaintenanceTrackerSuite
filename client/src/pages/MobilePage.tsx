@@ -53,6 +53,7 @@ const MobilePage = () => {
   const [isInvoiceCreatorOpen, setIsInvoiceCreatorOpen] = useState(false);
   const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(null);
   const [currentView, setCurrentView] = useState<'dashboard' | 'organization' | 'vendor' | 'calendar'>('dashboard');
+  const [ticketDateFilter, setTicketDateFilter] = useState<'all' | 'last30' | 'last7' | 'today'>('last30');
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -299,6 +300,38 @@ const MobilePage = () => {
     setIsInvoiceCreatorOpen(true);
   };
 
+  // Filter tickets based on date range
+  const getFilteredTickets = () => {
+    const now = new Date();
+    const filterDate = new Date();
+    
+    switch (ticketDateFilter) {
+      case 'today':
+        filterDate.setHours(0, 0, 0, 0);
+        return tickets.filter(ticket => {
+          const ticketDate = new Date(ticket.createdAt || 0);
+          return ticketDate >= filterDate;
+        });
+      case 'last7':
+        filterDate.setDate(now.getDate() - 7);
+        return tickets.filter(ticket => {
+          const ticketDate = new Date(ticket.createdAt || 0);
+          return ticketDate >= filterDate;
+        });
+      case 'last30':
+        filterDate.setDate(now.getDate() - 30);
+        return tickets.filter(ticket => {
+          const ticketDate = new Date(ticket.createdAt || 0);
+          return ticketDate >= filterDate;
+        });
+      case 'all':
+      default:
+        return tickets;
+    }
+  };
+
+  const filteredTickets = getFilteredTickets();
+
   const getDashboardView = () => {
     if (user.role === 'root') {
       return (
@@ -452,9 +485,32 @@ const MobilePage = () => {
             </Button>
           </CardHeader>
           <CardContent>
+            {/* Date Filter */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  Showing {filteredTickets.length} of {tickets.length} tickets
+                </p>
+                <div className="flex items-center gap-2">
+                  <Select value={ticketDateFilter} onValueChange={setTicketDateFilter}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="today">Today</SelectItem>
+                      <SelectItem value="last7">Last 7 days</SelectItem>
+                      <SelectItem value="last30">Last 30 days</SelectItem>
+                      <SelectItem value="all">All tickets</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </div>
+            </div>
+            
             <ScrollArea className="h-96">
               <div className="space-y-3">
-                {tickets.slice(0, 10).map((ticket: any) => (
+                {filteredTickets.slice(0, 20).map((ticket: any) => (
                   <div
                     key={ticket.id}
                     className="p-4 bg-muted/50 rounded-lg border border-border"
@@ -652,22 +708,103 @@ const MobilePage = () => {
   };
 
   const getCalendarView = () => {
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+    
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    
+    const generateCalendarDays = () => {
+      const days = [];
+      
+      // Empty cells for days before the first day of month
+      for (let i = 0; i < firstDayOfMonth; i++) {
+        days.push(<div key={`empty-${i}`} className="h-10 w-10"></div>);
+      }
+      
+      // Days of the month
+      for (let day = 1; day <= daysInMonth; day++) {
+        const isToday = day === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
+        days.push(
+          <div
+            key={day}
+            className={`h-10 w-10 flex items-center justify-center rounded-lg text-sm cursor-pointer hover:bg-muted ${
+              isToday ? 'bg-primary text-primary-foreground font-semibold' : 'text-foreground hover:text-foreground'
+            }`}
+          >
+            {day}
+          </div>
+        );
+      }
+      
+      return days;
+    };
+
     return (
       <div className="space-y-6">
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              Calendar View
+              {monthNames[currentMonth]} {currentYear}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8">
-              <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">Mobile calendar view coming soon!</p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Full calendar integration with scheduling and availability management.
-              </p>
+            <div className="space-y-4">
+              {/* Calendar Header */}
+              <div className="grid grid-cols-7 gap-1 text-center text-sm font-medium text-muted-foreground">
+                <div>Sun</div>
+                <div>Mon</div>
+                <div>Tue</div>
+                <div>Wed</div>
+                <div>Thu</div>
+                <div>Fri</div>
+                <div>Sat</div>
+              </div>
+              
+              {/* Calendar Grid */}
+              <div className="grid grid-cols-7 gap-1">
+                {generateCalendarDays()}
+              </div>
+              
+              {/* Quick Actions */}
+              <div className="pt-4 border-t">
+                <div className="space-y-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => {
+                      toast({
+                        title: "Coming Soon",
+                        description: "Schedule maintenance feature will be available soon.",
+                      });
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Schedule Maintenance
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => {
+                      toast({
+                        title: "Calendar Integration",
+                        description: "View your scheduled maintenance appointments here.",
+                      });
+                    }}
+                  >
+                    <Clock className="h-4 w-4 mr-2" />
+                    View Scheduled
+                  </Button>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>

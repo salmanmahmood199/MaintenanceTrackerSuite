@@ -67,7 +67,7 @@ export function TicketActionModal({
   };
 
   // Filter vendors based on user role and tier access
-  const availableVendors = vendors.filter(v => {
+  const availableVendors = vendors?.filter(v => {
     if (!v.isActive) return false;
     
     // Root and org admins can see all active vendors
