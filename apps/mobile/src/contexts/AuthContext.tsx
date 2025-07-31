@@ -45,6 +45,10 @@ export const useAuth = () => {
 const getApiUrl = () => {
   if (__DEV__) {
     // Development - connect to main server on port 5000
+    // Use localhost for web version, 0.0.0.0 for native
+    if (typeof window !== 'undefined') {
+      return 'http://localhost:5000';
+    }
     return 'http://0.0.0.0:5000';
   }
   // Production - use current Replit URL
@@ -63,21 +67,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const checkAuthStatus = async () => {
     try {
-      const token = await SecureStore.getItemAsync('sessionToken');
-      if (token) {
-        const response = await fetch(`${apiUrl}/api/auth/user`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (response.ok) {
-          const userData = await response.json();
-          setUser(userData);
-        } else {
-          await SecureStore.deleteItemAsync('sessionToken');
-        }
+      const response = await fetch(`${apiUrl}/api/auth/user`, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include cookies for session-based auth
+      });
+      
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData);
       }
     } catch (error) {
       console.error('Auth check failed:', error);
@@ -93,15 +92,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include cookies for session-based auth
         body: JSON.stringify({ email, password }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        await SecureStore.setItemAsync('sessionToken', data.token || 'authenticated');
+        // For session-based auth, we don't need to store token
         setUser(data.user);
         return true;
       } else {
+        const errorData = await response.json();
+        console.error('Login error:', errorData);
         return false;
       }
     } catch (error) {
@@ -112,7 +114,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
-      await SecureStore.deleteItemAsync('sessionToken');
+      await fetch(`${apiUrl}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
       setUser(null);
     } catch (error) {
       console.error('Logout failed:', error);
