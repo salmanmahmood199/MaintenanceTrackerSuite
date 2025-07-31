@@ -1,0 +1,111 @@
+Detailed Instructions: How I Got the Mobile App Running
+Here's a comprehensive, step-by-step guide explaining exactly how I got the Maintenance Tracker mobile app to run:
+
+1. Understanding the Project Structure and Configuration
+First, I explored the project to understand its structure:
+
+bash
+# Examined the project structure
+cd /Users/salmanmahmood/Downloads/MaintenanceTracker-1/apps/mobile
+Key files I identified:
+
+package.json
+ - For dependencies and scripts
+src/services/api.ts
+ - For API configuration
+Various setup instructions in README and markdown files
+2. API Configuration Updates
+I modified the API client to use session-based authentication:
+
+typescript
+// In /Users/salmanmahmood/Downloads/MaintenanceTracker-1/apps/mobile/src/services/api.ts
+
+// Changed the request method to include credentials for cookies
+async makeRequest(endpoint: string, options: RequestInit = {}) {
+  // Use session-based authentication
+  const config: RequestInit = {
+    ...options,
+    credentials: 'include',  // Include cookies for session-based auth
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  };
+
+  try {
+    const response = await fetch(`${this.baseURL}${endpoint}`, config);
+    return response;
+  } catch (error) {
+    console.error('API Request Error:', error);
+    throw error;
+  }
+}
+This change ensures:
+
+Session cookies are included with each request (credentials: 'include')
+Removed token-based authorization headers
+Added error handling with proper logging
+3. Installing Dependencies
+The app had dependency issues that needed to be resolved:
+
+bash
+# Install dependencies with legacy peer deps to bypass conflicts
+npm install --legacy-peer-deps
+
+# Install react-dom specifically for web support (matching React version)
+npm install react-dom@18.3.1 --legacy-peer-deps
+The --legacy-peer-deps flag was crucial because:
+
+There was a version conflict between Expo SDK 53 and the webpack config
+The React (18.3.1) and React DOM versions needed to match
+4. Starting the Development Server
+With dependencies installed, I started the Expo server with web support:
+
+bash
+# Kill any existing Expo processes if needed
+pkill -f "expo start"
+# OR
+lsof -i :19006 -t | xargs kill -9 2>/dev/null || true
+
+# Start Expo with web support
+npx expo start --web
+The --web flag is essential as it:
+
+Compiles the React Native code for web browsers
+Starts a webpack dev server on port 19006
+Makes the app accessible at http://localhost:19006
+5. Key Issues Resolved
+Authentication Method:
+Changed from token-based to cookie-based to match the server expectations
+Dependency Conflicts:
+Used --legacy-peer-deps to bypass peer dependency warnings
+Installed specific versions of React DOM compatible with React 18.3.1
+API Configuration:
+Configured the API to use your local server (http://localhost:5000)
+Added error handling to better diagnose any API connection issues
+6. Testing the App
+To verify it's working:
+
+Access http://localhost:19006 in your browser
+Log in with the provided credentials (root@mail.com / admin)
+Confirm API requests are going to http://localhost:5000 (check Network tab in browser dev tools)
+Verify you can see the dashboard and interact with the app
+7. Troubleshooting Common Issues
+If you encounter issues:
+
+API Connection Problems: Make sure your local server is running on port 5000
+CORS Errors: The server needs to allow requests from http://localhost:19006
+Authentication Failures: Check if cookies are being properly sent and received
+UI/Rendering Issues: Some native components may not render perfectly on web
+8. Running on iOS/Android
+For native mobile testing:
+
+Press i in the terminal to open in iOS simulator
+Press a in the terminal to open in Android emulator
+Or scan the QR code with Expo Go app on your physical device
+By following these steps, I was able to get the Maintenance Tracker mobile app running and properly connecting to the local backend server.
+
+Feedback submitted
+an hour ago
+29 minutes ago
+a minute ago
