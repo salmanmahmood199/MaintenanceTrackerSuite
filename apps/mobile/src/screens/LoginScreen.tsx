@@ -4,8 +4,8 @@ import { TextInput, Button, Card, Title, Paragraph, Text, Divider } from 'react-
 import { useAuth } from '../contexts/AuthContext';
 
 const LoginScreen = ({ navigation }: any) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('root@mail.com');
+  const [password, setPassword] = useState('admin');
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login');
   
@@ -21,6 +21,8 @@ const LoginScreen = ({ navigation }: any) => {
   const { login, register, forgotPassword } = useAuth();
 
   const handleLogin = async () => {
+    console.log('Login button clicked with:', email, password);
+    
     if (!email || !password) {
       Alert.alert('Error', 'Please enter both email and password');
       return;
@@ -28,13 +30,19 @@ const LoginScreen = ({ navigation }: any) => {
 
     setLoading(true);
     try {
+      console.log('Attempting login...');
       const success = await login(email, password);
+      console.log('Login result:', success);
+      
       if (success) {
+        console.log('Login successful, navigating to dashboard');
         navigation.replace('Dashboard');
       } else {
+        console.log('Login failed');
         Alert.alert('Error', 'Invalid email or password');
       }
     } catch (error) {
+      console.error('Login error:', error);
       Alert.alert('Error', 'Login failed. Please try again.');
     } finally {
       setLoading(false);

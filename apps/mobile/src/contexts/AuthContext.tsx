@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import * as SecureStore from 'expo-secure-store';
+// Remove SecureStore for web compatibility
 import Constants from 'expo-constants';
 
 // Define User type locally since shared import path isn't available
@@ -43,7 +43,7 @@ export const useAuth = () => {
 
 // Get API URL based on environment
 const getApiUrl = () => {
-  if (__DEV__) {
+  if (process.env.NODE_ENV === 'development') {
     // Development - connect to main server on port 5000
     // Use localhost for web version, 0.0.0.0 for native
     if (typeof window !== 'undefined') {
@@ -87,6 +87,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
+      console.log('Making login request to:', `${apiUrl}/api/auth/login`);
+      console.log('Credentials:', { email, password: '***' });
+      
       const response = await fetch(`${apiUrl}/api/auth/login`, {
         method: 'POST',
         headers: {
@@ -96,18 +99,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         body: JSON.stringify({ email, password }),
       });
 
+      console.log('Response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
-        // For session-based auth, we don't need to store token
+        console.log('Login successful, user data:', data.user);
         setUser(data.user);
         return true;
       } else {
         const errorData = await response.json();
-        console.error('Login error:', errorData);
+        console.error('Login error response:', errorData);
         return false;
       }
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error('Login network error:', error);
       return false;
     }
   };
