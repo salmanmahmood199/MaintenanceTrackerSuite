@@ -63,9 +63,9 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto bg-background text-foreground">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 text-foreground">
             <Wrench className="h-5 w-5" />
             Work Orders History
           </DialogTitle>
@@ -98,18 +98,18 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
               return (
                 <Card 
                   key={workOrder.id} 
-                  className="border-l-4 border-l-blue-500 hover:bg-slate-50 cursor-pointer transition-colors"
+                  className="border-l-4 border-l-blue-500 hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors bg-card text-card-foreground"
                   onClick={() => openWorkOrderDetail(workOrder)}
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg flex items-center gap-2">
+                      <CardTitle className="text-lg flex items-center gap-2 text-card-foreground">
                         <span>Work Order #{workOrder.workOrderNumber}</span>
                         <Badge variant="outline" className={`${getStatusColor(workOrder.completionStatus)} border-current`}>
                           {getStatusText(workOrder.completionStatus)}
                         </Badge>
                       </CardTitle>
-                      <div className="text-sm text-slate-500 text-right">
+                      <div className="text-sm text-muted-foreground text-right">
                         <div className="flex items-center gap-1">
                           <Calendar className="h-4 w-4" />
                           <span>
@@ -125,15 +125,15 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
 
                   <CardContent className="space-y-4">
                     {/* Technician Info */}
-                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <User className="h-4 w-4" />
                       <span>Technician: {workOrder.technicianName}</span>
                     </div>
 
                     {/* Work Description */}
                     <div>
-                      <h4 className="font-medium text-slate-900 mb-2">Work Performed</h4>
-                      <p className="text-slate-700 bg-slate-50 p-3 rounded-lg">
+                      <h4 className="font-medium text-card-foreground mb-2">Work Performed</h4>
+                      <p className="text-card-foreground bg-muted p-3 rounded-lg">
                         {workOrder.workDescription}
                       </p>
                     </div>
@@ -141,20 +141,20 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
                     {/* Parts Used */}
                     {parts.length > 0 && (
                       <div>
-                        <h4 className="font-medium text-slate-900 mb-2 flex items-center gap-2">
+                        <h4 className="font-medium text-card-foreground mb-2 flex items-center gap-2">
                           <Package className="h-4 w-4" />
                           Parts & Equipment Used
                         </h4>
                         <div className="space-y-2">
                           {parts.map((part: any, index: number) => (
-                            <div key={index} className="flex justify-between items-center bg-slate-50 p-2 rounded">
-                              <span>{part.name}</span>
-                              <div className="text-sm text-slate-600">
+                            <div key={index} className="flex justify-between items-center bg-muted p-2 rounded">
+                              <span className="text-card-foreground">{part.name}</span>
+                              <div className="text-sm text-muted-foreground">
                                 Qty: {part.quantity} × {formatCurrency(part.cost)} = {formatCurrency((part.quantity * part.cost).toString())}
                               </div>
                             </div>
                           ))}
-                          <div className="text-right font-medium text-slate-700">
+                          <div className="text-right font-medium text-card-foreground">
                             Parts Total: {formatCurrency(parts.reduce((sum: number, part: any) => sum + (part.quantity * part.cost), 0).toString())}
                           </div>
                         </div>
@@ -164,18 +164,18 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
                     {/* Other Charges */}
                     {otherCharges.length > 0 && (
                       <div>
-                        <h4 className="font-medium text-slate-900 mb-2 flex items-center gap-2">
+                        <h4 className="font-medium text-card-foreground mb-2 flex items-center gap-2">
                           <Truck className="h-4 w-4" />
                           Other Charges
                         </h4>
                         <div className="space-y-2">
                           {otherCharges.map((charge: any, index: number) => (
-                            <div key={index} className="flex justify-between items-center bg-slate-50 p-2 rounded">
-                              <span>{charge.description}</span>
-                              <span className="text-sm text-slate-600">{formatCurrency(charge.cost)}</span>
+                            <div key={index} className="flex justify-between items-center bg-muted p-2 rounded">
+                              <span className="text-card-foreground">{charge.description}</span>
+                              <span className="text-sm text-muted-foreground">{formatCurrency(charge.cost)}</span>
                             </div>
                           ))}
-                          <div className="text-right font-medium text-slate-700">
+                          <div className="text-right font-medium text-card-foreground">
                             Other Total: {formatCurrency(otherCharges.reduce((sum: number, charge: any) => sum + charge.cost, 0).toString())}
                           </div>
                         </div>
@@ -184,13 +184,13 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
 
                     {/* Total Cost */}
                     {parseFloat(workOrder.totalCost || '0') > 0 && (
-                      <div className="bg-blue-50 p-3 rounded-lg">
+                      <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
                         <div className="flex items-center justify-between">
-                          <span className="font-medium text-blue-900 flex items-center gap-2">
+                          <span className="font-medium text-blue-900 dark:text-blue-100 flex items-center gap-2">
                             <DollarSign className="h-4 w-4" />
                             Total Cost
                           </span>
-                          <span className="text-xl font-bold text-blue-900">
+                          <span className="text-xl font-bold text-blue-900 dark:text-blue-100">
                             {formatCurrency((workOrder.totalCost || '0').toString())}
                           </span>
                         </div>
@@ -202,7 +202,7 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
                     {/* Images */}
                     {workOrder.images && workOrder.images.length > 0 && (
                       <div>
-                        <h4 className="font-medium text-slate-900 mb-3 flex items-center gap-2">
+                        <h4 className="font-medium text-card-foreground mb-3 flex items-center gap-2">
                           <ImageIcon className="h-4 w-4" />
                           Work Order Images ({workOrder.images.length})
                         </h4>
@@ -241,7 +241,7 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
 
                     {/* Completion Notes */}
                     <div>
-                      <h4 className="font-medium text-slate-900 mb-2">
+                      <h4 className="font-medium text-card-foreground mb-2">
                         {workOrder.completionStatus === "return_needed" ? "Return Details" : "Completion Notes"}
                       </h4>
                       <p className="text-slate-700 bg-slate-50 p-3 rounded-lg">
@@ -267,9 +267,9 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
 
     {/* Detailed Work Order Modal */}
     <Dialog open={workOrderDetailOpen} onOpenChange={setWorkOrderDetailOpen}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-background text-foreground">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 text-foreground">
             <Wrench className="h-5 w-5" />
             Work Order #{selectedWorkOrder?.workOrderNumber} - Complete Details
           </DialogTitle>
@@ -278,9 +278,9 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
         {selectedWorkOrder && (
           <div className="space-y-6 py-4">
             {/* Header Info */}
-            <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-lg">
+            <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
               <div>
-                <h3 className="font-medium text-slate-900 mb-2">Work Order Information</h3>
+                <h3 className="font-medium text-foreground mb-2">Work Order Information</h3>
                 <div className="space-y-1 text-sm">
                   <div><strong>Work Order #:</strong> {selectedWorkOrder.workOrderNumber}</div>
                   <div><strong>Technician:</strong> {selectedWorkOrder.technicianName}</div>
@@ -296,7 +296,7 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
               {/* Time Tracking Section */}
               {(selectedWorkOrder.workDate || selectedWorkOrder.timeIn || selectedWorkOrder.timeOut || selectedWorkOrder.totalHours) && (
                 <div>
-                  <h3 className="font-medium text-slate-900 mb-2">Time Tracking</h3>
+                  <h3 className="font-medium text-foreground mb-2">Time Tracking</h3>
                   <div className="space-y-1 text-sm">
                     {selectedWorkOrder.workDate && <div><strong>Work Date:</strong> {selectedWorkOrder.workDate}</div>}
                     {selectedWorkOrder.timeIn && <div><strong>Time In:</strong> {selectedWorkOrder.timeIn}</div>}
@@ -313,9 +313,9 @@ export function WorkOrdersHistory({ open, onOpenChange, ticketId }: WorkOrdersHi
 
             {/* Work Description */}
             <div>
-              <h3 className="font-medium text-slate-900 mb-2">Work Performed</h3>
-              <div className="bg-slate-50 p-4 rounded-lg">
-                <p className="text-slate-700">{selectedWorkOrder.workDescription}</p>
+              <h3 className="font-medium text-foreground mb-2">Work Performed</h3>
+              <div className="bg-muted p-4 rounded-lg">
+                <p className="text-foreground">{selectedWorkOrder.workDescription}</p>
               </div>
             </div>
 
