@@ -92,7 +92,7 @@ export function EnhancedInvoiceCreator({
 
   // Initialize editable work orders
   useEffect(() => {
-    if (workOrders.length > 0) {
+    if (workOrders && workOrders.length > 0) {
       const editableWOs = workOrders.map(wo => {
         let parts = [];
         let otherCharges = [];
