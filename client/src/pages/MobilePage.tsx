@@ -1007,21 +1007,46 @@ const MobilePage = () => {
                         <h3 className="font-semibold mb-2">Images ({selectedTicketForDetails.images.length})</h3>
                         <div className="grid grid-cols-2 gap-2">
                           {selectedTicketForDetails.images.map((image: string, idx: number) => (
-                            <div key={idx} className="aspect-square bg-muted rounded-lg overflow-hidden">
-                              {image.includes('.mp4') || image.includes('.mov') ? (
+                            <div key={idx} className="aspect-square bg-muted rounded-lg overflow-hidden border">
+                              {image.includes('.mp4') || image.includes('.mov') || image.includes('.MOV') ? (
                                 <video 
                                   src={`/uploads/${image}`}
                                   className="w-full h-full object-cover"
                                   controls
+                                  playsInline
+                                  onError={(e) => {
+                                    console.error('Video load error:', image);
+                                    const target = e.target as HTMLVideoElement;
+                                    target.style.display = 'none';
+                                    target.parentElement!.innerHTML = `<div class="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs text-muted-foreground p-2 text-center">Video unavailable<br/>${image}</div>`;
+                                  }}
                                 />
                               ) : (
                                 <img 
                                   src={`/uploads/${image}`} 
                                   alt={`Ticket image ${idx + 1}`}
                                   className="w-full h-full object-cover cursor-pointer"
+                                  loading="lazy"
                                   onClick={() => {
-                                    // Open image in new tab for full view
-                                    window.open(`/uploads/${image}`, '_blank');
+                                    // Create a simple image viewer modal instead of opening new tab
+                                    const modal = document.createElement('div');
+                                    modal.className = 'fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50';
+                                    modal.innerHTML = `
+                                      <div class="relative max-w-full max-h-full p-4">
+                                        <img src="/uploads/${image}" class="max-w-full max-h-full object-contain" />
+                                        <button class="absolute top-2 right-2 text-white bg-black bg-opacity-50 rounded-full p-2 hover:bg-opacity-75" onclick="this.parentElement.parentElement.remove()">✕</button>
+                                      </div>
+                                    `;
+                                    modal.onclick = (e) => {
+                                      if (e.target === modal) modal.remove();
+                                    };
+                                    document.body.appendChild(modal);
+                                  }}
+                                  onError={(e) => {
+                                    console.error('Image load error:', image);
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    target.parentElement!.innerHTML = `<div class="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs text-muted-foreground p-2 text-center">Image unavailable<br/>${image}</div>`;
                                   }}
                                 />
                               )}
