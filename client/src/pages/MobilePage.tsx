@@ -55,7 +55,7 @@ const MobilePage = () => {
   const [isWorkOrderOpen, setIsWorkOrderOpen] = useState(false);
   const [isInvoiceCreatorOpen, setIsInvoiceCreatorOpen] = useState(false);
   const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(null);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'organization' | 'vendor' | 'calendar'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'organization' | 'vendor' | 'calendar' | 'marketplace'>('dashboard');
   const [ticketDateFilter, setTicketDateFilter] = useState<'all' | 'last30' | 'last7' | 'today'>('last30');
   const [selectedTicketForDetails, setSelectedTicketForDetails] = useState<Ticket | null>(null);
   const [isTicketDetailModalOpen, setIsTicketDetailModalOpen] = useState(false);
@@ -842,6 +842,141 @@ const MobilePage = () => {
     );
   };
 
+  const getMarketplaceView = () => {
+    const { data: marketplaceTickets = [], isLoading: marketplaceLoading } = useQuery<Ticket[]>({
+      queryKey: ["/api/marketplace/tickets"],
+      enabled: !!user && (user.role === 'maintenance_admin' || user.role === 'technician'),
+    });
+
+    const { data: myBids = [], isLoading: bidsLoading } = useQuery({
+      queryKey: ["/api/marketplace/my-bids"],
+      enabled: !!user && (user.role === 'maintenance_admin'),
+    });
+    
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-foreground">Marketplace</h2>
+            <p className="text-sm text-muted-foreground">Available tickets for bidding</p>
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground">Available</p>
+                  <p className="text-2xl font-bold">
+                    {marketplaceTickets.length}
+                  </p>
+                </div>
+                <TicketIcon className="h-5 w-5 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground">My Bids</p>
+                  <p className="text-2xl font-bold">
+                    {myBids.length || 0}
+                  </p>
+                </div>
+                <Star className="h-5 w-5 text-blue-500" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Marketplace Tickets */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Open Marketplace Tickets</CardTitle>
+            <CardDescription>
+              Tickets available for bidding
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-[400px]">
+              <div className="space-y-3">
+                {marketplaceLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Loading marketplace tickets...</p>
+                  </div>
+                ) : marketplaceTickets.length === 0 ? (
+                  <div className="text-center py-8">
+                    <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No tickets available for bidding</p>
+                  </div>
+                ) : (
+                  marketplaceTickets.map((ticket: Ticket) => (
+                    <div
+                      key={ticket.id}
+                      className="p-4 border rounded-lg bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+                      onClick={() => handleViewTicketDetails(ticket)}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <h4 className="font-medium text-card-foreground truncate flex-1">
+                          {ticket.title}
+                        </h4>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Handle place bid
+                            toast({
+                              title: "Place Bid",
+                              description: "Bidding functionality coming soon",
+                            });
+                          }}
+                        >
+                          Bid
+                        </Button>
+                      </div>
+                      
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge className={getStatusColor(ticket.status)} variant="secondary">
+                          {ticket.status?.replace('_', ' ').replace('-', ' ')}
+                        </Badge>
+                        <Badge variant="outline" className={getPriorityColor(ticket.priority)}>
+                          {ticket.priority}
+                        </Badge>
+                      </div>
+                      
+                      {ticket.description && (
+                        <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                          {ticket.description}
+                        </p>
+                      )}
+                      
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>
+                          {ticket.createdAt && new Date(ticket.createdAt).toLocaleDateString()}
+                        </span>
+                        {ticket.images && ticket.images.length > 0 && (
+                          <div className="flex items-center gap-1">
+                            <Image className="h-3 w-3" />
+                            <span>{ticket.images.length}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
   const getCurrentView = () => {
     switch (currentView) {
       case 'organization':
@@ -850,6 +985,8 @@ const MobilePage = () => {
         return getVendorView();
       case 'calendar':
         return getCalendarView();
+      case 'marketplace':
+        return getMarketplaceView();
       default:
         return getDashboardView();
     }
@@ -912,24 +1049,30 @@ const MobilePage = () => {
       {/* Navigation Tabs */}
       <div className="bg-background border-b border-border px-4 -mt-2">
         <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as any)} className="w-full">
-          <TabsList className="w-full grid grid-cols-4 bg-muted">
-            <TabsTrigger value="dashboard" className="text-xs">
+          <TabsList className="w-full flex bg-muted overflow-x-auto">
+            <TabsTrigger value="dashboard" className="text-xs flex-shrink-0">
               <Home className="h-4 w-4 mr-1" />
               Home
             </TabsTrigger>
             {user.role === 'root' && (
               <>
-                <TabsTrigger value="organization" className="text-xs">
+                <TabsTrigger value="organization" className="text-xs flex-shrink-0">
                   <Building2 className="h-4 w-4 mr-1" />
                   Orgs
                 </TabsTrigger>
-                <TabsTrigger value="vendor" className="text-xs">
+                <TabsTrigger value="vendor" className="text-xs flex-shrink-0">
                   <Wrench className="h-4 w-4 mr-1" />
                   Vendors
                 </TabsTrigger>
               </>
             )}
-            <TabsTrigger value="calendar" className="text-xs">
+            {(user.role === 'maintenance_admin' || user.role === 'technician') && (
+              <TabsTrigger value="marketplace" className="text-xs flex-shrink-0">
+                <DollarSign className="h-4 w-4 mr-1" />
+                Market
+              </TabsTrigger>
+            )}
+            <TabsTrigger value="calendar" className="text-xs flex-shrink-0">
               <Calendar className="h-4 w-4 mr-1" />
               Calendar
             </TabsTrigger>
@@ -1288,6 +1431,16 @@ const MobilePage = () => {
           />
         </>
       )}
+
+      {/* Create Ticket Modal */}
+      <CreateTicketModal
+        isOpen={isCreateTicketOpen}
+        onClose={() => setIsCreateTicketOpen(false)}
+        onSuccess={() => {
+          setIsCreateTicketOpen(false);
+          refetchTickets();
+        }}
+      />
     </div>
   );
 };

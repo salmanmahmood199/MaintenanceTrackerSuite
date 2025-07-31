@@ -2927,7 +2927,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     authenticateUser,
     async (req: AuthenticatedRequest, res) => {
       try {
-        const userId = parseInt(req.params.id);
+        const userIdParam = req.params.id;
+        if (userIdParam === 'undefined' || userIdParam === 'null' || !userIdParam) {
+          return res.status(400).json({ message: "Invalid user ID" });
+        }
+        
+        const userId = parseInt(userIdParam);
+        if (isNaN(userId)) {
+          return res.status(400).json({ message: "Invalid user ID format" });
+        }
+        
         const locations = await storage.getUserLocationAssignments(userId);
         res.json(locations);
       } catch (error) {
