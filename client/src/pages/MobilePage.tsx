@@ -54,6 +54,8 @@ const MobilePage = () => {
   const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(null);
   const [currentView, setCurrentView] = useState<'dashboard' | 'organization' | 'vendor' | 'calendar'>('dashboard');
   const [ticketDateFilter, setTicketDateFilter] = useState<'all' | 'last30' | 'last7' | 'today'>('last30');
+  const [selectedTicketForDetails, setSelectedTicketForDetails] = useState<Ticket | null>(null);
+  const [isTicketDetailModalOpen, setIsTicketDetailModalOpen] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -531,9 +533,33 @@ const MobilePage = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleViewTicketDetails(ticket)}>
+                          <DropdownMenuItem onClick={() => {
+                            setSelectedTicketForDetails(ticket);
+                            setIsTicketDetailModalOpen(true);
+                          }}>
                             <Eye className="h-4 w-4 mr-2" />
                             View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            setSelectedTicketForDetails(ticket);
+                            setIsTicketDetailModalOpen(true);
+                          }}>
+                            <MessageSquare className="h-4 w-4 mr-2" />
+                            Comments
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            setSelectedTicketForDetails(ticket);
+                            setIsTicketDetailModalOpen(true);
+                          }}>
+                            <TrendingUp className="h-4 w-4 mr-2" />
+                            Progress
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            setSelectedTicketForDetails(ticket);
+                            setIsTicketDetailModalOpen(true);
+                          }}>
+                            <Wrench className="h-4 w-4 mr-2" />
+                            Work Orders
                           </DropdownMenuItem>
                           {user.role === 'org_admin' && ticket.status === 'open' && (
                             <>
@@ -911,6 +937,145 @@ const MobilePage = () => {
       <div className="p-4">
         {getCurrentView()}
       </div>
+
+      {/* Mobile Ticket Details Modal */}
+      <Dialog open={isTicketDetailModalOpen} onOpenChange={setIsTicketDetailModalOpen}>
+        <DialogContent className="max-w-full h-full m-0 p-0 rounded-none">
+          <div className="flex flex-col h-full">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsTicketDetailModalOpen(false)}
+                  className="p-2"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <div>
+                  <h2 className="text-lg font-semibold">
+                    {selectedTicketForDetails?.title || 'Ticket Details'}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedTicketForDetails?.ticketNumber || `#${selectedTicketForDetails?.id}`}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Tabs */}
+            <Tabs defaultValue="details" className="flex-1 flex flex-col">
+              <TabsList className="grid w-full grid-cols-4 rounded-none border-b">
+                <TabsTrigger value="details">Details</TabsTrigger>
+                <TabsTrigger value="comments">Comments</TabsTrigger>
+                <TabsTrigger value="progress">Progress</TabsTrigger>
+                <TabsTrigger value="work-orders">Work Orders</TabsTrigger>
+              </TabsList>
+
+              {/* Details Tab */}
+              <TabsContent value="details" className="flex-1 overflow-y-auto p-4">
+                {selectedTicketForDetails && (
+                  <div className="space-y-4">
+                    {/* Status & Priority */}
+                    <div className="flex gap-2">
+                      <Badge variant="secondary" className={getStatusColor(selectedTicketForDetails.status)}>
+                        {selectedTicketForDetails.status?.replace('_', ' ').replace('-', ' ')}
+                      </Badge>
+                      <Badge variant="outline" className={getPriorityColor(selectedTicketForDetails.priority)}>
+                        {selectedTicketForDetails.priority}
+                      </Badge>
+                    </div>
+
+                    {/* Description */}
+                    {selectedTicketForDetails.description && (
+                      <div>
+                        <h3 className="font-semibold mb-2">Description</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {selectedTicketForDetails.description}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Images */}
+                    {selectedTicketForDetails.images && selectedTicketForDetails.images.length > 0 && (
+                      <div>
+                        <h3 className="font-semibold mb-2">Images ({selectedTicketForDetails.images.length})</h3>
+                        <div className="grid grid-cols-2 gap-2">
+                          {selectedTicketForDetails.images.map((image: string, idx: number) => (
+                            <div key={idx} className="aspect-square bg-muted rounded-lg overflow-hidden">
+                              {image.includes('.mp4') || image.includes('.mov') ? (
+                                <video 
+                                  src={`/uploads/${image}`}
+                                  className="w-full h-full object-cover"
+                                  controls
+                                />
+                              ) : (
+                                <img 
+                                  src={`/uploads/${image}`} 
+                                  alt={`Ticket image ${idx + 1}`}
+                                  className="w-full h-full object-cover cursor-pointer"
+                                  onClick={() => {
+                                    // Open image in new tab for full view
+                                    window.open(`/uploads/${image}`, '_blank');
+                                  }}
+                                />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Created Date */}
+                    <div>
+                      <h3 className="font-semibold mb-2">Created</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedTicketForDetails.createdAt && 
+                          new Date(selectedTicketForDetails.createdAt).toLocaleString()
+                        }
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* Comments Tab */}
+              <TabsContent value="comments" className="flex-1 overflow-y-auto p-4">
+                <div className="text-center py-8">
+                  <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">Comments feature coming soon!</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    View and add comments to track ticket progress and communication.
+                  </p>
+                </div>
+              </TabsContent>
+
+              {/* Progress Tab */}
+              <TabsContent value="progress" className="flex-1 overflow-y-auto p-4">
+                <div className="text-center py-8">
+                  <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">Progress tracking coming soon!</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Track ticket journey from creation to completion with detailed timeline.
+                  </p>
+                </div>
+              </TabsContent>
+
+              {/* Work Orders Tab */}
+              <TabsContent value="work-orders" className="flex-1 overflow-y-auto p-4">
+                <div className="text-center py-8">
+                  <Wrench className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">Work orders coming soon!</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    View detailed work orders with parts, labor, and completion notes.
+                  </p>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Modals */}
       <CreateTicketModal
