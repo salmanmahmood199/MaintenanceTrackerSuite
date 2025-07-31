@@ -20,6 +20,7 @@ import {
   DollarSign, Star, Camera, List
 } from 'lucide-react';
 import { CreateTicketModal } from "@/components/create-ticket-modal";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { TicketActionModal } from "@/components/ticket-action-modal";
 import { ConfirmCompletionModal } from "@/components/confirm-completion-modal";
 import { MarketplaceBidsModal } from "@/components/marketplace-bids-modal";
@@ -29,6 +30,9 @@ import { ProgressTrackerEmbedded } from "@/components/progress-tracker";
 import { WorkOrdersHistory } from "@/components/work-orders-history";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { insertTicketSchema } from "@shared/schema";
 import type { 
   Ticket,
   InsertTicket,
@@ -36,6 +40,236 @@ import type {
   MaintenanceVendor, 
   User 
 } from "@shared/schema";
+
+// Mobile Create Ticket Form Component
+const MobileCreateTicketForm = ({ onClose, onSuccess, user }: { onClose: () => void, onSuccess: () => void, user: any }) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [images, setImages] = useState<File[]>([]);
+  const { toast } = useToast();
+  
+  const form = useForm<InsertTicket>({
+    resolver: zodResolver(insertTicketSchema.omit({ reporterId: true, organizationId: true })),
+    defaultValues: {
+      title: "",
+      description: "",
+      priority: "medium" as const,
+    },
+  });
+
+  const handleSubmit = async (data: any) => {
+    if (images.length === 0) {
+      toast({
+        title: "Images Required",
+        description: "Please upload at least one image or video.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append('title', data.title);
+      formData.append('description', data.description);
+      formData.append('priority', data.priority);
+      
+      images.forEach((image) => {
+        formData.append('images', image);
+      });
+
+      const response = await fetch('/api/tickets', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "Ticket created successfully!",
+        });
+        onSuccess();
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: "Error",
+          description: errorData.message || "Failed to create ticket",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error creating ticket:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create ticket. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onClose}
+          className="p-2 text-white hover:bg-white/10"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div className="text-center">
+          <h2 className="text-lg font-semibold text-white">Create Ticket</h2>
+          <p className="text-sm text-blue-100">New maintenance request</p>
+        </div>
+        <div className="w-10" /> {/* Spacer */}
+      </div>
+
+      {/* Form Content */}
+      <div className="flex-1 overflow-y-auto p-4">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-foreground">Title</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Brief description of the issue" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-foreground">Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Detailed description of the maintenance issue..."
+                      rows={4}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="priority"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-foreground">Priority Level</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select priority" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="low">Low Priority</SelectItem>
+                      <SelectItem value="medium">Medium Priority</SelectItem>
+                      <SelectItem value="high">High Priority</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div>
+              <Label className="text-sm font-medium text-foreground">Upload Images & Videos *</Label>
+              <div className="mt-2">
+                <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+                  <div className="flex flex-col items-center justify-center">
+                    <Camera className="h-12 w-12 text-muted-foreground mb-4" />
+                    <p className="text-sm text-muted-foreground mb-2">
+                      {images.length > 0 ? `${images.length} file(s) selected` : 'Tap to add photos or videos'}
+                    </p>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*,video/*"
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files || []);
+                        setImages(prev => [...prev, ...files]);
+                      }}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    <Button type="button" variant="outline" size="sm" className="mt-2">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Files
+                    </Button>
+                  </div>
+                </div>
+                {images.length > 0 && (
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    {images.slice(0, 6).map((file, index) => (
+                      <div key={index} className="relative aspect-square bg-muted rounded-lg flex items-center justify-center">
+                        <div className="text-center">
+                          <div className="text-xs text-muted-foreground mb-1">
+                            {file.type.startsWith('video/') ? <Video className="h-6 w-6 mx-auto" /> : <Image className="h-6 w-6 mx-auto" />}
+                          </div>
+                          <p className="text-xs text-muted-foreground truncate px-1">
+                            {file.name.length > 12 ? `${file.name.substring(0, 12)}...` : file.name}
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                          onClick={() => setImages(prev => prev.filter((_, i) => i !== index))}
+                        >
+                          ×
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4 pb-8">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting || images.length === 0}
+                className="bg-primary text-white hover:bg-blue-700"
+              >
+                {isSubmitting ? (
+                  "Creating..."
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Ticket
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </div>
+    </div>
+  );
+};
 
 const MobilePage = () => {
   const [email, setEmail] = useState('root@mail.com');
@@ -1432,15 +1666,19 @@ const MobilePage = () => {
         </>
       )}
 
-      {/* Create Ticket Modal */}
-      <CreateTicketModal
-        isOpen={isCreateTicketOpen}
-        onClose={() => setIsCreateTicketOpen(false)}
-        onSuccess={() => {
-          setIsCreateTicketOpen(false);
-          refetchTickets();
-        }}
-      />
+      {/* Create Ticket Modal - Mobile Optimized */}
+      <Dialog open={isCreateTicketOpen} onOpenChange={setIsCreateTicketOpen}>
+        <DialogContent className="max-w-full h-full m-0 p-0 rounded-none">
+          <MobileCreateTicketForm 
+            onClose={() => setIsCreateTicketOpen(false)}
+            onSuccess={() => {
+              setIsCreateTicketOpen(false);
+              refetchTickets();
+            }}
+            user={user}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
