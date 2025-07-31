@@ -1,0 +1,44 @@
+Last login: Wed Jul 30 20:16:08 on ttys010
+salmanmahmood@MacBookPro ~ % cd /Users/salmanmahmood/Downloads/MaintenanceTracker-1/apps/mobile
+salmanmahmood@MacBookPro mobile % ./setup-mobile.sh
+zsh: permission denied: ./setup-mobile.sh
+salmanmahmood@MacBookPro mobile % npx expo start
+WARNING: The legacy expo-cli does not support Node +17. Migrate to the new local Expo CLI: https://blog.expo.dev/the-new-expo-cli-f4250d8e3421.
+┌───────────────────────────────────────────────────────────────────────────┐
+│                                                                           │
+│   The global expo-cli package has been deprecated.                        │
+│                                                                           │
+│   The new Expo CLI is now bundled in your project in the expo package.    │
+│   Learn more: https://blog.expo.dev/the-new-expo-cli-f4250d8e3421.        │
+│                                                                           │
+│   To use the local CLI instead (recommended in SDK 46 and higher), run:   │
+│   › npx expo <command>                                                    │
+│                                                                           │
+└───────────────────────────────────────────────────────────────────────────┘
+Starting project at /Users/salmanmahmood/Downloads/MaintenanceTracker-1/apps/mobile
+Unable to find expo in this project - have you run yarn / npm install yet?
+salmanmahmood@MacBookPro mobile % rm -rf node_modules package-lock.json
+salmanmahmood@MacBookPro mobile % npm cache clean --force
+npm warn using --force Recommended protections disabled.
+salmanmahmood@MacBookPro mobile % npm install
+npm error code ETARGET
+npm error notarget No matching version found for @expo/metro-config@~0.25.0.
+npm error notarget In most cases you or one of your dependencies are requesting
+npm error notarget a package version that doesn't exist.
+npm error A complete log of this run can be found in: /Users/salmanmahmood/.npm/_logs/2025-07-31T00_24_38_131Z-debug-0.log
+salmanmahmood@MacBookPro mobile % npx expo start
+WARNING: The legacy expo-cli does not support Node +17. Migrate to the new local Expo CLI: https://blog.expo.dev/the-new-expo-cli-f4250d8e3421.
+┌───────────────────────────────────────────────────────────────────────────┐
+│                                                                           │
+│   The global expo-cli package has been deprecated.                        │
+│                                                                           │
+│   The new Expo CLI is now bundled in your project in the expo package.    │
+│   Learn more: https://blog.expo.dev/the-new-expo-cli-f4250d8e3421.        │
+│                                                                           │
+│   To use the local CLI instead (recommended in SDK 46 and higher), run:   │
+│   › npx expo <command>                                                    │
+│                                                                           │
+└───────────────────────────────────────────────────────────────────────────┘
+Starting project at /Users/salmanmahmood/Downloads/MaintenanceTracker-1/apps/mobile
+Unable to find expo in this project - have you run yarn / npm install yet?
+salmanmahmood@MacBookPro mobile % 
