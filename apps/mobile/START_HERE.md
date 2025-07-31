@@ -1,13 +1,13 @@
-# TaskScout Mobile App - Getting Started
+# TaskScout Mobile App - Getting Started (SDK 53)
 
 ## 🚀 Quick Start Guide
 
-The TaskScout mobile app has been fully updated with all the latest features from the web platform. Here's how to get it running:
+The TaskScout mobile app has been upgraded to Expo SDK 53 for compatibility with the latest Expo Go app. Here's how to get it running:
 
 ### Prerequisites
 - Node.js 18+ installed
-- Expo CLI: `npm install -g @expo/cli`
-- Expo Go app on your phone ([iOS](https://apps.apple.com/app/expo-go/id982107779) | [Android](https://play.google.com/store/apps/details?id=host.exp.exponent))
+- Latest Expo CLI: `npm install -g @expo/cli@latest`
+- **Latest Expo Go app** on your phone ([iOS](https://apps.apple.com/app/expo-go/id982107779) | [Android](https://play.google.com/store/apps/details?id=host.exp.exponent))
 
 ### Installation Steps
 

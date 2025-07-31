@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🚀 Setting up TaskScout Mobile App..."
+echo "🚀 Setting up TaskScout Mobile App (Expo SDK 53)..."
 
 # Check if we're in the right directory
 if [ ! -f "package.json" ]; then
@@ -25,23 +25,34 @@ if [ -f "package-lock.json" ]; then
   rm -f package-lock.json
 fi
 
-# Install dependencies with legacy peer deps to avoid conflicts
-echo "📦 Installing dependencies..."
-npm install --legacy-peer-deps
+# Update npm to latest version
+echo "📦 Updating npm..."
+npm install -g npm@latest
 
-# Check if Expo CLI is installed globally
+# Install Expo CLI if not present
 if ! command -v expo &> /dev/null; then
   echo "⚡ Installing Expo CLI globally..."
-  npm install -g @expo/cli
+  npm install -g @expo/cli@latest
 fi
 
+# Install dependencies for SDK 53
+echo "📦 Installing Expo SDK 53 dependencies..."
+npm install
+
+# Install peer dependencies that might be missing
+echo "🔧 Installing additional peer dependencies..."
+npm install expo-dev-client@~4.0.0 --save-dev
+
 echo ""
-echo "✅ Setup complete! Now you can run:"
+echo "✅ SDK 53 Setup complete! Now you can run:"
 echo ""
 echo "   npx expo start"
 echo ""
 echo "📱 Make sure to:"
-echo "   1. Install Expo Go app on your phone"
+echo "   1. Update to latest Expo Go app on your phone (iOS/Android)"
 echo "   2. Keep your main TaskScout server running (port 5000)"
 echo "   3. Connect to the same WiFi network"
+echo ""
+echo "🍎 iOS Note: Latest Expo Go now supports SDK 53"
+echo "🤖 Android Note: Compatible with latest Expo Go"
 echo ""
