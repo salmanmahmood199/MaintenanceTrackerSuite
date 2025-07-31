@@ -1,48 +1,57 @@
-# Mobile App Crash Fix
+# TaskScout Mobile - Crash Fix Guide
 
-## Problem
-React Native crash with non-std C++ exception after SDK 53 upgrade.
+## React Native Runtime Crash Solution
 
-## Solution
-Reverted to Expo SDK 52 for better stability.
+If you're seeing crashes like "non-std C++ exception" or RCTFatal errors, try these steps:
 
-## Fixed Configuration
-- **Expo SDK**: 52.0.0 (stable)
-- **React Native**: 0.75.4 (stable)
-- **React**: 18.3.1
-- Stable versions of all dependencies
+### 1. Clear Everything
+```bash
+cd /Users/salmanmahmood/Downloads/MaintenanceTracker-1/apps/mobile
 
-## Steps to Fix:
-1. **Clean installation**:
-   ```bash
-   rm -rf node_modules
-   rm package-lock.json
-   npm install --legacy-peer-deps
-   ```
+# Clear all caches and builds
+rm -rf node_modules
+rm -rf .expo
+npm cache clean --force
+expo doctor --fix-dependencies
+```
 
-2. **Missing Dependencies Fixed**:
-   - Added `react-native-reanimated` (required for animations)
-   - Added proper `babel.config.js` configuration
+### 2. Reinstall Dependencies
+```bash
+npm install
+```
 
-2. **Start fresh**:
-   ```bash
-   ulimit -n 65536
-   npx expo start --clear
-   ```
+### 3. Reset Expo Cache
+```bash
+npx expo start --clear
+```
 
-3. **If still crashes**:
-   ```bash
-   # Reset Metro cache
-   npx expo start --reset-cache
-   
-   # Or try development build
-   npx expo start --dev-client
-   ```
+### 4. Alternative: Try Web Version
+If iOS continues crashing, test in web browser first:
+```bash
+npx expo start --web
+```
 
-## Why This Fixes It
-- SDK 52 is more stable than 53
-- Compatible dependencies
-- No experimental features
-- Proven stability record
+### 5. iOS Simulator Alternative
+If device crashes, try iOS Simulator:
+```bash
+npx expo start --ios
+```
 
-Your mobile app should now run without crashes!
+### 6. Minimal Test
+If still crashing, test with minimal config:
+```bash
+npx expo start --dev-client
+```
+
+## Configuration Changes Made
+- Simplified metro.config.js (removed complex monorepo setup)
+- Removed reanimated plugin from babel (common crash cause)
+- Using stable Expo SDK 53 configuration
+
+## If Nothing Works
+Try the web version of the mobile app:
+```bash
+npx expo start --web
+```
+
+The web version gives you the same mobile interface in a browser while we debug the native app.
