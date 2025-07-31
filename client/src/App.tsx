@@ -76,6 +76,7 @@ function Router() {
   if ((user?.role === "org_admin" || user?.role === "org_subadmin") && user.organizationId) {
     return (
       <Switch>
+        <Route path="/mobile" component={MobilePage} />
         <Route path="/calendar" component={Calendar} />
         <Route path="/" component={() => <OrganizationView />} />
         <Route path="/organization/:id" component={OrganizationView} />
@@ -88,6 +89,7 @@ function Router() {
   if (user?.role === "maintenance_admin" && user.maintenanceVendorId) {
     return (
       <Switch>
+        <Route path="/mobile" component={MobilePage} />
         <Route path="/calendar" component={Calendar} />
         <Route path="/" component={() => <VendorView />} />
         <Route path="/vendor/:id" component={VendorView} />
@@ -100,6 +102,7 @@ function Router() {
   if (user?.role === "technician") {
     return (
       <Switch>
+        <Route path="/mobile" component={MobilePage} />
         <Route path="/calendar" component={Calendar} />
         <Route path="/" component={TechnicianDashboard} />
         <Route component={NotFound} />
@@ -111,6 +114,7 @@ function Router() {
   if (user?.role === "residential") {
     return (
       <Switch>
+        <Route path="/mobile" component={MobilePage} />
         <Route path="/" component={ResidentialDashboard} />
         <Route component={NotFound} />
       </Switch>
@@ -120,6 +124,7 @@ function Router() {
   // Default to basic dashboard for authenticated users
   return (
     <Switch>
+      <Route path="/mobile" component={MobilePage} />
       <Route path="/" component={Dashboard} />
       <Route component={NotFound} />
     </Switch>

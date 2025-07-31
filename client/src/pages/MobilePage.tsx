@@ -103,8 +103,13 @@ const MobilePage = () => {
       });
 
       if (response.ok) {
-        // Reload page after successful login to re-check auth
-        window.location.reload();
+        // Get user data and update state instead of reloading
+        const userResponse = await fetch('/api/auth/user', { credentials: 'include' });
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          setUser(userData);
+          await loadData(userData);
+        }
       } else {
         const errorData = await response.json();
         console.error('Login failed:', errorData.message);
