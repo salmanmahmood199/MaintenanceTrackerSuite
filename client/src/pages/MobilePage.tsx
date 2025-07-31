@@ -314,6 +314,17 @@ const MobilePage = () => {
     enabled: !!user && (user.role === "root" || user.role === "maintenance_admin"),
   });
 
+  // Marketplace queries
+  const { data: marketplaceTickets = [], isLoading: marketplaceLoading } = useQuery<Ticket[]>({
+    queryKey: ["/api/marketplace/tickets"],
+    enabled: !!user && (user.role === 'maintenance_admin' || user.role === 'technician'),
+  });
+
+  const { data: myBids = [], isLoading: bidsLoading } = useQuery({
+    queryKey: ["/api/marketplace/my-bids"],
+    enabled: !!user && (user.role === 'maintenance_admin'),
+  });
+
   // Check authentication and load data
   useEffect(() => {
     const checkAuth = async () => {
@@ -1077,15 +1088,6 @@ const MobilePage = () => {
   };
 
   const getMarketplaceView = () => {
-    const { data: marketplaceTickets = [], isLoading: marketplaceLoading } = useQuery<Ticket[]>({
-      queryKey: ["/api/marketplace/tickets"],
-      enabled: !!user && (user.role === 'maintenance_admin' || user.role === 'technician'),
-    });
-
-    const { data: myBids = [], isLoading: bidsLoading } = useQuery({
-      queryKey: ["/api/marketplace/my-bids"],
-      enabled: !!user && (user.role === 'maintenance_admin'),
-    });
     
     return (
       <div className="space-y-6">
