@@ -391,7 +391,8 @@ export function ProgressTrackerEmbedded({
   const timelineEvents = createAllWorkflowSteps();
 
   return (
-    <div className="space-y-6">
+    <ScrollArea className="h-full max-h-[60vh]">
+      <div className="space-y-6 pr-4">
       {/* Detailed Timeline */}
       <Card>
         <CardHeader>
@@ -546,7 +547,8 @@ export function ProgressTrackerEmbedded({
           </CardContent>
         </Card>
       )}
-    </div>
+      </div>
+    </ScrollArea>
   );
 }
 
