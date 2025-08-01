@@ -360,7 +360,11 @@ const MobilePage = () => {
         
         <div className="relative z-10 text-center p-4">
           <div className="flex justify-center items-center space-x-3 mb-6">
-            <Smartphone className="w-16 h-16 text-cyan-400" />
+            <img 
+              src="/attached_assets/Logo_1753808482955.png" 
+              alt="TaskScout Logo" 
+              className="w-16 h-16 object-contain"
+            />
             <h1 className="text-2xl font-bold bg-gradient-to-r from-teal-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">TaskScout</h1>
           </div>
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4"></div>
@@ -433,7 +437,11 @@ const MobilePage = () => {
         <div className="relative z-10 w-full max-w-md space-y-8 p-4">
           <div className="text-center">
             <div className="flex justify-center items-center space-x-3 mb-4">
-              <Smartphone className="w-20 h-20 text-cyan-400" />
+              <img 
+                src="/attached_assets/Logo_1753808482955.png" 
+                alt="TaskScout Logo" 
+                className="w-20 h-20 object-contain"
+              />
               <h1 className="text-2xl font-bold bg-gradient-to-r from-teal-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">TaskScout</h1>
             </div>
             <p className="text-gray-400">Mobile App - Sign in to your account</p>
