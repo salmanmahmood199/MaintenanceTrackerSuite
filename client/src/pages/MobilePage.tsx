@@ -40,6 +40,7 @@ import type {
   MaintenanceVendor, 
   User 
 } from "@shared/schema";
+import taskscoutLogo from '@assets/Logo_1753808482955.png';
 
 // Mobile Create Ticket Form Component
 const MobileCreateTicketForm = ({ onClose, onSuccess, user }: { onClose: () => void, onSuccess: () => void, user: any }) => {
@@ -361,7 +362,7 @@ const MobilePage = () => {
         <div className="relative z-10 text-center p-4">
           <div className="flex justify-center items-center space-x-3 mb-6">
             <img 
-              src="/attached_assets/Logo_1753808482955.png" 
+              src={taskscoutLogo} 
               alt="TaskScout Logo" 
               className="w-16 h-16 object-contain"
             />
@@ -438,7 +439,7 @@ const MobilePage = () => {
           <div className="text-center">
             <div className="flex justify-center items-center space-x-3 mb-4">
               <img 
-                src="/attached_assets/Logo_1753808482955.png" 
+                src={taskscoutLogo} 
                 alt="TaskScout Logo" 
                 className="w-20 h-20 object-contain"
               />
