@@ -349,10 +349,22 @@ const MobilePage = () => {
   // Show loading state while checking auth
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading TaskScout Mobile...</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white flex items-center justify-center">
+        {/* Animated Background */}
+        <div className="fixed inset-0 opacity-20">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 animate-pulse"></div>
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-bounce"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-bounce delay-1000"></div>
+          <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-cyan-500/10 rounded-full blur-2xl animate-pulse delay-500"></div>
+        </div>
+        
+        <div className="relative z-10 text-center p-4">
+          <div className="flex justify-center items-center space-x-3 mb-6">
+            <Smartphone className="w-16 h-16 text-cyan-400" />
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-teal-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">TaskScout</h1>
+          </div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading TaskScout Mobile...</p>
         </div>
       </div>
     );
@@ -409,96 +421,109 @@ const MobilePage = () => {
   // Login screen for unauthenticated users
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <Smartphone className="h-12 w-12 text-blue-600" />
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white flex items-center justify-center">
+        {/* Animated Background */}
+        <div className="fixed inset-0 opacity-20">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 animate-pulse"></div>
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-bounce"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-bounce delay-1000"></div>
+          <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-cyan-500/10 rounded-full blur-2xl animate-pulse delay-500"></div>
+        </div>
+
+        <div className="relative z-10 w-full max-w-md space-y-8 p-4">
+          <div className="text-center">
+            <div className="flex justify-center items-center space-x-3 mb-4">
+              <Smartphone className="w-20 h-20 text-cyan-400" />
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-teal-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">TaskScout</h1>
             </div>
-            <CardTitle className="text-2xl">TaskScout Mobile</CardTitle>
-            <CardDescription>
-              Sign in to manage your maintenance tickets
-            </CardDescription>
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-              <p className="text-xs text-blue-600 font-medium mb-2">Quick Login Options:</p>
-              <div className="space-y-1 text-xs text-blue-800">
-                <div><strong>Root Admin:</strong> root@mail.com / admin</div>
-                <div><strong>Org Admin:</strong> admin@nsrpetroservices.org / password</div>
-                <div><strong>Sub Admin:</strong> placeticket@nsrpetro.com / password</div>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
-                  className="text-base"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  className="text-base"
-                />
-              </div>
-              
-              <div className="flex space-x-2">
+            <p className="text-gray-400">Mobile App - Sign in to your account</p>
+          </div>
+
+          <Card className="bg-gradient-to-br from-white/5 to-white/10 border-white/20 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="text-center text-white">Mobile Login</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-white">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="root@mail.com"
+                    className="text-base bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-white">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="admin"
+                    className="text-base bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                  />
+                </div>
+                
+                <div className="flex space-x-2">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    className="flex-1 text-xs p-2 h-8 bg-white/5 border-white/20 text-white hover:bg-white/10"
+                    onClick={() => {
+                      setEmail('root@mail.com');
+                      setPassword('admin');
+                    }}
+                  >
+                    Root
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    className="flex-1 text-xs p-2 h-8 bg-white/5 border-white/20 text-white hover:bg-white/10"
+                    onClick={() => {
+                      setEmail('placeticket@nsrpetro.com');
+                      setPassword('password');
+                    }}
+                  >
+                    Sub-Admin
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    className="flex-1 text-xs p-2 h-8 bg-white/5 border-white/20 text-white hover:bg-white/10"
+                    onClick={() => {
+                      setEmail('admin@nsrpetroservices.org');
+                      setPassword('password');
+                    }}
+                  >
+                    Org Admin
+                  </Button>
+                </div>
+                
                 <Button 
-                  type="button" 
-                  variant="outline" 
-                  className="flex-1 text-xs p-2 h-8"
-                  onClick={() => {
-                    setEmail('root@mail.com');
-                    setPassword('admin');
-                  }}
+                  type="submit" 
+                  className="w-full text-base py-6 bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-500 hover:from-teal-600 hover:via-cyan-600 hover:to-blue-600 text-white"
+                  disabled={loading}
                 >
-                  Root
+                  {loading ? 'Signing In...' : 'Sign In'}
                 </Button>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  className="flex-1 text-xs p-2 h-8"
-                  onClick={() => {
-                    setEmail('placeticket@nsrpetro.com');
-                    setPassword('password');
-                  }}
-                >
-                  Sub-Admin
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  className="flex-1 text-xs p-2 h-8"
-                  onClick={() => {
-                    setEmail('admin@nsrpetroservices.org');
-                    setPassword('password');
-                  }}
-                >
-                  Org Admin
-                </Button>
-              </div>
-              
-              <Button 
-                type="submit" 
-                className="w-full text-base py-6"
-                disabled={loading}
-              >
-                {loading ? 'Signing In...' : 'Sign In'}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+
+                <div className="mt-6 p-4 bg-white/5 rounded-lg border border-white/10 backdrop-blur-sm">
+                  <h3 className="text-sm font-medium text-white mb-2">Quick Access:</h3>
+                  <div className="space-y-1 text-xs text-gray-400">
+                    <div><strong className="text-white">Root Admin:</strong> root@mail.com / admin</div>
+                    <div><strong className="text-white">Org Admin:</strong> admin@nsrpetroservices.org / password</div>
+                    <div><strong className="text-white">Sub Admin:</strong> placeticket@nsrpetro.com / password</div>
+                  </div>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
