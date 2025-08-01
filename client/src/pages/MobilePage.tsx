@@ -365,6 +365,7 @@ const MobilePage = () => {
   const [selectedTicketForDetails, setSelectedTicketForDetails] = useState<Ticket | null>(null);
   const [isTicketDetailModalOpen, setIsTicketDetailModalOpen] = useState(false);
   const [isWorkOrderHistoryOpen, setIsWorkOrderHistoryOpen] = useState(false);
+  const [selectedImageForViewer, setSelectedImageForViewer] = useState<string | null>(null);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -1510,21 +1511,7 @@ const MobilePage = () => {
                                   alt={`Ticket image ${idx + 1}`}
                                   className="w-full h-full object-cover cursor-pointer"
                                   loading="lazy"
-                                  onClick={() => {
-                                    // Create a simple image viewer modal instead of opening new tab
-                                    const modal = document.createElement('div');
-                                    modal.className = 'fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50';
-                                    modal.innerHTML = `
-                                      <div class="relative max-w-full max-h-full p-4">
-                                        <img src="${image}" class="max-w-full max-h-full object-contain" />
-                                        <button class="absolute top-2 right-2 text-white bg-black bg-opacity-50 rounded-full p-2 hover:bg-opacity-75" onclick="this.parentElement.parentElement.remove()">✕</button>
-                                      </div>
-                                    `;
-                                    modal.onclick = (e) => {
-                                      if (e.target === modal) modal.remove();
-                                    };
-                                    document.body.appendChild(modal);
-                                  }}
+                                  onClick={() => setSelectedImageForViewer(image)}
                                   onError={(e) => {
                                     console.error('Image load error:', image);
                                     const target = e.target as HTMLImageElement;
@@ -1783,6 +1770,30 @@ const MobilePage = () => {
             }}
             user={user}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Viewer Modal */}
+      <Dialog open={!!selectedImageForViewer} onOpenChange={() => setSelectedImageForViewer(null)}>
+        <DialogContent className="max-w-full h-full m-0 p-0 bg-black/95 border-0 rounded-none">
+          <div className="relative w-full h-full flex items-center justify-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-4 right-4 z-10 text-white bg-black/50 hover:bg-black/70 rounded-full"
+              onClick={() => setSelectedImageForViewer(null)}
+            >
+              <X className="h-6 w-6" />
+            </Button>
+            {selectedImageForViewer && (
+              <img
+                src={selectedImageForViewer}
+                alt="Full size view"
+                className="max-w-full max-h-full object-contain"
+                onClick={() => setSelectedImageForViewer(null)}
+              />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
