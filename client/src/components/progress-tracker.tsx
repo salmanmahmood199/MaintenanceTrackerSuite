@@ -328,32 +328,32 @@ export function ProgressTrackerEmbedded({
         case 'accepted':
           if (['accepted', 'in-progress', 'completed', 'pending_confirmation', 'confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
             status = 'completed';
-            timestamp = ticket.acceptedAt || ticket.updatedAt;
+            timestamp = ticket.updatedAt;
           }
           break;
         case 'vendor_assigned':
           if (ticket.maintenanceVendorId && ['accepted', 'in-progress', 'completed', 'pending_confirmation', 'confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
             status = 'completed';
-            timestamp = ticket.vendorAssignedAt || ticket.updatedAt;
+            timestamp = ticket.updatedAt;
           }
           break;
         case 'vendor_accepted':
           if (ticket.maintenanceVendorId && ['in-progress', 'completed', 'pending_confirmation', 'confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
             status = 'completed';
-            timestamp = ticket.vendorAcceptedAt || ticket.updatedAt;
+            timestamp = ticket.updatedAt;
           }
           break;
         case 'technician_assigned':
           if (ticket.assigneeId && ['in-progress', 'completed', 'pending_confirmation', 'confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
             status = 'completed';
-            timestamp = ticket.technicianAssignedAt || ticket.updatedAt;
+            timestamp = ticket.updatedAt;
             user = ticketDetails?.assignee;
           }
           break;
         case 'work_started':
           if (['in-progress', 'completed', 'pending_confirmation', 'confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
             status = ticket.status === 'in-progress' ? 'current' : 'completed';
-            timestamp = ticket.workStartedAt || ticket.updatedAt;
+            timestamp = ticket.updatedAt;
             user = ticketDetails?.assignee;
           }
           break;
@@ -374,7 +374,7 @@ export function ProgressTrackerEmbedded({
         case 'billed':
           if (ticket.status === 'billed') {
             status = 'completed';
-            timestamp = ticket.billedAt || ticket.updatedAt;
+            timestamp = ticket.updatedAt;
           }
           break;
       }
@@ -696,7 +696,19 @@ export function ProgressTracker({
   const handleAddMilestone = () => {
     if (!selectedMilestone) return;
     
-    const milestoneType = milestoneTypes.find(m => m.value === selectedMilestone);
+    const milestoneTypes = [
+      { value: "in_progress", label: "In Progress" },
+      { value: "completed", label: "Completed" },
+      { value: "testing", label: "Testing" },
+      { value: "diagnosis_complete", label: "Diagnosis Complete" },
+      { value: "repair_started", label: "Repair Started" },
+      { value: "on_site", label: "On Site" },
+      { value: "assigned", label: "Assigned" },
+      { value: "technician_assigned", label: "Technician Assigned" },
+      { value: "reviewed", label: "Reviewed" },
+      { value: "parts_ordered", label: "Parts Ordered" }
+    ];
+    const milestoneType = milestoneTypes.find((m: any) => m.value === selectedMilestone);
     if (milestoneType) {
       addMilestoneMutation.mutate({
         milestoneType: milestoneType.value,
@@ -753,11 +765,11 @@ export function ProgressTracker({
                     {/* Stage Circles */}
                     <div className="relative flex justify-between items-center">
                       {getRelevantStages(ticket.status).map((stage, index) => {
-                        const isCompleted = isStageCompleted(stage.key, ticket.status);
-                        const isCurrent = isCurrentStage(stage.key, ticket.status);
+                        const isCompleted = isStageCompleted(stage?.key || '', ticket.status);
+                        const isCurrent = isCurrentStage(stage?.key || '', ticket.status);
                         
                         return (
-                          <div key={stage.key} className="flex flex-col items-center space-y-3">
+                          <div key={stage?.key || index} className="flex flex-col items-center space-y-3">
                             {/* Circle */}
                             <div className={`
                               relative z-10 w-12 h-12 rounded-full border-3 flex items-center justify-center transition-all duration-500 transform
@@ -780,7 +792,7 @@ export function ProgressTracker({
                               <div className={`text-xs font-semibold ${
                                 isCompleted || isCurrent ? 'text-foreground' : 'text-muted-foreground'
                               }`}>
-                                {stage.label.split(' ').slice(0, 2).join(' ')}
+                                {stage?.label?.split(' ')?.slice(0, 2)?.join(' ') || 'Unknown'}
                               </div>
                               {isCurrent && (
                                 <div className="text-xs text-blue-600 font-medium mt-1">

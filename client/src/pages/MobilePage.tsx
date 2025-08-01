@@ -392,7 +392,7 @@ const MobilePage = () => {
     enabled: !!user && (user.role === 'maintenance_admin' || user.role === 'technician'),
   });
 
-  const { data: myBids = [], isLoading: bidsLoading } = useQuery({
+  const { data: myBids = [], isLoading: bidsLoading } = useQuery<any[]>({
     queryKey: ["/api/marketplace/my-bids"],
     enabled: !!user && (user.role === 'maintenance_admin'),
   });
@@ -848,7 +848,7 @@ const MobilePage = () => {
                   Showing {filteredTickets.length} of {tickets.length} tickets
                 </p>
                 <div className="flex items-center gap-2">
-                  <Select value={ticketDateFilter} onValueChange={setTicketDateFilter}>
+                  <Select value={ticketDateFilter} onValueChange={(value: "all" | "last30" | "last7" | "today") => setTicketDateFilter(value)}>
                     <SelectTrigger className="w-32">
                       <SelectValue />
                     </SelectTrigger>
@@ -1592,45 +1592,69 @@ const MobilePage = () => {
 
       {/* Modals */}
       <CreateTicketModal
-        isOpen={isCreateTicketOpen}
-        onClose={() => setIsCreateTicketOpen(false)}
-        onSuccess={() => {
+        open={isCreateTicketOpen}
+        onOpenChange={setIsCreateTicketOpen}
+        onSubmit={(data, images) => {
+          // Handle ticket creation here
+          console.log('Creating ticket:', data, images);
           setIsCreateTicketOpen(false);
           refetchTickets();
         }}
+        isLoading={false}
+        userId={user?.id}
+        organizationId={user?.organizationId}
       />
 
       {selectedTicket && (
         <>
           <TicketActionModal
-            isOpen={isTicketActionOpen}
-            onClose={() => {
-              setIsTicketActionOpen(false);
-              setSelectedTicket(null);
-              setTicketAction(null);
+            open={isTicketActionOpen}
+            onOpenChange={(open) => {
+              setIsTicketActionOpen(open);
+              if (!open) {
+                setSelectedTicket(null);
+                setTicketAction(null);
+              }
             }}
             ticket={selectedTicket}
             action={ticketAction}
-            onSuccess={() => {
+            vendors={[]}
+            onAccept={(ticketId, data) => {
+              console.log('Accept ticket:', ticketId, data);
               setIsTicketActionOpen(false);
               setSelectedTicket(null);
               setTicketAction(null);
               refetchTickets();
             }}
+            onReject={(ticketId, reason) => {
+              console.log('Reject ticket:', ticketId, reason);
+              setIsTicketActionOpen(false);
+              setSelectedTicket(null);
+              setTicketAction(null);
+              refetchTickets();
+            }}
+            isLoading={false}
+            userRole={user?.role}
+            userPermissions={user?.permissions}
+            userVendorTiers={user?.vendorTiers}
           />
 
           <ConfirmCompletionModal
-            isOpen={isConfirmCompletionOpen}
-            onClose={() => {
-              setIsConfirmCompletionOpen(false);
-              setSelectedTicket(null);
+            open={isConfirmCompletionOpen}
+            onOpenChange={(open) => {
+              setIsConfirmCompletionOpen(open);
+              if (!open) {
+                setSelectedTicket(null);
+              }
             }}
             ticket={selectedTicket}
-            onSuccess={() => {
+            onConfirm={(confirmed, feedback) => {
+              console.log('Confirm completion:', confirmed, feedback);
               setIsConfirmCompletionOpen(false);
               setSelectedTicket(null);
               refetchTickets();
             }}
+            isLoading={false}
           />
 
           <MarketplaceBidsModal
@@ -1640,11 +1664,6 @@ const MobilePage = () => {
               setSelectedTicket(null);
             }}
             ticket={selectedTicket}
-            onSuccess={() => {
-              setIsMarketplaceBidsOpen(false);
-              setSelectedTicket(null);
-              refetchTickets();
-            }}
           />
 
           {/* Ticket Details Modal - Using Dialog for basic details view */}
@@ -1744,17 +1763,25 @@ const MobilePage = () => {
           </Dialog>
 
           <EnhancedInvoiceCreator
-            isOpen={isInvoiceCreatorOpen}
-            onClose={() => {
-              setIsInvoiceCreatorOpen(false);
-              setSelectedTicket(null);
+            open={isInvoiceCreatorOpen}
+            onOpenChange={(open) => {
+              setIsInvoiceCreatorOpen(open);
+              if (!open) {
+                setSelectedTicket(null);
+              }
             }}
             ticket={selectedTicket}
-            onSuccess={() => {
+            onSubmit={(data) => {
+              console.log('Submit invoice:', data);
               setIsInvoiceCreatorOpen(false);
               setSelectedTicket(null);
               refetchTickets();
             }}
+            isLoading={false}
+            workOrders={[]}
+            vendor={null}
+            organization={null}
+            location={null}
           />
         </>
       )}

@@ -214,7 +214,7 @@ export const ticketComments = pgTable("ticket_comments", {
 });
 
 // Marketplace bids table
-export const marketplaceBids = pgTable("marketplace_bids", {
+export const marketplaceBids: any = pgTable("marketplace_bids", {
   id: serial("id").primaryKey(),
   ticketId: integer("ticket_id").references(() => tickets.id).notNull(),
   vendorId: integer("vendor_id").references(() => maintenanceVendors.id).notNull(),
