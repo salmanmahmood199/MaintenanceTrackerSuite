@@ -570,11 +570,11 @@ const MobilePage = () => {
                     variant="outline" 
                     className="flex-1 text-xs p-2 h-8 bg-white/5 border-white/20 text-white hover:bg-white/10"
                     onClick={() => {
-                      setEmail('placeticket@nsrpetro.com');
+                      setEmail('admin@vendor.vendor');
                       setPassword('password');
                     }}
                   >
-                    Sub-Admin
+                    Vendor
                   </Button>
                   <Button 
                     type="button" 
@@ -602,7 +602,7 @@ const MobilePage = () => {
                   <div className="space-y-1 text-xs text-gray-400">
                     <div><strong className="text-white">Root Admin:</strong> root@mail.com / admin</div>
                     <div><strong className="text-white">Org Admin:</strong> admin@nsrpetroservices.org / password</div>
-                    <div><strong className="text-white">Sub Admin:</strong> placeticket@nsrpetro.com / password</div>
+                    <div><strong className="text-white">Vendor Admin:</strong> admin@vendor.vendor / password</div>
                   </div>
                 </div>
               </form>
@@ -928,9 +928,8 @@ const MobilePage = () => {
                           {/* Accept/Reject for users with proper permissions */}
                           {(
                             (user.role === 'org_admin') || 
-                            (user.role === 'org_subadmin' && user.permissions?.includes('accept_ticket')) ||
-                            (user.role === 'maintenance_admin')
-                          ) && ticket.status === 'open' && (
+                            (user.role === 'org_subadmin' && user.permissions?.includes('accept_ticket'))
+                          ) && (ticket.status === 'open' || ticket.status === 'pending') && (
                             <>
                               <DropdownMenuItem onClick={() => handleTicketAction(ticket, 'accept')}>
                                 <CheckCircle className="h-4 w-4 mr-2" />
@@ -944,19 +943,34 @@ const MobilePage = () => {
                           )}
                           
                           {/* Vendor-specific actions for maintenance admins */}
-                          {user.role === 'maintenance_admin' && ticket.maintenanceVendorId === user.maintenanceVendorId && (
+                          {user.role === 'maintenance_admin' && (
                             <>
-                              {ticket.status === 'accepted' && !ticket.assigneeId && (
+                              {/* Accept assignment when ticket is assigned to vendor */}
+                              {ticket.maintenanceVendorId === user.maintenanceVendorId && ticket.status === 'accepted' && !ticket.assigneeId && (
                                 <DropdownMenuItem onClick={() => handleTicketAction(ticket, 'accept')}>
                                   <UserCheck className="h-4 w-4 mr-2" />
                                   Accept & Assign Technician
                                 </DropdownMenuItem>
                               )}
-                              {ticket.status === 'accepted' && (
+                              {/* Reject assignment when ticket is assigned to vendor */}
+                              {ticket.maintenanceVendorId === user.maintenanceVendorId && ticket.status === 'accepted' && (
                                 <DropdownMenuItem onClick={() => handleTicketAction(ticket, 'reject')}>
                                   <XCircle className="h-4 w-4 mr-2" />
                                   Reject Assignment
                                 </DropdownMenuItem>
+                              )}
+                              {/* Accept/Reject open tickets that can be assigned to any vendor */}
+                              {(ticket.status === 'open' || ticket.status === 'pending') && !ticket.maintenanceVendorId && (
+                                <>
+                                  <DropdownMenuItem onClick={() => handleTicketAction(ticket, 'accept')}>
+                                    <CheckCircle className="h-4 w-4 mr-2" />
+                                    Accept Ticket
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleTicketAction(ticket, 'reject')}>
+                                    <AlertCircle className="h-4 w-4 mr-2" />
+                                    Reject Ticket
+                                  </DropdownMenuItem>
+                                </>
                               )}
                             </>
                           )}
@@ -1019,6 +1033,12 @@ const MobilePage = () => {
                       <Badge variant="outline" className={getPriorityColor(ticket.priority)}>
                         {ticket.priority}
                       </Badge>
+                      {/* Debug info for user role and permissions */}
+                      {user.role === 'maintenance_admin' && (
+                        <Badge variant="outline" className="text-xs">
+                          Role: {user.role} | Vendor: {user.maintenanceVendorId}
+                        </Badge>
+                      )}
                     </div>
                     
                     {ticket.description && (
