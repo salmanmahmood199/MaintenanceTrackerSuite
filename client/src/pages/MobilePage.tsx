@@ -17,7 +17,7 @@ import {
   AlertCircle, TrendingUp, Plus, Clock, User as UserIcon, MapPin, Filter, Search,
   MessageSquare, Image, Video, FileText, Phone, Mail, Users, Building2,
   Wrench, Edit, Eye, ArrowLeft, ChevronDown, MoreVertical, Home,
-  DollarSign, Star, Camera, List
+  DollarSign, Star, Camera, List, X
 } from 'lucide-react';
 import { CreateTicketModal } from "@/components/create-ticket-modal";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
