@@ -134,9 +134,9 @@ const MobileCreateTicketForm = ({ onClose, onSuccess, user }: { onClose: () => v
   };
 
   return (
-    <div className="fixed inset-0 bg-white z-50 flex flex-col">
+    <div className="fixed inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 z-50 flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-blue-600 to-purple-600 text-white flex-shrink-0">
+      <div className="flex items-center justify-between p-4 border-b border-white/20 bg-gradient-to-r from-blue-600 to-purple-600 text-white flex-shrink-0">
         <Button
           variant="ghost"
           size="sm"
@@ -237,8 +237,8 @@ const MobileCreateTicketForm = ({ onClose, onSuccess, user }: { onClose: () => v
                       </SelectContent>
                     </Select>
                   ) : (
-                    <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                      <p className="text-sm text-yellow-800">
+                    <div className="mt-2 p-3 bg-yellow-500/20 border border-yellow-400/30 rounded-md">
+                      <p className="text-sm text-yellow-200">
                         No locations assigned to your account. Please contact your administrator to assign locations before creating tickets.
                       </p>
                     </div>
@@ -311,20 +311,21 @@ const MobileCreateTicketForm = ({ onClose, onSuccess, user }: { onClose: () => v
       </div>
 
       {/* Fixed Footer Buttons */}
-      <div className="flex-shrink-0 p-4 border-t bg-white">
+      <div className="flex-shrink-0 p-4 border-t border-white/20 bg-gradient-to-r from-slate-900/90 to-purple-900/90 backdrop-blur-sm">
         <div className="flex justify-end space-x-3">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
             disabled={isSubmitting}
+            className="border-white/20 text-white hover:bg-white/10"
           >
             Cancel
           </Button>
           <Button
             onClick={form.handleSubmit(handleSubmit)}
             disabled={isSubmitting || images.length === 0}
-            className="bg-primary text-white hover:bg-blue-700"
+            className="bg-gradient-to-r from-teal-500 to-blue-600 text-white hover:from-teal-600 hover:to-blue-700 border-0"
           >
             {isSubmitting ? (
               "Creating..."
