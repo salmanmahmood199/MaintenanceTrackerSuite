@@ -1493,7 +1493,7 @@ const MobilePage = () => {
                             <div key={idx} className="aspect-square bg-muted rounded-lg overflow-hidden border">
                               {image.includes('.mp4') || image.includes('.mov') || image.includes('.MOV') ? (
                                 <video 
-                                  src={`/uploads/${image}`}
+                                  src={image}
                                   className="w-full h-full object-cover"
                                   controls
                                   playsInline
@@ -1506,7 +1506,7 @@ const MobilePage = () => {
                                 />
                               ) : (
                                 <img 
-                                  src={`/uploads/${image}`} 
+                                  src={image} 
                                   alt={`Ticket image ${idx + 1}`}
                                   className="w-full h-full object-cover cursor-pointer"
                                   loading="lazy"
@@ -1516,7 +1516,7 @@ const MobilePage = () => {
                                     modal.className = 'fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50';
                                     modal.innerHTML = `
                                       <div class="relative max-w-full max-h-full p-4">
-                                        <img src="/uploads/${image}" class="max-w-full max-h-full object-contain" />
+                                        <img src="${image}" class="max-w-full max-h-full object-contain" />
                                         <button class="absolute top-2 right-2 text-white bg-black bg-opacity-50 rounded-full p-2 hover:bg-opacity-75" onclick="this.parentElement.parentElement.remove()">✕</button>
                                       </div>
                                     `;
