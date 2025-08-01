@@ -17,7 +17,7 @@ import {
   AlertCircle, TrendingUp, Plus, Clock, User as UserIcon, MapPin, Filter, Search,
   MessageSquare, Image, Video, FileText, Phone, Mail, Users, Building2,
   Wrench, Edit, Eye, ArrowLeft, ChevronDown, MoreVertical, Home,
-  DollarSign, Star, Camera, List, X
+  DollarSign, Star, Camera, List, X, UserCheck, XCircle, CheckSquare, Building
 } from 'lucide-react';
 import { CreateTicketModal } from "@/components/create-ticket-modal";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -383,7 +383,12 @@ const MobilePage = () => {
 
   const { data: vendors = [], isLoading: vendorsLoading } = useQuery<MaintenanceVendor[]>({
     queryKey: ["/api/maintenance-vendors"],
-    enabled: !!user && (user.role === "root" || user.role === "maintenance_admin"),
+    enabled: !!user && (user.role === "root" || user.role === "org_admin" || user.role === "org_subadmin" || user.role === "maintenance_admin"),
+  });
+
+  const { data: vendorTiers = [] } = useQuery<any[]>({
+    queryKey: ["/api/organizations", user?.organizationId, "vendor-tiers"],
+    enabled: !!user?.organizationId && (user.role === "org_admin" || user.role === "org_subadmin"),
   });
 
   // Marketplace queries
@@ -656,6 +661,11 @@ const MobilePage = () => {
     setIsInvoiceCreatorOpen(true);
   };
 
+  const handleConfirmCompletion = (ticket: Ticket) => {
+    setSelectedTicket(ticket);
+    setIsConfirmCompletionOpen(true);
+  };
+
   // Filter tickets based on date range
   const getFilteredTickets = () => {
     const now = new Date();
@@ -915,34 +925,87 @@ const MobilePage = () => {
                             <Wrench className="h-4 w-4 mr-2" />
                             Work Orders
                           </DropdownMenuItem>
-                          {user.role === 'org_admin' && ticket.status === 'open' && (
+                          {/* Accept/Reject for users with proper permissions */}
+                          {(
+                            (user.role === 'org_admin') || 
+                            (user.role === 'org_subadmin' && user.permissions?.includes('accept_ticket')) ||
+                            (user.role === 'maintenance_admin')
+                          ) && ticket.status === 'open' && (
                             <>
                               <DropdownMenuItem onClick={() => handleTicketAction(ticket, 'accept')}>
                                 <CheckCircle className="h-4 w-4 mr-2" />
-                                Accept
+                                Accept Ticket
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleTicketAction(ticket, 'reject')}>
                                 <AlertCircle className="h-4 w-4 mr-2" />
-                                Reject
+                                Reject Ticket
                               </DropdownMenuItem>
                             </>
                           )}
-                          {user.role === 'technician' && ticket.status === 'accepted' && (
-                            <DropdownMenuItem onClick={() => handleCreateWorkOrder(ticket)}>
-                              <Wrench className="h-4 w-4 mr-2" />
-                              Start Work
-                            </DropdownMenuItem>
+                          
+                          {/* Vendor-specific actions for maintenance admins */}
+                          {user.role === 'maintenance_admin' && ticket.maintenanceVendorId === user.maintenanceVendorId && (
+                            <>
+                              {ticket.status === 'accepted' && !ticket.assigneeId && (
+                                <DropdownMenuItem onClick={() => handleTicketAction(ticket, 'accept')}>
+                                  <UserCheck className="h-4 w-4 mr-2" />
+                                  Accept & Assign Technician
+                                </DropdownMenuItem>
+                              )}
+                              {ticket.status === 'accepted' && (
+                                <DropdownMenuItem onClick={() => handleTicketAction(ticket, 'reject')}>
+                                  <XCircle className="h-4 w-4 mr-2" />
+                                  Reject Assignment
+                                </DropdownMenuItem>
+                              )}
+                            </>
                           )}
+                          {/* Technician actions */}
+                          {user.role === 'technician' && ticket.assigneeId === user.id && (
+                            <>
+                              {ticket.status === 'accepted' && (
+                                <DropdownMenuItem onClick={() => handleCreateWorkOrder(ticket)}>
+                                  <Wrench className="h-4 w-4 mr-2" />
+                                  Start Work
+                                </DropdownMenuItem>
+                              )}
+                              {ticket.status === 'in-progress' && (
+                                <DropdownMenuItem onClick={() => handleCreateWorkOrder(ticket)}>
+                                  <CheckCircle className="h-4 w-4 mr-2" />
+                                  Complete Work
+                                </DropdownMenuItem>
+                              )}
+                            </>
+                          )}
+                          {/* Marketplace actions */}
                           {ticket.assignedToMarketplace && (
                             <DropdownMenuItem onClick={() => handleViewBids(ticket)}>
                               <DollarSign className="h-4 w-4 mr-2" />
-                              View Bids
+                              View Marketplace Bids
                             </DropdownMenuItem>
                           )}
-                          {user.role === 'maintenance_admin' && ticket.status === 'ready_for_billing' && (
+                          
+                          {/* Marketplace bidding for vendors */}
+                          {user.role === 'maintenance_admin' && ticket.assignedToMarketplace && !ticket.maintenanceVendorId && (
+                            <DropdownMenuItem onClick={() => handleViewBids(ticket)}>
+                              <Plus className="h-4 w-4 mr-2" />
+                              Place Bid
+                            </DropdownMenuItem>
+                          )}
+                          
+                          {/* Billing actions */}
+                          {user.role === 'maintenance_admin' && ticket.status === 'ready_for_billing' && ticket.maintenanceVendorId === user.maintenanceVendorId && (
                             <DropdownMenuItem onClick={() => handleCreateInvoice(ticket)}>
                               <FileText className="h-4 w-4 mr-2" />
                               Create Invoice
+                            </DropdownMenuItem>
+                          )}
+                          
+                          {/* Completion confirmation for requesters */}
+                          {(ticket.reporterId === user.id || user.role === 'org_admin' || (user.role === 'org_subadmin' && user.permissions?.includes('accept_ticket'))) && ticket.status === 'completed' && (
+                            <DropdownMenuItem onClick={() => handleConfirmCompletion(ticket)}>
+                              <CheckSquare className="h-4 w-4 mr-2" />
+                              Confirm Completion
                             </DropdownMenuItem>
                           )}
                         </DropdownMenuContent>
@@ -1618,20 +1681,74 @@ const MobilePage = () => {
             }}
             ticket={selectedTicket}
             action={ticketAction}
-            vendors={[]}
-            onAccept={(ticketId, data) => {
-              console.log('Accept ticket:', ticketId, data);
-              setIsTicketActionOpen(false);
-              setSelectedTicket(null);
-              setTicketAction(null);
-              refetchTickets();
+            vendors={vendorTiers?.length > 0 ? vendorTiers : vendors.map(v => ({ vendor: v, tier: 'all', isActive: true }))}
+            onAccept={async (ticketId, data) => {
+              try {
+                const response = await fetch(`/api/tickets/${ticketId}/accept`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  credentials: 'include',
+                  body: JSON.stringify(data),
+                });
+                
+                if (response.ok) {
+                  toast({
+                    title: "Success",
+                    description: "Ticket accepted successfully",
+                  });
+                  setIsTicketActionOpen(false);
+                  setSelectedTicket(null);
+                  setTicketAction(null);
+                  refetchTickets();
+                } else {
+                  const error = await response.json();
+                  toast({
+                    title: "Error",
+                    description: error.message || "Failed to accept ticket",
+                    variant: "destructive",
+                  });
+                }
+              } catch (error) {
+                toast({
+                  title: "Error",
+                  description: "Failed to accept ticket",
+                  variant: "destructive",
+                });
+              }
             }}
-            onReject={(ticketId, reason) => {
-              console.log('Reject ticket:', ticketId, reason);
-              setIsTicketActionOpen(false);
-              setSelectedTicket(null);
-              setTicketAction(null);
-              refetchTickets();
+            onReject={async (ticketId, reason) => {
+              try {
+                const response = await fetch(`/api/tickets/${ticketId}/reject`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  credentials: 'include',
+                  body: JSON.stringify({ rejectionReason: reason }),
+                });
+                
+                if (response.ok) {
+                  toast({
+                    title: "Success", 
+                    description: "Ticket rejected successfully",
+                  });
+                  setIsTicketActionOpen(false);
+                  setSelectedTicket(null);
+                  setTicketAction(null);
+                  refetchTickets();
+                } else {
+                  const error = await response.json();
+                  toast({
+                    title: "Error",
+                    description: error.message || "Failed to reject ticket",
+                    variant: "destructive",
+                  });
+                }
+              } catch (error) {
+                toast({
+                  title: "Error",
+                  description: "Failed to reject ticket",
+                  variant: "destructive",
+                });
+              }
             }}
             isLoading={false}
             userRole={user?.role}
