@@ -1271,7 +1271,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           title: req.body.title,
           description: req.body.description,
           priority: req.body.priority,
-          status: req.body.status || "open",
+          status: req.body.status || "pending",
           organizationId:
             parseInt(req.body.organizationId) || user.organizationId || 1,
           reporterId: user.id,
