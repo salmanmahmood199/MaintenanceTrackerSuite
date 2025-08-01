@@ -46,6 +46,7 @@ import taskscoutLogo from '@assets/Logo_1753808482955.png';
 const MobileCreateTicketForm = ({ onClose, onSuccess, user }: { onClose: () => void, onSuccess: () => void, user: any }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [images, setImages] = useState<File[]>([]);
+  const [location, setLocation] = useState('');
   const { toast } = useToast();
   
   const form = useForm<InsertTicket>({
@@ -73,6 +74,7 @@ const MobileCreateTicketForm = ({ onClose, onSuccess, user }: { onClose: () => v
       formData.append('title', data.title);
       formData.append('description', data.description);
       formData.append('priority', data.priority);
+      formData.append('location', location);
       
       images.forEach((image) => {
         formData.append('images', image);
@@ -189,28 +191,47 @@ const MobileCreateTicketForm = ({ onClose, onSuccess, user }: { onClose: () => v
             />
 
             <div>
+              <Label className="text-sm font-medium text-foreground">Location</Label>
+              <div className="mt-2">
+                <Input
+                  placeholder="Enter location or address"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  className="w-full"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Describe where the maintenance work is needed
+                </p>
+              </div>
+            </div>
+
+            <div>
               <Label className="text-sm font-medium text-foreground">Upload Images & Videos *</Label>
               <div className="mt-2">
-                <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+                <div className="border-2 border-dashed border-border rounded-lg p-6 text-center relative">
                   <div className="flex flex-col items-center justify-center">
                     <Camera className="h-12 w-12 text-muted-foreground mb-4" />
                     <p className="text-sm text-muted-foreground mb-2">
                       {images.length > 0 ? `${images.length} file(s) selected` : 'Tap to add photos or videos'}
                     </p>
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*,video/*"
-                      onChange={(e) => {
-                        const files = Array.from(e.target.files || []);
-                        setImages(prev => [...prev, ...files]);
-                      }}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                    <Button type="button" variant="outline" size="sm" className="mt-2">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Files
-                    </Button>
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*,video/*"
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files || []);
+                          setImages(prev => [...prev, ...files]);
+                        }}
+                        className="hidden"
+                      />
+                      <Button type="button" variant="outline" size="sm" className="mt-2" asChild>
+                        <span>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Files
+                        </span>
+                      </Button>
+                    </label>
                   </div>
                 </div>
                 {images.length > 0 && (
