@@ -38,7 +38,8 @@ import type {
   InsertTicket,
   Organization, 
   MaintenanceVendor, 
-  User 
+  User,
+  Location 
 } from "@shared/schema";
 import taskscoutLogo from '@assets/Logo_1753808482955.png';
 
@@ -46,8 +47,17 @@ import taskscoutLogo from '@assets/Logo_1753808482955.png';
 const MobileCreateTicketForm = ({ onClose, onSuccess, user }: { onClose: () => void, onSuccess: () => void, user: any }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [images, setImages] = useState<File[]>([]);
-  const [location, setLocation] = useState('');
   const { toast } = useToast();
+
+  // Fetch user's assigned locations
+  const { data: userLocations = [] } = useQuery<Location[]>({
+    queryKey: ["/api/users", user?.id, "locations"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/users/${user?.id}/locations`);
+      return await response.json() as Location[];
+    },
+    enabled: !!user?.id,
+  });
   
   const form = useForm<InsertTicket>({
     resolver: zodResolver(insertTicketSchema.omit({ reporterId: true, organizationId: true })),
@@ -59,6 +69,15 @@ const MobileCreateTicketForm = ({ onClose, onSuccess, user }: { onClose: () => v
   });
 
   const handleSubmit = async (data: any) => {
+    // Validate location selection for users with location assignments
+    if (userLocations.length > 0 && !data.locationId) {
+      form.setError("locationId", { 
+        type: "manual", 
+        message: "Please select a location for this ticket" 
+      });
+      return;
+    }
+
     if (images.length === 0) {
       toast({
         title: "Images Required",
@@ -74,7 +93,9 @@ const MobileCreateTicketForm = ({ onClose, onSuccess, user }: { onClose: () => v
       formData.append('title', data.title);
       formData.append('description', data.description);
       formData.append('priority', data.priority);
-      formData.append('location', location);
+      if (data.locationId) {
+        formData.append('locationId', data.locationId.toString());
+      }
       
       images.forEach((image) => {
         formData.append('images', image);
@@ -190,20 +211,41 @@ const MobileCreateTicketForm = ({ onClose, onSuccess, user }: { onClose: () => v
               )}
             />
 
-            <div>
-              <Label className="text-sm font-medium text-foreground">Location</Label>
-              <div className="mt-2">
-                <Input
-                  placeholder="Enter location or address"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="w-full"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Describe where the maintenance work is needed
-                </p>
-              </div>
-            </div>
+            <FormField
+              control={form.control}
+              name="locationId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-foreground">
+                    Location <span className="text-red-500">*</span>
+                  </FormLabel>
+                  {userLocations.length > 0 ? (
+                    <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select location for this ticket" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {userLocations.map((location) => (
+                          <SelectItem key={location.id} value={location.id.toString()}>
+                            {location.name}
+                            {location.address && ` - ${location.address}`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                      <p className="text-sm text-yellow-800">
+                        No locations assigned to your account. Please contact your administrator to assign locations before creating tickets.
+                      </p>
+                    </div>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div>
               <Label className="text-sm font-medium text-foreground">Upload Images & Videos *</Label>
