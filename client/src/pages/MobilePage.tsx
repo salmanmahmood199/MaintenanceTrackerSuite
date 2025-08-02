@@ -1844,99 +1844,261 @@ const MobilePage = () => {
             ticket={selectedTicket}
           />
 
-          {/* Ticket Details Modal - Using Dialog for basic details view */}
+          {/* Enhanced Ticket Details Modal - Mobile Optimized */}
           <Dialog open={isTicketDetailsOpen} onOpenChange={setIsTicketDetailsOpen}>
-            <DialogContent className="w-[95vw] max-w-md">
-              <DialogHeader>
-                <DialogTitle>Ticket Details</DialogTitle>
-              </DialogHeader>
-              {selectedTicket && (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold">{selectedTicket.title}</h3>
-                    <p className="text-sm text-muted-foreground">{selectedTicket.ticketNumber}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm">{selectedTicket.description}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Badge className={getStatusColor(selectedTicket.status)}>
-                      {selectedTicket.status?.replace('_', ' ')}
-                    </Badge>
-                    <Badge variant="outline" className={getPriorityColor(selectedTicket.priority)}>
-                      {selectedTicket.priority}
-                    </Badge>
-                  </div>
-                  {selectedTicket.images && selectedTicket.images.length > 0 && (
-                    <div>
-                      <p className="text-sm font-medium mb-2">Attachments</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {selectedTicket.images.slice(0, 4).map((image, index) => (
-                          <div key={index} className="aspect-square bg-muted rounded-lg flex items-center justify-center">
-                            <Image className="h-8 w-8 text-muted-foreground" />
+            <DialogContent className="max-w-full h-full m-0 p-0 rounded-none">
+              <div className="h-full flex flex-col">
+                <DialogHeader className="p-4 border-b">
+                  <DialogTitle className="flex items-center gap-2">
+                    <TicketIcon className="h-5 w-5" />
+                    Ticket Details
+                  </DialogTitle>
+                </DialogHeader>
+                
+                {selectedTicket && (
+                  <ScrollArea className="flex-1">
+                    <div className="p-4 space-y-6">
+                      {/* Ticket Header */}
+                      <div>
+                        <h3 className="font-semibold text-lg mb-1">{selectedTicket.title}</h3>
+                        <p className="text-sm text-muted-foreground mb-3">{selectedTicket.ticketNumber}</p>
+                        <div className="flex gap-2 mb-3">
+                          <Badge className={getStatusColor(selectedTicket.status)}>
+                            {selectedTicket.status?.replace('_', ' ')}
+                          </Badge>
+                          <Badge variant="outline" className={getPriorityColor(selectedTicket.priority)}>
+                            {selectedTicket.priority}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* Description */}
+                      <div>
+                        <h4 className="font-medium mb-2">Description</h4>
+                        <p className="text-sm text-muted-foreground">{selectedTicket.description}</p>
+                      </div>
+
+                      {/* Original Images */}
+                      {selectedTicket.images && selectedTicket.images.length > 0 && (
+                        <div>
+                          <h4 className="font-medium mb-2">Attachments ({selectedTicket.images.length})</h4>
+                          <div className="grid grid-cols-2 gap-2">
+                            {selectedTicket.images.map((image, index) => (
+                              <div key={index} className="aspect-square bg-background rounded border overflow-hidden">
+                                <img
+                                  src={image}
+                                  alt={`Attachment ${index + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            ))}
                           </div>
-                        ))}
+                        </div>
+                      )}
+
+                      {/* Work Orders Section */}
+                      <div>
+                        <h4 className="font-medium mb-3">Work Orders</h4>
+                        <WorkOrdersHistory ticketId={selectedTicket.id} />
+                      </div>
+
+                      {/* Comments Section */}
+                      <div>
+                        <h4 className="font-medium mb-3">Comments & Updates</h4>
+                        <TicketComments 
+                          ticketId={selectedTicket.id}
+                          userRole={user?.role}
+                          userId={user?.id}
+                        />
+                      </div>
+
+                      {/* Progress Tracker */}
+                      <div>
+                        <h4 className="font-medium mb-3">Progress</h4>
+                        <ProgressTrackerEmbedded ticket={selectedTicket} />
                       </div>
                     </div>
-                  )}
+                  </ScrollArea>
+                )}
+
+                {/* Fixed Footer with Actions */}
+                <div className="p-4 border-t bg-background">
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => setIsTicketDetailsOpen(false)}
+                  >
+                    Close
+                  </Button>
                 </div>
-              )}
+              </div>
             </DialogContent>
           </Dialog>
 
-          {/* Work Order Modal - Using Dialog for basic work order creation */}
+          {/* Enhanced Work Order Modal - Mobile Optimized */}
           <Dialog open={isWorkOrderOpen} onOpenChange={setIsWorkOrderOpen}>
-            <DialogContent className="w-[95vw] max-w-md">
-              <DialogHeader>
-                <DialogTitle>Create Work Order</DialogTitle>
-              </DialogHeader>
-              {selectedTicket && (
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-sm font-medium">Ticket: {selectedTicket.title}</p>
-                    <p className="text-xs text-muted-foreground">{selectedTicket.ticketNumber}</p>
-                  </div>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-sm font-medium">Work Description</label>
-                      <Textarea
-                        placeholder="Describe the work performed..."
-                        className="mt-1"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-sm font-medium">Hours Worked</label>
-                        <Input type="number" placeholder="0" className="mt-1" />
+            <DialogContent className="max-w-full h-full m-0 p-0 rounded-none">
+              <div className="h-full flex flex-col">
+                <DialogHeader className="p-4 border-b">
+                  <DialogTitle className="flex items-center gap-2">
+                    <Wrench className="h-5 w-5" />
+                    Create Work Order
+                  </DialogTitle>
+                </DialogHeader>
+                
+                {selectedTicket && (
+                  <ScrollArea className="flex-1 p-4">
+                    <div className="space-y-6">
+                      {/* Original Ticket Information */}
+                      <div className="bg-muted p-4 rounded-lg">
+                        <h4 className="font-medium text-foreground mb-2">Original Request</h4>
+                        <p className="text-sm mb-3">{selectedTicket.description}</p>
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground mb-2">
+                          <span>#{selectedTicket.ticketNumber}</span>
+                          <span>{selectedTicket.createdAt && new Date(selectedTicket.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        
+                        {/* Original Images */}
+                        {selectedTicket.images && selectedTicket.images.length > 0 && (
+                          <div>
+                            <p className="text-sm font-medium mb-2">Original Photos ({selectedTicket.images.length})</p>
+                            <div className="grid grid-cols-3 gap-2">
+                              {selectedTicket.images.slice(0, 6).map((image, index) => (
+                                <div key={index} className="aspect-square bg-background rounded border overflow-hidden">
+                                  <img
+                                    src={image}
+                                    alt={`Original ${index + 1}`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
+
+                      {/* Work Description */}
                       <div>
-                        <label className="text-sm font-medium">Status</label>
+                        <Label className="text-sm font-medium">Work Description *</Label>
+                        <Textarea
+                          placeholder="Describe the work performed in detail..."
+                          className="mt-1 min-h-[80px]"
+                        />
+                      </div>
+
+                      {/* Time Tracking */}
+                      <div className="border rounded-lg p-4">
+                        <h4 className="font-medium mb-3">Time Tracking</h4>
+                        <div className="space-y-3">
+                          <div>
+                            <Label className="text-sm font-medium">Work Date</Label>
+                            <Input
+                              type="date"
+                              value={new Date().toISOString().split('T')[0]}
+                              disabled
+                              className="mt-1 bg-muted"
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label className="text-sm font-medium">Time In</Label>
+                              <Input type="time" className="mt-1" />
+                            </div>
+                            <div>
+                              <Label className="text-sm font-medium">Time Out</Label>
+                              <Input type="time" className="mt-1" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Parts & Labor */}
+                      <div className="border rounded-lg p-4">
+                        <h4 className="font-medium mb-3">Parts & Labor</h4>
+                        <div className="space-y-3">
+                          <div>
+                            <Label className="text-sm font-medium">Labor Cost ($)</Label>
+                            <Input type="number" step="0.01" placeholder="0.00" className="mt-1" />
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium">Parts Cost ($)</Label>
+                            <Input type="number" step="0.01" placeholder="0.00" className="mt-1" />
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium">Other Costs ($)</Label>
+                            <Input type="number" step="0.01" placeholder="0.00" className="mt-1" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Work Status */}
+                      <div>
+                        <Label className="text-sm font-medium">Work Status *</Label>
                         <Select>
                           <SelectTrigger className="mt-1">
-                            <SelectValue placeholder="Select status" />
+                            <SelectValue placeholder="Select completion status" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="completed">Completed</SelectItem>
-                            <SelectItem value="partial">Partial</SelectItem>
-                            <SelectItem value="return_needed">Return Needed</SelectItem>
+                            <SelectItem value="partial">Partial Completion</SelectItem>
+                            <SelectItem value="return_needed">Return Visit Needed</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
+
+                      {/* Work Completion Photos */}
+                      <div>
+                        <Label className="text-sm font-medium">Work Completion Photos</Label>
+                        <div className="mt-2 border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                          <Camera className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                          <p className="text-sm text-muted-foreground mb-2">
+                            Add photos of completed work
+                          </p>
+                          <Button variant="outline" size="sm">
+                            <Camera className="h-4 w-4 mr-2" />
+                            Take Photos
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Manager Notes */}
+                      <div>
+                        <Label className="text-sm font-medium">Notes for Manager</Label>
+                        <Textarea
+                          placeholder="Any additional notes or special instructions..."
+                          className="mt-1"
+                        />
+                      </div>
                     </div>
-                    <div className="flex justify-end gap-2 mt-4">
-                      <Button variant="outline" onClick={() => setIsWorkOrderOpen(false)}>
-                        Cancel
-                      </Button>
-                      <Button onClick={() => {
+                  </ScrollArea>
+                )}
+
+                {/* Fixed Footer */}
+                <div className="p-4 border-t bg-background">
+                  <div className="flex gap-3">
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => setIsWorkOrderOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      className="flex-1"
+                      onClick={() => {
                         setIsWorkOrderOpen(false);
                         refetchTickets();
-                      }}>
-                        Create Work Order
-                      </Button>
-                    </div>
+                        toast({
+                          title: "Work Order Created",
+                          description: "Work order submitted successfully"
+                        });
+                      }}
+                    >
+                      Submit Work Order
+                    </Button>
                   </div>
                 </div>
-              )}
+              </div>
             </DialogContent>
           </Dialog>
 
