@@ -17,7 +17,7 @@ import {
   AlertCircle, TrendingUp, Plus, Clock, User as UserIcon, MapPin, Filter, Search,
   MessageSquare, Image, Video, FileText, Phone, Mail, Users, Building2,
   Wrench, Edit, Eye, ArrowLeft, ChevronDown, MoreVertical, Home,
-  DollarSign, Star, Camera, List, X, UserCheck, XCircle, CheckSquare, Building
+  DollarSign, Star, Camera, List, X, UserCheck, XCircle, CheckSquare, Building, Trash2
 } from 'lucide-react';
 import { CreateTicketModal } from "@/components/create-ticket-modal";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -364,6 +364,9 @@ const MobilePage = () => {
   const [ticketDateFilter, setTicketDateFilter] = useState<'all' | 'last30' | 'last7' | 'today'>('last30');
   const [selectedTicketForDetails, setSelectedTicketForDetails] = useState<Ticket | null>(null);
   const [isTicketDetailModalOpen, setIsTicketDetailModalOpen] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const [parts, setParts] = useState([{ name: "", quantity: 1, cost: 0 }]);
+  const [otherCharges, setOtherCharges] = useState([{ description: "", cost: 0 }]);
   const [isWorkOrderHistoryOpen, setIsWorkOrderHistoryOpen] = useState(false);
   const [selectedImageForViewer, setSelectedImageForViewer] = useState<string | null>(null);
   
@@ -1940,7 +1943,7 @@ const MobilePage = () => {
             <DialogContent className="max-w-full h-screen w-screen m-0 p-0 rounded-none max-h-screen">
               <div className="h-screen flex flex-col">
                 {/* Fixed Header */}
-                <div className="bg-white border-b p-4 flex-shrink-0 z-10">
+                <div className="bg-background border-b p-4 flex-shrink-0 z-10">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Wrench className="h-5 w-5" />
@@ -1955,7 +1958,7 @@ const MobilePage = () => {
                 {/* Scrollable Content */}
                 {selectedTicket && (
                   <div 
-                    className="flex-1 overflow-y-auto bg-gray-50"
+                    className="flex-1 overflow-y-auto bg-muted"
                     style={{ 
                       height: 'calc(100vh - 140px)', 
                       overflowY: 'auto',
@@ -1964,21 +1967,25 @@ const MobilePage = () => {
                   >
                     <div className="p-4 space-y-6">
                       {/* Original Ticket Information */}
-                      <div className="bg-white p-4 rounded-lg shadow-sm">
-                        <h4 className="font-medium text-gray-900 mb-2">Original Request</h4>
-                        <p className="text-sm text-gray-700 mb-3">{selectedTicket.description}</p>
-                        <div className="flex items-center gap-4 text-xs text-gray-500 mb-2">
+                      <div className="bg-card p-4 rounded-lg shadow-sm">
+                        <h4 className="font-medium text-foreground mb-2">Original Request</h4>
+                        <p className="text-sm text-muted-foreground mb-3">{selectedTicket.description}</p>
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground mb-2">
                           <span>#{selectedTicket.ticketNumber}</span>
                           <span>{selectedTicket.createdAt && new Date(selectedTicket.createdAt).toLocaleDateString()}</span>
                         </div>
                         
-                        {/* Original Images */}
+                        {/* Original Images - Clickable to Enlarge */}
                         {selectedTicket.images && selectedTicket.images.length > 0 && (
                           <div>
                             <p className="text-sm font-medium mb-2">Original Photos ({selectedTicket.images.length})</p>
                             <div className="grid grid-cols-3 gap-2">
                               {selectedTicket.images.slice(0, 6).map((image, index) => (
-                                <div key={index} className="aspect-square bg-gray-100 rounded border overflow-hidden">
+                                <div 
+                                  key={index} 
+                                  className="aspect-square bg-background rounded border overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                                  onClick={() => setSelectedImageIndex(index)}
+                                >
                                   <img
                                     src={image}
                                     alt={`Original ${index + 1}`}
@@ -1992,8 +1999,8 @@ const MobilePage = () => {
                       </div>
 
                       {/* Work Description */}
-                      <div className="bg-white p-4 rounded-lg shadow-sm">
-                        <Label className="text-sm font-medium text-gray-900">Work Description *</Label>
+                      <div className="bg-card p-4 rounded-lg shadow-sm">
+                        <Label className="text-sm font-medium text-foreground">Work Description *</Label>
                         <Textarea
                           placeholder="Describe the work performed in detail..."
                           className="mt-2 min-h-[100px] resize-none"
@@ -2001,87 +2008,214 @@ const MobilePage = () => {
                       </div>
 
                       {/* Time Tracking */}
-                      <div className="bg-white p-4 rounded-lg shadow-sm">
-                        <h4 className="font-medium text-gray-900 mb-3">Time Tracking</h4>
+                      <div className="bg-card p-4 rounded-lg shadow-sm">
+                        <h4 className="font-medium text-foreground mb-3">Time Tracking</h4>
                         <div className="space-y-4">
                           <div>
-                            <Label className="text-sm font-medium text-gray-700">Work Date</Label>
+                            <Label className="text-sm font-medium text-muted-foreground">Work Date</Label>
                             <Input
                               type="date"
                               value={new Date().toISOString().split('T')[0]}
                               disabled
-                              className="mt-1 bg-gray-100"
+                              className="mt-1 bg-muted"
                             />
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <Label className="text-sm font-medium text-gray-700">Time In</Label>
+                              <Label className="text-sm font-medium text-muted-foreground">Time In *</Label>
                               <Input type="time" className="mt-1" />
                             </div>
                             <div>
-                              <Label className="text-sm font-medium text-gray-700">Time Out</Label>
+                              <Label className="text-sm font-medium text-muted-foreground">Time Out *</Label>
                               <Input type="time" className="mt-1" />
                             </div>
                           </div>
                         </div>
                       </div>
 
-                      {/* Parts & Labor */}
-                      <div className="bg-white p-4 rounded-lg shadow-sm">
-                        <h4 className="font-medium text-gray-900 mb-3">Parts & Labor</h4>
-                        <div className="space-y-4">
-                          <div>
-                            <Label className="text-sm font-medium text-gray-700">Labor Cost ($)</Label>
-                            <Input type="number" step="0.01" placeholder="0.00" className="mt-1" />
-                          </div>
-                          <div>
-                            <Label className="text-sm font-medium text-gray-700">Parts Cost ($)</Label>
-                            <Input type="number" step="0.01" placeholder="0.00" className="mt-1" />
-                          </div>
-                          <div>
-                            <Label className="text-sm font-medium text-gray-700">Other Costs ($)</Label>
-                            <Input type="number" step="0.01" placeholder="0.00" className="mt-1" />
-                          </div>
+                      {/* Parts Used */}
+                      <div className="bg-card p-4 rounded-lg shadow-sm">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-medium text-foreground">Parts Used</h4>
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setParts(prev => [...prev, { name: "", quantity: 1, cost: 0 }])}
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add Part
+                          </Button>
+                        </div>
+                        <div className="space-y-3">
+                          {parts.map((part, index) => (
+                            <div key={index} className="p-3 border rounded-lg bg-background">
+                              <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <Label className="text-sm font-medium text-muted-foreground">Part Name</Label>
+                                  {parts.length > 1 && (
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => setParts(prev => prev.filter((_, i) => i !== index))}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                                <Input 
+                                  placeholder="Enter part name or select from inventory" 
+                                  value={part.name}
+                                  onChange={(e) => setParts(prev => prev.map((p, i) => i === index ? { ...p, name: e.target.value } : p))}
+                                  className="mt-1"
+                                />
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <Label className="text-sm font-medium text-muted-foreground">Quantity</Label>
+                                    <Input 
+                                      type="number" 
+                                      min="1" 
+                                      value={part.quantity}
+                                      onChange={(e) => setParts(prev => prev.map((p, i) => i === index ? { ...p, quantity: parseInt(e.target.value) || 1 } : p))}
+                                      className="mt-1" 
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label className="text-sm font-medium text-muted-foreground">Cost ($)</Label>
+                                    <Input 
+                                      type="number" 
+                                      step="0.01" 
+                                      value={part.cost}
+                                      onChange={(e) => setParts(prev => prev.map((p, i) => i === index ? { ...p, cost: parseFloat(e.target.value) || 0 } : p))}
+                                      placeholder="0.00" 
+                                      className="mt-1" 
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
 
-                      {/* Work Status */}
-                      <div className="bg-white p-4 rounded-lg shadow-sm">
-                        <Label className="text-sm font-medium text-gray-900">Work Status *</Label>
+                      {/* Other Charges */}
+                      <div className="bg-card p-4 rounded-lg shadow-sm">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-medium text-foreground">Other Charges</h4>
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setOtherCharges(prev => [...prev, { description: "", cost: 0 }])}
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add Charge
+                          </Button>
+                        </div>
+                        <div className="space-y-3">
+                          {otherCharges.map((charge, index) => (
+                            <div key={index} className="p-3 border rounded-lg bg-background">
+                              <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <Label className="text-sm font-medium text-muted-foreground">Description</Label>
+                                  {otherCharges.length > 1 && (
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => setOtherCharges(prev => prev.filter((_, i) => i !== index))}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                                <Input 
+                                  placeholder="e.g., Travel time, disposal fee, etc." 
+                                  value={charge.description}
+                                  onChange={(e) => setOtherCharges(prev => prev.map((c, i) => i === index ? { ...c, description: e.target.value } : c))}
+                                  className="mt-1"
+                                />
+                                <div>
+                                  <Label className="text-sm font-medium text-muted-foreground">Cost ($)</Label>
+                                  <Input 
+                                    type="number" 
+                                    step="0.01" 
+                                    value={charge.cost}
+                                    onChange={(e) => setOtherCharges(prev => prev.map((c, i) => i === index ? { ...c, cost: parseFloat(e.target.value) || 0 } : c))}
+                                    placeholder="0.00" 
+                                    className="mt-1" 
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Completion Status */}
+                      <div className="bg-card p-4 rounded-lg shadow-sm">
+                        <Label className="text-sm font-medium text-foreground">Completion Status *</Label>
                         <Select>
                           <SelectTrigger className="mt-2">
                             <SelectValue placeholder="Select completion status" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="completed">Completed</SelectItem>
-                            <SelectItem value="partial">Partial Completion</SelectItem>
                             <SelectItem value="return_needed">Return Visit Needed</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
 
+                      {/* Completion Notes */}
+                      <div className="bg-card p-4 rounded-lg shadow-sm">
+                        <Label className="text-sm font-medium text-foreground">Completion Notes *</Label>
+                        <Textarea
+                          placeholder="Provide detailed notes about the work completion..."
+                          className="mt-2 min-h-[80px] resize-none"
+                        />
+                      </div>
+
                       {/* Work Completion Photos */}
-                      <div className="bg-white p-4 rounded-lg shadow-sm">
-                        <Label className="text-sm font-medium text-gray-900">Work Completion Photos</Label>
-                        <div className="mt-3 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                          <Camera className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                          <p className="text-sm text-gray-600 mb-3">
+                      <div className="bg-card p-4 rounded-lg shadow-sm">
+                        <Label className="text-sm font-medium text-foreground">Work Completion Photos</Label>
+                        <div className="mt-3 border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                          <Camera className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                          <p className="text-sm text-muted-foreground mb-3">
                             Add photos of completed work
                           </p>
-                          <Button variant="outline" size="sm" className="bg-white">
+                          <Button variant="outline" size="sm">
                             <Camera className="h-4 w-4 mr-2" />
                             Take Photos
                           </Button>
                         </div>
                       </div>
 
-                      {/* Manager Notes */}
-                      <div className="bg-white p-4 rounded-lg shadow-sm">
-                        <Label className="text-sm font-medium text-gray-900">Notes for Manager</Label>
-                        <Textarea
-                          placeholder="Any additional notes or special instructions..."
-                          className="mt-2 min-h-[80px] resize-none"
-                        />
+                      {/* Manager Verification */}
+                      <div className="bg-card p-4 rounded-lg shadow-sm">
+                        <h4 className="font-medium text-foreground mb-3">Manager Verification</h4>
+                        <div className="space-y-4">
+                          <div>
+                            <Label className="text-sm font-medium text-muted-foreground">Manager Name *</Label>
+                            <Input 
+                              placeholder="Enter manager's full name" 
+                              className="mt-1"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium text-muted-foreground">Manager Signature *</Label>
+                            <div className="mt-2 border rounded-lg p-4 bg-background">
+                              <div className="border-2 border-dashed border-muted-foreground/25 rounded p-4 text-center">
+                                <p className="text-sm text-muted-foreground mb-2">
+                                  Manager signature area (digital signature required)
+                                </p>
+                                <Button variant="outline" size="sm">
+                                  Sign Here
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
 
                       {/* Extra padding at bottom for safe scrolling */}
@@ -2091,7 +2225,7 @@ const MobilePage = () => {
                 )}
 
                 {/* Fixed Footer */}
-                <div className="bg-white border-t p-4 flex-shrink-0">
+                <div className="bg-background border-t p-4 flex-shrink-0">
                   <div className="flex gap-3">
                     <Button 
                       variant="outline" 
@@ -2118,6 +2252,32 @@ const MobilePage = () => {
               </div>
             </DialogContent>
           </Dialog>
+
+          {/* Image Enlargement Modal */}
+          {selectedImageIndex !== null && selectedTicket?.images && (
+            <Dialog open={true} onOpenChange={() => setSelectedImageIndex(null)}>
+              <DialogContent className="max-w-full h-full m-0 p-0 rounded-none">
+                <div className="relative h-full bg-black flex items-center justify-center">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="absolute top-4 right-4 z-10 text-white hover:bg-white/20"
+                    onClick={() => setSelectedImageIndex(null)}
+                  >
+                    <X className="h-6 w-6" />
+                  </Button>
+                  <img
+                    src={selectedTicket.images[selectedImageIndex]}
+                    alt={`Original ${selectedImageIndex + 1}`}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white bg-black/50 px-3 py-1 rounded">
+                    {selectedImageIndex + 1} of {selectedTicket.images.length}
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
 
           <EnhancedInvoiceCreator
             open={isInvoiceCreatorOpen}
