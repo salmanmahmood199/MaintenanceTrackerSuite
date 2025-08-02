@@ -50,13 +50,13 @@ export default function BlogsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
       {/* Header Section */}
-      <div className="relative z-10 px-6 pt-24 pb-16">
+      <div className="relative z-10 px-4 md:px-6 pt-20 md:pt-24 pb-12 md:pb-16">
         <div className="max-w-7xl mx-auto">
           {/* Back Button */}
           <Link href="/">
             <Button
               variant="ghost"
-              className="mb-8 text-gray-300 hover:text-white"
+              className="mb-6 md:mb-8 text-gray-300 hover:text-white text-sm md:text-base"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Home
@@ -70,11 +70,11 @@ export default function BlogsPage() {
               Commercial Maintenance Industry Insights
             </Badge>
 
-            <h1 className="text-3xl md:text-4xl font-bold mb-6 bg-gradient-to-r from-white via-teal-200 to-cyan-200 bg-clip-text text-transparent">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-6 bg-gradient-to-r from-white via-teal-200 to-cyan-200 bg-clip-text text-transparent">
               Maintenance Insights
             </h1>
 
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed px-4">
               Discover the latest trends in HVAC, plumbing, AI technology, and
               business solutions that are transforming commercial maintenance
               operations across industries.
@@ -82,14 +82,14 @@ export default function BlogsPage() {
           </div>
 
           {/* Search and Filter Controls */}
-          <div className="flex flex-col md:flex-row gap-4 mb-12">
+          <div className="flex flex-col lg:flex-row gap-4 mb-8 md:mb-12">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <Input
-                placeholder="Search articles by title, content, or category..."
+                placeholder="Search articles..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-white/10 border-white/20 text-white placeholder-gray-400"
+                className="pl-10 bg-white/10 border-white/20 text-white placeholder-gray-400 text-sm md:text-base"
               />
             </div>
             <div className="flex flex-wrap gap-2">
@@ -103,11 +103,11 @@ export default function BlogsPage() {
                   onClick={() => setSelectedCategory(category)}
                   className={
                     selectedCategory === category
-                      ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white border-none"
-                      : "border-white/20 text-gray-300 hover:text-white hover:bg-white/10"
+                      ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white border-none text-xs md:text-sm"
+                      : "border-white/20 text-gray-300 hover:text-white hover:bg-white/10 text-xs md:text-sm"
                   }
                 >
-                  {category === "all" ? "All Categories" : category}
+                  {category === "all" ? "All" : category}
                 </Button>
               ))}
             </div>
@@ -128,9 +128,9 @@ export default function BlogsPage() {
       </div>
 
       {/* Blog Posts Grid */}
-      <div className="relative z-10 px-6 pb-24">
+      <div className="relative z-10 px-4 md:px-6 pb-16 md:pb-24">
         <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {filteredPosts.map((post) => (
               <Card
                 key={post.id}
@@ -159,11 +159,11 @@ export default function BlogsPage() {
                     {post.category}
                   </Badge>
 
-                  <h3 className="text-xl mb-3 text-white group-hover:text-teal-300 transition-colors line-clamp-2">
+                  <h3 className="text-lg md:text-xl mb-3 text-white group-hover:text-teal-300 transition-colors line-clamp-2">
                     {post.title}
                   </h3>
 
-                  <p className="text-gray-300 mb-4 line-clamp-3 leading-relaxed">
+                  <p className="text-sm md:text-base text-gray-300 mb-4 line-clamp-3 leading-relaxed">
                     {post.excerpt}
                   </p>
 
@@ -212,13 +212,13 @@ export default function BlogsPage() {
       </div>
 
       {/* Call to Action Section */}
-      <div className="relative z-10 px-6 pb-24">
+      <div className="relative z-10 px-4 md:px-6 pb-16 md:pb-24">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="bg-gradient-to-r from-teal-500/10 to-cyan-500/10 backdrop-blur-sm border border-teal-500/20 rounded-2xl p-12">
-            <h2 className="text-3xl font-bold mb-6 bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
+          <div className="bg-gradient-to-r from-teal-500/10 to-cyan-500/10 backdrop-blur-sm border border-teal-500/20 rounded-2xl p-6 md:p-12">
+            <h2 className="text-2xl md:text-3xl font-bold mb-6 bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
               Ready to Transform Your Maintenance Operations?
             </h2>
-            <p className="text-xl text-gray-300 mb-8 leading-relaxed">
+            <p className="text-lg md:text-xl text-gray-300 mb-8 leading-relaxed px-4">
               Join thousands of businesses using TaskScout's AI-powered
               maintenance platform to reduce costs, improve efficiency, and
               prevent downtime.

@@ -39,7 +39,9 @@ import {
   Building,
   Wrench,
   Home,
-  DollarSign
+  DollarSign,
+  Menu,
+  X
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -47,6 +49,7 @@ export default function HomePage() {
   const [isVisible, setIsVisible] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [activeFeature, setActiveFeature] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
   const { location, service, content, isLoading } = useLocationContent();
 
@@ -305,18 +308,18 @@ export default function HomePage() {
       </div>
 
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between p-6 backdrop-blur-md bg-black/20 border-b border-white/10">
-        <div className="flex items-center space-x-3">
+      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between p-4 md:p-6 backdrop-blur-md bg-black/20 border-b border-white/10">
+        <div className="flex items-center space-x-2 md:space-x-3">
           <img 
             src="/assets/taskscout-logo.png" 
             alt="TaskScout Logo" 
-            className="w-16 h-16 object-contain"
+            className="w-12 h-12 md:w-16 md:h-16 object-contain"
           />
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-teal-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
+          <h1 className="text-lg md:text-2xl font-bold bg-gradient-to-r from-teal-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
             TaskScout
           </h1>
         </div>
-        <div className="hidden md:flex items-center space-x-6 text-gray-300">
+        <div className="hidden lg:flex items-center space-x-6 text-gray-300">
           <a href="#pricing" className="hover:text-teal-300 transition-colors">
             Pricing
           </a>
@@ -330,19 +333,87 @@ export default function HomePage() {
             Contact
           </Link>
         </div>
+        
         <div className="flex items-center space-x-4">
-          <Link href="/login">
-            <Button variant="outline" className="border-white/20 text-white hover:bg-white/10">
-              Login
-            </Button>
-          </Link>
-          <Link href="/contact">
-            <Button className="bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-500 hover:from-teal-600 hover:via-cyan-600 hover:to-blue-600">
-              Get Started
-            </Button>
-          </Link>
+          <div className="hidden md:flex items-center space-x-4">
+            <Link href="/login">
+              <Button variant="outline" className="border-white/20 text-white hover:bg-white/10">
+                Login
+              </Button>
+            </Link>
+            <Link href="/contact">
+              <Button className="bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-500 hover:from-teal-600 hover:via-cyan-600 hover:to-blue-600">
+                Get Started
+              </Button>
+            </Link>
+          </div>
+          
+          {/* Mobile Menu Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="lg:hidden text-white"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </Button>
         </div>
       </nav>
+
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-40 lg:hidden">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
+          <div className="fixed top-0 right-0 h-full w-80 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 border-l border-white/10 p-6">
+            <div className="flex flex-col space-y-6 mt-20">
+              <a 
+                href="#pricing" 
+                className="text-lg text-gray-300 hover:text-teal-300 transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Pricing
+              </a>
+              <Link 
+                href="/blogs" 
+                className="text-lg text-gray-300 hover:text-teal-300 transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Blog
+              </Link>
+              <a 
+                href="#features" 
+                className="text-lg text-gray-300 hover:text-teal-300 transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Features
+              </a>
+              <Link 
+                href="/contact" 
+                className="text-lg text-gray-300 hover:text-teal-300 transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Contact
+              </Link>
+              <Link 
+                href="/login"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <Button variant="outline" className="w-full border-white/20 text-white hover:bg-white/10">
+                  Login
+                </Button>
+              </Link>
+              <Link 
+                href="/contact"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <Button className="w-full bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-500">
+                  Get Started
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Hero Section */}
       <section className={`relative z-10 px-6 pt-32 pb-20 text-center transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
@@ -352,7 +423,7 @@ export default function HomePage() {
             Next-Generation Maintenance Platform
           </Badge>
           
-          <h1 className="text-6xl md:text-8xl font-bold mb-8 bg-gradient-to-r from-white via-teal-200 to-cyan-200 bg-clip-text text-transparent leading-tight">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-8xl font-bold mb-8 bg-gradient-to-r from-white via-teal-200 to-cyan-200 bg-clip-text text-transparent leading-tight">
             The Future of
             <br />
             <span className="bg-gradient-to-r from-teal-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
@@ -360,7 +431,7 @@ export default function HomePage() {
             </span>
           </h1>
           
-          <p className="text-xl md:text-2xl text-gray-300 mb-6 max-w-4xl mx-auto leading-relaxed">
+          <p className="text-lg sm:text-xl md:text-2xl text-gray-300 mb-6 max-w-4xl mx-auto leading-relaxed px-4">
             {isLoading 
               ? 'Revolutionary maintenance management with two game-changing solutions: AI-powered full-cycle ticketing from creation to completion, and an Uber-like marketplace connecting you with top-rated service providers instantly.'
               : `${service.description} Featuring AI-powered ticketing and an Uber-like marketplace for ${service.services.join(', ').toLowerCase()}.`
@@ -605,7 +676,7 @@ export default function HomePage() {
       {/* Stats Section */}
       <section className="relative z-10 px-6 py-16">
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
             {stats.map((stat, index) => (
               <div key={index} className="text-center transform hover:scale-110 transition-transform duration-300">
                 <div className="flex justify-center mb-4">
@@ -613,10 +684,10 @@ export default function HomePage() {
                     {stat.icon}
                   </div>
                 </div>
-                <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
+                <div className="text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
                   {stat.number}
                 </div>
-                <div className="text-gray-400">{stat.label}</div>
+                <div className="text-sm md:text-base text-gray-400">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -636,13 +707,13 @@ export default function HomePage() {
           </div>
 
           {/* Two Major Features */}
-          <div className="grid md:grid-cols-2 gap-12 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 mb-16">
             {/* AI-Powered Ticketing */}
             <div className="bg-gradient-to-br from-teal-500/10 to-cyan-500/10 border border-teal-500/20 rounded-3xl p-8 backdrop-blur-sm hover:scale-105 transition-all duration-500">
               <div className="w-16 h-16 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-2xl flex items-center justify-center mb-6 mx-auto">
                 <Zap className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-3xl font-bold text-center mb-4 bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
+              <h3 className="text-2xl md:text-3xl font-bold text-center mb-4 bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
                 AI-Powered A-Z Ticketing
               </h3>
               <p className="text-gray-300 text-center mb-6 leading-relaxed">
@@ -674,7 +745,7 @@ export default function HomePage() {
               <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center mb-6 mx-auto">
                 <Users className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-3xl font-bold text-center mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              <h3 className="text-2xl md:text-3xl font-bold text-center mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                 Uber-Like Marketplace
               </h3>
               <p className="text-gray-300 text-center mb-6 leading-relaxed">
@@ -703,7 +774,7 @@ export default function HomePage() {
           </div>
 
           {/* User Types Section */}
-          <div className="grid md:grid-cols-2 gap-8 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mb-16">
             {/* Commercial */}
             <div className="bg-gradient-to-br from-emerald-500/10 to-green-500/10 border border-emerald-500/20 rounded-2xl p-6 backdrop-blur-sm">
               <div className="text-center mb-4">
@@ -763,7 +834,7 @@ export default function HomePage() {
               We believe in simple, fair pricing. Commercial businesses and residential users never pay platform fees.
             </p>
             
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
               <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
                 <div className="text-center mb-4">
                   <Building className="w-8 h-8 text-teal-400 mx-auto mb-2" />
