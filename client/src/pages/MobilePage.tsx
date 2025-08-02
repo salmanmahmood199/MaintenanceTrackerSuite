@@ -28,6 +28,7 @@ import { EnhancedInvoiceCreator } from "@/components/enhanced-invoice-creator";
 import { TicketComments } from "@/components/ticket-comments";
 import { ProgressTrackerEmbedded } from "@/components/progress-tracker";
 import { WorkOrdersHistory } from "@/components/work-orders-history";
+import { MobileWorkOrderModal } from "@/components/mobile-work-order-modal";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
@@ -366,6 +367,7 @@ const MobilePage = () => {
   const [isTicketDetailModalOpen, setIsTicketDetailModalOpen] = useState(false);
   const [isWorkOrderHistoryOpen, setIsWorkOrderHistoryOpen] = useState(false);
   const [selectedImageForViewer, setSelectedImageForViewer] = useState<string | null>(null);
+  const [isTicketActionsOpen, setIsTicketActionsOpen] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -846,64 +848,64 @@ const MobilePage = () => {
     // Default ticket dashboard for other roles
     return (
       <div className="space-y-6">
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-2 gap-4">
-          <Card className="bg-card border-border">
-            <CardContent className="p-4">
+        {/* Statistics Cards - Much Larger for Mobile */}
+        <div className="grid grid-cols-2 gap-6">
+          <Card className="bg-card border-border shadow-sm">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Total Tickets</p>
-                  <p className="text-2xl font-bold text-foreground mt-1">{tickets.length}</p>
+                  <p className="text-sm text-muted-foreground uppercase tracking-wide font-medium mb-2">Total Tickets</p>
+                  <p className="text-3xl font-bold text-foreground">{tickets.length}</p>
                 </div>
-                <div className="bg-blue-500/10 p-2.5 rounded-lg">
-                  <TicketIcon className="h-5 w-5 text-blue-500" />
+                <div className="bg-blue-500/10 p-4 rounded-xl">
+                  <TicketIcon className="h-8 w-8 text-blue-500" />
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-card border-border">
-            <CardContent className="p-4">
+          <Card className="bg-card border-border shadow-sm">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Open</p>
-                  <p className="text-2xl font-bold text-foreground mt-1">
+                  <p className="text-sm text-muted-foreground uppercase tracking-wide font-medium mb-2">Open</p>
+                  <p className="text-3xl font-bold text-foreground">
                     {tickets.filter((t: any) => t.status === 'open').length}
                   </p>
                 </div>
-                <div className="bg-yellow-500/10 p-2.5 rounded-lg">
-                  <AlertCircle className="h-5 w-5 text-yellow-500" />
+                <div className="bg-yellow-500/10 p-4 rounded-xl">
+                  <AlertCircle className="h-8 w-8 text-yellow-500" />
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Recent Tickets */}
-        <Card className="bg-card border-border">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <List className="h-5 w-5" />
+        {/* Recent Tickets - Mobile Optimized */}
+        <Card className="bg-card border-border shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between p-6">
+            <CardTitle className="text-xl flex items-center gap-3">
+              <List className="h-6 w-6" />
               Recent Tickets
             </CardTitle>
             <Button 
-              size="sm" 
+              size="lg" 
               onClick={() => setIsCreateTicketOpen(true)}
-              className="gap-2"
+              className="gap-3 h-12 px-6 bg-gradient-to-r from-teal-500 to-blue-600 text-white hover:from-teal-600 hover:to-blue-700 text-base"
             >
-              <Plus className="h-4 w-4" />
-              New
+              <Plus className="h-5 w-5" />
+              New Ticket
             </Button>
           </CardHeader>
-          <CardContent>
-            {/* Date Filter */}
-            <div className="mb-4">
+          <CardContent className="p-6">
+            {/* Date Filter - Mobile Optimized */}
+            <div className="mb-6">
               <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-base text-muted-foreground font-medium">
                   Showing {filteredTickets.length} of {tickets.length} tickets
                 </p>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <Select value={ticketDateFilter} onValueChange={(value: "all" | "last30" | "last7" | "today") => setTicketDateFilter(value)}>
-                    <SelectTrigger className="w-32">
+                    <SelectTrigger className="w-40 h-12 text-base">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -913,188 +915,65 @@ const MobilePage = () => {
                       <SelectItem value="all">All tickets</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Filter className="h-4 w-4 text-muted-foreground" />
+                  <Filter className="h-5 w-5 text-muted-foreground" />
                 </div>
               </div>
             </div>
             
             <ScrollArea className="h-96">
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {filteredTickets.slice(0, 20).map((ticket: any) => (
                   <div
                     key={ticket.id}
-                    className="p-4 bg-muted/50 rounded-lg border border-border"
+                    className="p-6 bg-card rounded-xl border border-border shadow-sm hover:shadow-md transition-all cursor-pointer"
+                    onClick={() => handleViewTicketDetails(ticket)}
                   >
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        <h4 className="font-medium text-foreground mb-1">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1 pr-4">
+                        <h4 className="font-semibold text-lg text-foreground mb-2 line-clamp-2">
                           {ticket.title || 'Untitled Ticket'}
                         </h4>
-                        <p className="text-sm text-muted-foreground mb-2">
+                        <p className="text-base text-muted-foreground mb-3 font-medium">
                           {ticket.ticketNumber || `#${ticket.id}`}
                         </p>
                       </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => {
-                            setSelectedTicketForDetails(ticket);
-                            setIsTicketDetailModalOpen(true);
-                          }}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => {
-                            setSelectedTicketForDetails(ticket);
-                            setIsTicketDetailModalOpen(true);
-                          }}>
-                            <MessageSquare className="h-4 w-4 mr-2" />
-                            Comments
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => {
-                            setSelectedTicketForDetails(ticket);
-                            setIsTicketDetailModalOpen(true);
-                          }}>
-                            <TrendingUp className="h-4 w-4 mr-2" />
-                            Progress
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => {
-                            setSelectedTicketForDetails(ticket);
-                            setIsTicketDetailModalOpen(true);
-                          }}>
-                            <Wrench className="h-4 w-4 mr-2" />
-                            Work Orders
-                          </DropdownMenuItem>
-                          {/* Accept/Reject for users with proper permissions */}
-                          {(
-                            (user.role === 'org_admin') || 
-                            (user.role === 'org_subadmin' && user.permissions?.includes('accept_ticket'))
-                          ) && (ticket.status === 'open' || ticket.status === 'pending') && (
-                            <>
-                              <DropdownMenuItem onClick={() => handleTicketAction(ticket, 'accept')}>
-                                <CheckCircle className="h-4 w-4 mr-2" />
-                                Accept Ticket
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleTicketAction(ticket, 'reject')}>
-                                <AlertCircle className="h-4 w-4 mr-2" />
-                                Reject Ticket
-                              </DropdownMenuItem>
-                            </>
-                          )}
-                          
-                          {/* Vendor-specific actions for maintenance admins */}
-                          {user.role === 'maintenance_admin' && (
-                            <>
-                              {/* Accept assignment when ticket is assigned to vendor */}
-                              {ticket.maintenanceVendorId === user.maintenanceVendorId && ticket.status === 'accepted' && !ticket.assigneeId && (
-                                <DropdownMenuItem onClick={() => handleTicketAction(ticket, 'accept')}>
-                                  <UserCheck className="h-4 w-4 mr-2" />
-                                  Accept & Assign Technician
-                                </DropdownMenuItem>
-                              )}
-                              {/* Reject assignment when ticket is assigned to vendor */}
-                              {ticket.maintenanceVendorId === user.maintenanceVendorId && ticket.status === 'accepted' && (
-                                <DropdownMenuItem onClick={() => handleTicketAction(ticket, 'reject')}>
-                                  <XCircle className="h-4 w-4 mr-2" />
-                                  Reject Assignment
-                                </DropdownMenuItem>
-                              )}
-                              {/* Accept/Reject open tickets that can be assigned to any vendor */}
-                              {(ticket.status === 'open' || ticket.status === 'pending') && !ticket.maintenanceVendorId && (
-                                <>
-                                  <DropdownMenuItem onClick={() => handleTicketAction(ticket, 'accept')}>
-                                    <CheckCircle className="h-4 w-4 mr-2" />
-                                    Accept Ticket
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleTicketAction(ticket, 'reject')}>
-                                    <AlertCircle className="h-4 w-4 mr-2" />
-                                    Reject Ticket
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                            </>
-                          )}
-                          {/* Technician actions */}
-                          {user.role === 'technician' && ticket.assigneeId === user.id && (
-                            <>
-                              {ticket.status === 'accepted' && (
-                                <DropdownMenuItem onClick={() => handleCreateWorkOrder(ticket)}>
-                                  <Wrench className="h-4 w-4 mr-2" />
-                                  Start Work
-                                </DropdownMenuItem>
-                              )}
-                              {ticket.status === 'in-progress' && (
-                                <DropdownMenuItem onClick={() => handleCreateWorkOrder(ticket)}>
-                                  <CheckCircle className="h-4 w-4 mr-2" />
-                                  Complete Work
-                                </DropdownMenuItem>
-                              )}
-                            </>
-                          )}
-                          {/* Marketplace actions */}
-                          {ticket.assignedToMarketplace && (
-                            <DropdownMenuItem onClick={() => handleViewBids(ticket)}>
-                              <DollarSign className="h-4 w-4 mr-2" />
-                              View Marketplace Bids
-                            </DropdownMenuItem>
-                          )}
-                          
-                          {/* Marketplace bidding for vendors */}
-                          {user.role === 'maintenance_admin' && ticket.assignedToMarketplace && !ticket.maintenanceVendorId && (
-                            <DropdownMenuItem onClick={() => handleViewBids(ticket)}>
-                              <Plus className="h-4 w-4 mr-2" />
-                              Place Bid
-                            </DropdownMenuItem>
-                          )}
-                          
-                          {/* Billing actions */}
-                          {user.role === 'maintenance_admin' && ticket.status === 'ready_for_billing' && ticket.maintenanceVendorId === user.maintenanceVendorId && (
-                            <DropdownMenuItem onClick={() => handleCreateInvoice(ticket)}>
-                              <FileText className="h-4 w-4 mr-2" />
-                              Create Invoice
-                            </DropdownMenuItem>
-                          )}
-                          
-                          {/* Completion confirmation for requesters */}
-                          {(ticket.reporterId === user.id || user.role === 'org_admin' || (user.role === 'org_subadmin' && user.permissions?.includes('accept_ticket'))) && ticket.status === 'completed' && (
-                            <DropdownMenuItem onClick={() => handleConfirmCompletion(ticket)}>
-                              <CheckSquare className="h-4 w-4 mr-2" />
-                              Confirm Completion
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <Button 
+                        variant="ghost" 
+                        size="lg" 
+                        className="h-12 w-12 p-0 flex-shrink-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedTicket(ticket);
+                          setIsTicketActionsOpen(true);
+                        }}
+                      >
+                        <MoreVertical className="h-6 w-6" />
+                      </Button>
                     </div>
                     
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge className={getStatusColor(ticket.status)} variant="secondary">
+                    <div className="flex items-center gap-3 mb-4">
+                      <Badge className={`${getStatusColor(ticket.status)} text-sm py-2 px-4`} variant="secondary">
                         {ticket.status?.replace('_', ' ').replace('-', ' ')}
                       </Badge>
-                      <Badge variant="outline" className={getPriorityColor(ticket.priority)}>
+                      <Badge variant="outline" className={`${getPriorityColor(ticket.priority)} text-sm py-2 px-4`}>
                         {ticket.priority}
                       </Badge>
-
-
                     </div>
                     
                     {ticket.description && (
-                      <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                      <p className="text-base text-muted-foreground mb-4 line-clamp-3 leading-relaxed">
                         {ticket.description}
                       </p>
                     )}
                     
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span className="font-medium">
                         {ticket.createdAt && new Date(ticket.createdAt).toLocaleDateString()}
                       </span>
                       {ticket.images && ticket.images.length > 0 && (
-                        <div className="flex items-center gap-1">
-                          <Image className="h-3 w-3" />
-                          <span>{ticket.images.length}</span>
+                        <div className="flex items-center gap-2 bg-muted px-3 py-1 rounded-full">
+                          <Image className="h-4 w-4" />
+                          <span className="font-medium">{ticket.images.length}</span>
                         </div>
                       )}
                     </div>
@@ -1899,14 +1778,18 @@ const MobilePage = () => {
                       {/* Work Orders Section */}
                       <div>
                         <h4 className="font-medium mb-3">Work Orders</h4>
-                        <WorkOrdersHistory ticketId={selectedTicket.id} />
+                        <WorkOrdersHistory 
+                          open={true}
+                          onOpenChange={() => {}}
+                          ticketId={selectedTicket.id} 
+                        />
                       </div>
 
                       {/* Comments Section */}
                       <div>
                         <h4 className="font-medium mb-3">Comments & Updates</h4>
                         <TicketComments 
-                          ticketId={selectedTicket.id}
+                          ticket={selectedTicket}
                           userRole={user?.role}
                           userId={user?.id}
                         />
@@ -2122,6 +2005,193 @@ const MobilePage = () => {
             vendor={null}
             organization={null}
             location={null}
+          />
+
+          {/* Ticket Actions Modal - Mobile Optimized */}
+          <Dialog open={isTicketActionsOpen} onOpenChange={setIsTicketActionsOpen}>
+            <DialogContent className="max-w-full h-full m-0 p-0 rounded-none">
+              <div className="h-full flex flex-col">
+                <DialogHeader className="p-6 border-b">
+                  <DialogTitle className="flex items-center gap-3 text-xl">
+                    <TicketIcon className="h-6 w-6" />
+                    Ticket Actions
+                  </DialogTitle>
+                </DialogHeader>
+                
+                {selectedTicket && (
+                  <div className="flex-1 p-6">
+                    {/* Ticket Summary */}
+                    <div className="mb-8 p-6 bg-muted rounded-xl">
+                      <h3 className="font-semibold text-lg mb-2">{selectedTicket.title}</h3>
+                      <p className="text-muted-foreground mb-3">{selectedTicket.ticketNumber}</p>
+                      <div className="flex gap-3">
+                        <Badge className={`${getStatusColor(selectedTicket.status)} text-sm py-2 px-4`}>
+                          {selectedTicket.status?.replace('_', ' ')}
+                        </Badge>
+                        <Badge variant="outline" className={`${getPriorityColor(selectedTicket.priority)} text-sm py-2 px-4`}>
+                          {selectedTicket.priority}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="space-y-4">
+                      {/* View Details */}
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        className="w-full h-16 text-lg justify-start gap-4"
+                        onClick={() => {
+                          setIsTicketActionsOpen(false);
+                          handleViewTicketDetails(selectedTicket);
+                        }}
+                      >
+                        <Eye className="h-6 w-6" />
+                        View Full Details
+                      </Button>
+
+                      {/* Accept/Reject Actions */}
+                      {((user.role === 'org_admin') || 
+                        (user.role === 'org_subadmin' && user.permissions?.includes('accept_ticket'))) && 
+                        (selectedTicket.status === 'open' || selectedTicket.status === 'pending') && (
+                        <>
+                          <Button
+                            size="lg"
+                            className="w-full h-16 text-lg justify-start gap-4 bg-green-600 hover:bg-green-700"
+                            onClick={() => {
+                              setIsTicketActionsOpen(false);
+                              handleTicketAction(selectedTicket, 'accept');
+                            }}
+                          >
+                            <CheckCircle className="h-6 w-6" />
+                            Accept Ticket
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="lg"
+                            className="w-full h-16 text-lg justify-start gap-4 border-red-200 text-red-600 hover:bg-red-50"
+                            onClick={() => {
+                              setIsTicketActionsOpen(false);
+                              handleTicketAction(selectedTicket, 'reject');
+                            }}
+                          >
+                            <XCircle className="h-6 w-6" />
+                            Reject Ticket
+                          </Button>
+                        </>
+                      )}
+
+                      {/* Maintenance Admin Actions */}
+                      {user.role === 'maintenance_admin' && (
+                        <>
+                          {selectedTicket.maintenanceVendorId === user.maintenanceVendorId && 
+                           selectedTicket.status === 'accepted' && !selectedTicket.assigneeId && (
+                            <Button
+                              size="lg"
+                              className="w-full h-16 text-lg justify-start gap-4 bg-blue-600 hover:bg-blue-700"
+                              onClick={() => {
+                                setIsTicketActionsOpen(false);
+                                handleTicketAction(selectedTicket, 'accept');
+                              }}
+                            >
+                              <UserCheck className="h-6 w-6" />
+                              Accept & Assign Technician
+                            </Button>
+                          )}
+                          
+                          {(selectedTicket.status === 'open' || selectedTicket.status === 'pending') && 
+                           !selectedTicket.maintenanceVendorId && (
+                            <Button
+                              size="lg"
+                              className="w-full h-16 text-lg justify-start gap-4 bg-green-600 hover:bg-green-700"
+                              onClick={() => {
+                                setIsTicketActionsOpen(false);
+                                handleTicketAction(selectedTicket, 'accept');
+                              }}
+                            >
+                              <CheckCircle className="h-6 w-6" />
+                              Accept Ticket
+                            </Button>
+                          )}
+                        </>
+                      )}
+
+                      {/* Technician Actions */}
+                      {user.role === 'technician' && selectedTicket.assigneeId === user.id && (
+                        <>
+                          {selectedTicket.status === 'accepted' && (
+                            <Button
+                              size="lg"
+                              className="w-full h-16 text-lg justify-start gap-4 bg-orange-600 hover:bg-orange-700"
+                              onClick={() => {
+                                setIsTicketActionsOpen(false);
+                                setIsWorkOrderOpen(true);
+                              }}
+                            >
+                              <Wrench className="h-6 w-6" />
+                              Start Work Order
+                            </Button>
+                          )}
+                          {selectedTicket.status === 'in-progress' && (
+                            <Button
+                              size="lg"
+                              className="w-full h-16 text-lg justify-start gap-4 bg-green-600 hover:bg-green-700"
+                              onClick={() => {
+                                setIsTicketActionsOpen(false);
+                                setIsWorkOrderOpen(true);
+                              }}
+                            >
+                              <CheckSquare className="h-6 w-6" />
+                              Complete Work
+                            </Button>
+                          )}
+                        </>
+                      )}
+
+                      {/* Marketplace Actions */}
+                      {selectedTicket.assignedToMarketplace && (
+                        <Button
+                          variant="outline"
+                          size="lg"
+                          className="w-full h-16 text-lg justify-start gap-4"
+                          onClick={() => {
+                            setIsTicketActionsOpen(false);
+                            handleViewBids(selectedTicket);
+                          }}
+                        >
+                          <DollarSign className="h-6 w-6" />
+                          View Marketplace Bids
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Fixed Footer */}
+                <div className="p-6 border-t">
+                  <Button 
+                    variant="outline" 
+                    size="lg"
+                    className="w-full h-14 text-lg"
+                    onClick={() => setIsTicketActionsOpen(false)}
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Mobile Work Order Modal */}
+          <MobileWorkOrderModal
+            open={isWorkOrderOpen}
+            onOpenChange={setIsWorkOrderOpen}
+            ticket={selectedTicket}
+            onSuccess={() => {
+              setIsWorkOrderOpen(false);
+              setSelectedTicket(null);
+              refetchTickets();
+            }}
           />
         </>
       )}
