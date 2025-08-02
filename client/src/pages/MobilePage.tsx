@@ -1939,7 +1939,7 @@ const MobilePage = () => {
           <Dialog open={isWorkOrderOpen} onOpenChange={setIsWorkOrderOpen}>
             <DialogContent className="max-w-full h-full m-0 p-0 rounded-none">
               <div className="h-full flex flex-col">
-                <DialogHeader className="p-4 border-b">
+                <DialogHeader className="p-4 border-b flex-shrink-0">
                   <DialogTitle className="flex items-center gap-2">
                     <Wrench className="h-5 w-5" />
                     Create Work Order
@@ -1947,8 +1947,8 @@ const MobilePage = () => {
                 </DialogHeader>
                 
                 {selectedTicket && (
-                  <ScrollArea className="flex-1 p-4">
-                    <div className="space-y-6">
+                  <div className="flex-1 overflow-y-auto p-4">
+                    <div className="space-y-6 pb-4">
                       {/* Original Ticket Information */}
                       <div className="bg-muted p-4 rounded-lg">
                         <h4 className="font-medium text-foreground mb-2">Original Request</h4>
@@ -2070,11 +2070,11 @@ const MobilePage = () => {
                         />
                       </div>
                     </div>
-                  </ScrollArea>
+                  </div>
                 )}
 
                 {/* Fixed Footer */}
-                <div className="p-4 border-t bg-background">
+                <div className="p-4 border-t bg-background flex-shrink-0">
                   <div className="flex gap-3">
                     <Button 
                       variant="outline" 
