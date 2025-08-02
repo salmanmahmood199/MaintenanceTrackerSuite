@@ -381,14 +381,8 @@ const MobilePage = () => {
     enabled: !!user && (user.role === "root" || user.role === "org_admin"),
   });
 
-  // Fetch vendor tiers for filtering (similar to web app)
-  const { data: vendorTiers = [] } = useQuery<Array<{vendor: MaintenanceVendor, tier: string, isActive: boolean}>>({
-    queryKey: ["/api/organizations", user?.organizationId, "vendor-tiers"],
-    enabled: !!user?.organizationId && (user.role === "org_admin" || user.role === "org_subadmin"),
-  });
-
-  // Fetch vendors based on user role - with same filtering logic as web app
-  const { data: vendors = [], isLoading: vendorsLoading } = useQuery<MaintenanceVendor[]>({
+  // Fetch vendor tiers (similar to web app approach)
+  const { data: vendorTiers = [], isLoading: vendorsLoading } = useQuery<Array<{vendor: MaintenanceVendor, tier: string, isActive: boolean}>>({
     queryKey: user?.role === "maintenance_admin" 
       ? ["/api/maintenance-vendors"] 
       : user?.organizationId 
@@ -396,39 +390,37 @@ const MobilePage = () => {
         : ["/api/maintenance-vendors"],
     queryFn: async () => {
       if (user?.role === "maintenance_admin") {
-        // Maintenance admin - use existing endpoint
+        // Maintenance admin - get all vendors and convert to tier format
         const response = await apiRequest("GET", "/api/maintenance-vendors");
-        return await response.json() as MaintenanceVendor[];
+        const allVendors = await response.json() as MaintenanceVendor[];
+        return allVendors.map(vendor => ({
+          vendor,
+          tier: 'all',
+          isActive: true
+        }));
       } else if (user?.organizationId && (user?.role === "org_admin" || user?.role === "org_subadmin")) {
-        // Organization users - get vendors through organization vendor tiers with proper filtering
+        // Organization users - get vendor tiers directly
         const response = await apiRequest("GET", `/api/organizations/${user.organizationId}/vendor-tiers`);
         const orgVendorTiers = await response.json() as Array<{vendor: MaintenanceVendor, tier: string, isActive: boolean}>;
         
-        // Apply same filtering logic as web app
-        const filteredVendors = orgVendorTiers.filter(v => {
-          if (!v.isActive) return false;
-          
-          // Root and org admins can see all active vendors
-          if (user.role === "root" || user.role === "org_admin") return true;
-          
-          // Sub-admins with accept_ticket permission can see vendors based on their tier permissions
-          if (user.role === "org_subadmin" && user.permissions?.includes("accept_ticket")) {
-            // Check if user has access to this vendor tier
-            // If userVendorTiers is null/undefined, allow all basic tiers for backwards compatibility
-            if (!user.vendorTiers || user.vendorTiers.length === 0) {
-              return ["tier_1", "tier_2", "tier_3"].includes(v.tier);
-            }
-            return user.vendorTiers.includes(v.tier);
-          }
-          
-          return false;
+        console.log("Mobile Debug - Fetched vendor tiers:", {
+          role: user.role,
+          permissions: user.permissions,
+          vendorTiers: user.vendorTiers,
+          orgVendorTiers: orgVendorTiers.length,
+          vendors: orgVendorTiers.map(v => ({ name: v.vendor.name, tier: v.tier, active: v.isActive }))
         });
         
-        return filteredVendors.map(vt => vt.vendor);
+        return orgVendorTiers;
       } else if (user?.role === "root") {
-        // Root user - get all vendors
+        // Root user - get all vendors and convert to tier format
         const response = await apiRequest("GET", "/api/maintenance-vendors");
-        return await response.json() as MaintenanceVendor[];
+        const allVendors = await response.json() as MaintenanceVendor[];
+        return allVendors.map(vendor => ({
+          vendor,
+          tier: 'all',
+          isActive: true
+        }));
       }
       return [];
     },
@@ -768,7 +760,7 @@ const MobilePage = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Vendors</p>
-                    <p className="text-2xl font-bold text-foreground mt-1">{vendors.length}</p>
+                    <p className="text-2xl font-bold text-foreground mt-1">{vendorTiers.length}</p>
                   </div>
                   <div className="bg-green-500/10 p-2.5 rounded-lg">
                     <Wrench className="h-5 w-5 text-green-500" />
@@ -821,18 +813,19 @@ const MobilePage = () => {
             <CardContent>
               <ScrollArea className="h-64">
                 <div className="space-y-3">
-                  {vendors.map((vendor) => (
+                  {vendorTiers.map((vendorTier) => (
                     <div
-                      key={vendor.id}
+                      key={vendorTier.vendor.id}
                       className="flex items-center justify-between p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted"
                       onClick={() => {
-                        setSelectedVendor(vendor);
+                        setSelectedVendor(vendorTier.vendor);
                         setCurrentView('vendor');
                       }}
                     >
                       <div className="flex-1">
-                        <p className="font-medium text-foreground">{vendor.name}</p>
-                        <p className="text-sm text-muted-foreground">{vendor.email}</p>
+                        <p className="font-medium text-foreground">{vendorTier.vendor.name}</p>
+                        <p className="text-sm text-muted-foreground">{vendorTier.vendor.email}</p>
+                        <p className="text-xs text-muted-foreground">Tier: {vendorTier.tier}</p>
                       </div>
                       <ChevronDown className="h-4 w-4 text-muted-foreground rotate-[-90deg]" />
                     </div>
@@ -1747,7 +1740,7 @@ const MobilePage = () => {
             }}
             ticket={selectedTicket}
             action={ticketAction}
-            vendors={vendorTiers.length > 0 ? vendorTiers : vendors.map(v => ({ vendor: v, tier: 'all', isActive: true }))}
+            vendors={vendorTiers}
             userRole={user?.role}
             userPermissions={user?.permissions}
             userVendorTiers={user?.vendorTiers}

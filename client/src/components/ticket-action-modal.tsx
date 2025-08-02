@@ -67,25 +67,51 @@ export function TicketActionModal({
   };
 
   // Filter vendors based on user role and tier access
+  console.log("TicketActionModal Debug - Received vendors:", vendors);
+  
   const availableVendors = vendors?.filter(v => {
-    if (!v.isActive) return false;
+    console.log("TicketActionModal Debug - Checking vendor:", {
+      vendorName: v.vendor?.name || 'unnamed',
+      tier: v.tier,
+      isActive: v.isActive,
+      userRole,
+      hasAcceptPermission: userPermissions?.includes("accept_ticket"),
+      userVendorTiers,
+      fullVendorObject: v
+    });
+    
+    if (!v.isActive) {
+      console.log("TicketActionModal Debug - Vendor filtered out: not active");
+      return false;
+    }
     
     // Root and org admins can see all active vendors
-    if (userRole === "root" || userRole === "org_admin") return true;
+    if (userRole === "root" || userRole === "org_admin") {
+      console.log("TicketActionModal Debug - Vendor allowed: root/org_admin");
+      return true;
+    }
     
     // Sub-admins with accept_ticket permission can see vendors based on their tier permissions
     if (userRole === "org_subadmin" && userPermissions?.includes("accept_ticket")) {
       // Check if user has access to this vendor tier
       // If userVendorTiers is null/undefined, allow all basic tiers for backwards compatibility
       if (!userVendorTiers || userVendorTiers.length === 0) {
-        return ["tier_1", "tier_2", "tier_3"].includes(v.tier);
+        const allowed = ["tier_1", "tier_2", "tier_3"].includes(v.tier);
+        console.log("TicketActionModal Debug - Vendor check (no user tiers):", { tier: v.tier, allowed });
+        return allowed;
       }
-      return userVendorTiers.includes(v.tier);
+      const allowed = userVendorTiers.includes(v.tier);
+      console.log("TicketActionModal Debug - Vendor check (with user tiers):", { tier: v.tier, userTiers: userVendorTiers, allowed });
+      return allowed;
     }
     
     // Maintenance admins can see all vendors assigned to their organization
-    if (userRole === "maintenance_admin") return true;
+    if (userRole === "maintenance_admin") {
+      console.log("TicketActionModal Debug - Vendor allowed: maintenance_admin");
+      return true;
+    }
     
+    console.log("TicketActionModal Debug - Vendor filtered out: no access");
     return false;
   });
 
