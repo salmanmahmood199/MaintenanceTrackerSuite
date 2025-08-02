@@ -367,8 +367,38 @@ const MobilePage = () => {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [parts, setParts] = useState([{ name: "", quantity: 1, cost: 0 }]);
   const [otherCharges, setOtherCharges] = useState([{ description: "", cost: 0 }]);
+  const [timeIn, setTimeIn] = useState("");
+  const [timeOut, setTimeOut] = useState("");
   const [isWorkOrderHistoryOpen, setIsWorkOrderHistoryOpen] = useState(false);
   const [selectedImageForViewer, setSelectedImageForViewer] = useState<string | null>(null);
+
+  // Calculate hours between time in and time out
+  const calculateHours = (timeIn: string, timeOut: string) => {
+    if (!timeIn || !timeOut) return 0;
+    
+    try {
+      const [inHour, inMin] = timeIn.split(':').map(Number);
+      const [outHour, outMin] = timeOut.split(':').map(Number);
+      
+      if (isNaN(inHour) || isNaN(inMin) || isNaN(outHour) || isNaN(outMin)) return 0;
+      
+      const inMinutes = inHour * 60 + inMin;
+      const outMinutes = outHour * 60 + outMin;
+      
+      if (outMinutes <= inMinutes) return 0;
+      
+      const totalMinutes = outMinutes - inMinutes;
+      return Math.round((totalMinutes / 60) * 100) / 100;
+    } catch (error) {
+      return 0;
+    }
+  };
+
+  // Fetch available parts for this vendor
+  const { data: availableParts = [] } = useQuery({
+    queryKey: [`/api/maintenance-vendors/${user?.maintenanceVendorId}/parts`],
+    enabled: !!user?.maintenanceVendorId,
+  });
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -2023,13 +2053,32 @@ const MobilePage = () => {
                           <div className="grid grid-cols-2 gap-3">
                             <div>
                               <Label className="text-sm font-medium text-muted-foreground">Time In *</Label>
-                              <Input type="time" className="mt-1" />
+                              <Input 
+                                type="time" 
+                                value={timeIn}
+                                onChange={(e) => setTimeIn(e.target.value)}
+                                className="mt-1" 
+                              />
                             </div>
                             <div>
                               <Label className="text-sm font-medium text-muted-foreground">Time Out *</Label>
-                              <Input type="time" className="mt-1" />
+                              <Input 
+                                type="time" 
+                                value={timeOut}
+                                onChange={(e) => setTimeOut(e.target.value)}
+                                className="mt-1" 
+                              />
                             </div>
                           </div>
+                          
+                          {/* Calculated Hours Display */}
+                          {timeIn && timeOut && calculateHours(timeIn, timeOut) > 0 && (
+                            <div className="bg-green-50 dark:bg-green-950 p-3 rounded-lg mt-3">
+                              <div className="font-medium text-green-900 dark:text-green-100">
+                                Total Hours: {calculateHours(timeIn, timeOut)} hours
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -2064,12 +2113,52 @@ const MobilePage = () => {
                                     </Button>
                                   )}
                                 </div>
-                                <Input 
-                                  placeholder="Enter part name or select from inventory" 
-                                  value={part.name}
-                                  onChange={(e) => setParts(prev => prev.map((p, i) => i === index ? { ...p, name: e.target.value } : p))}
-                                  className="mt-1"
-                                />
+                                <Select
+                                  value={part.name && part.name !== "custom" ? part.name : ""}
+                                  onValueChange={(value) => {
+                                    if (value === "custom") {
+                                      setParts(prev => prev.map((p, i) => i === index ? { ...p, name: "custom", cost: 0 } : p));
+                                    } else {
+                                      const selectedPart = availableParts.find((p: any) => p.name === value);
+                                      if (selectedPart) {
+                                        setParts(prev => prev.map((p, i) => i === index ? { 
+                                          ...p, 
+                                          name: value, 
+                                          cost: selectedPart.sellingPrice || 0 
+                                        } : p));
+                                      }
+                                    }
+                                  }}
+                                >
+                                  <SelectTrigger className="mt-1">
+                                    <SelectValue placeholder="Select a part" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {Array.isArray(availableParts) && availableParts.map((availablePart: any) => (
+                                      <SelectItem key={availablePart.id} value={availablePart.name}>
+                                        <div className="flex flex-col">
+                                          <span className="font-medium">{availablePart.name}</span>
+                                          {availablePart.description && (
+                                            <span className="text-xs text-muted-foreground">{availablePart.description}</span>
+                                          )}
+                                        </div>
+                                      </SelectItem>
+                                    ))}
+                                    <SelectItem value="custom">
+                                      <span className="italic text-muted-foreground">Custom part...</span>
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                {part.name === "custom" && (
+                                  <div className="mt-2">
+                                    <Label className="text-xs text-muted-foreground">Custom Part Name</Label>
+                                    <Input
+                                      placeholder="Enter custom part name"
+                                      onChange={(e) => setParts(prev => prev.map((p, i) => i === index ? { ...p, name: e.target.value } : p))}
+                                      className="mt-1"
+                                    />
+                                  </div>
+                                )}
                                 <div className="grid grid-cols-2 gap-3">
                                   <div>
                                     <Label className="text-sm font-medium text-muted-foreground">Quantity</Label>
@@ -2082,14 +2171,17 @@ const MobilePage = () => {
                                     />
                                   </div>
                                   <div>
-                                    <Label className="text-sm font-medium text-muted-foreground">Cost ($)</Label>
+                                    <Label className="text-sm font-medium text-muted-foreground">
+                                      {part.name === "custom" ? "Selling Price ($)" : "Selling Price (Auto-filled)"}
+                                    </Label>
                                     <Input 
                                       type="number" 
                                       step="0.01" 
                                       value={part.cost}
+                                      disabled={part.name !== "custom"}
                                       onChange={(e) => setParts(prev => prev.map((p, i) => i === index ? { ...p, cost: parseFloat(e.target.value) || 0 } : p))}
                                       placeholder="0.00" 
-                                      className="mt-1" 
+                                      className={part.name !== "custom" ? "mt-1 bg-muted text-muted-foreground" : "mt-1"} 
                                     />
                                   </div>
                                 </div>
@@ -2097,61 +2189,14 @@ const MobilePage = () => {
                             </div>
                           ))}
                         </div>
+                        {parts.length > 0 && (
+                          <div className="text-sm text-foreground font-medium mt-2">
+                            Parts Total: ${parts.reduce((total, part) => total + (part.cost * part.quantity), 0).toFixed(2)}
+                          </div>
+                        )}
                       </div>
 
-                      {/* Other Charges */}
-                      <div className="bg-card p-4 rounded-lg shadow-sm">
-                        <div className="flex items-center justify-between mb-3">
-                          <h4 className="font-medium text-foreground">Other Charges</h4>
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => setOtherCharges(prev => [...prev, { description: "", cost: 0 }])}
-                          >
-                            <Plus className="h-4 w-4 mr-1" />
-                            Add Charge
-                          </Button>
-                        </div>
-                        <div className="space-y-3">
-                          {otherCharges.map((charge, index) => (
-                            <div key={index} className="p-3 border rounded-lg bg-background">
-                              <div className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                  <Label className="text-sm font-medium text-muted-foreground">Description</Label>
-                                  {otherCharges.length > 1 && (
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => setOtherCharges(prev => prev.filter((_, i) => i !== index))}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  )}
-                                </div>
-                                <Input 
-                                  placeholder="e.g., Travel time, disposal fee, etc." 
-                                  value={charge.description}
-                                  onChange={(e) => setOtherCharges(prev => prev.map((c, i) => i === index ? { ...c, description: e.target.value } : c))}
-                                  className="mt-1"
-                                />
-                                <div>
-                                  <Label className="text-sm font-medium text-muted-foreground">Cost ($)</Label>
-                                  <Input 
-                                    type="number" 
-                                    step="0.01" 
-                                    value={charge.cost}
-                                    onChange={(e) => setOtherCharges(prev => prev.map((c, i) => i === index ? { ...c, cost: parseFloat(e.target.value) || 0 } : c))}
-                                    placeholder="0.00" 
-                                    className="mt-1" 
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                      {/* Note: Other Charges section removed for technicians as per web version */}
 
                       {/* Completion Status */}
                       <div className="bg-card p-4 rounded-lg shadow-sm">
@@ -2253,26 +2298,47 @@ const MobilePage = () => {
             </DialogContent>
           </Dialog>
 
-          {/* Image Enlargement Modal */}
+          {/* Image Enlargement Modal with better exit functionality */}
           {selectedImageIndex !== null && selectedTicket?.images && (
             <Dialog open={true} onOpenChange={() => setSelectedImageIndex(null)}>
               <DialogContent className="max-w-full h-full m-0 p-0 rounded-none">
-                <div className="relative h-full bg-black flex items-center justify-center">
+                <div 
+                  className="relative h-full bg-black flex items-center justify-center"
+                  onClick={() => setSelectedImageIndex(null)}
+                >
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="absolute top-4 right-4 z-10 text-white hover:bg-white/20"
-                    onClick={() => setSelectedImageIndex(null)}
+                    className="absolute top-4 right-4 z-10 text-white hover:bg-white/20 bg-black/50"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedImageIndex(null);
+                    }}
                   >
                     <X className="h-6 w-6" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="absolute top-4 left-4 z-10 text-white hover:bg-white/20 bg-black/50"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedImageIndex(null);
+                    }}
+                  >
+                    <ArrowLeft className="h-6 w-6" />
                   </Button>
                   <img
                     src={selectedTicket.images[selectedImageIndex]}
                     alt={`Original ${selectedImageIndex + 1}`}
                     className="max-w-full max-h-full object-contain"
+                    onClick={(e) => e.stopPropagation()}
                   />
                   <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white bg-black/50 px-3 py-1 rounded">
                     {selectedImageIndex + 1} of {selectedTicket.images.length}
+                  </div>
+                  <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 text-white text-sm opacity-80">
+                    Tap anywhere to close
                   </div>
                 </div>
               </DialogContent>
