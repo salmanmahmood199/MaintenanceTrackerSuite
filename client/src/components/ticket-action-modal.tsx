@@ -13,6 +13,7 @@ interface TicketActionModalProps {
   ticket: Ticket | null;
   action: "accept" | "reject" | null;
   vendors: Array<{ vendor: MaintenanceVendor; tier: string; isActive: boolean }>;
+  technicians?: Array<{ id: number; firstName: string; lastName: string; email: string }>;
   onAccept: (ticketId: number, data: { maintenanceVendorId?: number; assigneeId?: number; marketplace?: boolean }) => void;
   onReject: (ticketId: number, rejectionReason: string) => void;
   isLoading: boolean;
@@ -27,6 +28,7 @@ export function TicketActionModal({
   ticket,
   action,
   vendors,
+  technicians = [],
   onAccept,
   onReject,
   isLoading,
@@ -45,6 +47,12 @@ export function TicketActionModal({
     if (action === "accept") {
       if (selectedVendorId === "marketplace") {
         onAccept(ticket.id, { marketplace: true });
+      } else if (selectedVendorId.startsWith("tech_")) {
+        // Handle technician assignment for maintenance admin
+        const technicianId = parseInt(selectedVendorId.replace("tech_", ""));
+        onAccept(ticket.id, {
+          assigneeId: technicianId,
+        });
       } else {
         onAccept(ticket.id, {
           maintenanceVendorId: selectedVendorId && selectedVendorId !== "none" ? parseInt(selectedVendorId) : undefined,
@@ -67,51 +75,25 @@ export function TicketActionModal({
   };
 
   // Filter vendors based on user role and tier access
-  console.log("TicketActionModal Debug - Received vendors:", vendors);
-  
   const availableVendors = vendors?.filter(v => {
-    console.log("TicketActionModal Debug - Checking vendor:", {
-      vendorName: v.vendor?.name || 'unnamed',
-      tier: v.tier,
-      isActive: v.isActive,
-      userRole,
-      hasAcceptPermission: userPermissions?.includes("accept_ticket"),
-      userVendorTiers,
-      fullVendorObject: v
-    });
-    
-    if (!v.isActive) {
-      console.log("TicketActionModal Debug - Vendor filtered out: not active");
-      return false;
-    }
+    if (!v.isActive) return false;
     
     // Root and org admins can see all active vendors
-    if (userRole === "root" || userRole === "org_admin") {
-      console.log("TicketActionModal Debug - Vendor allowed: root/org_admin");
-      return true;
-    }
+    if (userRole === "root" || userRole === "org_admin") return true;
     
     // Sub-admins with accept_ticket permission can see vendors based on their tier permissions
     if (userRole === "org_subadmin" && userPermissions?.includes("accept_ticket")) {
       // Check if user has access to this vendor tier
       // If userVendorTiers is null/undefined, allow all basic tiers for backwards compatibility
       if (!userVendorTiers || userVendorTiers.length === 0) {
-        const allowed = ["tier_1", "tier_2", "tier_3"].includes(v.tier);
-        console.log("TicketActionModal Debug - Vendor check (no user tiers):", { tier: v.tier, allowed });
-        return allowed;
+        return ["tier_1", "tier_2", "tier_3"].includes(v.tier);
       }
-      const allowed = userVendorTiers.includes(v.tier);
-      console.log("TicketActionModal Debug - Vendor check (with user tiers):", { tier: v.tier, userTiers: userVendorTiers, allowed });
-      return allowed;
+      return userVendorTiers.includes(v.tier);
     }
     
     // Maintenance admins can see all vendors assigned to their organization
-    if (userRole === "maintenance_admin") {
-      console.log("TicketActionModal Debug - Vendor allowed: maintenance_admin");
-      return true;
-    }
+    if (userRole === "maintenance_admin") return true;
     
-    console.log("TicketActionModal Debug - Vendor filtered out: no access");
     return false;
   });
 
@@ -149,35 +131,60 @@ export function TicketActionModal({
               <div className="space-y-3">
                 <div>
                   <Label htmlFor="vendor-select" className="text-sm font-medium">
-                    Assign to Vendor (Optional)
+                    {userRole === "maintenance_admin" ? "Assign to Technician (Optional)" : "Assign to Vendor (Optional)"}
                   </Label>
                   <Select value={selectedVendorId} onValueChange={setSelectedVendorId}>
                     <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Select a vendor..." />
+                      <SelectValue placeholder={userRole === "maintenance_admin" ? "Select a technician..." : "Select a vendor..."} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">No vendor assigned</SelectItem>
-                      {availableVendors.map(({ vendor, tier }) => (
-                        <SelectItem key={vendor.id} value={vendor.id.toString()}>
-                          <div className="flex items-center gap-2">
-                            <Wrench className="h-4 w-4" />
-                            <span>{vendor.name}</span>
-                            <span className="text-xs text-slate-500">({tier})</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                      {hasMarketplaceAccess && (
-                        <SelectItem value="marketplace">
-                          <div className="flex items-center gap-2">
-                            <span>🏪 Marketplace (Open Bidding)</span>
-                          </div>
-                        </SelectItem>
+                      <SelectItem value="none">
+                        {userRole === "maintenance_admin" ? "No technician assigned" : "No vendor assigned"}
+                      </SelectItem>
+                      
+                      {userRole === "maintenance_admin" ? (
+                        // Show technicians for maintenance admin
+                        technicians.map((technician) => (
+                          <SelectItem key={technician.id} value={`tech_${technician.id}`}>
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4" />
+                              <span>{technician.firstName} {technician.lastName}</span>
+                              <span className="text-xs text-slate-500">({technician.email})</span>
+                            </div>
+                          </SelectItem>
+                        ))
+                      ) : (
+                        // Show vendors for org users
+                        <>
+                          {availableVendors.map(({ vendor, tier }) => (
+                            <SelectItem key={vendor.id} value={vendor.id.toString()}>
+                              <div className="flex items-center gap-2">
+                                <Wrench className="h-4 w-4" />
+                                <span>{vendor.name}</span>
+                                <span className="text-xs text-slate-500">({tier})</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                          {hasMarketplaceAccess && (
+                            <SelectItem value="marketplace">
+                              <div className="flex items-center gap-2">
+                                <DollarSign className="h-4 w-4" />
+                                <span>Marketplace (Open Bidding)</span>
+                              </div>
+                            </SelectItem>
+                          )}
+                        </>
                       )}
                     </SelectContent>
                   </Select>
-                  {availableVendors.length === 0 && (
+                  {userRole !== "maintenance_admin" && availableVendors.length === 0 && (
                     <p className="text-sm text-slate-500 mt-1">
                       No active vendors available for assignment
+                    </p>
+                  )}
+                  {userRole === "maintenance_admin" && technicians.length === 0 && (
+                    <p className="text-sm text-slate-500 mt-1">
+                      No technicians available for assignment
                     </p>
                   )}
                 </div>

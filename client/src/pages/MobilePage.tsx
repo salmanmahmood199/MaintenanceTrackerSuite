@@ -381,6 +381,17 @@ const MobilePage = () => {
     enabled: !!user && (user.role === "root" || user.role === "org_admin"),
   });
 
+  // Fetch technicians for maintenance admin users
+  const { data: technicians = [] } = useQuery<Array<{id: number, firstName: string, lastName: string, email: string}>>({
+    queryKey: ["/api/maintenance-vendors", user?.maintenanceVendorId, "technicians"],
+    queryFn: async () => {
+      if (!user?.maintenanceVendorId) return [];
+      const response = await apiRequest("GET", `/api/maintenance-vendors/${user.maintenanceVendorId}/technicians`);
+      return await response.json();
+    },
+    enabled: !!user?.maintenanceVendorId && user.role === "maintenance_admin",
+  });
+
   // Fetch vendor tiers (similar to web app approach)
   const { data: vendorTiers = [], isLoading: vendorsLoading } = useQuery<Array<{vendor: MaintenanceVendor, tier: string, isActive: boolean}>>({
     queryKey: user?.role === "maintenance_admin" 
@@ -403,13 +414,7 @@ const MobilePage = () => {
         const response = await apiRequest("GET", `/api/organizations/${user.organizationId}/vendor-tiers`);
         const orgVendorTiers = await response.json() as Array<{vendor: MaintenanceVendor, tier: string, isActive: boolean}>;
         
-        console.log("Mobile Debug - Fetched vendor tiers:", {
-          role: user.role,
-          permissions: user.permissions,
-          vendorTiers: user.vendorTiers,
-          orgVendorTiers: orgVendorTiers.length,
-          vendors: orgVendorTiers.map(v => ({ name: v.vendor.name, tier: v.tier, active: v.isActive }))
-        });
+
         
         return orgVendorTiers;
       } else if (user?.role === "root") {
@@ -1072,12 +1077,8 @@ const MobilePage = () => {
                       <Badge variant="outline" className={getPriorityColor(ticket.priority)}>
                         {ticket.priority}
                       </Badge>
-                      {/* Debug info for user role and permissions */}
-                      {user.role === 'maintenance_admin' && (
-                        <Badge variant="outline" className="text-xs">
-                          Role: {user.role} | Vendor: {user.maintenanceVendorId}
-                        </Badge>
-                      )}
+
+
                     </div>
                     
                     {ticket.description && (
@@ -1741,6 +1742,7 @@ const MobilePage = () => {
             ticket={selectedTicket}
             action={ticketAction}
             vendors={vendorTiers}
+            technicians={technicians}
             userRole={user?.role}
             userPermissions={user?.permissions}
             userVendorTiers={user?.vendorTiers}
