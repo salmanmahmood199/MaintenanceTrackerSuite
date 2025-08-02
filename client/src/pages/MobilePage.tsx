@@ -381,15 +381,34 @@ const MobilePage = () => {
     enabled: !!user && (user.role === "root" || user.role === "org_admin"),
   });
 
+  // Fetch vendors based on user role - similar to web app logic
   const { data: vendors = [], isLoading: vendorsLoading } = useQuery<MaintenanceVendor[]>({
-    queryKey: ["/api/maintenance-vendors"],
+    queryKey: user?.role === "maintenance_admin" 
+      ? ["/api/maintenance-vendors"] 
+      : user?.organizationId 
+        ? ["/api/organizations", user.organizationId, "vendor-tiers"]
+        : ["/api/maintenance-vendors"],
+    queryFn: async () => {
+      if (user?.role === "maintenance_admin") {
+        // Maintenance admin - use existing endpoint
+        const response = await apiRequest("GET", "/api/maintenance-vendors");
+        return await response.json() as MaintenanceVendor[];
+      } else if (user?.organizationId && (user?.role === "org_admin" || user?.role === "org_subadmin")) {
+        // Organization users - get vendors through organization vendor tiers
+        const response = await apiRequest("GET", `/api/organizations/${user.organizationId}/vendor-tiers`);
+        const vendorTiers = await response.json() as Array<{vendor: MaintenanceVendor, tier: string, isActive: boolean}>;
+        return vendorTiers.filter(vt => vt.isActive).map(vt => vt.vendor);
+      } else if (user?.role === "root") {
+        // Root user - get all vendors
+        const response = await apiRequest("GET", "/api/maintenance-vendors");
+        return await response.json() as MaintenanceVendor[];
+      }
+      return [];
+    },
     enabled: !!user && (user.role === "root" || user.role === "org_admin" || user.role === "org_subadmin" || user.role === "maintenance_admin"),
   });
 
-  const { data: vendorTiers = [] } = useQuery<any[]>({
-    queryKey: ["/api/organizations", user?.organizationId, "vendor-tiers"],
-    enabled: !!user?.organizationId && (user.role === "org_admin" || user.role === "org_subadmin"),
-  });
+  // Removed redundant vendorTiers query - now handled directly in vendors query above
 
   // Marketplace queries
   const { data: marketplaceTickets = [], isLoading: marketplaceLoading } = useQuery<Ticket[]>({
@@ -1701,7 +1720,7 @@ const MobilePage = () => {
             }}
             ticket={selectedTicket}
             action={ticketAction}
-            vendors={vendorTiers?.length > 0 ? vendorTiers : vendors.map(v => ({ vendor: v, tier: 'all', isActive: true }))}
+            vendors={vendors.map(v => ({ vendor: v, tier: 'all', isActive: true }))}
             onAccept={async (ticketId, data) => {
               try {
                 const response = await fetch(`/api/tickets/${ticketId}/accept`, {
