@@ -381,7 +381,13 @@ const MobilePage = () => {
     enabled: !!user && (user.role === "root" || user.role === "org_admin"),
   });
 
-  // Fetch vendors based on user role - similar to web app logic
+  // Fetch vendor tiers for filtering (similar to web app)
+  const { data: vendorTiers = [] } = useQuery<Array<{vendor: MaintenanceVendor, tier: string, isActive: boolean}>>({
+    queryKey: ["/api/organizations", user?.organizationId, "vendor-tiers"],
+    enabled: !!user?.organizationId && (user.role === "org_admin" || user.role === "org_subadmin"),
+  });
+
+  // Fetch vendors based on user role - with same filtering logic as web app
   const { data: vendors = [], isLoading: vendorsLoading } = useQuery<MaintenanceVendor[]>({
     queryKey: user?.role === "maintenance_admin" 
       ? ["/api/maintenance-vendors"] 
@@ -394,10 +400,31 @@ const MobilePage = () => {
         const response = await apiRequest("GET", "/api/maintenance-vendors");
         return await response.json() as MaintenanceVendor[];
       } else if (user?.organizationId && (user?.role === "org_admin" || user?.role === "org_subadmin")) {
-        // Organization users - get vendors through organization vendor tiers
+        // Organization users - get vendors through organization vendor tiers with proper filtering
         const response = await apiRequest("GET", `/api/organizations/${user.organizationId}/vendor-tiers`);
-        const vendorTiers = await response.json() as Array<{vendor: MaintenanceVendor, tier: string, isActive: boolean}>;
-        return vendorTiers.filter(vt => vt.isActive).map(vt => vt.vendor);
+        const orgVendorTiers = await response.json() as Array<{vendor: MaintenanceVendor, tier: string, isActive: boolean}>;
+        
+        // Apply same filtering logic as web app
+        const filteredVendors = orgVendorTiers.filter(v => {
+          if (!v.isActive) return false;
+          
+          // Root and org admins can see all active vendors
+          if (user.role === "root" || user.role === "org_admin") return true;
+          
+          // Sub-admins with accept_ticket permission can see vendors based on their tier permissions
+          if (user.role === "org_subadmin" && user.permissions?.includes("accept_ticket")) {
+            // Check if user has access to this vendor tier
+            // If userVendorTiers is null/undefined, allow all basic tiers for backwards compatibility
+            if (!user.vendorTiers || user.vendorTiers.length === 0) {
+              return ["tier_1", "tier_2", "tier_3"].includes(v.tier);
+            }
+            return user.vendorTiers.includes(v.tier);
+          }
+          
+          return false;
+        });
+        
+        return filteredVendors.map(vt => vt.vendor);
       } else if (user?.role === "root") {
         // Root user - get all vendors
         const response = await apiRequest("GET", "/api/maintenance-vendors");
@@ -1720,7 +1747,10 @@ const MobilePage = () => {
             }}
             ticket={selectedTicket}
             action={ticketAction}
-            vendors={vendors.map(v => ({ vendor: v, tier: 'all', isActive: true }))}
+            vendors={vendorTiers.length > 0 ? vendorTiers : vendors.map(v => ({ vendor: v, tier: 'all', isActive: true }))}
+            userRole={user?.role}
+            userPermissions={user?.permissions}
+            userVendorTiers={user?.vendorTiers}
             onAccept={async (ticketId, data) => {
               try {
                 const response = await fetch(`/api/tickets/${ticketId}/accept`, {
@@ -1790,9 +1820,6 @@ const MobilePage = () => {
               }
             }}
             isLoading={false}
-            userRole={user?.role}
-            userPermissions={user?.permissions}
-            userVendorTiers={user?.vendorTiers}
           />
 
           <ConfirmCompletionModal
