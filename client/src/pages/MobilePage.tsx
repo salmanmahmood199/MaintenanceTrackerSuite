@@ -1935,25 +1935,39 @@ const MobilePage = () => {
             </DialogContent>
           </Dialog>
 
-          {/* Enhanced Work Order Modal - Mobile Optimized */}
+          {/* Enhanced Work Order Modal - Mobile Optimized with Proper Scrolling */}
           <Dialog open={isWorkOrderOpen} onOpenChange={setIsWorkOrderOpen}>
-            <DialogContent className="max-w-full h-full m-0 p-0 rounded-none">
-              <div className="h-full flex flex-col">
-                <DialogHeader className="p-4 border-b flex-shrink-0">
-                  <DialogTitle className="flex items-center gap-2">
-                    <Wrench className="h-5 w-5" />
-                    Create Work Order
-                  </DialogTitle>
-                </DialogHeader>
+            <DialogContent className="max-w-full h-screen w-screen m-0 p-0 rounded-none max-h-screen">
+              <div className="h-screen flex flex-col">
+                {/* Fixed Header */}
+                <div className="bg-white border-b p-4 flex-shrink-0 z-10">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Wrench className="h-5 w-5" />
+                      <h2 className="text-lg font-semibold">Create Work Order</h2>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => setIsWorkOrderOpen(false)}>
+                      <X className="h-5 w-5" />
+                    </Button>
+                  </div>
+                </div>
                 
+                {/* Scrollable Content */}
                 {selectedTicket && (
-                  <div className="flex-1 overflow-y-auto p-4">
-                    <div className="space-y-6 pb-4">
+                  <div 
+                    className="flex-1 overflow-y-auto bg-gray-50"
+                    style={{ 
+                      height: 'calc(100vh - 140px)', 
+                      overflowY: 'auto',
+                      WebkitOverflowScrolling: 'touch'
+                    }}
+                  >
+                    <div className="p-4 space-y-6">
                       {/* Original Ticket Information */}
-                      <div className="bg-muted p-4 rounded-lg">
-                        <h4 className="font-medium text-foreground mb-2">Original Request</h4>
-                        <p className="text-sm mb-3">{selectedTicket.description}</p>
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground mb-2">
+                      <div className="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 className="font-medium text-gray-900 mb-2">Original Request</h4>
+                        <p className="text-sm text-gray-700 mb-3">{selectedTicket.description}</p>
+                        <div className="flex items-center gap-4 text-xs text-gray-500 mb-2">
                           <span>#{selectedTicket.ticketNumber}</span>
                           <span>{selectedTicket.createdAt && new Date(selectedTicket.createdAt).toLocaleDateString()}</span>
                         </div>
@@ -1964,7 +1978,7 @@ const MobilePage = () => {
                             <p className="text-sm font-medium mb-2">Original Photos ({selectedTicket.images.length})</p>
                             <div className="grid grid-cols-3 gap-2">
                               {selectedTicket.images.slice(0, 6).map((image, index) => (
-                                <div key={index} className="aspect-square bg-background rounded border overflow-hidden">
+                                <div key={index} className="aspect-square bg-gray-100 rounded border overflow-hidden">
                                   <img
                                     src={image}
                                     alt={`Original ${index + 1}`}
@@ -1978,34 +1992,34 @@ const MobilePage = () => {
                       </div>
 
                       {/* Work Description */}
-                      <div>
-                        <Label className="text-sm font-medium">Work Description *</Label>
+                      <div className="bg-white p-4 rounded-lg shadow-sm">
+                        <Label className="text-sm font-medium text-gray-900">Work Description *</Label>
                         <Textarea
                           placeholder="Describe the work performed in detail..."
-                          className="mt-1 min-h-[80px]"
+                          className="mt-2 min-h-[100px] resize-none"
                         />
                       </div>
 
                       {/* Time Tracking */}
-                      <div className="border rounded-lg p-4">
-                        <h4 className="font-medium mb-3">Time Tracking</h4>
-                        <div className="space-y-3">
+                      <div className="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 className="font-medium text-gray-900 mb-3">Time Tracking</h4>
+                        <div className="space-y-4">
                           <div>
-                            <Label className="text-sm font-medium">Work Date</Label>
+                            <Label className="text-sm font-medium text-gray-700">Work Date</Label>
                             <Input
                               type="date"
                               value={new Date().toISOString().split('T')[0]}
                               disabled
-                              className="mt-1 bg-muted"
+                              className="mt-1 bg-gray-100"
                             />
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <Label className="text-sm font-medium">Time In</Label>
+                              <Label className="text-sm font-medium text-gray-700">Time In</Label>
                               <Input type="time" className="mt-1" />
                             </div>
                             <div>
-                              <Label className="text-sm font-medium">Time Out</Label>
+                              <Label className="text-sm font-medium text-gray-700">Time Out</Label>
                               <Input type="time" className="mt-1" />
                             </div>
                           </div>
@@ -2013,29 +2027,29 @@ const MobilePage = () => {
                       </div>
 
                       {/* Parts & Labor */}
-                      <div className="border rounded-lg p-4">
-                        <h4 className="font-medium mb-3">Parts & Labor</h4>
-                        <div className="space-y-3">
+                      <div className="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 className="font-medium text-gray-900 mb-3">Parts & Labor</h4>
+                        <div className="space-y-4">
                           <div>
-                            <Label className="text-sm font-medium">Labor Cost ($)</Label>
+                            <Label className="text-sm font-medium text-gray-700">Labor Cost ($)</Label>
                             <Input type="number" step="0.01" placeholder="0.00" className="mt-1" />
                           </div>
                           <div>
-                            <Label className="text-sm font-medium">Parts Cost ($)</Label>
+                            <Label className="text-sm font-medium text-gray-700">Parts Cost ($)</Label>
                             <Input type="number" step="0.01" placeholder="0.00" className="mt-1" />
                           </div>
                           <div>
-                            <Label className="text-sm font-medium">Other Costs ($)</Label>
+                            <Label className="text-sm font-medium text-gray-700">Other Costs ($)</Label>
                             <Input type="number" step="0.01" placeholder="0.00" className="mt-1" />
                           </div>
                         </div>
                       </div>
 
                       {/* Work Status */}
-                      <div>
-                        <Label className="text-sm font-medium">Work Status *</Label>
+                      <div className="bg-white p-4 rounded-lg shadow-sm">
+                        <Label className="text-sm font-medium text-gray-900">Work Status *</Label>
                         <Select>
-                          <SelectTrigger className="mt-1">
+                          <SelectTrigger className="mt-2">
                             <SelectValue placeholder="Select completion status" />
                           </SelectTrigger>
                           <SelectContent>
@@ -2047,14 +2061,14 @@ const MobilePage = () => {
                       </div>
 
                       {/* Work Completion Photos */}
-                      <div>
-                        <Label className="text-sm font-medium">Work Completion Photos</Label>
-                        <div className="mt-2 border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-                          <Camera className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                          <p className="text-sm text-muted-foreground mb-2">
+                      <div className="bg-white p-4 rounded-lg shadow-sm">
+                        <Label className="text-sm font-medium text-gray-900">Work Completion Photos</Label>
+                        <div className="mt-3 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                          <Camera className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                          <p className="text-sm text-gray-600 mb-3">
                             Add photos of completed work
                           </p>
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" className="bg-white">
                             <Camera className="h-4 w-4 mr-2" />
                             Take Photos
                           </Button>
@@ -2062,19 +2076,22 @@ const MobilePage = () => {
                       </div>
 
                       {/* Manager Notes */}
-                      <div>
-                        <Label className="text-sm font-medium">Notes for Manager</Label>
+                      <div className="bg-white p-4 rounded-lg shadow-sm">
+                        <Label className="text-sm font-medium text-gray-900">Notes for Manager</Label>
                         <Textarea
                           placeholder="Any additional notes or special instructions..."
-                          className="mt-1"
+                          className="mt-2 min-h-[80px] resize-none"
                         />
                       </div>
+
+                      {/* Extra padding at bottom for safe scrolling */}
+                      <div className="h-4"></div>
                     </div>
                   </div>
                 )}
 
                 {/* Fixed Footer */}
-                <div className="p-4 border-t bg-background flex-shrink-0">
+                <div className="bg-white border-t p-4 flex-shrink-0">
                   <div className="flex gap-3">
                     <Button 
                       variant="outline" 
