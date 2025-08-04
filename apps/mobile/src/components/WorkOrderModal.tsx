@@ -247,6 +247,7 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
   };
 
   const handleSubmit = () => {
+    console.log('Submitting work order...');
     const newErrors: { [key: string]: string } = {};
 
     // Validation
@@ -272,6 +273,17 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
       newErrors.managerName = 'Manager name is required';
     }
 
+    console.log('Validation errors:', newErrors);
+    console.log('Form data:', {
+      workDescription,
+      completionStatus,
+      timeIn,
+      timeOut,
+      managerName,
+      parts: parts.filter(p => p.name.trim() !== ''),
+      workImages: workImages.length
+    });
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       Alert.alert('Validation Error', 'Please fix the errors before submitting');
@@ -288,6 +300,7 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
       managerName,
     };
 
+    console.log('Calling onSubmit with:', ticket.id, workOrderData, workImages);
     onSubmit(ticket.id, workOrderData, workImages);
   };
 
@@ -295,7 +308,7 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
     setWorkDescription('');
     setCompletionStatus(undefined);
     setCompletionNotes('');
-    setParts([{ name: '', quantity: 1, cost: 0 }]);
+    setParts([{ name: '', quantity: 0, cost: 0 }]);
     setTimeIn('');
     setTimeOut('');
     setManagerName('');
@@ -598,8 +611,10 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                   mode="contained"
                   onPress={handleSubmit}
                   disabled={isLoading}
-                  style={styles.actionButton}
+                  style={[styles.actionButton, { backgroundColor: '#1976d2' }]}
                   loading={isLoading}
+                  buttonColor="#1976d2"
+                  textColor="#ffffff"
                 >
                   {isLoading ? 'Submitting...' : 'Complete Work Order'}
                 </Button>
@@ -794,9 +809,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingTop: 16,
+    paddingBottom: 16,
+    gap: 12,
   },
   actionButton: {
     flex: 0.48,
+    minHeight: 48,
   },
   errorText: {
     color: 'red',
