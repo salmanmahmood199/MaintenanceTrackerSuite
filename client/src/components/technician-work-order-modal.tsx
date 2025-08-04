@@ -378,7 +378,9 @@ export function TechnicianWorkOrderModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto bg-background text-foreground">
+        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto bg-background text-foreground p-0">
+          <div className="flex flex-col h-full max-h-[95vh]">
+            <div className="p-6 border-b border-border flex-shrink-0">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3 text-foreground">
               <span>Work Order - {ticket.title}</span>
@@ -505,15 +507,17 @@ export function TechnicianWorkOrderModal({
                       Add Part
                     </Button>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-4">
                     {parts.map((part, index) => (
-                      <div key={index} className="grid grid-cols-12 gap-2 items-end">
-                        <div className="col-span-5">
+                      <div key={index} className="p-4 border border-border rounded-lg bg-card space-y-4">
+                        {/* Part Selection */}
+                        <div>
+                          <Label className="text-sm font-medium text-foreground mb-2 block">Part Selection</Label>
                           <Select
                             value={part.name && part.name !== "custom" ? part.name : ""}
                             onValueChange={(value) => selectPart(index, value)}
                           >
-                            <SelectTrigger className="bg-background text-foreground border-border">
+                            <SelectTrigger className="bg-background text-foreground border-border h-12">
                               <SelectValue placeholder="Select a part" />
                             </SelectTrigger>
                             <SelectContent>
@@ -533,51 +537,87 @@ export function TechnicianWorkOrderModal({
                             </SelectContent>
                           </Select>
                           {part.name === "custom" && (
-                            <div className="mt-2">
-                              <Label className="text-xs text-foreground">Custom Part Name</Label>
+                            <div className="mt-3">
+                              <Label className="text-sm text-foreground mb-2 block">Custom Part Name</Label>
                               <Input
                                 placeholder="Enter custom part name"
-                                className="bg-background text-foreground border-border"
+                                className="bg-background text-foreground border-border h-12"
                                 onChange={(e) => updatePart(index, "name", e.target.value)}
                               />
                             </div>
                           )}
                         </div>
-                        <div className="col-span-2">
-                          <Label className="text-xs text-foreground">Quantity</Label>
-                          <Input
-                            type="number"
-                            placeholder="Qty"
-                            min="1"
-                            value={part.quantity}
-                            className="bg-background text-foreground border-border"
-                            onChange={(e) => updatePart(index, "quantity", parseInt(e.target.value) || 1)}
-                          />
+                        
+                        {/* Quantity and Price - Mobile Friendly Layout */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label className="text-sm font-medium text-foreground mb-2 block">Quantity</Label>
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-12 w-12 flex-shrink-0"
+                                onClick={() => updatePart(index, "quantity", Math.max(1, part.quantity - 1))}
+                                disabled={part.quantity <= 1}
+                              >
+                                -
+                              </Button>
+                              <Input
+                                type="number"
+                                min="1"
+                                value={part.quantity}
+                                className="bg-background text-foreground border-border h-12 text-center text-lg font-medium"
+                                onChange={(e) => {
+                                  const newValue = parseInt(e.target.value) || 1;
+                                  updatePart(index, "quantity", Math.max(1, newValue));
+                                }}
+                                onFocus={(e) => e.target.select()}
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-12 w-12 flex-shrink-0"
+                                onClick={() => updatePart(index, "quantity", part.quantity + 1)}
+                              >
+                                +
+                              </Button>
+                            </div>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium text-foreground mb-2 block">
+                              {part.name === "custom" ? "Price ($)" : "Price (Auto)"}
+                            </Label>
+                            <Input
+                              type="number"
+                              placeholder="0.00"
+                              min="0"
+                              step="0.01"
+                              value={part.cost}
+                              disabled={part.name !== "custom"}
+                              className={part.name !== "custom" ? "bg-muted text-muted-foreground h-12" : "bg-background text-foreground border-border h-12"}
+                              onChange={(e) => updatePart(index, "cost", parseFloat(e.target.value) || 0)}
+                              onFocus={(e) => e.target.select()}
+                            />
+                          </div>
                         </div>
-                        <div className="col-span-3">
-                          <Label className="text-xs text-foreground">
-                            {part.name === "custom" ? "Selling Price ($)" : "Selling Price (Auto-filled)"}
-                          </Label>
-                          <Input
-                            type="number"
-                            placeholder="Selling Price ($)"
-                            min="0"
-                            step="0.01"
-                            value={part.cost}
-                            disabled={part.name !== "custom"}
-                            className={part.name !== "custom" ? "bg-muted text-muted-foreground" : "bg-background text-foreground border-border"}
-                            onChange={(e) => updatePart(index, "cost", parseFloat(e.target.value) || 0)}
-                          />
-                        </div>
-                        <div className="col-span-2">
+                        
+                        {/* Subtotal and Remove Button */}
+                        <div className="flex items-center justify-between pt-2 border-t border-border">
+                          <div className="text-sm font-medium text-foreground">
+                            Subtotal: ${(part.quantity * part.cost).toFixed(2)}
+                          </div>
                           <Button
                             type="button"
                             size="sm"
-                            variant="ghost"
+                            variant="destructive"
                             onClick={() => removePart(index)}
                             disabled={parts.length === 1}
+                            className="h-10"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Remove
                           </Button>
                         </div>
                       </div>
