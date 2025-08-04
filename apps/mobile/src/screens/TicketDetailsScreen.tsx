@@ -71,51 +71,68 @@ const TicketDetailsScreen = ({ route, navigation }: any) => {
   };
 
   const handleWorkOrderSubmit = async (ticketId: string, workOrderData: any, images: string[]) => {
+    console.log('Mobile: Starting work order submission for ticket:', ticketId);
+    console.log('Mobile: Work order data:', workOrderData);
+    console.log('Mobile: Images count:', images.length);
+    
     setLoading(true);
     try {
       const formData = new FormData();
       
-      // Add work order data
-      Object.keys(workOrderData).forEach(key => {
-        if (key === 'parts') {
-          formData.append('parts', JSON.stringify(workOrderData.parts));
-        } else {
-          formData.append(key, workOrderData[key]);
+      // Add work order data as JSON string (matching server expectations)
+      formData.append('workOrder', JSON.stringify(workOrderData));
+
+      // Add work images if any
+      if (images.length > 0) {
+        for (let i = 0; i < images.length; i++) {
+          const imageUri = images[i];
+          console.log('Mobile: Processing image:', imageUri);
+          
+          try {
+            // For mobile web, images are base64 data URLs
+            if (imageUri.startsWith('data:')) {
+              // Convert base64 to blob
+              const response = await fetch(imageUri);
+              const blob = await response.blob();
+              
+              formData.append('images', blob, `work_image_${i}.jpg`);
+              console.log('Mobile: Added image blob to FormData');
+            } else {
+              console.log('Mobile: Skipping non-base64 image:', imageUri);
+            }
+          } catch (imageError) {
+            console.error('Mobile: Error processing image:', imageError);
+            // Continue with other images
+          }
         }
-      });
+      }
 
-      // Add work images
-      images.forEach((imageUri, index) => {
-        const uriParts = imageUri.split('.');
-        const fileType = uriParts[uriParts.length - 1];
-        
-        formData.append('workImages', {
-          uri: imageUri,
-          name: `work_image_${index}.${fileType}`,
-          type: `image/${fileType}`,
-        } as any);
-      });
-
+      console.log('Mobile: Sending request to server...');
       const response = await fetch(`http://0.0.0.0:5000/api/tickets/${ticketId}/complete`, {
         method: 'POST',
         body: formData,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
         credentials: 'include',
+        // Let browser set the Content-Type for multipart/form-data
       });
 
+      console.log('Mobile: Response status:', response.status);
+      console.log('Mobile: Response ok:', response.ok);
+
       if (response.ok) {
+        const responseData = await response.json();
+        console.log('Mobile: Success response:', responseData);
+        
         setWorkOrderModalVisible(false);
-        Alert.alert('Success', 'Work order completed successfully', [
+        Alert.alert('Success', 'Work order submitted properly', [
           { text: 'OK', onPress: () => navigation.goBack() }
         ]);
       } else {
         const errorData = await response.json();
+        console.error('Mobile: Error response:', errorData);
         Alert.alert('Error', errorData.message || 'Failed to complete work order');
       }
     } catch (error) {
-      console.error('Complete work order error:', error);
+      console.error('Mobile: Complete work order error:', error);
       Alert.alert('Error', 'Failed to complete work order. Please try again.');
     } finally {
       setLoading(false);

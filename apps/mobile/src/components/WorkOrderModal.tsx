@@ -300,7 +300,7 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
       managerName,
     };
 
-    console.log('Calling onSubmit with:', ticket.id, workOrderData, workImages);
+    console.log('WorkOrderModal: Calling onSubmit with:', ticket.id, workOrderData, workImages.length, 'images');
     onSubmit(ticket.id, workOrderData, workImages);
   };
 
