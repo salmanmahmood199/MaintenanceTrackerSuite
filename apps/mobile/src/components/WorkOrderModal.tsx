@@ -157,7 +157,7 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
   };
 
   const addPart = () => {
-    setParts(prev => [...prev, { name: '', quantity: 1, cost: 0 }]);
+    setParts(prev => [...prev, { name: '', quantity: 0, cost: 0 }]);
   };
 
   const removePart = (index: number) => {
@@ -198,36 +198,47 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
 
   const takePhoto = async () => {
     try {
-      // For mobile web, create a file input with camera capture
-      if (typeof window !== 'undefined' && document) {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/*';
-        (input as any).capture = 'environment'; // Use rear camera
-        
-        input.onchange = (event: any) => {
-          const file = event.target.files?.[0];
-          if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-              if (e.target?.result) {
-                handleImageSelected(e.target.result as string);
-              }
-            };
-            reader.readAsDataURL(file);
-          }
-        };
-        
-        input.click();
-      } else {
-        // Fallback for native - show demo image
-        const demoImageUri = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNmMGYwZjAiLz48dGV4dCB4PSI1MCIgeT0iNTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiM2NjY2NjYiIGZvbnQtc2l6ZT0iMTAiPkNhbWVyYSBQaG90bzwvdGV4dD48L3N2Zz4=';
-        setWorkImages(prev => [...prev, demoImageUri]);
-        Alert.alert('Photo Added', 'Demo photo added! Camera functionality requires expo-image-picker for native apps.');
-      }
+      // Create a file input that specifically requests camera access
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      (input as any).capture = 'environment'; // Request rear camera
+      input.style.display = 'none';
+      
+      // Add to document temporarily
+      document.body.appendChild(input);
+      
+      input.onchange = (event: any) => {
+        const file = event.target.files?.[0];
+        if (file) {
+          console.log('Photo captured:', file.name, file.size);
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            if (e.target?.result) {
+              const imageUri = e.target.result as string;
+              console.log('Photo processed, adding to work images');
+              setWorkImages(prev => [...prev, imageUri]);
+              Alert.alert('Success', 'Photo added successfully!');
+            }
+          };
+          reader.onerror = () => {
+            Alert.alert('Error', 'Failed to process photo');
+          };
+          reader.readAsDataURL(file);
+        }
+        // Clean up
+        document.body.removeChild(input);
+      };
+      
+      input.oncancel = () => {
+        document.body.removeChild(input);
+      };
+      
+      // Trigger the file picker
+      input.click();
     } catch (error) {
       console.error('Error taking photo:', error);
-      Alert.alert('Error', 'Failed to access camera');
+      Alert.alert('Error', 'Failed to access camera: ' + (error as Error).message);
     }
   };
 
@@ -353,7 +364,7 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                         <TouchableOpacity
                           style={styles.quantityButton}
                           onPress={() => {
-                            const newQuantity = Math.max(1, part.quantity - 1);
+                            const newQuantity = Math.max(0, part.quantity - 1);
                             console.log(`Decreasing quantity for part ${index} from ${part.quantity} to ${newQuantity}`);
                             updatePart(index, 'quantity', newQuantity);
                           }}
@@ -362,16 +373,17 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                         </TouchableOpacity>
                         
                         <TextInput
-                          value={part.quantity.toString()}
+                          value={part.quantity === 0 ? '' : part.quantity.toString()}
                           onChangeText={(value: string) => {
-                            const numValue = parseInt(value) || 1;
+                            const numValue = parseInt(value) || 0;
                             console.log(`Updating quantity from ${part.quantity} to ${numValue}`);
-                            updatePart(index, 'quantity', Math.max(1, numValue));
+                            updatePart(index, 'quantity', Math.max(0, numValue));
                           }}
                           mode="outlined"
                           style={styles.quantityInput}
                           keyboardType="numeric"
                           selectTextOnFocus={true}
+                          placeholder="0"
                           onFocus={() => {
                             console.log('Quantity input focused');
                           }}
