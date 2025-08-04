@@ -24,6 +24,7 @@ import {
 // import { Picker } from '@react-native-picker/picker';
 // import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../contexts/AuthContext';
+import WebImagePicker from './WebImagePicker';
 
 // Import shared types from the correct path
 interface Ticket {
@@ -185,16 +186,49 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
     });
   };
 
-  const takePhoto = async () => {
-    // Placeholder for camera functionality
-    // In production, implement with expo-image-picker
-    Alert.alert('Camera', 'Camera functionality will be available after installing expo-image-picker');
+  const handleImageSelected = (imageUri: string) => {
+    console.log('Image selected:', imageUri);
+    setWorkImages(prev => [...prev, imageUri]);
   };
 
-  const pickImage = async () => {
-    // Placeholder for image picker functionality  
-    // In production, implement with expo-image-picker
-    Alert.alert('Gallery', 'Gallery functionality will be available after installing expo-image-picker');
+  const handleImageError = (error: string) => {
+    console.log('Image picker error:', error);
+    Alert.alert('Error', error);
+  };
+
+  const takePhoto = async () => {
+    try {
+      // For mobile web, create a file input with camera capture
+      if (typeof window !== 'undefined' && document) {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        (input as any).capture = 'environment'; // Use rear camera
+        
+        input.onchange = (event: any) => {
+          const file = event.target.files?.[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              if (e.target?.result) {
+                handleImageSelected(e.target.result as string);
+              }
+            };
+            reader.readAsDataURL(file);
+          }
+        };
+        
+        input.click();
+      } else {
+        // Fallback for native - show demo image
+        const demoImageUri = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNmMGYwZjAiLz48dGV4dCB4PSI1MCIgeT0iNTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiM2NjY2NjYiIGZvbnQtc2l6ZT0iMTAiPkNhbWVyYSBQaG90bzwvdGV4dD48L3N2Zz4=';
+        setWorkImages(prev => [...prev, demoImageUri]);
+        Alert.alert('Photo Added', 'Demo photo added! Camera functionality requires expo-image-picker for native apps.');
+      }
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      Alert.alert('Error', 'Failed to access camera');
+    }
   };
 
   const removeImage = (index: number) => {
@@ -495,9 +529,10 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                   <Button mode="outlined" onPress={takePhoto} icon="camera" style={styles.photoButton}>
                     Take Photo
                   </Button>
-                  <Button mode="outlined" onPress={pickImage} icon="image" style={styles.photoButton}>
-                    Pick Image
-                  </Button>
+                  <WebImagePicker 
+                    onImageSelected={handleImageSelected}
+                    onError={handleImageError}
+                  />
                 </View>
                 
                 {workImages.length > 0 && (

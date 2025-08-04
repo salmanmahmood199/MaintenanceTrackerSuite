@@ -38,8 +38,8 @@ const WebImagePicker: React.FC<WebImagePickerProps> = ({ onImageSelected, onErro
   };
 
   return (
-    <Button mode="contained" onPress={pickImage}>
-      Pick Image/Video
+    <Button mode="outlined" onPress={pickImage} icon="image" style={{ flex: 1 }}>
+      Pick Image
     </Button>
   );
 };
