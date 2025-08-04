@@ -832,6 +832,8 @@ export function TechnicianWorkOrderModal({
               </form>
             </div>
           </div>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
