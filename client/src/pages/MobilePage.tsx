@@ -918,14 +918,17 @@ const MobilePage = () => {
               <List className="h-5 w-5" />
               Recent Tickets
             </CardTitle>
-            <Button 
-              size="sm" 
-              onClick={() => setIsCreateTicketOpen(true)}
-              className="gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              New
-            </Button>
+            {/* Only show create ticket button for organization users, not vendors */}
+            {user && (user.role === 'org_admin' || user.role === 'org_subadmin' || user.role === 'residential') && (
+              <Button 
+                size="sm" 
+                onClick={() => setIsCreateTicketOpen(true)}
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                New
+              </Button>
+            )}
           </CardHeader>
           <CardContent>
             {/* Date Filter */}
@@ -2236,7 +2239,7 @@ const MobilePage = () => {
                         </div>
                       </div>
 
-                      {/* Manager Verification */}
+                      {/* Manager Verification with Working Signature Canvas */}
                       <div className="bg-card p-4 rounded-lg shadow-sm">
                         <h4 className="font-medium text-foreground mb-3">Manager Verification</h4>
                         <div className="space-y-4">
@@ -2249,14 +2252,96 @@ const MobilePage = () => {
                           </div>
                           <div>
                             <Label className="text-sm font-medium text-muted-foreground">Manager Signature *</Label>
-                            <div className="mt-2 border rounded-lg p-4 bg-background">
-                              <div className="border-2 border-dashed border-muted-foreground/25 rounded p-4 text-center">
-                                <p className="text-sm text-muted-foreground mb-2">
-                                  Manager signature area (digital signature required)
-                                </p>
-                                <Button variant="outline" size="sm">
-                                  Sign Here
+                            <div className="mt-2 space-y-2">
+                              <canvas
+                                width={300}
+                                height={150}
+                                className="border-2 border-border rounded-lg bg-white touch-none w-full max-w-sm"
+                                style={{ touchAction: 'none' }}
+                                onMouseDown={(e) => {
+                                  const canvas = e.currentTarget;
+                                  const rect = canvas.getBoundingClientRect();
+                                  const ctx = canvas.getContext('2d');
+                                  if (ctx) {
+                                    ctx.strokeStyle = '#000000';
+                                    ctx.lineWidth = 2;
+                                    ctx.lineCap = 'round';
+                                    ctx.beginPath();
+                                    ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+                                    canvas.setAttribute('data-drawing', 'true');
+                                  }
+                                }}
+                                onMouseMove={(e) => {
+                                  const canvas = e.currentTarget;
+                                  if (canvas.getAttribute('data-drawing') === 'true') {
+                                    const rect = canvas.getBoundingClientRect();
+                                    const ctx = canvas.getContext('2d');
+                                    if (ctx) {
+                                      ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+                                      ctx.stroke();
+                                    }
+                                  }
+                                }}
+                                onMouseUp={(e) => {
+                                  const canvas = e.currentTarget;
+                                  canvas.setAttribute('data-drawing', 'false');
+                                }}
+                                onTouchStart={(e) => {
+                                  e.preventDefault();
+                                  const touch = e.touches[0];
+                                  const canvas = e.currentTarget;
+                                  const rect = canvas.getBoundingClientRect();
+                                  const ctx = canvas.getContext('2d');
+                                  if (ctx && touch) {
+                                    ctx.strokeStyle = '#000000';
+                                    ctx.lineWidth = 2;
+                                    ctx.lineCap = 'round';
+                                    ctx.beginPath();
+                                    ctx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
+                                    canvas.setAttribute('data-drawing', 'true');
+                                  }
+                                }}
+                                onTouchMove={(e) => {
+                                  e.preventDefault();
+                                  const canvas = e.currentTarget;
+                                  if (canvas.getAttribute('data-drawing') === 'true') {
+                                    const touch = e.touches[0];
+                                    if (touch) {
+                                      const rect = canvas.getBoundingClientRect();
+                                      const ctx = canvas.getContext('2d');
+                                      if (ctx) {
+                                        ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
+                                        ctx.stroke();
+                                      }
+                                    }
+                                  }
+                                }}
+                                onTouchEnd={(e) => {
+                                  e.preventDefault();
+                                  const canvas = e.currentTarget;
+                                  canvas.setAttribute('data-drawing', 'false');
+                                }}
+                              />
+                              <div className="flex gap-2">
+                                <Button 
+                                  type="button" 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={(e) => {
+                                    const canvas = (e.currentTarget.parentElement?.previousElementSibling as HTMLCanvasElement);
+                                    if (canvas) {
+                                      const ctx = canvas.getContext('2d');
+                                      if (ctx) {
+                                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                                      }
+                                    }
+                                  }}
+                                >
+                                  Clear Signature
                                 </Button>
+                                <p className="text-xs text-muted-foreground flex items-center">
+                                  Sign with finger or stylus
+                                </p>
                               </div>
                             </div>
                           </div>
