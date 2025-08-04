@@ -1,14 +1,25 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { Card, Title, Paragraph, Chip, Button, Divider } from 'react-native-paper';
 import { useAuth } from '../contexts/AuthContext';
+import WorkOrderModal from '../components/WorkOrderModal';
 
-// Import shared types
-import type { Ticket } from '@maintenance/shared';
+// Define Ticket interface
+interface Ticket {
+  id: string;
+  title: string;
+  description: string;
+  priority: 'low' | 'medium' | 'high';
+  status: 'open' | 'in-progress' | 'completed';
+  createdAt: string;
+  ticketNumber?: string;
+}
 
 const TicketDetailsScreen = ({ route, navigation }: any) => {
   const { ticket }: { ticket: Ticket } = route.params;
   const { user } = useAuth();
+  const [workOrderModalVisible, setWorkOrderModalVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -28,14 +39,87 @@ const TicketDetailsScreen = ({ route, navigation }: any) => {
     }
   };
 
-  const handleAcceptTicket = () => {
-    // TODO: Implement accept ticket functionality
-    console.log('Accept ticket:', ticket.id);
+  const handleAcceptTicket = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`http://0.0.0.0:5000/api/tickets/${ticket.id}/accept`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        Alert.alert('Success', 'Ticket accepted successfully', [
+          { text: 'OK', onPress: () => navigation.goBack() }
+        ]);
+      } else {
+        const errorData = await response.json();
+        Alert.alert('Error', errorData.message || 'Failed to accept ticket');
+      }
+    } catch (error) {
+      console.error('Accept ticket error:', error);
+      Alert.alert('Error', 'Failed to accept ticket. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCompleteTicket = () => {
-    // TODO: Implement complete ticket functionality
-    console.log('Complete ticket:', ticket.id);
+    setWorkOrderModalVisible(true);
+  };
+
+  const handleWorkOrderSubmit = async (ticketId: string, workOrderData: any, images: string[]) => {
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      
+      // Add work order data
+      Object.keys(workOrderData).forEach(key => {
+        if (key === 'parts') {
+          formData.append('parts', JSON.stringify(workOrderData.parts));
+        } else {
+          formData.append(key, workOrderData[key]);
+        }
+      });
+
+      // Add work images
+      images.forEach((imageUri, index) => {
+        const uriParts = imageUri.split('.');
+        const fileType = uriParts[uriParts.length - 1];
+        
+        formData.append('workImages', {
+          uri: imageUri,
+          name: `work_image_${index}.${fileType}`,
+          type: `image/${fileType}`,
+        } as any);
+      });
+
+      const response = await fetch(`http://0.0.0.0:5000/api/tickets/${ticketId}/complete`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        setWorkOrderModalVisible(false);
+        Alert.alert('Success', 'Work order completed successfully', [
+          { text: 'OK', onPress: () => navigation.goBack() }
+        ]);
+      } else {
+        const errorData = await response.json();
+        Alert.alert('Error', errorData.message || 'Failed to complete work order');
+      }
+    } catch (error) {
+      console.error('Complete work order error:', error);
+      Alert.alert('Error', 'Failed to complete work order. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -102,6 +186,8 @@ const TicketDetailsScreen = ({ route, navigation }: any) => {
                 mode="contained"
                 onPress={handleCompleteTicket}
                 style={styles.actionButton}
+                loading={loading}
+                disabled={loading}
               >
                 Complete Work
               </Button>
@@ -109,6 +195,14 @@ const TicketDetailsScreen = ({ route, navigation }: any) => {
           </View>
         </Card.Content>
       </Card>
+      
+      <WorkOrderModal
+        visible={workOrderModalVisible}
+        onDismiss={() => setWorkOrderModalVisible(false)}
+        ticket={ticket}
+        onSubmit={handleWorkOrderSubmit}
+        isLoading={loading}
+      />
     </ScrollView>
   );
 };
