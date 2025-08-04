@@ -365,13 +365,15 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                           value={part.quantity.toString()}
                           onChangeText={(value: string) => {
                             const numValue = parseInt(value) || 1;
+                            console.log(`Updating quantity from ${part.quantity} to ${numValue}`);
                             updatePart(index, 'quantity', Math.max(1, numValue));
                           }}
                           mode="outlined"
                           style={styles.quantityInput}
                           keyboardType="numeric"
-                          onFocus={(event) => {
-                            event.target.setSelection(0, part.quantity.toString().length);
+                          selectTextOnFocus={true}
+                          onFocus={() => {
+                            console.log('Quantity input focused');
                           }}
                         />
                         
@@ -671,6 +673,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     textAlign: 'center',
     fontSize: 16,
+    backgroundColor: '#fff',
+    height: 45,
   },
   costInput: {
     marginBottom: 12,
