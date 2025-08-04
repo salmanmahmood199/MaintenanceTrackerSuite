@@ -82,6 +82,10 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
   // Error states
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
+  // Computed values
+  const calculatedHours = calculateHours(timeIn, timeOut);
+  const totalPartsCost = parts.reduce((total, part) => total + (part.quantity * part.cost), 0);
+
   if (!ticket) return null;
 
   const validateTimeOrder = (timeInValue: string, timeOutValue: string): boolean => {
@@ -162,9 +166,23 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
   };
 
   const updatePart = (index: number, field: keyof Part, value: string | number) => {
-    setParts(prev => prev.map((part, i) => 
-      i === index ? { ...part, [field]: value } : part
-    ));
+    console.log(`Updating part ${index}, field: ${field}, value: ${value}`);
+    setParts(prev => {
+      const newParts = prev.map((part, i) => {
+        if (i === index) {
+          const updatedPart = { ...part, [field]: value };
+          // Ensure quantity is always at least 1
+          if (field === 'quantity' && typeof value === 'number') {
+            updatedPart.quantity = Math.max(1, value);
+          }
+          console.log(`Updated part:`, updatedPart);
+          return updatedPart;
+        }
+        return part;
+      });
+      console.log(`New parts array:`, newParts);
+      return newParts;
+    });
   };
 
   const takePhoto = async () => {
@@ -245,8 +263,7 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
     onDismiss();
   };
 
-  const totalPartsCost = parts.reduce((sum, part) => sum + (part.cost * part.quantity), 0);
-  const calculatedHours = calculateHours(timeIn, timeOut);
+  // Computed values are already defined above
 
   return (
     <Portal>
@@ -301,22 +318,36 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                       <View style={styles.quantityControls}>
                         <TouchableOpacity
                           style={styles.quantityButton}
-                          onPress={() => updatePart(index, 'quantity', Math.max(1, part.quantity - 1))}
+                          onPress={() => {
+                            const newQuantity = Math.max(1, part.quantity - 1);
+                            console.log(`Decreasing quantity for part ${index} from ${part.quantity} to ${newQuantity}`);
+                            updatePart(index, 'quantity', newQuantity);
+                          }}
                         >
                           <Text style={styles.quantityButtonText}>-</Text>
                         </TouchableOpacity>
                         
                         <TextInput
                           value={part.quantity.toString()}
-                          onChangeText={(value: string) => updatePart(index, 'quantity', parseInt(value) || 1)}
+                          onChangeText={(value: string) => {
+                            const numValue = parseInt(value) || 1;
+                            updatePart(index, 'quantity', Math.max(1, numValue));
+                          }}
                           mode="outlined"
                           style={styles.quantityInput}
                           keyboardType="numeric"
+                          onFocus={(event) => {
+                            event.target.setSelection(0, part.quantity.toString().length);
+                          }}
                         />
                         
                         <TouchableOpacity
                           style={styles.quantityButton}
-                          onPress={() => updatePart(index, 'quantity', part.quantity + 1)}
+                          onPress={() => {
+                            const newQuantity = part.quantity + 1;
+                            console.log(`Increasing quantity for part ${index} from ${part.quantity} to ${newQuantity}`);
+                            updatePart(index, 'quantity', newQuantity);
+                          }}
                         >
                           <Text style={styles.quantityButtonText}>+</Text>
                         </TouchableOpacity>
@@ -604,6 +635,7 @@ const styles = StyleSheet.create({
     width: 80,
     marginHorizontal: 16,
     textAlign: 'center',
+    fontSize: 16,
   },
   costInput: {
     marginBottom: 12,
