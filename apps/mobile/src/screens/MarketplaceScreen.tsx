@@ -47,7 +47,7 @@ const MarketplaceScreen = ({ navigation }: any) => {
   const fetchMarketplaceData = async () => {
     try {
       // Fetch marketplace tickets
-      const ticketsResponse = await fetch('http://0.0.0.0:5000/api/marketplace/tickets', {
+      const ticketsResponse = await fetch('http://localhost:5000/api/marketplace/tickets', {
         credentials: 'include',
       });
       
@@ -57,7 +57,7 @@ const MarketplaceScreen = ({ navigation }: any) => {
       }
 
       // Fetch vendor's bids
-      const bidsResponse = await fetch('http://0.0.0.0:5000/api/marketplace/my-bids', {
+      const bidsResponse = await fetch('http://localhost:5000/api/marketplace/my-bids', {
         credentials: 'include',
       });
       
@@ -84,7 +84,7 @@ const MarketplaceScreen = ({ navigation }: any) => {
 
     setLoading(true);
     try {
-      const response = await fetch(`http://0.0.0.0:5000/api/marketplace/${selectedTicket.id}/bid`, {
+      const response = await fetch(`http://localhost:5000/api/marketplace/${selectedTicket.id}/bid`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

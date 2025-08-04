@@ -42,7 +42,7 @@ const TicketDetailsScreen = ({ route, navigation }: any) => {
   const handleAcceptTicket = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`http://0.0.0.0:5000/api/tickets/${ticket.id}/accept`, {
+      const response = await fetch(`http://localhost:5000/api/tickets/${ticket.id}/accept`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -74,9 +74,20 @@ const TicketDetailsScreen = ({ route, navigation }: any) => {
     console.log('Mobile: Starting work order submission for ticket:', ticketId);
     console.log('Mobile: Work order data:', workOrderData);
     console.log('Mobile: Images count:', images.length);
+    console.log('Mobile: Current user:', user);
     
     setLoading(true);
     try {
+      // First check if user is still authenticated
+      const authCheck = await fetch('http://localhost:5000/api/auth/user', {
+        credentials: 'include',
+      });
+      console.log('Mobile: Auth check status:', authCheck.status);
+      
+      if (!authCheck.ok) {
+        Alert.alert('Session Expired', 'Please log in again to submit work orders.');
+        return;
+      }
       const formData = new FormData();
       
       // Add work order data as JSON string (matching server expectations)
@@ -107,8 +118,13 @@ const TicketDetailsScreen = ({ route, navigation }: any) => {
         }
       }
 
-      console.log('Mobile: Sending request to server...');
-      const response = await fetch(`http://0.0.0.0:5000/api/tickets/${ticketId}/complete`, {
+      console.log('Mobile: Sending request to server...', `http://localhost:5000/api/tickets/${ticketId}/complete`);
+      console.log('Mobile: FormData contents:');
+      for (let [key, value] of formData.entries()) {
+        console.log(`Mobile: ${key}:`, typeof value === 'string' ? value.substring(0, 100) + '...' : value);
+      }
+      
+      const response = await fetch(`http://localhost:5000/api/tickets/${ticketId}/complete`, {
         method: 'POST',
         body: formData,
         credentials: 'include',
@@ -117,6 +133,9 @@ const TicketDetailsScreen = ({ route, navigation }: any) => {
 
       console.log('Mobile: Response status:', response.status);
       console.log('Mobile: Response ok:', response.ok);
+      
+      // Log response headers for debugging
+      console.log('Mobile: Response headers:', Array.from(response.headers.entries()));
 
       if (response.ok) {
         const responseData = await response.json();
@@ -127,13 +146,26 @@ const TicketDetailsScreen = ({ route, navigation }: any) => {
           { text: 'OK', onPress: () => navigation.goBack() }
         ]);
       } else {
-        const errorData = await response.json();
-        console.error('Mobile: Error response:', errorData);
+        // Try to get error response
+        let errorData;
+        try {
+          errorData = await response.json();
+          console.error('Mobile: Error response JSON:', errorData);
+        } catch (jsonError) {
+          const textResponse = await response.text();
+          console.error('Mobile: Error response text:', textResponse);
+          errorData = { message: textResponse || `HTTP ${response.status}` };
+        }
         Alert.alert('Error', errorData.message || 'Failed to complete work order');
       }
     } catch (error) {
       console.error('Mobile: Complete work order error:', error);
-      Alert.alert('Error', 'Failed to complete work order. Please try again.');
+      console.error('Mobile: Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+      Alert.alert('Error', `Network error: ${error.message}. Please check your connection and try again.`);
     } finally {
       setLoading(false);
     }

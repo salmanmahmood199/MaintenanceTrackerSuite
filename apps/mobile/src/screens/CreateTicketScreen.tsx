@@ -79,7 +79,7 @@ const CreateTicketScreen = ({ navigation }: any) => {
         } as any);
       });
 
-      const response = await fetch('http://0.0.0.0:5000/api/tickets', {
+      const response = await fetch('http://localhost:5000/api/tickets', {
         method: 'POST',
         body: formData,
         headers: {
