@@ -82,6 +82,10 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
 
   // Error states
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  
+  // Image preview states
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string>('');
 
   // Helper functions
   const calculateHours = (timeInValue: string, timeOutValue: string): number => {
@@ -264,6 +268,16 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
     setWorkImages(prev => prev.filter((_, i) => i !== index));
   };
 
+  const openImagePreview = (imageUri: string) => {
+    setPreviewImage(imageUri);
+    setPreviewVisible(true);
+  };
+
+  const closeImagePreview = () => {
+    setPreviewVisible(false);
+    setPreviewImage('');
+  };
+
   const handleSubmit = () => {
     console.log('Submitting work order...');
     const newErrors: { [key: string]: string } = {};
@@ -332,6 +346,8 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
     setManagerName('');
     setWorkImages([]);
     setErrors({});
+    setPreviewVisible(false);
+    setPreviewImage('');
   };
 
   const handleDismiss = () => {
@@ -590,7 +606,12 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                   <View style={styles.imageGrid}>
                     {workImages.map((imageUri, index) => (
                       <View key={index} style={styles.imageContainer}>
-                        <Image source={{ uri: imageUri }} style={styles.workImage} />
+                        <TouchableOpacity
+                          onPress={() => openImagePreview(imageUri)}
+                          style={styles.imagePreviewTouchable}
+                        >
+                          <Image source={{ uri: imageUri }} style={styles.workImage} />
+                        </TouchableOpacity>
                         <TouchableOpacity
                           style={styles.removeImageButton}
                           onPress={() => removeImage(index)}
@@ -646,6 +667,29 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
             </ScrollView>
           </Card.Content>
         </Card>
+      </Modal>
+
+      {/* Image Preview Modal */}
+      <Modal 
+        visible={previewVisible} 
+        onDismiss={closeImagePreview} 
+        contentContainerStyle={styles.previewModal}
+      >
+        <View style={styles.previewContainer}>
+          <TouchableOpacity 
+            style={styles.previewCloseButton} 
+            onPress={closeImagePreview}
+          >
+            <Text style={styles.previewCloseText}>×</Text>
+          </TouchableOpacity>
+          {previewImage && (
+            <Image 
+              source={{ uri: previewImage }} 
+              style={styles.previewImage}
+              resizeMode="contain"
+            />
+          )}
+        </View>
       </Modal>
     </Portal>
   );
@@ -844,6 +888,45 @@ const styles = StyleSheet.create({
     color: 'red',
     fontSize: 12,
     marginTop: 4,
+  },
+  imagePreviewTouchable: {
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  previewModal: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    margin: 0,
+    padding: 0,
+  },
+  previewContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  previewImage: {
+    width: '90%',
+    height: '80%',
+    maxWidth: '100%',
+    maxHeight: '100%',
+  },
+  previewCloseButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  previewCloseText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#000',
   },
 });
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios'
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,8 @@ import {
   AlertCircle, TrendingUp, Plus, Clock, User as UserIcon, MapPin, Filter, Search,
   MessageSquare, Image, Video, FileText, Phone, Mail, Users, Building2,
   Wrench, Edit, Eye, ArrowLeft, ChevronDown, MoreVertical, Home,
-  DollarSign, Star, Camera, List, X, UserCheck, XCircle, CheckSquare, Building, Trash2
+  DollarSign, Star, Camera, List, X, UserCheck, XCircle, CheckSquare, Building, Trash2,
+  Loader2
 } from 'lucide-react';
 import { CreateTicketModal } from "@/components/create-ticket-modal";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -33,6 +35,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertTicketSchema } from "@shared/schema";
+
 import type { 
   Ticket,
   InsertTicket,
@@ -58,7 +61,7 @@ const MobileCreateTicketForm = ({ onClose, onSuccess, user }: { onClose: () => v
     },
     enabled: !!user?.id,
   });
-  
+
   const form = useForm<InsertTicket>({
     resolver: zodResolver(insertTicketSchema.omit({ reporterId: true, organizationId: true })),
     defaultValues: {
@@ -96,7 +99,7 @@ const MobileCreateTicketForm = ({ onClose, onSuccess, user }: { onClose: () => v
       if (data.locationId) {
         formData.append('locationId', data.locationId.toString());
       }
-      
+
       images.forEach((image) => {
         formData.append('images', image);
       });
@@ -343,6 +346,8 @@ const MobileCreateTicketForm = ({ onClose, onSuccess, user }: { onClose: () => v
 };
 
 const MobilePage = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [email, setEmail] = useState('root@mail.com');
   const [password, setPassword] = useState('admin');
   const [loading, setLoading] = useState(false);
@@ -359,6 +364,10 @@ const MobilePage = () => {
   const [isTicketDetailsOpen, setIsTicketDetailsOpen] = useState(false);
   const [isWorkOrderOpen, setIsWorkOrderOpen] = useState(false);
   const [isInvoiceCreatorOpen, setIsInvoiceCreatorOpen] = useState(false);
+
+    const [uploadedImages, setUploadedImages] = useState<Array<{ file: File; url: string }>>([]);
+    const [uploadingImg, setUploadingImg] = useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(null);
   const [currentView, setCurrentView] = useState<'dashboard' | 'organization' | 'vendor' | 'calendar' | 'marketplace'>('dashboard');
   const [ticketDateFilter, setTicketDateFilter] = useState<'all' | 'last30' | 'last7' | 'today'>('last30');
@@ -372,21 +381,120 @@ const MobilePage = () => {
   const [isWorkOrderHistoryOpen, setIsWorkOrderHistoryOpen] = useState(false);
   const [selectedImageForViewer, setSelectedImageForViewer] = useState<string | null>(null);
 
+  // Work order submission mutation
+  const submitWorkOrderMutation = useMutation({
+    mutationFn: async (workOrderData: any) => {
+      if (!selectedTicket) {
+        throw new Error('No ticket selected');
+      }
+
+      const formData = new FormData();
+
+      // Prepare work order data
+      const workOrder = {
+        workDescription: workOrderData.workDescription || 'Work completed',
+        parts: workOrderData.parts || [],
+        otherCharges: workOrderData.otherCharges || [],
+        timeIn: workOrderData.timeIn || '',
+        timeOut: workOrderData.timeOut || '',
+        completionStatus: 'completed',
+        completionNotes: 'Work completed',
+        managerName: '',
+        managerSignature: ''
+      };
+
+      // Add work order data as JSON string
+      formData.append('workOrder', JSON.stringify(workOrder));
+
+      // Add images if any
+      if (uploadedImages.length > 0) {
+        uploadedImages.forEach((image) => {
+          formData.append('images', image.file);
+        });
+      }
+
+      // Send to the complete ticket endpoint which also creates a work order
+      const response = await apiRequest('POST', `/api/tickets/${selectedTicket.id}/complete`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response;
+    },
+    onSuccess: () => {
+      // Invalidate and refetch tickets to update the UI
+      queryClient.invalidateQueries({ queryKey: ['/api/tickets'] });
+      setIsWorkOrderOpen(false);
+      setUploadedImages([]);
+      setParts([{ name: "", quantity: 1, cost: 0 }]);
+      setOtherCharges([{ description: "", cost: 0 }]);
+      setTimeIn("");
+      setTimeOut("");
+
+      toast({
+        title: "Success",
+        description: "Work order submitted successfully",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      console.error('Error submitting work order:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to submit work order",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Handle work order submission
+  // Handle work order submission
+  const handleWorkOrderSubmit = () => {
+    if (!selectedTicket) {
+      toast({
+        title: "Error",
+        description: "No ticket selected",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate required fields
+    if (!timeIn || !timeOut) {
+      toast({
+        title: "Error",
+        description: "Please provide both time in and time out",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const workOrderData = {
+      workDescription: "Work completed",
+      parts: parts.filter(part => part.name.trim() !== ""),
+      otherCharges: otherCharges.filter(charge => charge.description.trim() !== ""),
+      timeIn,
+      timeOut,
+    };
+
+    submitWorkOrderMutation.mutate(workOrderData);
+  };
+
   // Calculate hours between time in and time out
   const calculateHours = (timeIn: string, timeOut: string) => {
     if (!timeIn || !timeOut) return 0;
-    
+
     try {
       const [inHour, inMin] = timeIn.split(':').map(Number);
       const [outHour, outMin] = timeOut.split(':').map(Number);
-      
+
       if (isNaN(inHour) || isNaN(inMin) || isNaN(outHour) || isNaN(outMin)) return 0;
-      
+
       const inMinutes = inHour * 60 + inMin;
       const outMinutes = outHour * 60 + outMin;
-      
+
       if (outMinutes <= inMinutes) return 0;
-      
+
       const totalMinutes = outMinutes - inMinutes;
       return Math.round((totalMinutes / 60) * 100) / 100;
     } catch (error) {
@@ -399,9 +507,8 @@ const MobilePage = () => {
     queryKey: [`/api/maintenance-vendors/${user?.maintenanceVendorId}/parts`],
     enabled: !!user?.maintenanceVendorId,
   });
-  
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+
+
 
   // Queries for data
   const { data: tickets = [], isLoading: ticketsLoading, refetch: refetchTickets } = useQuery<Ticket[]>({
@@ -446,9 +553,9 @@ const MobilePage = () => {
         // Organization users - get vendor tiers directly
         const response = await apiRequest("GET", `/api/organizations/${user.organizationId}/vendor-tiers`);
         const orgVendorTiers = await response.json() as Array<{vendor: MaintenanceVendor, tier: string, isActive: boolean}>;
-        
 
-        
+
+
         return orgVendorTiers;
       } else if (user?.role === "root") {
         // Root user - get all vendors and convert to tier format
@@ -510,7 +617,7 @@ const MobilePage = () => {
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-bounce delay-1000"></div>
           <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-cyan-500/10 rounded-full blur-2xl animate-pulse delay-500"></div>
         </div>
-        
+
         <div className="relative z-10 text-center p-4">
           <div className="flex justify-center items-center space-x-3 mb-6">
             <img 
@@ -628,7 +735,7 @@ const MobilePage = () => {
                     className="text-base bg-white/10 border-white/20 text-white placeholder:text-gray-400"
                   />
                 </div>
-                
+
                 <div className="flex space-x-2">
                   <Button 
                     type="button" 
@@ -664,7 +771,7 @@ const MobilePage = () => {
                     Org Admin
                   </Button>
                 </div>
-                
+
                 <Button 
                   type="submit" 
                   className="w-full text-base py-6 bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-500 hover:from-teal-600 hover:via-cyan-600 hover:to-blue-600 text-white"
@@ -746,7 +853,7 @@ const MobilePage = () => {
   const getFilteredTickets = () => {
     const now = new Date();
     const filterDate = new Date();
-    
+
     switch (ticketDateFilter) {
       case 'today':
         filterDate.setHours(0, 0, 0, 0);
@@ -774,6 +881,52 @@ const MobilePage = () => {
 
   const filteredTickets = getFilteredTickets();
 
+
+  const handleFileUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploadingImg(true);
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const response = await axios.post('https://byzpal.com/api/application/uploadfile', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        if (response.data && response.data.url) {
+          setUploadedImages(prev => [...prev, { url: response.data.url, file }]);
+      // Show success message
+      const toast = document.createElement('div');
+      toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg';
+      toast.textContent = 'Files uploaded successfully!';
+      document.body.appendChild(toast);
+      setUploadingImg(false);
+      setTimeout(() => toast.remove(), 3000);
+        }
+      } catch (error) {
+        console.error('Error uploading files:', error);
+        const toast = document.createElement('div');
+        toast.className = 'fixed bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded-md shadow-lg';
+        toast.textContent = 'Failed to upload files. Please try again.';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+        setUploadingImg(false);
+      }
+    }
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setUploadedImages(prev => prev.filter((_, i) => i !== index));
+  };
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      handleFileUpload(e.target.files);
+    }
+  };
   const getDashboardView = () => {
     if (user.role === 'root') {
       return (
@@ -953,7 +1106,7 @@ const MobilePage = () => {
                 </div>
               </div>
             </div>
-            
+
             <ScrollArea className="h-96">
               <div className="space-y-3">
                 {filteredTickets.slice(0, 20).map((ticket: any) => (
@@ -1021,7 +1174,7 @@ const MobilePage = () => {
                               </DropdownMenuItem>
                             </>
                           )}
-                          
+
                           {/* Vendor-specific actions for maintenance admins */}
                           {user.role === 'maintenance_admin' && (
                             <>
@@ -1078,7 +1231,7 @@ const MobilePage = () => {
                               View Marketplace Bids
                             </DropdownMenuItem>
                           )}
-                          
+
                           {/* Marketplace bidding for vendors */}
                           {user.role === 'maintenance_admin' && ticket.assignedToMarketplace && !ticket.maintenanceVendorId && (
                             <DropdownMenuItem onClick={() => handleViewBids(ticket)}>
@@ -1086,7 +1239,7 @@ const MobilePage = () => {
                               Place Bid
                             </DropdownMenuItem>
                           )}
-                          
+
                           {/* Billing actions */}
                           {user.role === 'maintenance_admin' && ticket.status === 'ready_for_billing' && ticket.maintenanceVendorId === user.maintenanceVendorId && (
                             <DropdownMenuItem onClick={() => handleCreateInvoice(ticket)}>
@@ -1094,7 +1247,7 @@ const MobilePage = () => {
                               Create Invoice
                             </DropdownMenuItem>
                           )}
-                          
+
                           {/* Completion confirmation for requesters */}
                           {(ticket.reporterId === user.id || user.role === 'org_admin' || (user.role === 'org_subadmin' && user.permissions?.includes('accept_ticket'))) && ticket.status === 'completed' && (
                             <DropdownMenuItem onClick={() => handleConfirmCompletion(ticket)}>
@@ -1105,7 +1258,7 @@ const MobilePage = () => {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
-                    
+
                     <div className="flex items-center gap-2 mb-2">
                       <Badge className={getStatusColor(ticket.status)} variant="secondary">
                         {ticket.status?.replace('_', ' ').replace('-', ' ')}
@@ -1116,13 +1269,13 @@ const MobilePage = () => {
 
 
                     </div>
-                    
+
                     {ticket.description && (
                       <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
                         {ticket.description}
                       </p>
                     )}
-                    
+
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>
                         {ticket.createdAt && new Date(ticket.createdAt).toLocaleDateString()}
@@ -1146,7 +1299,7 @@ const MobilePage = () => {
 
   const getOrganizationView = () => {
     if (!selectedOrganization) return null;
-    
+
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-3 mb-4">
@@ -1197,7 +1350,7 @@ const MobilePage = () => {
 
   const getVendorView = () => {
     if (!selectedVendor) return null;
-    
+
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-3 mb-4">
@@ -1252,20 +1405,20 @@ const MobilePage = () => {
     const currentYear = today.getFullYear();
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
     const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
-    
+
     const monthNames = [
       "January", "February", "March", "April", "May", "June",
       "July", "August", "September", "October", "November", "December"
     ];
-    
+
     const generateCalendarDays = () => {
       const days = [];
-      
+
       // Empty cells for days before the first day of month
       for (let i = 0; i < firstDayOfMonth; i++) {
         days.push(<div key={`empty-${i}`} className="h-10 w-10"></div>);
       }
-      
+
       // Days of the month
       for (let day = 1; day <= daysInMonth; day++) {
         const isToday = day === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
@@ -1280,7 +1433,7 @@ const MobilePage = () => {
           </div>
         );
       }
-      
+
       return days;
     };
 
@@ -1305,12 +1458,12 @@ const MobilePage = () => {
                 <div>Fri</div>
                 <div>Sat</div>
               </div>
-              
+
               {/* Calendar Grid */}
               <div className="grid grid-cols-7 gap-1">
                 {generateCalendarDays()}
               </div>
-              
+
               {/* Quick Actions */}
               <div className="pt-4 border-t">
                 <div className="space-y-2">
@@ -1352,7 +1505,7 @@ const MobilePage = () => {
   };
 
   const getMarketplaceView = () => {
-    
+
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -1439,7 +1592,7 @@ const MobilePage = () => {
                           Bid
                         </Button>
                       </div>
-                      
+
                       <div className="flex items-center gap-2 mb-2">
                         <Badge className={getStatusColor(ticket.status)} variant="secondary">
                           {ticket.status?.replace('_', ' ').replace('-', ' ')}
@@ -1448,13 +1601,13 @@ const MobilePage = () => {
                           {ticket.priority}
                         </Badge>
                       </div>
-                      
+
                       {ticket.description && (
                         <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
                           {ticket.description}
                         </p>
                       )}
-                      
+
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <span>
                           {ticket.createdAt && new Date(ticket.createdAt).toLocaleDateString()}
@@ -1790,7 +1943,7 @@ const MobilePage = () => {
                   credentials: 'include',
                   body: JSON.stringify(data),
                 });
-                
+
                 if (response.ok) {
                   toast({
                     title: "Success",
@@ -1824,7 +1977,7 @@ const MobilePage = () => {
                   credentials: 'include',
                   body: JSON.stringify({ rejectionReason: reason }),
                 });
-                
+
                 if (response.ok) {
                   toast({
                     title: "Success", 
@@ -1890,7 +2043,7 @@ const MobilePage = () => {
                     Ticket Details
                   </DialogTitle>
                 </DialogHeader>
-                
+
                 {selectedTicket && (
                   <ScrollArea className="flex-1">
                     <div className="p-4 space-y-6">
@@ -1987,7 +2140,7 @@ const MobilePage = () => {
                     </Button>
                   </div>
                 </div>
-                
+
                 {/* Scrollable Content */}
                 {selectedTicket && (
                   <div 
@@ -2007,7 +2160,7 @@ const MobilePage = () => {
                           <span>#{selectedTicket.ticketNumber}</span>
                           <span>{selectedTicket.createdAt && new Date(selectedTicket.createdAt).toLocaleDateString()}</span>
                         </div>
-                        
+
                         {/* Original Images - Clickable to Enlarge */}
                         {selectedTicket.images && selectedTicket.images.length > 0 && (
                           <div>
@@ -2073,7 +2226,7 @@ const MobilePage = () => {
                               />
                             </div>
                           </div>
-                          
+
                           {/* Calculated Hours Display */}
                           {timeIn && timeOut && calculateHours(timeIn, timeOut) > 0 && (
                             <div className="bg-green-50 dark:bg-green-950 p-3 rounded-lg mt-3">
@@ -2169,7 +2322,34 @@ const MobilePage = () => {
                                       type="number" 
                                       min="1" 
                                       value={part.quantity}
-                                      onChange={(e) => setParts(prev => prev.map((p, i) => i === index ? { ...p, quantity: parseInt(e.target.value) || 1 } : p))}
+
+                                      onChange={(e) => {
+                                        const value = e.target.value;
+
+                                        // Only update if it's a valid number or empty (allow empty so users can type freely)
+                                        if (/^\d*$/.test(value)) {
+                                          setParts(prev =>
+                                            prev.map((p, i) =>
+                                              i === index ? { ...p, quantity: value === '' ? '' : Number(value) } : p
+                                            )
+                                          );
+                                        }
+                                      }}
+                                      onBlur={() => {
+                                        // On blur, ensure quantity is at least 1
+                                        setParts(prev =>
+                                          prev.map((p, i) =>
+                                            i === index
+                                              ? { ...p, quantity: p.quantity === '' || p.quantity < 1 ? 1 : p.quantity }
+                                              : p
+                                          )
+                                        );
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (['e', 'E', '+', '-', '.'].includes(e.key)) {
+                                          e.preventDefault();
+                                        }
+                                      }}
                                       className="mt-1" 
                                     />
                                   </div>
@@ -2226,18 +2406,57 @@ const MobilePage = () => {
 
                       {/* Work Completion Photos */}
                       <div className="bg-card p-4 rounded-lg shadow-sm">
-                        <Label className="text-sm font-medium text-foreground">Work Completion Photos</Label>
-                        <div className="mt-3 border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-                          <Camera className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                          <p className="text-sm text-muted-foreground mb-3">
-                            Add photos of completed work
-                          </p>
-                          <Button variant="outline" size="sm">
-                            <Camera className="h-4 w-4 mr-2" />
-                            Take Photos
-                          </Button>
-                        </div>
-                      </div>
+                                          <Label className="text-sm font-medium text-foreground">Work Completion Photos</Label>
+                                          <div className="space-y-3">
+                                            <div className="grid grid-cols-2 gap-2">
+                                              {uploadedImages.map((image, index) => (
+                                                <div key={index} className="relative group">
+                                                  <img 
+                                                    src={image.url} 
+                                                    alt={`Uploaded ${index + 1}`}
+                                                    className="h-24 w-full object-cover rounded-md"
+                                                  />
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveImage(index)}
+                                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                  >
+                                                    <X className="h-3 w-3" />
+                                                  </button>
+                                                </div>
+                                              ))}
+                                              {uploadingImg && (
+                                                <div className="flex items-center justify-center">
+                                                  <Loader2 className="h-6 w-6 animate-spin" />
+                                                  <p className="ml-2 text-sm text-muted-foreground">Uploading...</p>
+                                                </div>
+                                              )}
+                                            </div>
+                                            <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 text-center">
+                                              <input
+                                                type="file"
+                                                ref={fileInputRef}
+                                                onChange={handleFileInputChange}
+                                                accept="image/*,video/*"
+                                                multiple
+                                                className="hidden"
+                                              />
+                                              <Button 
+                                                variant="outline" 
+                                                size="sm" 
+                                                type="button"
+                                                onClick={() => fileInputRef.current?.click()}
+                                                className="w-full"
+                                              >
+                                                <Camera className="h-4 w-4 mr-2" />
+                                                {uploadedImages.length > 0 ? 'Add More Photos' : 'Take Photos'}
+                                              </Button>
+                                              <p className="text-xs text-muted-foreground mt-2">
+                                                Upload images or videos of completed work
+                                              </p>
+                                            </div>
+                                          </div>
+                                        </div>
 
                       {/* Manager Verification with Working Signature Canvas */}
                       <div className="bg-card p-4 rounded-lg shadow-sm">
@@ -2361,21 +2580,24 @@ const MobilePage = () => {
                       variant="outline" 
                       className="flex-1"
                       onClick={() => setIsWorkOrderOpen(false)}
+                      disabled={submitWorkOrderMutation.isPending}
                     >
                       Cancel
                     </Button>
                     <Button 
                       className="flex-1"
-                      onClick={() => {
-                        setIsWorkOrderOpen(false);
-                        refetchTickets();
-                        toast({
-                          title: "Work Order Created",
-                          description: "Work order submitted successfully"
-                        });
-                      }}
+                      onClick={handleWorkOrderSubmit}
+                      disabled={submitWorkOrderMutation.isPending}
                     >
-                      Submit Work Order
+                      {submitWorkOrderMutation.isPending ? (
+                        <span className="flex items-center">
+                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Submitting...
+                        </span>
+                      ) : 'Submit Work Order'}
                     </Button>
                   </div>
                 </div>
