@@ -1,0 +1,80 @@
+es — I found the relevant code for image uploads in your WorkOrderModal.tsx file. You're using a custom component called WebImagePicker, and while your logic is mostly correct, here are a few key reasons why uploads might not be working:
+
+🔍 Key Findings
+You're using WebImagePicker
+
+tsx
+Copy
+Edit
+<WebImagePicker
+  onImageSelected={handleImageSelected}
+  onError={handleImageError}
+/>
+That component must correctly interface with the native device's file picker or camera.
+
+Only image/* is accepted
+In the code:
+
+tsx
+Copy
+Edit
+input.accept = 'image/*';
+This restricts file selection to only images, not videos. If you want to allow both:
+
+Change to:
+
+tsx
+Copy
+Edit
+input.accept = 'image/*,video/*';
+Missing Permissions Handling?
+If you're using Expo or React Native, uploading photos/videos usually requires permission prompts. But I didn’t see expo-image-picker or Permissions being used in WorkOrderModal.tsx.
+
+If you're running this on native mobile and didn’t request media library permissions (especially on iOS), the picker will silently fail.
+
+No UI Feedback on Error
+If the image or video picker fails, it’s logged via:
+
+tsx
+Copy
+Edit
+console.log('Image picker error:', error);
+But you don’t show any error to the user. You should ideally display an Alert or Snackbar so users know it failed.
+
+✅ Fix Checklist
+Here's how to fix it:
+
+1. Allow both photos and videos
+In WebImagePicker.tsx, locate where you're setting input.accept and change it to:
+
+ts
+Copy
+Edit
+input.accept = 'image/*,video/*';
+2. Ensure correct permissions
+In the WebImagePicker or wherever you're using Expo SDK:
+
+tsx
+Copy
+Edit
+import * as ImagePicker from 'expo-image-picker';
+
+const requestPermissions = async () => {
+  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (status !== 'granted') {
+    Alert.alert("Permission denied", "We need permission to access your media.");
+    return false;
+  }
+  return true;
+};
+Call this before showing the picker.
+
+3. Handle errors visually
+Update your handleImageError function to show a real error message:
+
+tsx
+Copy
+Edit
+const handleImageError = (error: string) => {
+  Alert.alert("Upload Error", error);
+};

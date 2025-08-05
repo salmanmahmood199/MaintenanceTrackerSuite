@@ -202,7 +202,7 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
       // Create a file input that specifically requests camera access
       const input = document.createElement('input');
       input.type = 'file';
-      input.accept = 'image/*';
+      input.accept = 'image/*,video/*';
       (input as any).capture = 'environment'; // Request rear camera
       input.style.display = 'none';
       
@@ -212,18 +212,35 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
       input.onchange = (event: any) => {
         const file = event.target.files?.[0];
         if (file) {
-          console.log('Photo captured:', file.name, file.size);
+          console.log('Media captured:', file.name, file.size, file.type);
+          
+          // Validate file type
+          const isImage = file.type.startsWith('image/');
+          const isVideo = file.type.startsWith('video/');
+          
+          if (!isImage && !isVideo) {
+            Alert.alert('Error', 'Please select an image or video file only');
+            return;
+          }
+          
+          // Check file size (limit to 50MB)
+          const maxSize = 50 * 1024 * 1024; // 50MB in bytes
+          if (file.size > maxSize) {
+            Alert.alert('Error', 'File size too large. Please select a file smaller than 50MB');
+            return;
+          }
+          
           const reader = new FileReader();
           reader.onload = (e) => {
             if (e.target?.result) {
               const imageUri = e.target.result as string;
-              console.log('Photo processed, adding to work images');
+              console.log('Media processed, adding to work images');
               setWorkImages(prev => [...prev, imageUri]);
-              Alert.alert('Success', 'Photo added successfully!');
+              Alert.alert('Success', 'Media added successfully!');
             }
           };
           reader.onerror = () => {
-            Alert.alert('Error', 'Failed to process photo');
+            Alert.alert('Error', 'Failed to process media file');
           };
           reader.readAsDataURL(file);
         }
@@ -556,12 +573,12 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                 />
               </View>
 
-              {/* Work Photos */}
+              {/* Work Photos/Videos */}
               <View style={styles.section}>
-                <Title style={styles.sectionTitle}>Work Photos</Title>
+                <Title style={styles.sectionTitle}>Work Photos & Videos</Title>
                 <View style={styles.photoButtons}>
                   <Button mode="outlined" onPress={takePhoto} icon="camera" style={styles.photoButton}>
-                    Take Photo
+                    Take Media
                   </Button>
                   <WebImagePicker 
                     onImageSelected={handleImageSelected}
