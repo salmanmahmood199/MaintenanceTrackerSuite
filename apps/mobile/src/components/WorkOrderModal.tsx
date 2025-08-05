@@ -83,11 +83,27 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
   // Error states
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-  // Computed values
-  const calculatedHours = calculateHours(timeIn, timeOut);
-  const totalPartsCost = parts.reduce((total, part) => total + (part.quantity * part.cost), 0);
-
-  if (!ticket) return null;
+  // Helper functions
+  const calculateHours = (timeInValue: string, timeOutValue: string): number => {
+    if (!timeInValue || !timeOutValue) return 0;
+    
+    try {
+      const [inHour, inMin] = timeInValue.split(':').map(Number);
+      const [outHour, outMin] = timeOutValue.split(':').map(Number);
+      
+      if (isNaN(inHour) || isNaN(inMin) || isNaN(outHour) || isNaN(outMin)) return 0;
+      
+      const inMinutes = inHour * 60 + inMin;
+      const outMinutes = outHour * 60 + outMin;
+      
+      if (outMinutes <= inMinutes) return 0;
+      
+      const totalMinutes = outMinutes - inMinutes;
+      return Math.round((totalMinutes / 60) * 100) / 100;
+    } catch (error) {
+      return 0;
+    }
+  };
 
   const validateTimeOrder = (timeInValue: string, timeOutValue: string): boolean => {
     if (!timeInValue || !timeOutValue) return true;
@@ -109,26 +125,11 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
     }
   };
 
-  const calculateHours = (timeInValue: string, timeOutValue: string): number => {
-    if (!timeInValue || !timeOutValue) return 0;
-    
-    try {
-      const [inHour, inMin] = timeInValue.split(':').map(Number);
-      const [outHour, outMin] = timeOutValue.split(':').map(Number);
-      
-      if (isNaN(inHour) || isNaN(inMin) || isNaN(outHour) || isNaN(outMin)) return 0;
-      
-      const inMinutes = inHour * 60 + inMin;
-      const outMinutes = outHour * 60 + outMin;
-      
-      if (outMinutes <= inMinutes) return 0;
-      
-      const totalMinutes = outMinutes - inMinutes;
-      return Math.round((totalMinutes / 60) * 100) / 100;
-    } catch (error) {
-      return 0;
-    }
-  };
+  // Computed values
+  const calculatedHours = calculateHours(timeIn, timeOut);
+  const totalPartsCost = parts.reduce((total, part) => total + (part.quantity * part.cost), 0);
+
+  if (!ticket) return null;
 
   const validateTimeOut = (value: string) => {
     const newErrors = { ...errors };
@@ -172,9 +173,9 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
       const newParts = prev.map((part, i) => {
         if (i === index) {
           const updatedPart = { ...part, [field]: value };
-          // Ensure quantity is always at least 1
+          // Allow 0 for quantity to enable clearing the input field
           if (field === 'quantity' && typeof value === 'number') {
-            updatedPart.quantity = Math.max(1, value);
+            updatedPart.quantity = Math.max(0, value);
           }
           console.log(`Updated part:`, updatedPart);
           return updatedPart;
@@ -280,7 +281,7 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
       timeIn,
       timeOut,
       managerName,
-      parts: parts.filter(p => p.name.trim() !== ''),
+      parts: parts.filter(p => p.name.trim() !== '' && p.quantity > 0),
       workImages: workImages.length
     });
 
@@ -294,7 +295,7 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
       workDescription,
       completionStatus,
       completionNotes,
-      parts: parts.filter(p => p.name.trim() !== ''),
+      parts: parts.filter(p => p.name.trim() !== '' && p.quantity > 0),
       timeIn,
       timeOut,
       managerName,
@@ -388,9 +389,15 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                         <TextInput
                           value={part.quantity === 0 ? '' : part.quantity.toString()}
                           onChangeText={(value: string) => {
-                            const numValue = parseInt(value) || 0;
-                            console.log(`Updating quantity from ${part.quantity} to ${numValue}`);
-                            updatePart(index, 'quantity', Math.max(0, numValue));
+                            // Allow empty string to clear the field
+                            if (value === '') {
+                              updatePart(index, 'quantity', 0);
+                              return;
+                            }
+                            const numValue = parseInt(value);
+                            if (!isNaN(numValue)) {
+                              updatePart(index, 'quantity', Math.max(0, numValue));
+                            }
                           }}
                           mode="outlined"
                           style={styles.quantityInput}
