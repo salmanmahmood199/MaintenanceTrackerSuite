@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, FlatList, RefreshControl, Alert } from 'react-native';
-import { Card, Title, Paragraph, Chip, FAB, Appbar, Text } from 'react-native-paper';
+import { Card, Title, Paragraph, Chip, FAB, Appbar, Text, Menu, IconButton } from 'react-native-paper';
 import { useAuth } from '../contexts/AuthContext';
 
 // Define Ticket type locally since shared import path isn't available
@@ -22,6 +22,7 @@ interface Ticket {
 const DashboardScreen = ({ navigation }: any) => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [menuVisible, setMenuVisible] = useState<{ [key: number]: boolean }>({});
   const { user, logout } = useAuth();
 
   useEffect(() => {
@@ -55,6 +56,65 @@ const DashboardScreen = ({ navigation }: any) => {
     setRefreshing(true);
     await fetchTickets();
     setRefreshing(false);
+  };
+
+  const toggleMenu = (ticketId: number) => {
+    setMenuVisible(prev => ({
+      ...prev,
+      [ticketId]: !prev[ticketId]
+    }));
+  };
+
+  const closeMenu = (ticketId: number) => {
+    setMenuVisible(prev => ({
+      ...prev,
+      [ticketId]: false
+    }));
+  };
+
+  const handleVerifyJobCompleted = async (ticket: Ticket) => {
+    closeMenu(ticket.id);
+    
+    Alert.alert(
+      'Verify Job Completed',
+      'Are you satisfied with the completed work? This will mark the ticket as ready for billing.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Verify & Send to Billing',
+          style: 'default',
+          onPress: async () => {
+            try {
+              const response = await fetch(`http://localhost:5000/api/tickets/${ticket.id}/confirm`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  confirmed: true,
+                  feedback: 'Verified via mobile app',
+                }),
+              });
+
+              if (response.ok) {
+                Alert.alert('Success', 'Job verified and sent to billing successfully');
+                fetchTickets(); // Refresh the ticket list
+              } else {
+                const errorData = await response.json();
+                Alert.alert('Error', errorData.message || 'Failed to verify job completion');
+              }
+            } catch (error) {
+              console.error('Verify job completion error:', error);
+              Alert.alert('Error', 'Failed to verify job completion. Please try again.');
+            }
+          },
+        },
+      ],
+    );
   };
 
   const getPriorityColor = (priority: string) => {
@@ -102,21 +162,74 @@ const DashboardScreen = ({ navigation }: any) => {
       <Card.Content>
         <View style={styles.ticketHeader}>
           <Title style={styles.ticketTitle} numberOfLines={2}>{item.title}</Title>
-          <View style={styles.chips}>
-            <Chip 
-              mode="flat" 
-              textStyle={{ color: 'white', fontSize: 10 }}
-              style={[styles.chip, { backgroundColor: getPriorityColor(item.priority) }]}
+          <View style={styles.headerRight}>
+            <View style={styles.chips}>
+              <Chip 
+                mode="flat" 
+                textStyle={{ color: 'white', fontSize: 10 }}
+                style={[styles.chip, { backgroundColor: getPriorityColor(item.priority) }]}
+              >
+                {item.priority?.toUpperCase()}
+              </Chip>
+              <Chip 
+                mode="flat" 
+                textStyle={{ color: 'white', fontSize: 10 }}
+                style={[styles.chip, { backgroundColor: getStatusColor(item.status) }]}
+              >
+                {getStatusLabel(item.status)}
+              </Chip>
+            </View>
+            <Menu
+              visible={menuVisible[item.id] || false}
+              onDismiss={() => closeMenu(item.id)}
+              anchor={
+                <IconButton
+                  icon="dots-vertical"
+                  size={20}
+                  onPress={() => toggleMenu(item.id)}
+                />
+              }
             >
-              {item.priority?.toUpperCase()}
-            </Chip>
-            <Chip 
-              mode="flat" 
-              textStyle={{ color: 'white', fontSize: 10 }}
-              style={[styles.chip, { backgroundColor: getStatusColor(item.status) }]}
-            >
-              {getStatusLabel(item.status)}
-            </Chip>
+              <Menu.Item
+                onPress={() => {
+                  closeMenu(item.id);
+                  navigation.navigate('TicketDetails', { ticket: item });
+                }}
+                title="View Details"
+                leadingIcon="eye"
+              />
+              <Menu.Item
+                onPress={() => {
+                  closeMenu(item.id);
+                  navigation.navigate('TicketDetails', { ticket: item, scrollToComments: true });
+                }}
+                title="Comments"
+                leadingIcon="comment"
+              />
+              <Menu.Item
+                onPress={() => {
+                  closeMenu(item.id);
+                  navigation.navigate('TicketDetails', { ticket: item, showProgress: true });
+                }}
+                title="Progress"
+                leadingIcon="progress-check"
+              />
+              <Menu.Item
+                onPress={() => {
+                  closeMenu(item.id);
+                  navigation.navigate('TicketDetails', { ticket: item, showWorkOrders: true });
+                }}
+                title="Work Orders"
+                leadingIcon="clipboard-text"
+              />
+              {item.status === 'pending_confirmation' && (
+                <Menu.Item
+                  onPress={() => handleVerifyJobCompleted(item)}
+                  title="Verify Job Completed"
+                  leadingIcon="check-circle"
+                />
+              )}
+            </Menu>
           </View>
         </View>
         <Paragraph style={styles.description} numberOfLines={3}>
@@ -197,6 +310,10 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 8,
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   ticketTitle: {
     flex: 1,
     fontSize: 16,
@@ -205,6 +322,7 @@ const styles = StyleSheet.create({
   chips: {
     flexDirection: 'row',
     gap: 4,
+    marginRight: 4,
   },
   chip: {
     height: 24,
