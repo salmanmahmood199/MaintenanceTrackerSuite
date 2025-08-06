@@ -1718,6 +1718,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Work order data required" });
         }
 
+        console.log("SERVER DEBUGGING - Raw workOrder object:", workOrder);
+        console.log("SERVER DEBUGGING - workOrder.completionStatus:", workOrder.completionStatus);
+        console.log("SERVER DEBUGGING - typeof completionStatus:", typeof workOrder.completionStatus);
+
         // Get uploaded image filenames
         const images = ((req.files as Express.Multer.File[]) || []).map(
           (file) => `/uploads/${file.filename}`,

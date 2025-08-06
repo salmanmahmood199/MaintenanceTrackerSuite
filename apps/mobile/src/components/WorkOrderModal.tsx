@@ -332,6 +332,8 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
       managerName,
     };
 
+    console.log('WorkOrderModal: DEBUGGING - completionStatus selected:', completionStatus);
+    console.log('WorkOrderModal: DEBUGGING - workOrderData.completionStatus:', workOrderData.completionStatus);
     console.log('WorkOrderModal: Calling onSubmit with:', ticket.id, workOrderData, workImages.length, 'images');
     onSubmit(ticket.id, workOrderData, workImages);
   };

@@ -76,6 +76,8 @@ const TicketDetailsScreen = ({ route, navigation }: any) => {
   const handleWorkOrderSubmit = async (ticketId: string, workOrderData: any, images: string[]) => {
     console.log('Mobile: Starting work order submission for ticket:', ticketId);
     console.log('Mobile: Work order data:', workOrderData);
+    console.log('Mobile: DEBUGGING - completionStatus in data:', workOrderData.completionStatus);
+    console.log('Mobile: DEBUGGING - JSON stringified data:', JSON.stringify(workOrderData));
     console.log('Mobile: Images count:', images.length);
     console.log('Mobile: Current user:', user);
     
