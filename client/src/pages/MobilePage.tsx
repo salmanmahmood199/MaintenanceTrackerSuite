@@ -2015,11 +2015,47 @@ const MobilePage = () => {
               }
             }}
             ticket={selectedTicket}
-            onConfirm={(confirmed, feedback) => {
-              console.log('Confirm completion:', confirmed, feedback);
+            onConfirm={async (confirmed, feedback) => {
+              try {
+                if (!selectedTicket) return;
+                
+                const response = await fetch(`/api/tickets/${selectedTicket.id}/confirm`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  credentials: 'include',
+                  body: JSON.stringify({
+                    confirmed,
+                    feedback: feedback || (confirmed ? 'Work completed and verified via mobile app' : 'Work needs additional attention')
+                  }),
+                });
+
+                if (response.ok) {
+                  toast({
+                    title: confirmed ? "Job Verified" : "Job Needs More Work",
+                    description: confirmed ? "Ticket sent to billing successfully" : "Ticket marked as needing additional work",
+                  });
+                  refetchTickets();
+                } else {
+                  const errorData = await response.json();
+                  toast({
+                    title: "Error",
+                    description: errorData.message || "Failed to update ticket status",
+                    variant: "destructive",
+                  });
+                }
+              } catch (error) {
+                console.error('Error confirming completion:', error);
+                toast({
+                  title: "Error",
+                  description: "Failed to update ticket. Please try again.",
+                  variant: "destructive",
+                });
+              }
+              
               setIsConfirmCompletionOpen(false);
               setSelectedTicket(null);
-              refetchTickets();
             }}
             isLoading={false}
           />
