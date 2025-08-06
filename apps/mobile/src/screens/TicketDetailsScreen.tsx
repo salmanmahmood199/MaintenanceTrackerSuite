@@ -10,13 +10,14 @@ interface Ticket {
   title: string;
   description: string;
   priority: 'low' | 'medium' | 'high';
-  status: 'open' | 'in-progress' | 'completed';
+  status: 'open' | 'in-progress' | 'completed' | 'return_needed' | 'pending_confirmation';
   createdAt: string;
   ticketNumber?: string;
 }
 
 const TicketDetailsScreen = ({ route, navigation }: any) => {
-  const { ticket }: { ticket: Ticket } = route.params;
+  const initialTicket: Ticket = route.params.ticket;
+  const [ticket, setTicket] = useState<Ticket>(initialTicket);
   const { user } = useAuth();
   const [workOrderModalVisible, setWorkOrderModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -35,6 +36,8 @@ const TicketDetailsScreen = ({ route, navigation }: any) => {
       case 'open': return '#3b82f6';
       case 'in-progress': return '#f59e0b';
       case 'completed': return '#10b981';
+      case 'return_needed': return '#f59e0b';
+      case 'pending_confirmation': return '#8b5cf6';
       default: return '#6b7280';
     }
   };
@@ -119,10 +122,7 @@ const TicketDetailsScreen = ({ route, navigation }: any) => {
       }
 
       console.log('Mobile: Sending request to server...', `http://localhost:5000/api/tickets/${ticketId}/complete`);
-      console.log('Mobile: FormData contents:');
-      for (let [key, value] of formData.entries()) {
-        console.log(`Mobile: ${key}:`, typeof value === 'string' ? value.substring(0, 100) + '...' : value);
-      }
+      console.log('Mobile: FormData contents prepared for submission');
       
       const response = await fetch(`http://localhost:5000/api/tickets/${ticketId}/complete`, {
         method: 'POST',
@@ -134,17 +134,28 @@ const TicketDetailsScreen = ({ route, navigation }: any) => {
       console.log('Mobile: Response status:', response.status);
       console.log('Mobile: Response ok:', response.ok);
       
-      // Log response headers for debugging
-      console.log('Mobile: Response headers:', Array.from(response.headers.entries()));
+      // Log response for debugging
+      console.log('Mobile: Response received');
 
       if (response.ok) {
         const responseData = await response.json();
         console.log('Mobile: Success response:', responseData);
         
         setWorkOrderModalVisible(false);
-        Alert.alert('Success', 'Work order submitted properly', [
-          { text: 'OK', onPress: () => navigation.goBack() }
-        ]);
+        
+        // Update the local ticket state with the new status
+        if (responseData) {
+          setTicket(responseData);
+        }
+        
+        // Show different messages based on completion status
+        if (workOrderData.completionStatus === 'return_needed') {
+          Alert.alert('Work Order Submitted', 'Return visit scheduled. You can submit another work order when ready.');
+        } else {
+          Alert.alert('Success', 'Work order submitted successfully', [
+            { text: 'OK', onPress: () => navigation.goBack() }
+          ]);
+        }
       } else {
         // Try to get error response
         let errorData;
@@ -160,12 +171,8 @@ const TicketDetailsScreen = ({ route, navigation }: any) => {
       }
     } catch (error) {
       console.error('Mobile: Complete work order error:', error);
-      console.error('Mobile: Error details:', {
-        message: error.message,
-        stack: error.stack,
-        name: error.name
-      });
-      Alert.alert('Error', `Network error: ${error.message}. Please check your connection and try again.`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      Alert.alert('Error', `Network error: ${errorMessage}. Please check your connection and try again.`);
     } finally {
       setLoading(false);
     }
@@ -230,7 +237,7 @@ const TicketDetailsScreen = ({ route, navigation }: any) => {
               </Button>
             )}
             
-            {user?.role === 'technician' && ticket.status === 'in-progress' && (
+            {user?.role === 'technician' && (ticket.status === 'in-progress' || ticket.status === 'return_needed') && (
               <Button
                 mode="contained"
                 onPress={handleCompleteTicket}
@@ -238,7 +245,7 @@ const TicketDetailsScreen = ({ route, navigation }: any) => {
                 loading={loading}
                 disabled={loading}
               >
-                Complete Work
+                {ticket.status === 'return_needed' ? 'Submit Additional Work' : 'Complete Work'}
               </Button>
             )}
           </View>
