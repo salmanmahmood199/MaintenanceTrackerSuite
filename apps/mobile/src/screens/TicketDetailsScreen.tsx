@@ -73,6 +73,53 @@ const TicketDetailsScreen = ({ route, navigation }: any) => {
     setWorkOrderModalVisible(true);
   };
 
+  const handleConfirmCompletion = async () => {
+    Alert.alert(
+      'Confirm Work Completion',
+      'Are you satisfied with the completed work? This will mark the ticket as ready for billing.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Confirm',
+          style: 'default',
+          onPress: async () => {
+            setLoading(true);
+            try {
+              const response = await fetch(`http://localhost:5000/api/tickets/${ticket.id}/confirm`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  confirmed: true,
+                  feedback: 'Confirmed via mobile app',
+                }),
+              });
+
+              if (response.ok) {
+                Alert.alert('Success', 'Work completion confirmed successfully', [
+                  { text: 'OK', onPress: () => navigation.goBack() }
+                ]);
+              } else {
+                const errorData = await response.json();
+                Alert.alert('Error', errorData.message || 'Failed to confirm completion');
+              }
+            } catch (error) {
+              console.error('Confirm completion error:', error);
+              Alert.alert('Error', 'Failed to confirm completion. Please try again.');
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const handleWorkOrderSubmit = async (ticketId: string, workOrderData: any, images: string[]) => {
     console.log('Mobile: Starting work order submission for ticket:', ticketId);
     console.log('Mobile: Work order data:', workOrderData);
@@ -248,6 +295,18 @@ const TicketDetailsScreen = ({ route, navigation }: any) => {
                 disabled={loading}
               >
                 {ticket.status === 'return_needed' ? 'Submit Additional Work' : 'Complete Work'}
+              </Button>
+            )}
+            
+            {(user?.role === 'org_admin' || user?.role === 'maintenance_admin') && ticket.status === 'pending_confirmation' && (
+              <Button
+                mode="contained"
+                onPress={handleConfirmCompletion}
+                style={styles.actionButton}
+                loading={loading}
+                disabled={loading}
+              >
+                Confirm Completion
               </Button>
             )}
           </View>
