@@ -374,7 +374,7 @@ const MobilePage = () => {
   const [selectedTicketForDetails, setSelectedTicketForDetails] = useState<Ticket | null>(null);
   const [isTicketDetailModalOpen, setIsTicketDetailModalOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
-  const [parts, setParts] = useState([{ name: "", quantity: 1, cost: 0 }]);
+  const [parts, setParts] = useState([{ name: "", customName: "", quantity: 1, cost: 0 }]);
   const [otherCharges, setOtherCharges] = useState([{ description: "", cost: 0 }]);
   const [timeIn, setTimeIn] = useState("");
   const [timeOut, setTimeOut] = useState("");
@@ -414,11 +414,8 @@ const MobilePage = () => {
       }
 
       // Send to the complete ticket endpoint which also creates a work order
-      const response = await apiRequest('POST', `/api/tickets/${selectedTicket.id}/complete`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      // For FormData, we don't set Content-Type header - let the browser set it with the correct boundary
+      const response = await apiRequest('POST', `/api/tickets/${selectedTicket.id}/complete`, formData);
       return response;
     },
     onSuccess: () => {
@@ -471,13 +468,27 @@ const MobilePage = () => {
 
     const workOrderData = {
       workDescription: "Work completed",
-      parts: parts.filter(part => part.name.trim() !== ""),
+      parts: parts
+        .filter(part => (part.name === "custom" ? part.customName : part.name).trim() !== "")
+        .map(part => ({
+          ...part,
+          name: part.name === "custom" ? part.customName : part.name
+        })),
       otherCharges: otherCharges.filter(charge => charge.description.trim() !== ""),
       timeIn,
       timeOut,
     };
 
     submitWorkOrderMutation.mutate(workOrderData);
+  };
+
+  // Calculate total cost of all parts
+  const calculatePartsTotal = (parts: any[]) => {
+    return parts.reduce((total, part) => {
+      const quantity = Number(part.quantity) || 0;
+      const cost = Number(part.cost) || 0;
+      return total + (quantity * cost);
+    }, 0);
   };
 
   // Calculate hours between time in and time out
@@ -2018,7 +2029,7 @@ const MobilePage = () => {
             onConfirm={async (confirmed, feedback) => {
               try {
                 if (!selectedTicket) return;
-                
+
                 const response = await fetch(`/api/tickets/${selectedTicket.id}/confirm`, {
                   method: 'POST',
                   headers: {
@@ -2053,7 +2064,7 @@ const MobilePage = () => {
                   variant: "destructive",
                 });
               }
-              
+
               setIsConfirmCompletionOpen(false);
               setSelectedTicket(null);
             }}
@@ -2309,7 +2320,7 @@ const MobilePage = () => {
                                   value={part.name && part.name !== "custom" ? part.name : ""}
                                   onValueChange={(value) => {
                                     if (value === "custom") {
-                                      setParts(prev => prev.map((p, i) => i === index ? { ...p, name: "custom", cost: 0 } : p));
+                                      setParts(prev => prev.map((p, i) => i === index ? { ...p, name: "custom", customName: "", cost: 0 } : p));
                                     } else {
                                       const selectedPart = availableParts.find((p: any) => p.name === value);
                                       if (selectedPart) {
@@ -2342,11 +2353,21 @@ const MobilePage = () => {
                                   </SelectContent>
                                 </Select>
                                 {part.name === "custom" && (
-                                  <div className="mt-2">
+                                  <div 
+                                    className="mt-2" 
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
                                     <Label className="text-xs text-muted-foreground">Custom Part Name</Label>
                                     <Input
                                       placeholder="Enter custom part name"
-                                      onChange={(e) => setParts(prev => prev.map((p, i) => i === index ? { ...p, name: e.target.value } : p))}
+                                      value={part.customName || ''}
+                                      onChange={(e) => {
+                                        setParts(prev => prev.map((p, i) => 
+                                          i === index ? { ...p, customName: e.target.value } : p
+                                        ));
+                                      }}
+                                      onClick={(e) => e.stopPropagation()}
+                                      onFocus={(e) => e.stopPropagation()}
                                       className="mt-1"
                                     />
                                   </div>
@@ -2409,8 +2430,11 @@ const MobilePage = () => {
                           ))}
                         </div>
                         {parts.length > 0 && (
-                          <div className="text-sm text-foreground font-medium mt-2">
-                            Parts Total: ${parts.reduce((total, part) => total + (part.cost * part.quantity), 0).toFixed(2)}
+                          <div className="text-right font-medium text-sm mt-2">
+                            <div className="text-foreground/80">Parts Subtotal: ${calculatePartsTotal(parts).toFixed(2)}</div>
+                            <div className="text-foreground/60 text-xs">
+                              ({parts.filter(p => p.name && p.quantity > 0).length} item{parts.filter(p => p.name && p.quantity > 0).length !== 1 ? 's' : ''})
+                            </div>
                           </div>
                         )}
                       </div>
@@ -2450,7 +2474,8 @@ const MobilePage = () => {
                                                   <img 
                                                     src={image.url} 
                                                     alt={`Uploaded ${index + 1}`}
-                                                    className="h-24 w-full object-cover rounded-md"
+                                                    className="h-24 w-full object-cover rounded-md cursor-pointer hover:opacity-80 transition-opacity"
+                                                    onClick={() => setSelectedImageForViewer(image.url)}
                                                   />
                                                   <button
                                                     type="button"
