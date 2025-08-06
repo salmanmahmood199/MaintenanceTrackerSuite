@@ -376,6 +376,7 @@ const MobilePage = () => {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [parts, setParts] = useState([{ name: "", customName: "", quantity: 1, cost: 0 }]);
   const [otherCharges, setOtherCharges] = useState([{ description: "", cost: 0 }]);
+  const [completionStatus, setCompletionStatus] = useState<'completed' | 'return_needed'>('completed');
   const [timeIn, setTimeIn] = useState("");
   const [timeOut, setTimeOut] = useState("");
   const [isWorkOrderHistoryOpen, setIsWorkOrderHistoryOpen] = useState(false);
@@ -397,8 +398,8 @@ const MobilePage = () => {
         otherCharges: workOrderData.otherCharges || [],
         timeIn: workOrderData.timeIn || '',
         timeOut: workOrderData.timeOut || '',
-        completionStatus: 'completed',
-        completionNotes: 'Work completed',
+        completionStatus: workOrderData.completionStatus || 'completed',
+        completionNotes: workOrderData.completionStatus === 'return_needed' ? 'Return visit needed' : 'Work completed',
         managerName: '',
         managerSignature: ''
       };
@@ -427,6 +428,7 @@ const MobilePage = () => {
       setOtherCharges([{ description: "", cost: 0 }]);
       setTimeIn("");
       setTimeOut("");
+      setCompletionStatus('completed');
 
       toast({
         title: "Success",
@@ -477,9 +479,23 @@ const MobilePage = () => {
       otherCharges: otherCharges.filter(charge => charge.description.trim() !== ""),
       timeIn,
       timeOut,
+      completionStatus,
     };
 
     submitWorkOrderMutation.mutate(workOrderData);
+  };
+
+  // Calculate selling price from cost and markup
+  const calculateSellingPrice = (cost: number, markupPercentage: number, roundToNinteyNine: boolean) => {
+    const markup = cost * (markupPercentage / 100);
+    let sellingPrice = cost + markup;
+    
+    if (roundToNinteyNine) {
+      // Round to nearest .99 (e.g., 12.34 becomes 12.99)
+      sellingPrice = Math.floor(sellingPrice) + 0.99;
+    }
+    
+    return sellingPrice;
   };
 
   // Calculate total cost of all parts
@@ -2324,10 +2340,15 @@ const MobilePage = () => {
                                     } else {
                                       const selectedPart = availableParts.find((p: any) => p.name === value);
                                       if (selectedPart) {
+                                        const sellingPrice = calculateSellingPrice(
+                                          Number(selectedPart.currentCost), 
+                                          Number(selectedPart.markupPercentage),
+                                          selectedPart.roundToNinteyNine
+                                        );
                                         setParts(prev => prev.map((p, i) => i === index ? { 
                                           ...p, 
                                           name: value, 
-                                          cost: selectedPart.sellingPrice || 0 
+                                          cost: sellingPrice 
                                         } : p));
                                       }
                                     }
@@ -2340,7 +2361,16 @@ const MobilePage = () => {
                                     {Array.isArray(availableParts) && availableParts.map((availablePart: any) => (
                                       <SelectItem key={availablePart.id} value={availablePart.name}>
                                         <div className="flex flex-col">
-                                          <span className="font-medium">{availablePart.name}</span>
+                                          <div className="flex justify-between items-center">
+                                            <span className="font-medium">{availablePart.name}</span>
+                                            <span className="text-xs text-green-600 font-medium">
+                                              ${calculateSellingPrice(
+                                                Number(availablePart.currentCost), 
+                                                Number(availablePart.markupPercentage),
+                                                availablePart.roundToNinteyNine
+                                              ).toFixed(2)}
+                                            </span>
+                                          </div>
                                           {availablePart.description && (
                                             <span className="text-xs text-muted-foreground">{availablePart.description}</span>
                                           )}
@@ -2444,7 +2474,7 @@ const MobilePage = () => {
                       {/* Completion Status */}
                       <div className="bg-card p-4 rounded-lg shadow-sm">
                         <Label className="text-sm font-medium text-foreground">Completion Status *</Label>
-                        <Select>
+                        <Select value={completionStatus} onValueChange={(value: 'completed' | 'return_needed') => setCompletionStatus(value)}>
                           <SelectTrigger className="mt-2">
                             <SelectValue placeholder="Select completion status" />
                           </SelectTrigger>
