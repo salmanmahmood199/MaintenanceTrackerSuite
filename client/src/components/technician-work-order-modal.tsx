@@ -777,15 +777,7 @@ export function TechnicianWorkOrderModal({
                 {/* Completion Status */}
                 <div className="border-t pt-4">
                   <Label htmlFor="completionStatus" className="text-foreground font-medium">Job Status</Label>
-                  <Select 
-                    value={form.watch("completionStatus") || ""}
-                    onValueChange={(value) => {
-                      console.log('WEB DEBUGGING - Selected completion status:', value);
-                      form.setValue("completionStatus", value as "completed" | "return_needed");
-                      // Force a re-render to update the label
-                      form.trigger("completionStatus");
-                    }}
-                  >
+                  <Select onValueChange={(value) => form.setValue("completionStatus", value as "completed" | "return_needed")}>
                     <SelectTrigger className="bg-background text-foreground border-border">
                       <SelectValue placeholder="Select job completion status" />
                     </SelectTrigger>
