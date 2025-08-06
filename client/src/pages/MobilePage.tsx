@@ -1249,10 +1249,10 @@ const MobilePage = () => {
                           )}
 
                           {/* Completion confirmation for requesters */}
-                          {(ticket.reporterId === user.id || user.role === 'org_admin' || (user.role === 'org_subadmin' && user.permissions?.includes('accept_ticket'))) && ticket.status === 'completed' && (
+                          {(ticket.reporterId === user.id || user.role === 'org_admin' || (user.role === 'org_subadmin' && user.permissions?.includes('accept_ticket'))) && ticket.status === 'pending_confirmation' && (
                             <DropdownMenuItem onClick={() => handleConfirmCompletion(ticket)}>
                               <CheckSquare className="h-4 w-4 mr-2" />
-                              Confirm Completion
+                              Verify Job Completed
                             </DropdownMenuItem>
                           )}
                         </DropdownMenuContent>
