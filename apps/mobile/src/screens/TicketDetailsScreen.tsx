@@ -199,9 +199,9 @@ const TicketDetailsScreen = ({ route, navigation }: any) => {
         
         // Show different messages based on completion status
         if (workOrderData.completionStatus === 'return_needed') {
-          Alert.alert('Work Order Submitted', 'Return visit scheduled. You can submit another work order when ready.');
+          Alert.alert('Return Visit Scheduled', 'Work order submitted. You can submit another work order when ready to complete the job.');
         } else {
-          Alert.alert('Success', 'Work order submitted successfully', [
+          Alert.alert('Work Order Submitted', 'Work completed and sent for customer confirmation. Once approved, it will be ready for billing.', [
             { text: 'OK', onPress: () => navigation.goBack() }
           ]);
         }

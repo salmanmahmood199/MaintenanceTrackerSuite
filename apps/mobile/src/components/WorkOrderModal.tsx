@@ -536,6 +536,10 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
               {/* Completion Status */}
               <View style={styles.section}>
                 <Title style={styles.sectionTitle}>Completion Status *</Title>
+                <Text style={styles.helperText}>
+                  Select "Work Completed" when job is finished and ready for customer confirmation. 
+                  Select "Need to Return" if additional work is required.
+                </Text>
                 <View style={styles.statusButtons}>
                   <TouchableOpacity
                     style={[
@@ -548,7 +552,7 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                       styles.statusButtonText,
                       completionStatus === 'completed' && styles.statusButtonTextActive
                     ]}>
-                      Work Completed
+                      Work Completed (Ready for Review)
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -809,6 +813,12 @@ const styles = StyleSheet.create({
   },
   hoursChip: {
     backgroundColor: '#c8e6c9',
+  },
+  helperText: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 12,
+    fontStyle: 'italic',
   },
   statusButtons: {
     flexDirection: 'row',
