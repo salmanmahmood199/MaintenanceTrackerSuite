@@ -1003,59 +1003,59 @@ export function EnhancedInvoiceCreator({
 
           {/* PDF Preview Tab */}
           <TabsContent value="preview">
-            <div className="bg-white border rounded-lg shadow-lg max-w-4xl mx-auto">
+            <div className="bg-white border rounded-lg shadow-lg w-full mx-auto text-black">
               {/* Professional Invoice Header */}
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-t-lg">
-                <div className="flex justify-between items-start">
+              <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 md:p-6 rounded-t-lg">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-start space-y-4 md:space-y-0">
                   <div>
-                    <h1 className="text-3xl font-bold">INVOICE</h1>
-                    <p className="text-blue-100 mt-2">{vendor?.name || 'Maintenance Services'}</p>
+                    <h1 className="text-2xl md:text-3xl font-bold">INVOICE</h1>
+                    <p className="text-blue-100 mt-2 text-sm md:text-base">{vendor?.name || 'Maintenance Services'}</p>
                   </div>
-                  <div className="text-right">
+                  <div className="md:text-right">
                     <p className="text-sm opacity-75">Invoice Date:</p>
-                    <p className="text-lg font-semibold">
+                    <p className="text-base md:text-lg font-semibold">
                       {formatTz(toZonedTime(new Date(), 'America/New_York'), "MMM dd, yyyy", { timeZone: 'America/New_York' })}
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="p-6 space-y-6">
+              <div className="p-4 md:p-6 space-y-6">
                 {/* Company & Client Info */}
-                <div className="grid grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                   <div>
-                    <h3 className="font-semibold text-lg mb-3 flex items-center gap-2" style={{color: 'black'}}>
+                    <h3 className="font-semibold text-lg md:text-xl mb-3 flex items-center gap-2 text-black">
                       <Building2 className="h-5 w-5" />
                       From:
                     </h3>
                     <div className="bg-gray-50 p-4 rounded-lg">
-                      <p className="font-semibold text-xl" style={{color: 'black'}}>{vendor?.name || 'Maintenance Vendor'}</p>
-                      <p style={{color: 'black'}}>{vendor?.address || 'Vendor Address'}</p>
-                      <p style={{color: 'black'}}>{vendor?.email || 'vendor@email.com'}</p>
-                      <p style={{color: 'black'}}>{vendor?.phone || 'Phone Number'}</p>
+                      <p className="font-semibold text-lg md:text-xl text-black">{vendor?.name || 'Maintenance Vendor'}</p>
+                      <p className="text-base text-black mt-1">{vendor?.address || 'Vendor Address'}</p>
+                      <p className="text-base text-black">{vendor?.email || 'vendor@email.com'}</p>
+                      <p className="text-base text-black">{vendor?.phone || 'Phone Number'}</p>
                     </div>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg mb-3 flex items-center gap-2" style={{color: 'black'}}>
+                    <h3 className="font-semibold text-lg md:text-xl mb-3 flex items-center gap-2 text-black">
                       <Building2 className="h-5 w-5" />
                       Bill To:
                     </h3>
                     <div className="bg-gray-50 p-4 rounded-lg">
-                      <p className="font-semibold text-xl" style={{color: 'black'}}>{organization?.name || 'Organization'}</p>
+                      <p className="font-semibold text-lg md:text-xl text-black">{organization?.name || 'Organization'}</p>
                       {location && (
-                        <div className="mt-2 p-2 bg-blue-50 rounded border-l-4 border-blue-400">
-                          <p className="font-semibold" style={{color: 'black'}}>
+                        <div className="mt-3 p-3 bg-blue-50 rounded border-l-4 border-blue-400">
+                          <p className="font-semibold text-base text-black">
                             Service Location: {location.name}
                           </p>
                           {location.address && (
-                            <p style={{color: 'black'}}>{location.address}</p>
+                            <p className="text-base text-black">{location.address}</p>
                           )}
                         </div>
                       )}
-                      <div className="mt-2">
-                        <p style={{color: 'black'}}>{organization?.address || 'Organization Address'}</p>
-                        <p style={{color: 'black'}}>{organization?.email || 'org@email.com'}</p>
-                        <p style={{color: 'black'}}>{organization?.phone || 'Phone Number'}</p>
+                      <div className="mt-3">
+                        <p className="text-base text-black">{organization?.address || 'Organization Address'}</p>
+                        <p className="text-base text-black">{organization?.email || 'org@email.com'}</p>
+                        <p className="text-base text-black">{organization?.phone || 'Phone Number'}</p>
                       </div>
                     </div>
                   </div>
@@ -1063,26 +1063,28 @@ export function EnhancedInvoiceCreator({
 
                 {/* Ticket Information */}
                 <div className="bg-blue-50 p-4 rounded-lg">
-                  <h3 className="font-semibold text-lg mb-2" style={{color: 'black'}}>Service Details</h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm" style={{color: 'black'}}>
-                    <div><span className="font-medium">Ticket Number:</span> {ticket.ticketNumber}</div>
-                    <div><span className="font-medium">Priority:</span> <Badge variant="outline">{ticket.priority}</Badge></div>
-                    <div className="col-span-2"><span className="font-medium">Description:</span> {ticket.description}</div>
+                  <h3 className="font-semibold text-lg md:text-xl mb-3 text-black">Service Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-base text-black">
+                    <div className="mb-2"><span className="font-medium">Ticket Number:</span> {ticket.ticketNumber}</div>
+                    <div className="mb-2"><span className="font-medium">Priority:</span> <Badge variant="outline">{ticket.priority}</Badge></div>
+                    <div className="md:col-span-2"><span className="font-medium">Description:</span> {ticket.description}</div>
                   </div>
                 </div>
 
-                {/* Work Orders Table */}
+                {/* Work Orders - Mobile-Friendly */}
                 <div>
-                  <h3 className="font-semibold text-lg mb-4" style={{color: 'black'}}>Work Orders Completed</h3>
-                  <div className="overflow-hidden rounded-lg border">
+                  <h3 className="font-semibold text-lg md:text-xl mb-4 text-black">Work Orders Completed</h3>
+                  
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block overflow-hidden rounded-lg border">
                     <table className="w-full">
                       <thead className="bg-gray-100">
                         <tr>
-                          <th className="px-4 py-3 text-left font-semibold" style={{color: 'black'}}>Work Order</th>
-                          <th className="px-4 py-3 text-left font-semibold" style={{color: 'black'}}>Description</th>
-                          <th className="px-4 py-3 text-left font-semibold" style={{color: 'black'}}>Labor Details</th>
-                          <th className="px-4 py-3 text-left font-semibold" style={{color: 'black'}}>Parts Used</th>
-                          <th className="px-4 py-3 text-right font-semibold" style={{color: 'black'}}>Total</th>
+                          <th className="px-4 py-3 text-left font-semibold text-black">Work Order</th>
+                          <th className="px-4 py-3 text-left font-semibold text-black">Description</th>
+                          <th className="px-4 py-3 text-left font-semibold text-black">Labor Details</th>
+                          <th className="px-4 py-3 text-left font-semibold text-black">Parts Used</th>
+                          <th className="px-4 py-3 text-right font-semibold text-black">Total</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1090,29 +1092,29 @@ export function EnhancedInvoiceCreator({
                           const partsCost = (workOrder.editableParts || []).reduce((sum, part) => sum + (part.cost * part.quantity), 0);
                           return (
                             <tr key={workOrder.id} className="border-t">
-                              <td className="px-4 py-3 font-medium align-top" style={{color: 'black'}}>
+                              <td className="px-4 py-3 font-medium align-top text-black">
                                 <div>#{workOrder.workOrderNumber}</div>
-                                <div className="text-sm" style={{color: 'black'}}>by {workOrder.technicianName}</div>
-                                <div className="text-xs" style={{color: 'black'}}>
+                                <div className="text-sm text-black">by {workOrder.technicianName}</div>
+                                <div className="text-xs text-black">
                                   {workOrder.dateCompleted ? new Date(workOrder.dateCompleted).toLocaleDateString() : 'In Progress'}
                                 </div>
                               </td>
-                              <td className="px-4 py-3 align-top" style={{color: 'black'}}>
+                              <td className="px-4 py-3 align-top text-black">
                                 <div className="text-sm">{workOrder.description || 'Work order description'}</div>
                                 {workOrder.notes && (
-                                  <div className="text-xs mt-1 italic" style={{color: 'black'}}>
+                                  <div className="text-xs mt-1 italic text-black">
                                     Notes: {workOrder.notes}
                                   </div>
                                 )}
                               </td>
-                              <td className="px-4 py-3 align-top" style={{color: 'black'}}>
+                              <td className="px-4 py-3 align-top text-black">
                                 <div className="text-sm">
                                   <div>{workOrder.editableHours?.toFixed(2)} hours</div>
                                   <div>@ ${(workOrder.editableLaborCost! / workOrder.editableHours!).toFixed(2)}/hr</div>
                                   <div className="font-medium">Labor: ${workOrder.editableLaborCost?.toFixed(2)}</div>
                                 </div>
                               </td>
-                              <td className="px-4 py-3 align-top" style={{color: 'black'}}>
+                              <td className="px-4 py-3 align-top text-black">
                                 {workOrder.editableParts && workOrder.editableParts.length > 0 ? (
                                   <div className="text-sm space-y-1">
                                     {workOrder.editableParts.map((part, index) => (
@@ -1128,10 +1130,10 @@ export function EnhancedInvoiceCreator({
                                     </div>
                                   </div>
                                 ) : (
-                                  <div className="text-sm" style={{color: 'black'}}>No parts used</div>
+                                  <div className="text-sm text-black">No parts used</div>
                                 )}
                               </td>
-                              <td className="px-4 py-3 text-right font-semibold align-top" style={{color: 'black'}}>
+                              <td className="px-4 py-3 text-right font-semibold align-top text-black">
                                 ${workOrder.editableTotalCost?.toFixed(2)}
                               </td>
                             </tr>
@@ -1140,43 +1142,109 @@ export function EnhancedInvoiceCreator({
                       </tbody>
                     </table>
                   </div>
+                  
+                  {/* Mobile Card View */}
+                  <div className="md:hidden space-y-4">
+                    {editableWorkOrders.map((workOrder) => {
+                      const partsCost = (workOrder.editableParts || []).reduce((sum, part) => sum + (part.cost * part.quantity), 0);
+                      return (
+                        <div key={workOrder.id} className="border rounded-lg p-4 bg-gray-50">
+                          <div className="flex justify-between items-start mb-3">
+                            <div>
+                              <div className="font-semibold text-lg text-black">#{workOrder.workOrderNumber}</div>
+                              <div className="text-base text-black">by {workOrder.technicianName}</div>
+                              <div className="text-sm text-black">
+                                {workOrder.dateCompleted ? new Date(workOrder.dateCompleted).toLocaleDateString() : 'In Progress'}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-xl font-bold text-green-600">
+                                ${workOrder.editableTotalCost?.toFixed(2)}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-3">
+                            <div>
+                              <h4 className="font-medium text-base text-black mb-1">Description</h4>
+                              <p className="text-base text-black">{workOrder.description || 'Work order description'}</p>
+                              {workOrder.notes && (
+                                <p className="text-sm italic text-black mt-1">
+                                  Notes: {workOrder.notes}
+                                </p>
+                              )}
+                            </div>
+                            
+                            <div>
+                              <h4 className="font-medium text-base text-black mb-1">Labor Details</h4>
+                              <div className="text-base text-black">
+                                <div>{workOrder.editableHours?.toFixed(2)} hours @ ${(workOrder.editableLaborCost! / workOrder.editableHours!).toFixed(2)}/hr</div>
+                                <div className="font-medium">Labor: ${workOrder.editableLaborCost?.toFixed(2)}</div>
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <h4 className="font-medium text-base text-black mb-1">Parts Used</h4>
+                              {workOrder.editableParts && workOrder.editableParts.length > 0 ? (
+                                <div className="space-y-2">
+                                  {workOrder.editableParts.map((part, index) => (
+                                    <div key={index} className="bg-white p-2 rounded border">
+                                      <div className="font-medium text-base text-black">{part.name}</div>
+                                      <div className="text-sm text-black">
+                                        Qty: {part.quantity} @ ${part.cost.toFixed(2)} = ${(part.quantity * part.cost).toFixed(2)}
+                                      </div>
+                                    </div>
+                                  ))}
+                                  <div className="font-bold text-base text-black border-t pt-2">
+                                    Parts Total: ${partsCost.toFixed(2)}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="text-base text-black">No parts used</div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {/* Invoice Total */}
-                <div className="bg-gray-50 p-6 rounded-lg">
-                  <div className="flex justify-end">
-                    <div className="w-64 space-y-2">
-                      <div className="flex justify-between text-lg" style={{color: 'black'}}>
-                        <span>Subtotal:</span>
-                        <span>${workOrdersSubtotal.toFixed(2)}</span>
+                <div className="bg-gray-50 p-4 md:p-6 rounded-lg">
+                  <div className="flex justify-center md:justify-end">
+                    <div className="w-full md:w-64 space-y-3">
+                      <div className="flex justify-between text-lg md:text-xl text-black">
+                        <span className="font-medium">Subtotal:</span>
+                        <span className="font-semibold">${workOrdersSubtotal.toFixed(2)}</span>
                       </div>
                       {tax > 0 && (
-                        <div className="flex justify-between" style={{color: 'black'}}>
-                          <span>Tax:</span>
-                          <span>${tax.toFixed(2)}</span>
+                        <div className="flex justify-between text-lg text-black">
+                          <span className="font-medium">Tax:</span>
+                          <span className="font-semibold">${tax.toFixed(2)}</span>
                         </div>
                       )}
                       {discount > 0 && (
-                        <div className="flex justify-between" style={{color: 'black'}}>
-                          <span>Discount:</span>
-                          <span>-${discount.toFixed(2)}</span>
+                        <div className="flex justify-between text-lg text-black">
+                          <span className="font-medium">Discount:</span>
+                          <span className="font-semibold">-${discount.toFixed(2)}</span>
                         </div>
                       )}
-                      <div className="flex justify-between text-2xl font-bold border-t pt-2" style={{color: 'black'}}>
+                      <div className="flex justify-between text-2xl md:text-3xl font-bold border-t pt-3 text-black">
                         <span>TOTAL:</span>
-                        <span style={{color: 'black'}}>${total.toFixed(2)}</span>
+                        <span className="text-green-600">${total.toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Payment Terms & Notes */}
-                <div className="text-sm" style={{color: 'black'}}>
-                  <p><span className="font-medium">Payment Terms:</span> {form.watch("paymentTerms") || "Net 30"}</p>
+                <div className="text-base text-black">
+                  <p className="mb-2"><span className="font-medium text-lg">Payment Terms:</span> <span className="text-lg">{form.watch("paymentTerms") || "Net 30"}</span></p>
                   {form.watch("notes") && (
-                    <div className="mt-2">
-                      <p className="font-medium">Notes:</p>
-                      <p>{form.watch("notes")}</p>
+                    <div className="mt-4">
+                      <p className="font-medium text-lg mb-2">Notes:</p>
+                      <p className="text-base">{form.watch("notes")}</p>
                     </div>
                   )}
                 </div>
