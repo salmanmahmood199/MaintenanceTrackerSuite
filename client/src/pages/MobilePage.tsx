@@ -535,12 +535,38 @@ const MobilePage = () => {
     enabled: !!user?.maintenanceVendorId,
   });
 
-
+  // Check if any work order has return_needed status for a ticket
+  const hasReturnNeededWorkOrder = (ticket: Ticket, workOrders?: any[]) => {
+    if (!workOrders) return false;
+    return workOrders.some((wo: any) => wo.completionStatus === 'return_needed');
+  };
 
   // Queries for data
   const { data: tickets = [], isLoading: ticketsLoading, refetch: refetchTickets } = useQuery<Ticket[]>({
     queryKey: ["/api/tickets"],
     enabled: !!user,
+  });
+
+  // Fetch work orders for all tickets to check return needed status
+  const { data: allTicketsWorkOrders = {} } = useQuery({
+    queryKey: ['/api/tickets/work-orders'],
+    queryFn: async () => {
+      if (!tickets?.length) return {};
+      
+      const workOrderPromises = tickets.map(async (ticket: Ticket) => {
+        try {
+          const response = await apiRequest('GET', `/api/tickets/${ticket.id}/work-orders`);
+          const data = await response.json();
+          return { [ticket.id]: data };
+        } catch (error) {
+          return { [ticket.id]: [] };
+        }
+      });
+      
+      const results = await Promise.all(workOrderPromises);
+      return results.reduce((acc, result) => ({ ...acc, ...result }), {});
+    },
+    enabled: !!tickets?.length,
   });
 
   const { data: organizations = [], isLoading: orgsLoading } = useQuery<Organization[]>({
@@ -1247,6 +1273,13 @@ const MobilePage = () => {
                                 <DropdownMenuItem onClick={() => handleCreateWorkOrder(ticket)}>
                                   <CheckCircle className="h-4 w-4 mr-2" />
                                   Complete Work
+                                </DropdownMenuItem>
+                              )}
+                              {/* Allow creating another work order if previous one needed return visit */}
+                              {hasReturnNeededWorkOrder(ticket, allTicketsWorkOrders[ticket.id]) && (
+                                <DropdownMenuItem onClick={() => handleCreateWorkOrder(ticket)}>
+                                  <Wrench className="h-4 w-4 mr-2" />
+                                  Create Another Work Order
                                 </DropdownMenuItem>
                               )}
                             </>
