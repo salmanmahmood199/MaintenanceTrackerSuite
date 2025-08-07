@@ -2796,7 +2796,7 @@ const MobilePage = () => {
               refetchTickets();
             }}
             isLoading={false}
-            workOrders={[]}
+            workOrders={selectedTicket ? allTicketsWorkOrders[selectedTicket.id] || [] : []}
             vendor={null}
             organization={null}
             location={null}
