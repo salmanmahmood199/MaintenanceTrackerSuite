@@ -1275,13 +1275,6 @@ const MobilePage = () => {
                                   Complete Work
                                 </DropdownMenuItem>
                               )}
-                              {/* Allow creating another work order if previous one needed return visit */}
-                              {hasReturnNeededWorkOrder(ticket, allTicketsWorkOrders[ticket.id]) && (
-                                <DropdownMenuItem onClick={() => handleCreateWorkOrder(ticket)}>
-                                  <Wrench className="h-4 w-4 mr-2" />
-                                  Create Another Work Order
-                                </DropdownMenuItem>
-                              )}
                             </>
                           )}
                           {/* Marketplace actions */}
