@@ -254,6 +254,141 @@ export function EnhancedInvoiceCreator({
     }));
   };
 
+  const updatePartName = (workOrderId: number, partIndex: number, newName: string) => {
+    setEditableWorkOrders(prev => prev.map(wo => {
+      if (wo.id === workOrderId) {
+        const updatedParts = [...(wo.editableParts || [])];
+        updatedParts[partIndex] = { ...updatedParts[partIndex], name: newName };
+        
+        return {
+          ...wo,
+          editableParts: updatedParts,
+        };
+      }
+      return wo;
+    }));
+  };
+
+  const addNewPart = (workOrderId: number) => {
+    setEditableWorkOrders(prev => prev.map(wo => {
+      if (wo.id === workOrderId) {
+        const newPart = { name: "New Part", quantity: 1, cost: 0 };
+        const updatedParts = [...(wo.editableParts || []), newPart];
+        
+        const laborCost = wo.editableLaborCost || 0;
+        const partsCost = updatedParts.reduce((sum, part) => sum + (part.cost * part.quantity), 0);
+        const otherCost = (wo.editableOtherCharges || []).reduce((sum, charge) => sum + charge.amount, 0);
+        const totalCost = laborCost + partsCost + otherCost;
+        
+        return {
+          ...wo,
+          editableParts: updatedParts,
+          editableTotalCost: totalCost,
+        };
+      }
+      return wo;
+    }));
+  };
+
+  const removePart = (workOrderId: number, partIndex: number) => {
+    setEditableWorkOrders(prev => prev.map(wo => {
+      if (wo.id === workOrderId) {
+        const updatedParts = [...(wo.editableParts || [])];
+        updatedParts.splice(partIndex, 1);
+        
+        const laborCost = wo.editableLaborCost || 0;
+        const partsCost = updatedParts.reduce((sum, part) => sum + (part.cost * part.quantity), 0);
+        const otherCost = (wo.editableOtherCharges || []).reduce((sum, charge) => sum + charge.amount, 0);
+        const totalCost = laborCost + partsCost + otherCost;
+        
+        return {
+          ...wo,
+          editableParts: updatedParts,
+          editableTotalCost: totalCost,
+        };
+      }
+      return wo;
+    }));
+  };
+
+  const updateOtherChargeDescription = (workOrderId: number, chargeIndex: number, newDescription: string) => {
+    setEditableWorkOrders(prev => prev.map(wo => {
+      if (wo.id === workOrderId) {
+        const updatedCharges = [...(wo.editableOtherCharges || [])];
+        updatedCharges[chargeIndex] = { ...updatedCharges[chargeIndex], description: newDescription };
+        
+        return {
+          ...wo,
+          editableOtherCharges: updatedCharges,
+        };
+      }
+      return wo;
+    }));
+  };
+
+  const updateOtherChargeAmount = (workOrderId: number, chargeIndex: number, newAmount: number) => {
+    setEditableWorkOrders(prev => prev.map(wo => {
+      if (wo.id === workOrderId) {
+        const updatedCharges = [...(wo.editableOtherCharges || [])];
+        updatedCharges[chargeIndex] = { ...updatedCharges[chargeIndex], amount: Math.max(0, newAmount) };
+        
+        const laborCost = wo.editableLaborCost || 0;
+        const partsCost = (wo.editableParts || []).reduce((sum, part) => sum + (part.cost * part.quantity), 0);
+        const otherCost = updatedCharges.reduce((sum, charge) => sum + charge.amount, 0);
+        const totalCost = laborCost + partsCost + otherCost;
+        
+        return {
+          ...wo,
+          editableOtherCharges: updatedCharges,
+          editableTotalCost: totalCost,
+        };
+      }
+      return wo;
+    }));
+  };
+
+  const addNewOtherCharge = (workOrderId: number) => {
+    setEditableWorkOrders(prev => prev.map(wo => {
+      if (wo.id === workOrderId) {
+        const newCharge = { description: "Additional Charge", amount: 0 };
+        const updatedCharges = [...(wo.editableOtherCharges || []), newCharge];
+        
+        const laborCost = wo.editableLaborCost || 0;
+        const partsCost = (wo.editableParts || []).reduce((sum, part) => sum + (part.cost * part.quantity), 0);
+        const otherCost = updatedCharges.reduce((sum, charge) => sum + charge.amount, 0);
+        const totalCost = laborCost + partsCost + otherCost;
+        
+        return {
+          ...wo,
+          editableOtherCharges: updatedCharges,
+          editableTotalCost: totalCost,
+        };
+      }
+      return wo;
+    }));
+  };
+
+  const removeOtherCharge = (workOrderId: number, chargeIndex: number) => {
+    setEditableWorkOrders(prev => prev.map(wo => {
+      if (wo.id === workOrderId) {
+        const updatedCharges = [...(wo.editableOtherCharges || [])];
+        updatedCharges.splice(chargeIndex, 1);
+        
+        const laborCost = wo.editableLaborCost || 0;
+        const partsCost = (wo.editableParts || []).reduce((sum, part) => sum + (part.cost * part.quantity), 0);
+        const otherCost = updatedCharges.reduce((sum, charge) => sum + charge.amount, 0);
+        const totalCost = laborCost + partsCost + otherCost;
+        
+        return {
+          ...wo,
+          editableOtherCharges: updatedCharges,
+          editableTotalCost: totalCost,
+        };
+      }
+      return wo;
+    }));
+  };
+
   const calculateTax = (percentage: number) => {
     const taxAppliesTo = form.watch('taxAppliesTo');
     const laborTotal = editableWorkOrders.reduce((sum, wo) => sum + (wo.editableLaborCost || 0), 0);
@@ -431,18 +566,48 @@ export function EnhancedInvoiceCreator({
                         )}
 
                         {/* Detailed Parts Section (for editing) */}
-                        {workOrder.editableParts && workOrder.editableParts.length > 0 && (
-                          <div className="bg-background p-4 rounded-lg border border-border">
-                            <h4 className="font-semibold mb-3 flex items-center gap-2 text-foreground">
+                        <div className="bg-background p-4 rounded-lg border border-border">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="font-semibold flex items-center gap-2 text-foreground">
                               <Package className="h-4 w-4" />
                               Edit Parts & Materials Costs
                             </h4>
-                            <div className="space-y-3">
-                              {workOrder.editableParts.map((part, index) => (
-                                <div key={index} className="grid grid-cols-4 gap-4 items-center bg-muted/50 p-3 rounded">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                addNewPart(workOrder.id);
+                              }}
+                              className="flex items-center gap-2"
+                            >
+                              <Plus className="h-4 w-4" />
+                              Add Part
+                            </Button>
+                          </div>
+                          <div className="space-y-3">
+                            {(!workOrder.editableParts || workOrder.editableParts.length === 0) ? (
+                              <div className="text-center py-4 text-muted-foreground">
+                                No parts added yet. Click "Add Part" to add materials.
+                              </div>
+                            ) : (
+                              workOrder.editableParts.map((part, index) => (
+                                <div key={index} className="grid grid-cols-5 gap-4 items-center bg-muted/50 p-3 rounded">
                                   <div>
                                     <label className="text-sm font-medium text-foreground">Part Name</label>
-                                    <div className="mt-1 font-medium text-foreground">{part.name}</div>
+                                    <Input
+                                      type="text"
+                                      value={part.name}
+                                      onChange={(e) => {
+                                        e.stopPropagation();
+                                        updatePartName(workOrder.id, index, e.target.value);
+                                      }}
+                                      onClick={(e) => e.stopPropagation()}
+                                      onFocus={(e) => e.stopPropagation()}
+                                      className="w-full mt-1 bg-background text-foreground border-input"
+                                      placeholder="Enter part name"
+                                    />
                                   </div>
                                   <div>
                                     <label className="text-sm font-medium text-foreground">Quantity</label>
@@ -484,29 +649,107 @@ export function EnhancedInvoiceCreator({
                                       ${(part.cost * part.quantity).toFixed(2)}
                                     </div>
                                   </div>
+                                  <div className="flex items-end justify-center">
+                                    <Button
+                                      type="button"
+                                      variant="destructive"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        removePart(workOrder.id, index);
+                                      }}
+                                      className="mt-6"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
                                 </div>
-                              ))}
-                            </div>
+                              ))
+                            )}
                           </div>
-                        )}
+                        </div>
 
                         {/* Other Charges */}
-                        {workOrder.editableOtherCharges && workOrder.editableOtherCharges.length > 0 && (
-                          <div className="bg-background p-4 rounded-lg border border-border">
-                            <h4 className="font-semibold mb-3 flex items-center gap-2 text-foreground">
+                        <div className="bg-background p-4 rounded-lg border border-border">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="font-semibold flex items-center gap-2 text-foreground">
                               <DollarSign className="h-4 w-4" />
                               Additional Charges
                             </h4>
-                            <div className="space-y-2">
-                              {workOrder.editableOtherCharges.map((charge, index) => (
-                                <div key={index} className="flex justify-between items-center bg-muted/50 p-3 rounded">
-                                  <span className="font-medium text-foreground">{charge.description}</span>
-                                  <span className="font-semibold text-green-600">${charge.amount.toFixed(2)}</span>
-                                </div>
-                              ))}
-                            </div>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                addNewOtherCharge(workOrder.id);
+                              }}
+                              className="flex items-center gap-2"
+                            >
+                              <Plus className="h-4 w-4" />
+                              Add Charge
+                            </Button>
                           </div>
-                        )}
+                          <div className="space-y-3">
+                            {(!workOrder.editableOtherCharges || workOrder.editableOtherCharges.length === 0) ? (
+                              <div className="text-center py-4 text-muted-foreground">
+                                No additional charges. Click "Add Charge" to add miscellaneous costs.
+                              </div>
+                            ) : (
+                              workOrder.editableOtherCharges.map((charge, index) => (
+                                <div key={index} className="grid grid-cols-3 gap-4 items-center bg-muted/50 p-3 rounded">
+                                  <div>
+                                    <label className="text-sm font-medium text-foreground">Description</label>
+                                    <Input
+                                      type="text"
+                                      value={charge.description}
+                                      onChange={(e) => {
+                                        e.stopPropagation();
+                                        updateOtherChargeDescription(workOrder.id, index, e.target.value);
+                                      }}
+                                      onClick={(e) => e.stopPropagation()}
+                                      onFocus={(e) => e.stopPropagation()}
+                                      className="w-full mt-1 bg-background text-foreground border-input"
+                                      placeholder="Enter charge description"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-sm font-medium text-foreground">Amount</label>
+                                    <div className="flex items-center mt-1">
+                                      <span className="mr-1 text-foreground">$</span>
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        value={charge.amount}
+                                        onChange={(e) => {
+                                          e.stopPropagation();
+                                          updateOtherChargeAmount(workOrder.id, index, parseFloat(e.target.value) || 0);
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
+                                        onFocus={(e) => e.stopPropagation()}
+                                        className="w-full bg-background text-foreground border-input"
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="flex items-end justify-center">
+                                    <Button
+                                      type="button"
+                                      variant="destructive"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        removeOtherCharge(workOrder.id, index);
+                                      }}
+                                      className="mt-6"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
                       </CardContent>
                     )}
                   </Card>
