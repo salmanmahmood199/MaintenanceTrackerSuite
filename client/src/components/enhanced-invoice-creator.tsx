@@ -427,27 +427,30 @@ export function EnhancedInvoiceCreator({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto bg-background text-foreground">
+      <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto bg-background text-foreground">
         <DialogHeader className="border-b pb-4">
-          <DialogTitle className="flex items-center gap-3 text-2xl text-foreground">
-            <FileText className="h-6 w-6 text-blue-600" />
-            Invoice Creation - {ticket.ticketNumber}
+          <DialogTitle className="flex items-center gap-3 text-xl md:text-2xl text-foreground">
+            <FileText className="h-5 w-5 md:h-6 md:w-6 text-blue-600" />
+            <span className="truncate">Invoice - {ticket.ticketNumber}</span>
           </DialogTitle>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-6 bg-muted">
-            <TabsTrigger value="work-orders" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground">
-              <Edit3 className="h-4 w-4" />
-              Edit Work Orders
+            <TabsTrigger value="work-orders" className="flex items-center gap-1 md:gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground text-xs md:text-sm">
+              <Edit3 className="h-3 w-3 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">Edit Work Orders</span>
+              <span className="sm:hidden">Edit</span>
             </TabsTrigger>
-            <TabsTrigger value="invoice-details" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground">
-              <Calculator className="h-4 w-4" />
-              Invoice Details
+            <TabsTrigger value="invoice-details" className="flex items-center gap-1 md:gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground text-xs md:text-sm">
+              <Calculator className="h-3 w-3 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">Invoice Details</span>
+              <span className="sm:hidden">Details</span>
             </TabsTrigger>
-            <TabsTrigger value="preview" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground">
-              <FileText className="h-4 w-4" />
-              PDF Preview
+            <TabsTrigger value="preview" className="flex items-center gap-1 md:gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground text-xs md:text-sm">
+              <FileText className="h-3 w-3 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">PDF Preview</span>
+              <span className="sm:hidden">PDF</span>
             </TabsTrigger>
           </TabsList>
 
@@ -489,15 +492,15 @@ export function EnhancedInvoiceCreator({
                       <CardContent className="space-y-4 bg-muted/30" onClick={(e) => e.stopPropagation()}>
                         {/* Labor Section */}
                         <div className="bg-background p-4 rounded-lg border border-border">
-                          <h4 className="font-semibold mb-3 flex items-center gap-2 text-foreground">
+                          <h4 className="font-semibold mb-4 flex items-center gap-2 text-foreground">
                             <User className="h-4 w-4" />
                             Labor Costs
                           </h4>
-                          <div className="grid grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
-                              <label className="text-sm font-medium text-foreground">Hourly Rate</label>
-                              <div className="flex items-center mt-1">
-                                <span className="text-lg mr-1 text-foreground">$</span>
+                              <label className="text-sm font-medium text-foreground block mb-2">Hourly Rate</label>
+                              <div className="flex items-center">
+                                <span className="text-lg mr-2 text-foreground font-medium">$</span>
                                 <Input
                                   type="number"
                                   step="0.01"
@@ -508,12 +511,12 @@ export function EnhancedInvoiceCreator({
                                   }}
                                   onClick={(e) => e.stopPropagation()}
                                   onFocus={(e) => e.stopPropagation()}
-                                  className="w-full bg-background text-foreground border-input"
+                                  className="flex-1 bg-background text-foreground border-input text-sm"
                                 />
                               </div>
                             </div>
                             <div>
-                              <label className="text-sm font-medium text-foreground">Hours Worked</label>
+                              <label className="text-sm font-medium text-foreground block mb-2">Hours Worked</label>
                               <Input
                                 type="number"
                                 step="0.25"
@@ -524,12 +527,12 @@ export function EnhancedInvoiceCreator({
                                 }}
                                 onClick={(e) => e.stopPropagation()}
                                 onFocus={(e) => e.stopPropagation()}
-                                className="w-full mt-1 bg-background text-foreground border-input"
+                                className="w-full bg-background text-foreground border-input text-sm"
                               />
                             </div>
                             <div>
-                              <label className="text-sm font-medium text-foreground">Labor Total</label>
-                              <div className="mt-1 p-2 bg-muted text-foreground rounded border text-lg font-semibold">
+                              <label className="text-sm font-medium text-foreground block mb-2">Labor Total</label>
+                              <div className="p-3 bg-muted text-foreground rounded border font-bold text-green-600 text-center text-lg">
                                 ${workOrder.editableLaborCost?.toFixed(2) || '0.00'}
                               </div>
                             </div>
@@ -586,70 +589,73 @@ export function EnhancedInvoiceCreator({
                               Add Part
                             </Button>
                           </div>
-                          <div className="space-y-3">
+                          <div className="space-y-4">
                             {(!workOrder.editableParts || workOrder.editableParts.length === 0) ? (
-                              <div className="text-center py-4 text-muted-foreground">
+                              <div className="text-center py-6 text-muted-foreground">
                                 No parts added yet. Click "Add Part" to add materials.
                               </div>
                             ) : (
                               workOrder.editableParts.map((part, index) => (
-                                <div key={index} className="grid grid-cols-5 gap-4 items-center bg-muted/50 p-3 rounded">
-                                  <div>
-                                    <label className="text-sm font-medium text-foreground">Part Name</label>
-                                    <Input
-                                      type="text"
-                                      value={part.name}
-                                      onChange={(e) => {
-                                        e.stopPropagation();
-                                        updatePartName(workOrder.id, index, e.target.value);
-                                      }}
-                                      onClick={(e) => e.stopPropagation()}
-                                      onFocus={(e) => e.stopPropagation()}
-                                      className="w-full mt-1 bg-background text-foreground border-input"
-                                      placeholder="Enter part name"
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium text-foreground">Quantity</label>
-                                    <Input
-                                      type="number"
-                                      min="0"
-                                      step="1"
-                                      value={part.quantity}
-                                      onChange={(e) => {
-                                        e.stopPropagation();
-                                        updatePartQuantity(workOrder.id, index, parseInt(e.target.value) || 0);
-                                      }}
-                                      onClick={(e) => e.stopPropagation()}
-                                      onFocus={(e) => e.stopPropagation()}
-                                      className="w-full mt-1 bg-background text-foreground border-input text-center"
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium text-foreground">Unit Cost</label>
-                                    <div className="flex items-center mt-1">
-                                      <span className="mr-1 text-foreground">$</span>
+                                <div key={index} className="bg-muted/50 p-4 rounded-lg space-y-4">
+                                  {/* Mobile: Stack vertically, Desktop: Grid layout */}
+                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <div className="md:col-span-2 lg:col-span-1">
+                                      <label className="text-sm font-medium text-foreground block mb-2">Part Name</label>
                                       <Input
-                                        type="number"
-                                        step="0.01"
-                                        value={part.cost}
+                                        type="text"
+                                        value={part.name}
                                         onChange={(e) => {
                                           e.stopPropagation();
-                                          updatePartCost(workOrder.id, index, parseFloat(e.target.value) || 0);
+                                          updatePartName(workOrder.id, index, e.target.value);
                                         }}
                                         onClick={(e) => e.stopPropagation()}
                                         onFocus={(e) => e.stopPropagation()}
-                                        className="w-full bg-background text-foreground border-input"
+                                        className="w-full bg-background text-foreground border-input text-sm"
+                                        placeholder="Enter part name"
                                       />
                                     </div>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium text-foreground">Total</label>
-                                    <div className="mt-1 text-center font-semibold text-green-600">
-                                      ${(part.cost * part.quantity).toFixed(2)}
+                                    <div>
+                                      <label className="text-sm font-medium text-foreground block mb-2">Quantity</label>
+                                      <Input
+                                        type="number"
+                                        min="0"
+                                        step="1"
+                                        value={part.quantity}
+                                        onChange={(e) => {
+                                          e.stopPropagation();
+                                          updatePartQuantity(workOrder.id, index, parseInt(e.target.value) || 0);
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
+                                        onFocus={(e) => e.stopPropagation()}
+                                        className="w-full bg-background text-foreground border-input text-center text-sm"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="text-sm font-medium text-foreground block mb-2">Unit Cost</label>
+                                      <div className="flex items-center">
+                                        <span className="mr-2 text-foreground font-medium">$</span>
+                                        <Input
+                                          type="number"
+                                          step="0.01"
+                                          value={part.cost}
+                                          onChange={(e) => {
+                                            e.stopPropagation();
+                                            updatePartCost(workOrder.id, index, parseFloat(e.target.value) || 0);
+                                          }}
+                                          onClick={(e) => e.stopPropagation()}
+                                          onFocus={(e) => e.stopPropagation()}
+                                          className="flex-1 bg-background text-foreground border-input text-sm"
+                                        />
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <label className="text-sm font-medium text-foreground block mb-2">Total</label>
+                                      <div className="p-2 bg-background rounded border font-semibold text-green-600 text-center text-sm">
+                                        ${(part.cost * part.quantity).toFixed(2)}
+                                      </div>
                                     </div>
                                   </div>
-                                  <div className="flex items-end justify-center">
+                                  <div className="flex justify-end pt-2">
                                     <Button
                                       type="button"
                                       variant="destructive"
@@ -658,9 +664,10 @@ export function EnhancedInvoiceCreator({
                                         e.stopPropagation();
                                         removePart(workOrder.id, index);
                                       }}
-                                      className="mt-6"
+                                      className="flex items-center gap-2"
                                     >
                                       <Trash2 className="h-4 w-4" />
+                                      <span className="hidden sm:inline">Remove</span>
                                     </Button>
                                   </div>
                                 </div>
@@ -690,48 +697,50 @@ export function EnhancedInvoiceCreator({
                               Add Charge
                             </Button>
                           </div>
-                          <div className="space-y-3">
+                          <div className="space-y-4">
                             {(!workOrder.editableOtherCharges || workOrder.editableOtherCharges.length === 0) ? (
-                              <div className="text-center py-4 text-muted-foreground">
+                              <div className="text-center py-6 text-muted-foreground">
                                 No additional charges. Click "Add Charge" to add miscellaneous costs.
                               </div>
                             ) : (
                               workOrder.editableOtherCharges.map((charge, index) => (
-                                <div key={index} className="grid grid-cols-3 gap-4 items-center bg-muted/50 p-3 rounded">
-                                  <div>
-                                    <label className="text-sm font-medium text-foreground">Description</label>
-                                    <Input
-                                      type="text"
-                                      value={charge.description}
-                                      onChange={(e) => {
-                                        e.stopPropagation();
-                                        updateOtherChargeDescription(workOrder.id, index, e.target.value);
-                                      }}
-                                      onClick={(e) => e.stopPropagation()}
-                                      onFocus={(e) => e.stopPropagation()}
-                                      className="w-full mt-1 bg-background text-foreground border-input"
-                                      placeholder="Enter charge description"
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium text-foreground">Amount</label>
-                                    <div className="flex items-center mt-1">
-                                      <span className="mr-1 text-foreground">$</span>
+                                <div key={index} className="bg-muted/50 p-4 rounded-lg space-y-4">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                      <label className="text-sm font-medium text-foreground block mb-2">Description</label>
                                       <Input
-                                        type="number"
-                                        step="0.01"
-                                        value={charge.amount}
+                                        type="text"
+                                        value={charge.description}
                                         onChange={(e) => {
                                           e.stopPropagation();
-                                          updateOtherChargeAmount(workOrder.id, index, parseFloat(e.target.value) || 0);
+                                          updateOtherChargeDescription(workOrder.id, index, e.target.value);
                                         }}
                                         onClick={(e) => e.stopPropagation()}
                                         onFocus={(e) => e.stopPropagation()}
-                                        className="w-full bg-background text-foreground border-input"
+                                        className="w-full bg-background text-foreground border-input text-sm"
+                                        placeholder="Enter charge description"
                                       />
                                     </div>
+                                    <div>
+                                      <label className="text-sm font-medium text-foreground block mb-2">Amount</label>
+                                      <div className="flex items-center">
+                                        <span className="mr-2 text-foreground font-medium">$</span>
+                                        <Input
+                                          type="number"
+                                          step="0.01"
+                                          value={charge.amount}
+                                          onChange={(e) => {
+                                            e.stopPropagation();
+                                            updateOtherChargeAmount(workOrder.id, index, parseFloat(e.target.value) || 0);
+                                          }}
+                                          onClick={(e) => e.stopPropagation()}
+                                          onFocus={(e) => e.stopPropagation()}
+                                          className="flex-1 bg-background text-foreground border-input text-sm"
+                                        />
+                                      </div>
+                                    </div>
                                   </div>
-                                  <div className="flex items-end justify-center">
+                                  <div className="flex justify-end pt-2">
                                     <Button
                                       type="button"
                                       variant="destructive"
@@ -740,9 +749,10 @@ export function EnhancedInvoiceCreator({
                                         e.stopPropagation();
                                         removeOtherCharge(workOrder.id, index);
                                       }}
-                                      className="mt-6"
+                                      className="flex items-center gap-2"
                                     >
                                       <Trash2 className="h-4 w-4" />
+                                      <span className="hidden sm:inline">Remove</span>
                                     </Button>
                                   </div>
                                 </div>
