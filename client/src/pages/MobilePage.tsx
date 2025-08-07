@@ -35,6 +35,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertTicketSchema } from "@shared/schema";
+import { format } from "date-fns";
 
 import type { 
   Ticket,
@@ -370,6 +371,11 @@ const MobilePage = () => {
     const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [ticketAction, setTicketAction] = useState<"accept" | "reject" | null>(null);
   const [currentView, setCurrentView] = useState<'dashboard' | 'organization' | 'vendor' | 'calendar' | 'marketplace'>('dashboard');
+  const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(null);
+  const [showEventModal, setShowEventModal] = useState(false);
+  const [selectedCalendarEvent, setSelectedCalendarEvent] = useState<any>(null);
+  const [calendarView, setCalendarView] = useState<'month' | 'day'>('month');
   const [ticketDateFilter, setTicketDateFilter] = useState<'all' | 'last30' | 'last7' | 'today'>('last30');
   const [selectedTicketForDetails, setSelectedTicketForDetails] = useState<Ticket | null>(null);
   const [isTicketDetailModalOpen, setIsTicketDetailModalOpen] = useState(false);
@@ -545,6 +551,12 @@ const MobilePage = () => {
   const { data: tickets = [], isLoading: ticketsLoading, refetch: refetchTickets } = useQuery<Ticket[]>({
     queryKey: ["/api/tickets"],
     enabled: !!user,
+  });
+
+  // Calendar events query
+  const { data: calendarEvents = [], isLoading: calendarLoading } = useQuery({
+    queryKey: ["/api/calendar/events"],
+    enabled: !!user && currentView === 'calendar',
   });
 
   // Fetch work orders for all tickets to check return needed status
@@ -1465,8 +1477,8 @@ const MobilePage = () => {
 
   const getCalendarView = () => {
     const today = new Date();
-    const currentMonth = today.getMonth();
-    const currentYear = today.getFullYear();
+    const currentMonth = currentCalendarDate.getMonth();
+    const currentYear = currentCalendarDate.getFullYear();
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
     const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
 
@@ -1475,25 +1487,84 @@ const MobilePage = () => {
       "July", "August", "September", "October", "November", "December"
     ];
 
+    const getEventsForDate = (date: Date) => {
+      const dateString = format(date, 'yyyy-MM-dd');
+      return calendarEvents.filter((event: any) => {
+        if (event.eventType === 'availability') {
+          return false;
+        }
+        const eventStartDate = event.startDate.split('T')[0];
+        const eventEndDate = event.endDate.split('T')[0];
+        return dateString >= eventStartDate && dateString <= eventEndDate;
+      });
+    };
+
+    const getEventTypeColor = (eventType: string) => {
+      switch (eventType) {
+        case 'work_assignment': return 'bg-blue-500';
+        case 'meeting': return 'bg-purple-500';
+        case 'maintenance': return 'bg-orange-500';
+        case 'personal': return 'bg-gray-500';
+        default: return 'bg-green-500';
+      }
+    };
+
+    const handleDateClick = (date: Date) => {
+      setSelectedCalendarDate(date);
+      const eventsForDate = getEventsForDate(date);
+      if (eventsForDate.length > 0) {
+        setCalendarView('day');
+      }
+    };
+
+    const handleEventClick = (event: any) => {
+      setSelectedCalendarEvent(event);
+      setShowEventModal(true);
+    };
+
     const generateCalendarDays = () => {
       const days = [];
 
       // Empty cells for days before the first day of month
       for (let i = 0; i < firstDayOfMonth; i++) {
-        days.push(<div key={`empty-${i}`} className="h-10 w-10"></div>);
+        days.push(<div key={`empty-${i}`} className="h-16 w-full"></div>);
       }
 
       // Days of the month
       for (let day = 1; day <= daysInMonth; day++) {
+        const currentDate = new Date(currentYear, currentMonth, day);
         const isToday = day === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
+        const dayEvents = getEventsForDate(currentDate);
+        
         days.push(
           <div
             key={day}
-            className={`h-10 w-10 flex items-center justify-center rounded-lg text-sm cursor-pointer hover:bg-muted ${
-              isToday ? 'bg-primary text-primary-foreground font-semibold' : 'text-foreground hover:text-foreground'
+            className={`h-16 w-full flex flex-col items-center justify-start p-1 rounded-lg text-sm cursor-pointer hover:bg-muted transition-colors relative ${
+              isToday ? 'bg-primary/10 ring-1 ring-primary' : 'hover:bg-accent'
             }`}
+            onClick={() => handleDateClick(currentDate)}
           >
-            {day}
+            <div className={`font-medium mb-1 ${
+              isToday ? 'text-primary font-bold' : 'text-foreground'
+            }`}>
+              {day}
+            </div>
+            <div className="flex flex-col gap-0.5 w-full">
+              {dayEvents.slice(0, 2).map((event: any, index: number) => (
+                <div
+                  key={`${event.id}-${index}`}
+                  className={`w-2 h-2 rounded-full ${getEventTypeColor(event.eventType)} flex-shrink-0`}
+                  title={event.title}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEventClick(event);
+                  }}
+                ></div>
+              ))}
+              {dayEvents.length > 2 && (
+                <div className="text-xs text-muted-foreground">+{dayEvents.length - 2}</div>
+              )}
+            </div>
           </div>
         );
       }
@@ -1501,69 +1572,364 @@ const MobilePage = () => {
       return days;
     };
 
-    return (
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              {monthNames[currentMonth]} {currentYear}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Calendar Header */}
-              <div className="grid grid-cols-7 gap-1 text-center text-sm font-medium text-muted-foreground">
-                <div>Sun</div>
-                <div>Mon</div>
-                <div>Tue</div>
-                <div>Wed</div>
-                <div>Thu</div>
-                <div>Fri</div>
-                <div>Sat</div>
-              </div>
+    const navigateMonth = (direction: 'prev' | 'next') => {
+      setCurrentCalendarDate(prev => {
+        const newDate = new Date(prev);
+        if (direction === 'prev') {
+          newDate.setMonth(prev.getMonth() - 1);
+        } else {
+          newDate.setMonth(prev.getMonth() + 1);
+        }
+        return newDate;
+      });
+    };
 
-              {/* Calendar Grid */}
-              <div className="grid grid-cols-7 gap-1">
-                {generateCalendarDays()}
-              </div>
+    const formatEventTime = (timeString: string) => {
+      try {
+        const [hours, minutes] = timeString.split(':').map(Number);
+        const date = new Date();
+        date.setHours(hours, minutes);
+        return format(date, "h:mm a");
+      } catch {
+        return timeString;
+      }
+    };
 
-              {/* Quick Actions */}
-              <div className="pt-4 border-t">
-                <div className="space-y-2">
+    if (calendarView === 'day' && selectedCalendarDate) {
+      const dayEvents = getEventsForDate(selectedCalendarDate);
+      return (
+        <div className="space-y-4">
+          {/* Day View Header */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setCalendarView('month')}
+                  className="flex items-center gap-2"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back to Month
+                </Button>
+                <CardTitle className="text-lg text-center">
+                  {format(selectedCalendarDate, 'EEEE, MMMM d, yyyy')}
+                </CardTitle>
+                <div className="w-20" /> {/* Spacer */}
+              </div>
+            </CardHeader>
+          </Card>
+
+          {/* Day Events */}
+          <Card>
+            <CardContent className="p-4">
+              {dayEvents.length === 0 ? (
+                <div className="text-center py-8">
+                  <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No events scheduled for this day</p>
                   <Button 
                     size="sm" 
                     variant="outline" 
-                    className="w-full justify-start"
+                    className="mt-4"
                     onClick={() => {
                       toast({
-                        title: "Coming Soon",
-                        description: "Schedule maintenance feature will be available soon.",
+                        title: "Create Event",
+                        description: "Event creation feature coming soon",
                       });
                     }}
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Schedule Maintenance
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="w-full justify-start"
-                    onClick={() => {
-                      toast({
-                        title: "Calendar Integration",
-                        description: "View your scheduled maintenance appointments here.",
-                      });
-                    }}
-                  >
-                    <Clock className="h-4 w-4 mr-2" />
-                    View Scheduled
+                    Add Event
                   </Button>
                 </div>
+              ) : (
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-lg">Events ({dayEvents.length})</h3>
+                  {dayEvents.map((event: any) => (
+                    <div
+                      key={event.id}
+                      className="p-3 border rounded-lg bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+                      onClick={() => handleEventClick(event)}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <h4 className="font-medium text-sm">{event.title}</h4>
+                        <div className={`w-3 h-3 rounded-full ${getEventTypeColor(event.eventType)} flex-shrink-0`}></div>
+                      </div>
+                      {event.startTime && (
+                        <p className="text-xs text-muted-foreground mb-1">
+                          {formatEventTime(event.startTime)}
+                          {event.endTime && ` - ${formatEventTime(event.endTime)}`}
+                        </p>
+                      )}
+                      {event.description && (
+                        <p className="text-xs text-muted-foreground">{event.description}</p>
+                      )}
+                      {event.location && (
+                        <div className="flex items-center gap-1 mt-2">
+                          <MapPin className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">{event.location}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 mt-2">
+                        <Badge variant="secondary" className="text-xs">
+                          {event.eventType.replace('_', ' ')}
+                        </Badge>
+                        {event.priority && (
+                          <Badge variant="outline" className={`text-xs ${
+                            event.priority === 'high' ? 'border-red-200 text-red-700' :
+                            event.priority === 'medium' ? 'border-yellow-200 text-yellow-700' :
+                            'border-green-200 text-green-700'
+                          }`}>
+                            {event.priority}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        {/* Calendar Header */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => navigateMonth('prev')}
+                disabled={calendarLoading}
+              >
+                <ChevronDown className="h-4 w-4 rotate-90" />
+              </Button>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                {monthNames[currentMonth]} {currentYear}
+              </CardTitle>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => navigateMonth('next')}
+                disabled={calendarLoading}
+              >
+                <ChevronDown className="h-4 w-4 -rotate-90" />
+              </Button>
+            </div>
+            <div className="flex justify-center mt-3">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setCurrentCalendarDate(new Date())}
+                disabled={calendarLoading}
+              >
+                Today
+              </Button>
+            </div>
+          </CardHeader>
+        </Card>
+
+        {/* Calendar Grid */}
+        <Card>
+          <CardContent className="p-4">
+            {calendarLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading calendar...</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Calendar Header */}
+                <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-muted-foreground">
+                  <div className="py-2">Sun</div>
+                  <div className="py-2">Mon</div>
+                  <div className="py-2">Tue</div>
+                  <div className="py-2">Wed</div>
+                  <div className="py-2">Thu</div>
+                  <div className="py-2">Fri</div>
+                  <div className="py-2">Sat</div>
+                </div>
+
+                {/* Calendar Grid */}
+                <div className="grid grid-cols-7 gap-1">
+                  {generateCalendarDays()}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Event Legend */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Event Types</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <span>Work Assignment</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                <span>Meeting</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                <span>Maintenance</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
+                <span>Personal</span>
               </div>
             </div>
           </CardContent>
         </Card>
+
+        {/* Quick Actions */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="space-y-2">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => {
+                  toast({
+                    title: "Create Event",
+                    description: "Event creation feature will be integrated with the full calendar system",
+                  });
+                }}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create New Event
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => {
+                  const upcomingEvents = calendarEvents.filter((event: any) => {
+                    const eventDate = new Date(event.startDate);
+                    return eventDate >= today;
+                  });
+                  toast({
+                    title: "Upcoming Events",
+                    description: `You have ${upcomingEvents.length} upcoming events`,
+                  });
+                }}
+              >
+                <Clock className="h-4 w-4 mr-2" />
+                View Upcoming Events ({calendarEvents.filter((event: any) => new Date(event.startDate) >= today).length})
+              </Button>
+              {(user?.role === 'maintenance_admin' || user?.role === 'technician') && (
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="w-full justify-start text-green-700 border-green-200"
+                  onClick={() => {
+                    toast({
+                      title: "Set Availability",
+                      description: "Availability management will be integrated soon",
+                    });
+                  }}
+                >
+                  <Clock className="h-4 w-4 mr-2" />
+                  Manage Availability
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Event Detail Modal */}
+        {showEventModal && selectedCalendarEvent && (
+          <Dialog open={showEventModal} onOpenChange={setShowEventModal}>
+            <DialogContent className="max-w-sm mx-4">
+              <DialogHeader>
+                <DialogTitle className="text-lg">{selectedCalendarEvent.title}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                {selectedCalendarEvent.description && (
+                  <div>
+                    <h4 className="text-sm font-medium mb-1">Description</h4>
+                    <p className="text-sm text-muted-foreground">{selectedCalendarEvent.description}</p>
+                  </div>
+                )}
+                <div>
+                  <h4 className="text-sm font-medium mb-1">Date & Time</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {format(new Date(selectedCalendarEvent.startDate), 'MMMM d, yyyy')}
+                    {selectedCalendarEvent.startTime && (
+                      <> at {formatEventTime(selectedCalendarEvent.startTime)}</>
+                    )}
+                    {selectedCalendarEvent.endTime && (
+                      <> - {formatEventTime(selectedCalendarEvent.endTime)}</>
+                    )}
+                  </p>
+                </div>
+                {selectedCalendarEvent.location && (
+                  <div>
+                    <h4 className="text-sm font-medium mb-1">Location</h4>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">{selectedCalendarEvent.location}</p>
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary">
+                    {selectedCalendarEvent.eventType.replace('_', ' ')}
+                  </Badge>
+                  {selectedCalendarEvent.priority && (
+                    <Badge variant="outline" className={`${
+                      selectedCalendarEvent.priority === 'high' ? 'border-red-200 text-red-700' :
+                      selectedCalendarEvent.priority === 'medium' ? 'border-yellow-200 text-yellow-700' :
+                      'border-green-200 text-green-700'
+                    }`}>
+                      {selectedCalendarEvent.priority}
+                    </Badge>
+                  )}
+                  <Badge variant="outline" className={`${
+                    selectedCalendarEvent.status === 'confirmed' ? 'border-green-200 text-green-700' :
+                    selectedCalendarEvent.status === 'tentative' ? 'border-yellow-200 text-yellow-700' :
+                    'border-red-200 text-red-700'
+                  }`}>
+                    {selectedCalendarEvent.status}
+                  </Badge>
+                </div>
+                <div className="flex gap-2 pt-4">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => setShowEventModal(false)}
+                  >
+                    Close
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => {
+                      toast({
+                        title: "Edit Event",
+                        description: "Event editing will be available soon",
+                      });
+                      setShowEventModal(false);
+                    }}
+                  >
+                    Edit
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
     );
   };
