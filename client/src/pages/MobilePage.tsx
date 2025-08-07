@@ -1275,6 +1275,17 @@ const MobilePage = () => {
                                   Complete Work
                                 </DropdownMenuItem>
                               )}
+                              {/* Allow creating another work order if previous one needed return visit */}
+                              {hasReturnNeededWorkOrder(ticket, allTicketsWorkOrders[ticket.id]) && 
+                               ticket.status !== 'pending_confirmation' && 
+                               ticket.status !== 'confirmed' && 
+                               ticket.status !== 'ready_for_billing' && 
+                               ticket.status !== 'billed' && (
+                                <DropdownMenuItem onClick={() => handleCreateWorkOrder(ticket)}>
+                                  <Wrench className="h-4 w-4 mr-2" />
+                                  Create Another Work Order
+                                </DropdownMenuItem>
+                              )}
                             </>
                           )}
                           {/* Marketplace actions */}
