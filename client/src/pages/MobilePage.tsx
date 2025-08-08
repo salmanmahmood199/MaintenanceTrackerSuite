@@ -1539,6 +1539,10 @@ const MobilePage = () => {
     };
 
     const handleDateClick = (date: Date) => {
+      // Reset all modal states first
+      setShowTimeSlotBooking(false);
+      setShowEventModal(false);
+      
       setSelectedCalendarDate(date);
       const eventsForDate = getEventsForDate(date);
       if (eventsForDate.length > 0) {
@@ -1550,6 +1554,9 @@ const MobilePage = () => {
         setShowTimeSlotBooking(true);
         setSelectedTimeSlot(null);
         setBookingForm({ title: '', description: '', location: '' });
+        // Clear location autocomplete state
+        setLocationSuggestions([]);
+        setShowLocationSuggestions(false);
       }
     };
 
@@ -1814,10 +1821,20 @@ const MobilePage = () => {
             description: `Successfully booked ${bookingForm.title} for ${format(bookingDate, 'MMM d')} at ${formatEventTime(selectedTimeSlot.start)}`
           });
 
-          // Reset form and close modal
+          // Reset all form state and close modal
           setShowTimeSlotBooking(false);
+          setBookingDate(null);
           setBookingForm({ title: '', description: '', location: '' });
           setSelectedTimeSlot(null);
+          setLocationSuggestions([]);
+          setShowLocationSuggestions(false);
+          setLocationSearchLoading(false);
+          
+          // Clear search timeout if exists
+          if (locationSearchTimeout) {
+            clearTimeout(locationSearchTimeout);
+            setLocationSearchTimeout(null);
+          }
           
           // Refresh calendar events
           queryClient.invalidateQueries({ queryKey: ["/api/calendar/events"] });
@@ -1843,7 +1860,18 @@ const MobilePage = () => {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => setCalendarView('month')}
+                  onClick={() => {
+                    // Clean up all modal states when going back
+                    setShowTimeSlotBooking(false);
+                    setShowEventModal(false);
+                    setSelectedCalendarDate(null);
+                    setBookingDate(null);
+                    setSelectedTimeSlot(null);
+                    setBookingForm({ title: '', description: '', location: '' });
+                    setLocationSuggestions([]);
+                    setShowLocationSuggestions(false);
+                    setCalendarView('month');
+                  }}
                   className="flex items-center gap-2"
                 >
                   <ArrowLeft className="h-4 w-4" />
@@ -1965,18 +1993,29 @@ const MobilePage = () => {
                         // Use the currently selected date from day detail
                         const dateToUse = selectedCalendarDate;
                         if (dateToUse) {
-                          setBookingDate(dateToUse);
-                          setShowTimeSlotBooking(true);
+                          // Reset all booking-related state first
                           setSelectedTimeSlot(null);
+                          setSelectedDuration(1);
                           setBookingForm({ title: '', description: '', location: '' });
-                          // Clear location autocomplete state
                           setLocationSuggestions([]);
                           setShowLocationSuggestions(false);
                           setLocationSearchLoading(false);
+                          
+                          // Clear search timeout if exists
                           if (locationSearchTimeout) {
                             clearTimeout(locationSearchTimeout);
                             setLocationSearchTimeout(null);
                           }
+                          
+                          // Set booking date and show modal
+                          setBookingDate(dateToUse);
+                          setShowTimeSlotBooking(true);
+                        } else {
+                          toast({
+                            title: "Error",
+                            description: "Unable to determine selected date. Please try again.",
+                            variant: "destructive",
+                          });
                         }
                       }}
                       className="w-full text-blue-600 border-blue-200 hover:bg-blue-50"
@@ -2225,7 +2264,25 @@ const MobilePage = () => {
         )}
 
         {/* Time Slot Booking Modal */}
-        <Dialog open={showTimeSlotBooking} onOpenChange={setShowTimeSlotBooking}>
+        <Dialog 
+          open={showTimeSlotBooking} 
+          onOpenChange={(open) => {
+            if (!open) {
+              // Clean up state when modal is closed
+              setShowTimeSlotBooking(false);
+              setBookingDate(null);
+              setSelectedTimeSlot(null);
+              setBookingForm({ title: '', description: '', location: '' });
+              setLocationSuggestions([]);
+              setShowLocationSuggestions(false);
+              setLocationSearchLoading(false);
+              if (locationSearchTimeout) {
+                clearTimeout(locationSearchTimeout);
+                setLocationSearchTimeout(null);
+              }
+            }
+          }}
+        >
           <DialogContent className="max-w-sm mx-4 max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -2408,7 +2465,20 @@ const MobilePage = () => {
                 <div className="flex gap-2 pt-4">
                   <Button
                     variant="outline"
-                    onClick={() => setShowTimeSlotBooking(false)}
+                    onClick={() => {
+                      // Clean up all state when canceling
+                      setShowTimeSlotBooking(false);
+                      setBookingDate(null);
+                      setSelectedTimeSlot(null);
+                      setBookingForm({ title: '', description: '', location: '' });
+                      setLocationSuggestions([]);
+                      setShowLocationSuggestions(false);
+                      setLocationSearchLoading(false);
+                      if (locationSearchTimeout) {
+                        clearTimeout(locationSearchTimeout);
+                        setLocationSearchTimeout(null);
+                      }
+                    }}
                     className="flex-1"
                   >
                     Cancel
