@@ -3808,6 +3808,320 @@ const MobilePage = () => {
         isOpen={isAvailabilityConfigOpen}
         onClose={() => setIsAvailabilityConfigOpen(false)}
       />
+      
+      {/* Time Slot Booking Modal */}
+      <Dialog open={showTimeSlotBooking} onOpenChange={() => {
+        setShowTimeSlotBooking(false);
+        setBookingDate(null);
+        setSelectedTimeSlot(null);
+        setBookingForm({ title: '', description: '', location: '' });
+        setLocationSuggestions([]);
+        setShowLocationSuggestions(false);
+        if (locationSearchTimeout) {
+          clearTimeout(locationSearchTimeout);
+          setLocationSearchTimeout(null);
+        }
+      }}>
+        <DialogContent className="max-w-full h-full m-0 p-0 rounded-none">
+          <div className="h-full flex flex-col bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-white/20 bg-gradient-to-r from-blue-600 to-purple-600 text-white flex-shrink-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowTimeSlotBooking(false);
+                  setBookingDate(null);
+                  setSelectedTimeSlot(null);
+                  setBookingForm({ title: '', description: '', location: '' });
+                  setLocationSuggestions([]);
+                  setShowLocationSuggestions(false);
+                  if (locationSearchTimeout) {
+                    clearTimeout(locationSearchTimeout);
+                    setLocationSearchTimeout(null);
+                  }
+                }}
+                className="p-2 text-white hover:bg-white/10"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <div className="text-center">
+                <h2 className="text-lg font-semibold text-white">Book Time Slot</h2>
+                <p className="text-sm text-blue-100">
+                  {bookingDate ? format(bookingDate, 'EEEE, MMM d, yyyy') : ''}
+                </p>
+              </div>
+              <div className="w-10" /> {/* Spacer */}
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-6">
+              {/* Duration Selection */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium text-white">Duration</Label>
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { value: 0.25, label: '15m' },
+                    { value: 0.5, label: '30m' },
+                    { value: 1, label: '1h' },
+                    { value: 2, label: '2h' },
+                    { value: 3, label: '3h' },
+                    { value: 4, label: '4h' }
+                  ].map((duration) => (
+                    <Button
+                      key={duration.value}
+                      type="button"
+                      variant={selectedDuration === duration.value ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => {
+                        setSelectedDuration(duration.value);
+                        setSelectedTimeSlot(null);
+                      }}
+                      className={selectedDuration === duration.value 
+                        ? "bg-teal-500 text-white border-teal-500" 
+                        : "bg-white/10 text-white border-white/20 hover:bg-white/20"
+                      }
+                    >
+                      {duration.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Time Slots */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium text-white">Available Time Slots</Label>
+                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                  {generateTimeSlots().map((slot, index) => {
+                    const isSelected = selectedTimeSlot?.start === slot.start && selectedTimeSlot?.end === slot.end;
+                    return (
+                      <Button
+                        key={index}
+                        type="button"
+                        variant={isSelected ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setSelectedTimeSlot(isSelected ? null : { start: slot.start, end: slot.end })}
+                        className={isSelected 
+                          ? "bg-purple-500 text-white border-purple-500" 
+                          : "bg-white/10 text-white border-white/20 hover:bg-white/20"
+                        }
+                      >
+                        {slot.label}
+                      </Button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Event Details Form */}
+              {selectedTimeSlot && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-white">Title *</Label>
+                    <Input
+                      value={bookingForm.title}
+                      onChange={(e) => setBookingForm(prev => ({ ...prev, title: e.target.value }))}
+                      placeholder="Event title"
+                      className="bg-white/10 border-white/20 text-white placeholder:text-white/60"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-white">Description</Label>
+                    <Textarea
+                      value={bookingForm.description}
+                      onChange={(e) => setBookingForm(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="Event description (optional)"
+                      rows={3}
+                      className="bg-white/10 border-white/20 text-white placeholder:text-white/60"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2 relative">
+                    <Label className="text-sm font-medium text-white">Location</Label>
+                    <div className="relative">
+                      <Input
+                        value={bookingForm.location}
+                        onChange={(e) => {
+                          const query = e.target.value;
+                          setBookingForm(prev => ({ ...prev, location: query }));
+                          
+                          // Clear existing timeout
+                          if (locationSearchTimeout) {
+                            clearTimeout(locationSearchTimeout);
+                          }
+                          
+                          if (query.length >= 2) {
+                            setLocationSearchLoading(true);
+                            const timeout = setTimeout(async () => {
+                              try {
+                                const response = await fetch(`/api/places/search?q=${encodeURIComponent(query)}`);
+                                const data = await response.json();
+                                setLocationSuggestions(
+                                  data.predictions?.slice(0, 5).map((p: any) => p.description) || []
+                                );
+                                setShowLocationSuggestions(true);
+                              } catch (error) {
+                                console.error('Error fetching locations:', error);
+                                setLocationSuggestions([]);
+                              } finally {
+                                setLocationSearchLoading(false);
+                              }
+                            }, 300);
+                            setLocationSearchTimeout(timeout);
+                          } else {
+                            setLocationSuggestions([]);
+                            setShowLocationSuggestions(false);
+                            setLocationSearchLoading(false);
+                          }
+                        }}
+                        placeholder="Event location (optional)"
+                        className="bg-white/10 border-white/20 text-white placeholder:text-white/60"
+                      />
+                      
+                      {/* Location Suggestions Dropdown */}
+                      {showLocationSuggestions && locationSuggestions.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 bg-white/95 backdrop-blur-sm border border-white/20 rounded-md mt-1 max-h-48 overflow-y-auto z-50">
+                          {locationSuggestions.map((suggestion, index) => (
+                            <button
+                              key={index}
+                              className="w-full px-3 py-2 text-left text-sm text-gray-800 hover:bg-blue-100 first:rounded-t-md last:rounded-b-md"
+                              onClick={() => {
+                                setBookingForm(prev => ({ ...prev, location: suggestion }));
+                                setLocationSuggestions([]);
+                                setShowLocationSuggestions(false);
+                              }}
+                            >
+                              {suggestion}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {locationSearchLoading && (
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                          <Loader2 className="h-4 w-4 animate-spin text-white/60" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            {selectedTimeSlot && (
+              <div className="flex-shrink-0 p-4 border-t border-white/20 bg-gradient-to-r from-slate-900/90 to-purple-900/90 backdrop-blur-sm">
+                <div className="mb-3 p-3 bg-blue-500/20 border border-blue-400/30 rounded">
+                  <p className="text-sm font-medium text-blue-100">
+                    Selected: {formatTime(selectedTimeSlot.start)} - {formatTime(selectedTimeSlot.end)}
+                  </p>
+                  <p className="text-xs text-blue-200">
+                    Duration: {selectedDuration >= 1 ? `${selectedDuration} hour${selectedDuration > 1 ? 's' : ''}` : `${selectedDuration * 60} minutes`}
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowTimeSlotBooking(false);
+                      setBookingDate(null);
+                      setSelectedTimeSlot(null);
+                      setBookingForm({ title: '', description: '', location: '' });
+                      setLocationSuggestions([]);
+                      setShowLocationSuggestions(false);
+                      if (locationSearchTimeout) {
+                        clearTimeout(locationSearchTimeout);
+                        setLocationSearchTimeout(null);
+                      }
+                    }}
+                    className="flex-1 border-white/20 text-white hover:bg-white/10"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      if (!bookingForm.title.trim()) {
+                        toast({
+                          title: "Error",
+                          description: "Please enter a title for the event",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+                      
+                      if (!bookingDate || !selectedTimeSlot) {
+                        toast({
+                          title: "Error",
+                          description: "Please select a date and time slot",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+                      
+                      try {
+                        const eventData = {
+                          title: bookingForm.title,
+                          description: bookingForm.description || '',
+                          eventType: 'personal',
+                          startDate: format(bookingDate, 'yyyy-MM-dd'),
+                          endDate: format(bookingDate, 'yyyy-MM-dd'),
+                          startTime: selectedTimeSlot.start,
+                          endTime: selectedTimeSlot.end,
+                          isAllDay: false,
+                          priority: 'medium',
+                          location: bookingForm.location || '',
+                          color: '#3B82F6',
+                          timezone: 'America/New_York',
+                          isAvailability: false,
+                          status: 'confirmed'
+                        };
+                        
+                        await apiRequest("POST", "/api/calendar/events", eventData);
+                        
+                        toast({
+                          title: "Success",
+                          description: "Event booked successfully!",
+                        });
+                        
+                        // Invalidate calendar events
+                        queryClient.invalidateQueries({ queryKey: ['/api/calendar/events'] });
+                        
+                        // Close modal and reset state
+                        setShowTimeSlotBooking(false);
+                        setBookingDate(null);
+                        setSelectedTimeSlot(null);
+                        setBookingForm({ title: '', description: '', location: '' });
+                        setLocationSuggestions([]);
+                        setShowLocationSuggestions(false);
+                        if (locationSearchTimeout) {
+                          clearTimeout(locationSearchTimeout);
+                          setLocationSearchTimeout(null);
+                        }
+                        
+                        // Switch to day view to show the new event
+                        setCalendarView('day');
+                        
+                      } catch (error) {
+                        console.error('Error creating event:', error);
+                        toast({
+                          title: "Error",
+                          description: "Failed to book event. Please try again.",
+                          variant: "destructive",
+                        });
+                      }
+                    }}
+                    className="flex-1 bg-gradient-to-r from-teal-500 to-blue-600 text-white hover:from-teal-600 hover:to-blue-700 border-0"
+                  >
+                    Book Event
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
