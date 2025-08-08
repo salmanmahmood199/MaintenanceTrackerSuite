@@ -327,11 +327,6 @@ export default function TechnicianDashboard() {
                             </span>
                           </div>
                         )}
-                        {ticket.location && (
-                          <div className="flex items-center gap-1">
-                            <span>{ticket.location}</span>
-                          </div>
-                        )}
                       </div>
                       
                       <div className="flex items-center gap-2">

@@ -4,7 +4,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, XCircle, Wrench, User, DollarSign } from "lucide-react";
+import { CheckCircle, XCircle, Wrench, User, DollarSign, Calendar, Clock, Eye } from "lucide-react";
+import { format } from "date-fns";
+import { TechnicianCalendarWidget } from "./technician-calendar-widget";
 import type { Ticket, MaintenanceVendor } from "@shared/schema";
 
 interface TicketActionModalProps {
@@ -14,7 +16,14 @@ interface TicketActionModalProps {
   action: "accept" | "reject" | null;
   vendors: Array<{ vendor: MaintenanceVendor; tier: string; isActive: boolean }>;
   technicians?: Array<{ id: number; firstName: string; lastName: string; email: string }>;
-  onAccept: (ticketId: number, data: { maintenanceVendorId?: number; assigneeId?: number; marketplace?: boolean }) => void;
+  onAccept: (ticketId: number, data: {
+    maintenanceVendorId?: number;
+    assigneeId?: number;
+    marketplace?: boolean;
+    scheduledStartTime?: string;
+    scheduledEndTime?: string;
+    estimatedDuration?: number;
+  }) => void;
   onReject: (ticketId: number, rejectionReason: string) => void;
   isLoading: boolean;
   userRole?: string;
@@ -38,6 +47,12 @@ export function TicketActionModal({
 }: TicketActionModalProps) {
   const [selectedVendorId, setSelectedVendorId] = useState<string>("");
   const [rejectionReason, setRejectionReason] = useState("");
+  const [selectedSchedule, setSelectedSchedule] = useState<{
+    date: Date;
+    startTime: string;
+    endTime: string;
+    duration: number;
+  } | null>(null);
 
 
 
@@ -50,9 +65,26 @@ export function TicketActionModal({
       } else if (selectedVendorId.startsWith("tech_")) {
         // Handle technician assignment for maintenance admin
         const technicianId = parseInt(selectedVendorId.replace("tech_", ""));
-        onAccept(ticket.id, {
+        const acceptData: any = {
           assigneeId: technicianId,
-        });
+        };
+        
+        // Include scheduling data if available
+        if (selectedSchedule) {
+          const scheduledStart = new Date(selectedSchedule.date);
+          const [startHour, startMinute] = selectedSchedule.startTime.split(':').map(Number);
+          scheduledStart.setHours(startHour, startMinute, 0, 0);
+          
+          const scheduledEnd = new Date(selectedSchedule.date);
+          const [endHour, endMinute] = selectedSchedule.endTime.split(':').map(Number);
+          scheduledEnd.setHours(endHour, endMinute, 0, 0);
+          
+          acceptData.scheduledStartTime = scheduledStart.toISOString();
+          acceptData.scheduledEndTime = scheduledEnd.toISOString();
+          acceptData.estimatedDuration = selectedSchedule.duration;
+        }
+        
+        onAccept(ticket.id, acceptData);
       } else {
         onAccept(ticket.id, {
           maintenanceVendorId: selectedVendorId && selectedVendorId !== "none" ? parseInt(selectedVendorId) : undefined,
@@ -66,11 +98,13 @@ export function TicketActionModal({
     // Reset form
     setSelectedVendorId("");
     setRejectionReason("");
+    setSelectedSchedule(null);
   };
 
   const handleClose = () => {
     setSelectedVendorId("");
     setRejectionReason("");
+    setSelectedSchedule(null);
     onOpenChange(false);
   };
 
@@ -188,6 +222,63 @@ export function TicketActionModal({
                     </p>
                   )}
                 </div>
+                
+                {/* Calendar scheduling for technician assignment */}
+                {userRole === "maintenance_admin" && selectedVendorId.startsWith("tech_") && (
+                  <div className="space-y-3 pt-3 border-t">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-blue-600" />
+                      <Label className="text-sm font-medium text-gray-900 dark:text-gray-100">Schedule Work (Optional)</Label>
+                    </div>
+                    
+                    <TechnicianCalendarWidget
+                      technicianId={parseInt(selectedVendorId.replace("tech_", ""))}
+                      technicianName={technicians.find(t => t.id.toString() === selectedVendorId.replace("tech_", ""))?.firstName || 'Technician'}
+                      onTimeSlotSelect={(slot) => {
+                        setSelectedSchedule(slot);
+                      }}
+                      trigger={
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          View Technician Calendar
+                        </Button>
+                      }
+                    />
+                    
+                    {selectedSchedule && (
+                      <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded">
+                        <div className="text-sm">
+                          <p className="font-medium text-blue-900 dark:text-blue-100">
+                            Scheduled: {format(selectedSchedule.date, 'EEEE, MMMM d, yyyy')}
+                          </p>
+                          <p className="text-blue-700 dark:text-blue-300">
+                            Time: {selectedSchedule.startTime} - {selectedSchedule.endTime} ({selectedSchedule.duration >= 1 ? `${selectedSchedule.duration} hour${selectedSchedule.duration > 1 ? 's' : ''}` : `${selectedSchedule.duration * 60} min`})
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedSchedule(null)}
+                          className="mt-2 text-xs"
+                        >
+                          Clear Schedule
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {!selectedSchedule && (
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Click "View Technician Calendar" to schedule a specific time slot, or skip to assign without scheduling.
+                      </p>
+                    )}
+                  </div>
+                )}
                 
                 {selectedVendorId === "marketplace" && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
