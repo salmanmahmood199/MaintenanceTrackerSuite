@@ -30,7 +30,6 @@ import { EnhancedInvoiceCreator } from "@/components/enhanced-invoice-creator";
 import { TicketComments } from "@/components/ticket-comments";
 import { ProgressTrackerEmbedded } from "@/components/progress-tracker";
 import { WorkOrdersHistory } from "@/components/work-orders-history";
-import { AvailabilityModal } from "@/components/availability-modal";
 import { CreateEventModal } from "@/components/create-event-modal";
 import AvailabilityConfigModal from "@/components/availability-config-modal";
 import { useToast } from "@/hooks/use-toast";
@@ -390,10 +389,13 @@ const MobilePage = () => {
   const [timeOut, setTimeOut] = useState("");
   const [isWorkOrderHistoryOpen, setIsWorkOrderHistoryOpen] = useState(false);
   const [selectedImageForViewer, setSelectedImageForViewer] = useState<string | null>(null);
-  const [isAvailabilityModalOpen, setIsAvailabilityModalOpen] = useState(false);
   const [isCreateEventModalOpen, setIsCreateEventModalOpen] = useState(false);
   const [isAvailabilityConfigOpen, setIsAvailabilityConfigOpen] = useState(false);
   const [selectedCalendarDateForEvent, setSelectedCalendarDateForEvent] = useState<Date | null>(null);
+  const [showTimeSlotBooking, setShowTimeSlotBooking] = useState(false);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<{start: string, end: string} | null>(null);
+  const [selectedDuration, setSelectedDuration] = useState<number>(1); // Default 1 hour
+  const [bookingDate, setBookingDate] = useState<Date | null>(null);
 
   // Work order submission mutation
   const submitWorkOrderMutation = useMutation({
@@ -1521,6 +1523,11 @@ const MobilePage = () => {
       const eventsForDate = getEventsForDate(date);
       if (eventsForDate.length > 0) {
         setCalendarView('day');
+      } else {
+        // Show time slot booking for empty dates
+        setBookingDate(date);
+        setShowTimeSlotBooking(true);
+        setSelectedTimeSlot(null);
       }
     };
 
@@ -1603,6 +1610,72 @@ const MobilePage = () => {
         return format(date, "h:mm a");
       } catch {
         return timeString;
+      }
+    };
+
+    // Generate time slots for booking (similar to technician calendar widget)
+    const generateTimeSlots = () => {
+      const slots = [];
+      const durationHours = selectedDuration;
+      const durationMinutes = durationHours * 60;
+      
+      // Generate slots every 30 minutes from 8 AM to 6 PM
+      for (let hour = 8; hour < 18; hour++) {
+        for (let minute = 0; minute < 60; minute += 30) {
+          const startHour = hour;
+          const startMinute = minute;
+          const startTime = `${startHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}`;
+          
+          // Calculate end time based on duration
+          const endTotalMinutes = startHour * 60 + startMinute + durationMinutes;
+          const endHour = Math.floor(endTotalMinutes / 60);
+          const endMinute = endTotalMinutes % 60;
+          
+          // Don't show slots that would end after 6 PM (18:00)
+          if (endHour > 18 || (endHour === 18 && endMinute > 0)) {
+            continue;
+          }
+          
+          const endTime = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
+          
+          slots.push({
+            start: startTime,
+            end: endTime,
+            label: `${formatEventTime(startTime)} - ${formatEventTime(endTime)}`
+          });
+        }
+      }
+      return slots;
+    };
+
+    // Check if a time slot is available (no conflicting events)
+    const isTimeSlotAvailable = (startTime: string, endTime: string) => {
+      if (!bookingDate) return true;
+      
+      const dayEvents = getEventsForDate(bookingDate);
+      
+      for (const event of dayEvents) {
+        if (event.startTime && event.endTime) {
+          // Check for time overlap
+          if (startTime < event.endTime && endTime > event.startTime) {
+            return false;
+          }
+        }
+      }
+      
+      return true;
+    };
+
+    // Handle booking a selected time slot
+    const handleBookTimeSlot = () => {
+      if (bookingDate && selectedTimeSlot) {
+        // Create an event with the selected time slot
+        setSelectedCalendarDateForEvent(bookingDate);
+        setIsCreateEventModalOpen(true);
+        setShowTimeSlotBooking(false);
+        
+        // Pre-fill the event modal with the selected time
+        // The CreateEventModal will handle the actual event creation
       }
     };
 
@@ -1825,19 +1898,10 @@ const MobilePage = () => {
                 size="sm" 
                 variant="outline" 
                 className="w-full justify-start bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 border-green-200 text-green-700"
-                onClick={() => setIsAvailabilityModalOpen(true)}
+                onClick={() => setIsAvailabilityConfigOpen(true)}
               >
                 <Clock className="h-4 w-4 mr-2" />
                 Set Availability
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="w-full justify-start bg-gradient-to-r from-orange-50 to-amber-50 hover:from-orange-100 hover:to-amber-100 border-orange-200 text-orange-700"
-                onClick={() => setIsAvailabilityConfigOpen(true)}
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Configure Schedule
               </Button>
               <Button 
                 size="sm" 
@@ -1857,22 +1921,6 @@ const MobilePage = () => {
                 <List className="h-4 w-4 mr-2" />
                 View Upcoming ({calendarEvents.filter((event: any) => new Date(event.startDate) >= today).length})
               </Button>
-              {(user?.role === 'maintenance_admin' || user?.role === 'technician') && (
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="w-full justify-start text-green-700 border-green-200"
-                  onClick={() => {
-                    toast({
-                      title: "Set Availability",
-                      description: "Availability management will be integrated soon",
-                    });
-                  }}
-                >
-                  <Clock className="h-4 w-4 mr-2" />
-                  Manage Availability
-                </Button>
-              )}
             </div>
           </CardContent>
         </Card>
@@ -1960,6 +2008,121 @@ const MobilePage = () => {
             </DialogContent>
           </Dialog>
         )}
+
+        {/* Time Slot Booking Modal */}
+        <Dialog open={showTimeSlotBooking} onOpenChange={setShowTimeSlotBooking}>
+          <DialogContent className="max-w-sm mx-4 max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-blue-600" />
+                Book Time Slot
+              </DialogTitle>
+            </DialogHeader>
+            
+            {bookingDate && (
+              <div className="space-y-4">
+                <div className="text-center p-3 bg-blue-50 rounded-lg">
+                  <p className="font-medium text-blue-900">
+                    {format(bookingDate, 'EEEE, MMMM d, yyyy')}
+                  </p>
+                  <p className="text-sm text-blue-700">Select your preferred time slot</p>
+                </div>
+
+                {/* Duration Selection */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-gray-700">Duration:</h4>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      { value: 0.25, label: '15min' },
+                      { value: 0.5, label: '30min' },
+                      { value: 1, label: '1hr' },
+                      { value: 2, label: '2hr' }
+                    ].map((duration) => (
+                      <button
+                        key={duration.value}
+                        onClick={() => {
+                          setSelectedDuration(duration.value);
+                          setSelectedTimeSlot(null); // Reset selected slot when duration changes
+                        }}
+                        className={`
+                          px-2 py-1 text-xs rounded border transition-all
+                          ${
+                            selectedDuration === duration.value
+                              ? 'bg-blue-500 text-white border-blue-500'
+                              : 'bg-white text-gray-900 border-gray-200 hover:bg-blue-50'
+                          }
+                        `}
+                      >
+                        {duration.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Available Time Slots */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-gray-700">
+                    Available Times ({selectedDuration >= 1 ? `${selectedDuration} hour${selectedDuration > 1 ? 's' : ''}` : `${selectedDuration * 60} min`}):
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                    {generateTimeSlots().map((slot, index) => {
+                      const isAvailable = isTimeSlotAvailable(slot.start, slot.end);
+                      const isSelected = selectedTimeSlot?.start === slot.start && selectedTimeSlot?.end === slot.end;
+                      
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => setSelectedTimeSlot(isSelected ? null : { start: slot.start, end: slot.end })}
+                          disabled={!isAvailable}
+                          className={`
+                            p-2 text-xs rounded border transition-all text-center
+                            ${
+                              isAvailable 
+                                ? isSelected 
+                                  ? 'bg-green-500 text-white border-green-500' 
+                                  : 'bg-white text-gray-900 border-gray-200 hover:bg-green-50'
+                                : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                            }
+                          `}
+                        >
+                          {slot.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {selectedTimeSlot && (
+                  <div className="p-3 bg-green-50 border border-green-200 rounded">
+                    <p className="text-sm font-medium text-green-900">
+                      Selected: {formatEventTime(selectedTimeSlot.start)} - {formatEventTime(selectedTimeSlot.end)}
+                    </p>
+                    <p className="text-xs text-green-700">
+                      Ready to schedule for {format(bookingDate, 'MMM d, yyyy')}
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex gap-2 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowTimeSlotBooking(false)}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleBookTimeSlot}
+                    disabled={!selectedTimeSlot}
+                    className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  >
+                    Book Slot
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     );
   };
@@ -3239,10 +3402,6 @@ const MobilePage = () => {
       </Dialog>
 
       {/* Calendar-related modals */}
-      <AvailabilityModal
-        isOpen={isAvailabilityModalOpen}
-        onClose={() => setIsAvailabilityModalOpen(false)}
-      />
       
       <CreateEventModal
         open={isCreateEventModalOpen}
