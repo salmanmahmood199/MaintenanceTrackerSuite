@@ -3872,7 +3872,7 @@ const MobilePage = () => {
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-32">
+            <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-48">
               {/* Duration Selection */}
               <div className="space-y-3">
                 <Label className="text-sm font-medium text-white">Duration</Label>
