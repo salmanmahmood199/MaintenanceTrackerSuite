@@ -65,15 +65,6 @@ const MobileCreateTicketForm = ({ onClose, onSuccess, user }: { onClose: () => v
     enabled: !!user?.id,
   });
 
-  // Fetch location details for selected ticket
-  const { data: selectedTicketLocation } = useQuery<Location>({
-    queryKey: ["/api/locations", selectedTicketForDetails?.locationId],
-    queryFn: async () => {
-      const response = await apiRequest("GET", `/api/locations/${selectedTicketForDetails?.locationId}`);
-      return await response.json() as Location;
-    },
-    enabled: !!selectedTicketForDetails?.locationId,
-  });
 
   const form = useForm<InsertTicket>({
     resolver: zodResolver(insertTicketSchema.omit({ reporterId: true, organizationId: true })),
@@ -390,6 +381,16 @@ const MobilePage = () => {
   const [calendarView, setCalendarView] = useState<'month' | 'day'>('month');
   const [ticketDateFilter, setTicketDateFilter] = useState<'all' | 'last30' | 'last7' | 'today'>('last30');
   const [selectedTicketForDetails, setSelectedTicketForDetails] = useState<Ticket | null>(null);
+
+  // Fetch location details for selected ticket
+  const { data: selectedTicketLocation } = useQuery<Location>({
+    queryKey: ["/api/locations", selectedTicketForDetails?.locationId],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/locations/${selectedTicketForDetails?.locationId}`);
+      return await response.json() as Location;
+    },
+    enabled: !!selectedTicketForDetails?.locationId,
+  });
   const [isTicketDetailModalOpen, setIsTicketDetailModalOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [parts, setParts] = useState<Array<{ name: string; customName?: string; quantity: number; cost: number }>>([{ name: "", quantity: 1, cost: 0 }]);
