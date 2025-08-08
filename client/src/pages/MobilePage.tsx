@@ -382,7 +382,7 @@ const MobilePage = () => {
   const [selectedTicketForDetails, setSelectedTicketForDetails] = useState<Ticket | null>(null);
   const [isTicketDetailModalOpen, setIsTicketDetailModalOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
-  const [parts, setParts] = useState([{ name: "", customName: "", quantity: 1, cost: 0 }]);
+  const [parts, setParts] = useState<Array<{ name: string; customName?: string; quantity: number; cost: number }>>([{ name: "", quantity: 1, cost: 0 }]);
   const [otherCharges, setOtherCharges] = useState([{ description: "", cost: 0 }]);
   const [completionStatus, setCompletionStatus] = useState<'completed' | 'return_needed'>('completed');
   const [timeIn, setTimeIn] = useState("");
@@ -506,10 +506,10 @@ const MobilePage = () => {
     const workOrderData = {
       workDescription: "Work completed",
       parts: parts
-        .filter(part => (part.name === "custom" ? part.customName : part.name).trim() !== "")
+        .filter(part => (part.name === "custom" ? part.customName || "" : part.name).trim() !== "")
         .map(part => ({
           ...part,
-          name: part.name === "custom" ? part.customName : part.name
+          name: part.name === "custom" ? (part.customName || "") : part.name
         })),
       otherCharges: otherCharges.filter(charge => charge.description.trim() !== ""),
       timeIn,
@@ -583,7 +583,7 @@ const MobilePage = () => {
   });
 
   // Calendar events query
-  const { data: calendarEvents = [], isLoading: calendarLoading } = useQuery({
+  const { data: calendarEvents = [], isLoading: calendarLoading } = useQuery<any[]>({
     queryKey: ["/api/calendar/events"],
     enabled: !!user && currentView === 'calendar',
   });
@@ -1642,40 +1642,6 @@ const MobilePage = () => {
       }
     };
 
-    // Generate time slots for booking based on selected duration
-    const generateTimeSlots = () => {
-      const slots = [];
-      const durationHours = selectedDuration;
-      const durationMinutes = durationHours * 60;
-      
-      // Generate slots every 30 minutes from 8 AM to 6 PM
-      for (let hour = 8; hour < 18; hour++) {
-        for (let minute = 0; minute < 60; minute += 30) {
-          const startHour = hour;
-          const startMinute = minute;
-          const startTime = `${startHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}`;
-          
-          // Calculate end time based on duration
-          const endTotalMinutes = startHour * 60 + startMinute + durationMinutes;
-          const endHour = Math.floor(endTotalMinutes / 60);
-          const endMinute = endTotalMinutes % 60;
-          
-          // Don't show slots that would end after 6 PM (18:00)
-          if (endHour > 18 || (endHour === 18 && endMinute > 0)) {
-            continue;
-          }
-          
-          const endTime = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
-          
-          slots.push({
-            start: startTime,
-            end: endTime,
-            label: `${formatTime(startTime)} - ${formatTime(endTime)}`
-          });
-        }
-      }
-      return slots;
-    };
 
     // Google Places API location search via backend proxy
   const searchLocations = async (query: string): Promise<string[]> => {
@@ -1776,6 +1742,14 @@ const MobilePage = () => {
     }
   };
 
+  // Format time for display
+  const formatTime = (time: string) => {
+    const [hour, minute] = time.split(':').map(Number);
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    return `${displayHour}:${minute.toString().padStart(2, '0')} ${period}`;
+  };
+
   // Generate time slots for booking (similar to technician calendar widget)
     const generateTimeSlots = () => {
       const slots = [];
@@ -1804,7 +1778,7 @@ const MobilePage = () => {
           slots.push({
             start: startTime,
             end: endTime,
-            label: `${formatEventTime(startTime)} - ${formatEventTime(endTime)}`
+            label: `${formatTime(startTime)} - ${formatTime(endTime)}`
           });
         }
       }
@@ -3168,14 +3142,18 @@ const MobilePage = () => {
                       {/* Work Orders Section */}
                       <div>
                         <h4 className="font-medium mb-3">Work Orders</h4>
-                        <WorkOrdersHistory ticketId={selectedTicket.id} />
+                        <WorkOrdersHistory 
+                          ticketId={selectedTicket.id}
+                          open={isWorkOrderHistoryOpen}
+                          onOpenChange={setIsWorkOrderHistoryOpen}
+                        />
                       </div>
 
                       {/* Comments Section */}
                       <div>
                         <h4 className="font-medium mb-3">Comments & Updates</h4>
                         <TicketComments 
-                          ticketId={selectedTicket.id}
+                          ticket={selectedTicket}
                           userRole={user?.role}
                           userId={user?.id}
                         />
@@ -3355,7 +3333,7 @@ const MobilePage = () => {
                                     if (value === "custom") {
                                       setParts(prev => prev.map((p, i) => i === index ? { ...p, name: "custom", customName: "", cost: 0 } : p));
                                     } else {
-                                      const selectedPart = availableParts.find((p: any) => p.name === value);
+                                      const selectedPart = (availableParts as any[])?.find((p: any) => p.name === value);
                                       if (selectedPart) {
                                         const sellingPrice = calculateSellingPrice(
                                           Number(selectedPart.currentCost), 
@@ -3434,7 +3412,7 @@ const MobilePage = () => {
                                         if (/^\d*$/.test(value)) {
                                           setParts(prev =>
                                             prev.map((p, i) =>
-                                              i === index ? { ...p, quantity: value === '' ? '' : Number(value) } : p
+                                              i === index ? { ...p, quantity: value === '' ? 0 : Number(value) } : p
                                             )
                                           );
                                         }
@@ -3444,7 +3422,7 @@ const MobilePage = () => {
                                         setParts(prev =>
                                           prev.map((p, i) =>
                                             i === index
-                                              ? { ...p, quantity: p.quantity === '' || p.quantity < 1 ? 1 : p.quantity }
+                                              ? { ...p, quantity: Number(p.quantity) < 1 ? 1 : Number(p.quantity) }
                                               : p
                                           )
                                         );
