@@ -406,6 +406,16 @@ const MobilePage = () => {
   const [locationSuggestions, setLocationSuggestions] = useState<string[]>([]);
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
   const [locationSearchLoading, setLocationSearchLoading] = useState(false);
+  const [locationSearchTimeout, setLocationSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (locationSearchTimeout) {
+        clearTimeout(locationSearchTimeout);
+      }
+    };
+  }, [locationSearchTimeout]);
 
   // Work order submission mutation
   const submitWorkOrderMutation = useMutation({
@@ -1676,26 +1686,33 @@ const MobilePage = () => {
     return sorted.slice(0, 8);
   };
   
-  // Handle location input change with debounce
-  const handleLocationChange = async (value: string) => {
+  // Handle location input change with proper debounce
+  const handleLocationChange = (value: string) => {
     setBookingForm(prev => ({ ...prev, location: value }));
+    
+    // Clear existing timeout
+    if (locationSearchTimeout) {
+      clearTimeout(locationSearchTimeout);
+    }
     
     if (value.trim().length === 0) {
       setLocationSuggestions([]);
       setShowLocationSuggestions(false);
+      setLocationSearchLoading(false);
       return;
     }
     
     if (value.trim().length < 2) {
       setShowLocationSuggestions(false);
+      setLocationSearchLoading(false);
       return;
     }
     
     setLocationSearchLoading(true);
     setShowLocationSuggestions(true);
     
-    // Simple debounce - in a real app you'd use a proper debounce function
-    setTimeout(async () => {
+    // Proper debounce implementation
+    const timeoutId = setTimeout(async () => {
       try {
         const suggestions = await searchLocations(value);
         setLocationSuggestions(suggestions);
@@ -1706,6 +1723,8 @@ const MobilePage = () => {
         setLocationSearchLoading(false);
       }
     }, 300);
+    
+    setLocationSearchTimeout(timeoutId);
   };
   
   // Handle selecting a location suggestion
@@ -1713,6 +1732,12 @@ const MobilePage = () => {
     setBookingForm(prev => ({ ...prev, location: selectedLocation }));
     setShowLocationSuggestions(false);
     setLocationSuggestions([]);
+    setLocationSearchLoading(false);
+    // Clear any pending search
+    if (locationSearchTimeout) {
+      clearTimeout(locationSearchTimeout);
+      setLocationSearchTimeout(null);
+    }
   };
 
   // Generate time slots for booking (similar to technician calendar widget)
@@ -1943,10 +1968,22 @@ const MobilePage = () => {
                       variant="outline" 
                       size="sm"
                       onClick={() => {
-                        setBookingDate(selectedCalendarDate);
-                        setShowTimeSlotBooking(true);
-                        setSelectedTimeSlot(null);
-                        setBookingForm({ title: '', description: '', location: '' });
+                        // Use the currently selected date from day detail
+                        const dateToUse = selectedCalendarDate;
+                        if (dateToUse) {
+                          setBookingDate(dateToUse);
+                          setShowTimeSlotBooking(true);
+                          setSelectedTimeSlot(null);
+                          setBookingForm({ title: '', description: '', location: '' });
+                          // Clear location autocomplete state
+                          setLocationSuggestions([]);
+                          setShowLocationSuggestions(false);
+                          setLocationSearchLoading(false);
+                          if (locationSearchTimeout) {
+                            clearTimeout(locationSearchTimeout);
+                            setLocationSearchTimeout(null);
+                          }
+                        }
                       }}
                       className="w-full text-blue-600 border-blue-200 hover:bg-blue-50"
                     >
@@ -2322,13 +2359,9 @@ const MobilePage = () => {
                           value={bookingForm.location}
                           onChange={(e) => handleLocationChange(e.target.value)}
                           onFocus={() => {
-                            if (bookingForm.location.trim().length >= 2) {
+                            if (bookingForm.location.trim().length >= 2 && locationSuggestions.length > 0) {
                               setShowLocationSuggestions(true);
                             }
-                          }}
-                          onBlur={() => {
-                            // Delay hiding suggestions to allow clicking on them
-                            setTimeout(() => setShowLocationSuggestions(false), 200);
                           }}
                           className="mt-1"
                         />
@@ -2340,41 +2373,35 @@ const MobilePage = () => {
                               <div className="p-3 text-center text-sm text-muted-foreground">
                                 <div className="flex items-center justify-center gap-2">
                                   <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                                  Searching locations...
+                                  Searching...
                                 </div>
                               </div>
                             ) : locationSuggestions.length > 0 ? (
-                              <>
-                                {locationSuggestions.map((suggestion, index) => (
-                                  <button
-                                    key={index}
-                                    type="button"
-                                    className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 focus:outline-none transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0"
-                                    onMouseDown={(e) => e.preventDefault()} // Prevent input blur
-                                    onClick={() => handleLocationSelect(suggestion)}
-                                  >
-                                    <div className="flex items-start gap-2">
-                                      <MapPin className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                                      <div className="flex-1 min-w-0">
-                                        <div className="text-gray-900 dark:text-gray-100 truncate">
-                                          {suggestion.split(',')[0]} {/* First part (address number/name) */}
-                                        </div>
-                                        {suggestion.includes(',') && (
-                                          <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                            {suggestion.split(',').slice(1).join(',').trim()} {/* Rest of address */}
-                                          </div>
-                                        )}
+                              locationSuggestions.map((suggestion, index) => (
+                                <button
+                                  key={index}
+                                  type="button"
+                                  className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 focus:outline-none transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                                  onClick={() => handleLocationSelect(suggestion)}
+                                >
+                                  <div className="flex items-start gap-2">
+                                    <MapPin className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="text-gray-900 dark:text-gray-100 truncate">
+                                        {suggestion.split(',')[0]}
                                       </div>
+                                      {suggestion.includes(',') && (
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                          {suggestion.split(',').slice(1).join(',').trim()}
+                                        </div>
+                                      )}
                                     </div>
-                                  </button>
-                                ))}
-                                <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-750 border-t border-gray-100 dark:border-gray-700">
-                                  {locationSuggestions.length} location{locationSuggestions.length !== 1 ? 's' : ''} found
-                                </div>
-                              </>
+                                  </div>
+                                </button>
+                              ))
                             ) : (
                               <div className="p-3 text-center text-sm text-muted-foreground">
-                                No locations found for "{bookingForm.location}"
+                                No locations found
                               </div>
                             )}
                           </div>
