@@ -4496,5 +4496,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Google Places API proxy endpoint
+  app.get('/api/places/search', async (req, res) => {
+    try {
+      const query = req.query.q as string;
+      
+      if (!query || query.trim().length < 2) {
+        return res.json({ predictions: [] });
+      }
+      
+      const GOOGLE_PLACES_API_KEY = 'AIzaSyDSH2C4gyfgmxKA8Nyk-RzaxhjmxPCo9eg';
+      
+      // Fetch from Google Places Autocomplete API
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(query)}&key=${GOOGLE_PLACES_API_KEY}&types=address&components=country:us`
+      );
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
+        console.error('Google Places API error:', data.status, data.error_message);
+        // Return empty results on error
+        return res.json({ predictions: [] });
+      }
+      
+      // Return the Google Places response
+      res.json(data);
+      
+    } catch (error) {
+      console.error('Error proxying Google Places request:', error);
+      res.status(500).json({ 
+        error: 'Failed to search locations',
+        predictions: [] 
+      });
+    }
+  });
+
   return httpServer;
 }

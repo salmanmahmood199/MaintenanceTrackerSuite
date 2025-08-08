@@ -1635,55 +1635,49 @@ const MobilePage = () => {
       }
     };
 
-    // Mock location search function (simulates maps API)
+    // Google Places API location search via backend proxy
   const searchLocations = async (query: string): Promise<string[]> => {
     if (query.trim().length < 2) return [];
     
-    // Mock location database - in a real app, this would be an API call
+    try {
+      // Use backend proxy to avoid CORS issues
+      const response = await fetch(`/api/places/search?q=${encodeURIComponent(query)}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Extract location descriptions from Google Places response
+      const suggestions = data.predictions?.map((prediction: any) => 
+        prediction.description
+      ) || [];
+      
+      // Return top 8 results
+      return suggestions.slice(0, 8);
+      
+    } catch (error) {
+      console.error('Error fetching locations from Google Places:', error);
+      // Fallback to mock data if API fails
+      return fallbackLocationSearch(query);
+    }
+  };
+  
+  // Fallback location search (in case Google API fails)
+  const fallbackLocationSearch = (query: string): string[] => {
     const mockLocations = [
       "2318 Halls Ferry Rd, St. Louis, MO 63136",
-      "2318 Hall Street, San Francisco, CA 94133",
+      "2318 Hall Street, San Francisco, CA 94133", 
       "2318 Hallmark Drive, Austin, TX 78758",
-      "2318 Hallwood Ave, Chicago, IL 60647",
-      "231 Hall Plaza, New York, NY 10001",
-      "23 Halls Corner, Boston, MA 02134",
-      "2310 Hallfield Lane, Los Angeles, CA 90210",
-      "2320 Hallway Street, Miami, FL 33101",
-      "2300 Hall Boulevard, Seattle, WA 98101",
-      "2325 Hallmark Court, Denver, CO 80202",
-      "Main Street, Anytown USA",
-      "123 Business Ave, Corporate City",
-      "456 Office Park Dr, Commercial District",
-      "789 Industrial Blvd, Manufacturing Zone",
-      "321 Retail Plaza, Shopping Center",
-      "654 Restaurant Row, Food District",
-      "987 Medical Center Dr, Healthcare Complex",
-      "147 University Ave, Campus Area",
-      "258 Airport Rd, Transportation Hub",
-      "369 Hotel Circle, Hospitality District"
+      "Main Street, Your City",
+      "123 Business Ave, Corporate Center",
+      "456 Office Park Dr, Business District"
     ];
     
-    // Filter locations based on query (case insensitive)
-    const filtered = mockLocations.filter(location => 
+    return mockLocations.filter(location => 
       location.toLowerCase().includes(query.toLowerCase())
-    );
-    
-    // Sort by relevance (exact matches first, then partial matches)
-    const sorted = filtered.sort((a, b) => {
-      const aLower = a.toLowerCase();
-      const bLower = b.toLowerCase();
-      const queryLower = query.toLowerCase();
-      
-      // Exact matches first
-      if (aLower.includes(queryLower) && !bLower.includes(queryLower)) return -1;
-      if (bLower.includes(queryLower) && !aLower.includes(queryLower)) return 1;
-      
-      // Then by string length (shorter addresses are more likely to be what user wants)
-      return a.length - b.length;
-    });
-    
-    // Return top 8 results
-    return sorted.slice(0, 8);
+    ).slice(0, 5);
   };
   
   // Handle location input change with proper debounce
@@ -2355,7 +2349,7 @@ const MobilePage = () => {
                         <Label htmlFor="booking-location" className="text-xs">Location</Label>
                         <Input
                           id="booking-location"
-                          placeholder="Type to search locations (e.g., 2318 halls...)"
+                          placeholder="Search for any address or business..."
                           value={bookingForm.location}
                           onChange={(e) => handleLocationChange(e.target.value)}
                           onFocus={() => {
