@@ -6,73 +6,337 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
+  ActivityIndicator,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { apiRequest } from '../../src/services/api';
+import type { Ticket, WorkOrder } from '../../src/types';
 
 export default function TicketsScreen() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  const [dateFilter, setDateFilter] = useState<'all' | 'last30' | 'last7' | 'today'>('last30');
 
-  const { data: tickets = [], isLoading, refetch } = useQuery({
+  // Fetch tickets
+  const { data: tickets = [], isLoading: ticketsLoading, refetch: refetchTickets } = useQuery<Ticket[]>({
     queryKey: ['/api/tickets'],
     queryFn: async () => {
       const response = await apiRequest('GET', '/api/tickets');
+      return await response.json() as Ticket[];
+    },
+  });
+
+  // Fetch work orders for all tickets
+  const { data: allTicketsWorkOrders = {} } = useQuery<Record<number, WorkOrder[]>>({
+    queryKey: ['/api/tickets/work-orders/all'],
+    queryFn: async () => {
+      const workOrdersMap: Record<number, WorkOrder[]> = {};
+      for (const ticket of tickets) {
+        try {
+          const response = await apiRequest('GET', `/api/tickets/${ticket.id}/work-orders`);
+          if (response.ok) {
+            workOrdersMap[ticket.id] = await response.json();
+          }
+        } catch (error) {
+          workOrdersMap[ticket.id] = [];
+        }
+      }
+      return workOrdersMap;
+    },
+    enabled: tickets.length > 0,
+  });
+
+  // Ticket action mutations
+  const acceptTicketMutation = useMutation({
+    mutationFn: async ({ ticketId, technicianId, scheduledDate, scheduledTime }: {
+      ticketId: number;
+      technicianId?: number;
+      scheduledDate?: string;
+      scheduledTime?: string;
+    }) => {
+      const response = await apiRequest('POST', `/api/tickets/${ticketId}/accept`, {
+        technicianId,
+        scheduledDate,
+        scheduledTime,
+      });
+      if (!response.ok) {
+        throw new Error('Failed to accept ticket');
+      }
       return response.json();
     },
-    enabled: !!user,
+    onSuccess: () => {
+      refetchTickets();
+      queryClient.invalidateQueries({ queryKey: ['/api/calendar/events'] });
+    },
+  });
+
+  const rejectTicketMutation = useMutation({
+    mutationFn: async ({ ticketId, reason }: { ticketId: number; reason: string }) => {
+      const response = await apiRequest('POST', `/api/tickets/${ticketId}/reject`, {
+        rejectionReason: reason,
+      });
+      if (!response.ok) {
+        throw new Error('Failed to reject ticket');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchTickets();
+    },
   });
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await refetch();
+    await refetchTickets();
     setRefreshing(false);
   };
 
-  const filteredTickets = tickets.filter((ticket: any) => {
-    const matchesSearch = ticket.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         ticket.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || ticket.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  // Filter tickets based on search and filters
+  const getFilteredTickets = () => {
+    let filtered = tickets;
 
-  const StatusButton = ({ status, active, onPress }: any) => (
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(ticket =>
+        ticket.title?.toLowerCase().includes(query) ||
+        ticket.description?.toLowerCase().includes(query) ||
+        ticket.id.toString().includes(query)
+      );
+    }
+
+    // Status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(ticket => ticket.status === statusFilter);
+    }
+
+    // Priority filter
+    if (priorityFilter !== 'all') {
+      filtered = filtered.filter(ticket => ticket.priority === priorityFilter);
+    }
+
+    // Date filter
+    if (dateFilter !== 'all') {
+      const now = new Date();
+      const filterDate = new Date();
+
+      switch (dateFilter) {
+        case 'today':
+          filterDate.setHours(0, 0, 0, 0);
+          filtered = filtered.filter(ticket => {
+            const ticketDate = new Date(ticket.createdAt || 0);
+            return ticketDate >= filterDate;
+          });
+          break;
+        case 'last7':
+          filterDate.setDate(now.getDate() - 7);
+          filtered = filtered.filter(ticket => {
+            const ticketDate = new Date(ticket.createdAt || 0);
+            return ticketDate >= filterDate;
+          });
+          break;
+        case 'last30':
+          filterDate.setDate(now.getDate() - 30);
+          filtered = filtered.filter(ticket => {
+            const ticketDate = new Date(ticket.createdAt || 0);
+            return ticketDate >= filterDate;
+          });
+          break;
+      }
+    }
+
+    return filtered.sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0);
+      const dateB = new Date(b.createdAt || 0);
+      return dateB.getTime() - dateA.getTime();
+    });
+  };
+
+  const filteredTickets = getFilteredTickets();
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return '#ef4444';
+      case 'medium': return '#f59e0b';
+      case 'low': return '#10b981';
+      default: return '#94a3b8';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return '#f59e0b';
+      case 'open': return '#06b6d4';
+      case 'accepted': return '#8b5cf6';
+      case 'in_progress': return '#3b82f6';
+      case 'completed': return '#10b981';
+      case 'rejected': return '#ef4444';
+      case 'confirmed': return '#059669';
+      case 'ready_for_billing': return '#7c3aed';
+      case 'billed': return '#1f2937';
+      default: return '#94a3b8';
+    }
+  };
+
+  const hasReturnNeededWorkOrder = (ticket: Ticket, workOrders: WorkOrder[] = []) => {
+    return workOrders.some(wo => wo.completionStatus === 'return_needed');
+  };
+
+  const handleTicketAction = (ticket: Ticket, action: 'accept' | 'reject') => {
+    if (action === 'accept') {
+      Alert.alert(
+        'Accept Ticket',
+        'Are you sure you want to accept this ticket?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Accept',
+            onPress: () => {
+              acceptTicketMutation.mutate({ ticketId: ticket.id });
+            },
+          },
+        ]
+      );
+    } else {
+      Alert.prompt(
+        'Reject Ticket',
+        'Please provide a reason for rejection:',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Reject',
+            onPress: (reason) => {
+              if (reason?.trim()) {
+                rejectTicketMutation.mutate({ ticketId: ticket.id, reason });
+              }
+            },
+          },
+        ],
+        'plain-text',
+        '',
+        'default'
+      );
+    }
+  };
+
+  const handleViewTicketDetails = (ticket: Ticket) => {
+    router.push(`/ticket/${ticket.id}`);
+  };
+
+  const handleCreateWorkOrder = (ticket: Ticket) => {
+    router.push(`/ticket/${ticket.id}?action=work-order`);
+  };
+
+  const getTicketActions = (ticket: Ticket) => {
+    const actions = [
+      { text: 'View Details', icon: 'eye', onPress: () => handleViewTicketDetails(ticket) },
+    ];
+
+    // Organization admin actions
+    if ((user?.role === 'org_admin') || 
+        (user?.role === 'org_subadmin' && user.permissions?.includes('accept_ticket'))) {
+      if (ticket.status === 'open' || ticket.status === 'pending') {
+        actions.push(
+          { text: 'Accept Ticket', icon: 'checkmark-circle', onPress: () => handleTicketAction(ticket, 'accept') },
+          { text: 'Reject Ticket', icon: 'close-circle', onPress: () => handleTicketAction(ticket, 'reject') }
+        );
+      }
+    }
+
+    // Maintenance admin actions
+    if (user?.role === 'maintenance_admin') {
+      if (ticket.maintenanceVendorId === user.maintenanceVendorId && ticket.status === 'accepted' && !ticket.assigneeId) {
+        actions.push({ text: 'Accept & Assign Technician', icon: 'person-add', onPress: () => handleTicketAction(ticket, 'accept') });
+      }
+      if (ticket.maintenanceVendorId === user.maintenanceVendorId && ticket.status === 'accepted') {
+        actions.push({ text: 'Reject Assignment', icon: 'close-circle', onPress: () => handleTicketAction(ticket, 'reject') });
+      }
+      if ((ticket.status === 'open' || ticket.status === 'pending') && !ticket.maintenanceVendorId) {
+        actions.push(
+          { text: 'Accept Ticket', icon: 'checkmark-circle', onPress: () => handleTicketAction(ticket, 'accept') },
+          { text: 'Reject Ticket', icon: 'close-circle', onPress: () => handleTicketAction(ticket, 'reject') }
+        );
+      }
+    }
+
+    // Technician actions
+    if (user?.role === 'technician' && ticket.assigneeId === user.id) {
+      if (ticket.status === 'accepted') {
+        actions.push({ text: 'Start Work', icon: 'construct', onPress: () => handleCreateWorkOrder(ticket) });
+      }
+      if (ticket.status === 'in-progress') {
+        actions.push({ text: 'Complete Work', icon: 'checkmark-circle', onPress: () => handleCreateWorkOrder(ticket) });
+      }
+      if (hasReturnNeededWorkOrder(ticket, allTicketsWorkOrders[ticket.id]) && 
+          !['pending_confirmation', 'confirmed', 'ready_for_billing', 'billed'].includes(ticket.status)) {
+        actions.push({ text: 'Create Another Work Order', icon: 'construct', onPress: () => handleCreateWorkOrder(ticket) });
+      }
+    }
+
+    return actions;
+  };
+
+  const FilterButton = ({ 
+    title, 
+    value, 
+    activeValue, 
+    onPress 
+  }: { 
+    title: string; 
+    value: string; 
+    activeValue: string; 
+    onPress: () => void; 
+  }) => (
     <TouchableOpacity
-      style={[styles.statusButton, active && styles.activeStatusButton]}
+      style={[styles.filterButton, activeValue === value && styles.activeFilterButton]}
       onPress={onPress}
     >
-      <Text style={[styles.statusButtonText, active && styles.activeStatusButtonText]}>
-        {status}
+      <Text style={[styles.filterButtonText, activeValue === value && styles.activeFilterButtonText]}>
+        {title}
       </Text>
     </TouchableOpacity>
   );
+
+  if (ticketsLoading && !refreshing) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <LinearGradient colors={['#1e293b', '#7c3aed', '#1e293b']} style={styles.gradient}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#06b6d4" />
+            <Text style={styles.loadingText}>Loading tickets...</Text>
+          </View>
+        </LinearGradient>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient colors={['#1e293b', '#7c3aed', '#1e293b']} style={styles.gradient}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>My Tickets</Text>
-          <TouchableOpacity
-            style={styles.createButton}
-            onPress={() => router.push('/create-ticket')}
-          >
-            <Ionicons name="add" size={24} color="#ffffff" />
-          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Tickets</Text>
+          <Text style={styles.headerSubtitle}>
+            {filteredTickets.length} of {tickets.length} tickets
+          </Text>
         </View>
 
         {/* Search and Filters */}
         <View style={styles.filtersContainer}>
+          {/* Search Bar */}
           <View style={styles.searchContainer}>
-            <Ionicons name="search" size={20} color="#94a3b8" style={styles.searchIcon} />
+            <Ionicons name="search" size={16} color="#94a3b8" style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
               placeholder="Search tickets..."
@@ -80,34 +344,50 @@ export default function TicketsScreen() {
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <Ionicons name="close" size={16} color="#94a3b8" />
+              </TouchableOpacity>
+            )}
           </View>
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statusFilters}>
-            <StatusButton
-              status="All"
-              active={statusFilter === 'all'}
-              onPress={() => setStatusFilter('all')}
-            />
-            <StatusButton
-              status="Pending"
-              active={statusFilter === 'pending'}
-              onPress={() => setStatusFilter('pending')}
-            />
-            <StatusButton
-              status="Accepted"
-              active={statusFilter === 'accepted'}
-              onPress={() => setStatusFilter('accepted')}
-            />
-            <StatusButton
-              status="In Progress"
-              active={statusFilter === 'in_progress'}
-              onPress={() => setStatusFilter('in_progress')}
-            />
-            <StatusButton
-              status="Completed"
-              active={statusFilter === 'completed'}
-              onPress={() => setStatusFilter('completed')}
-            />
+          {/* Filter Tabs */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterTabs}>
+            <View style={styles.filterTabsContent}>
+              <Text style={styles.filterLabel}>Status:</Text>
+              <View style={styles.filterGroup}>
+                <FilterButton title="All" value="all" activeValue={statusFilter} onPress={() => setStatusFilter('all')} />
+                <FilterButton title="Open" value="open" activeValue={statusFilter} onPress={() => setStatusFilter('open')} />
+                <FilterButton title="Pending" value="pending" activeValue={statusFilter} onPress={() => setStatusFilter('pending')} />
+                <FilterButton title="Accepted" value="accepted" activeValue={statusFilter} onPress={() => setStatusFilter('accepted')} />
+                <FilterButton title="In Progress" value="in_progress" activeValue={statusFilter} onPress={() => setStatusFilter('in_progress')} />
+                <FilterButton title="Completed" value="completed" activeValue={statusFilter} onPress={() => setStatusFilter('completed')} />
+              </View>
+            </View>
+          </ScrollView>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterTabs}>
+            <View style={styles.filterTabsContent}>
+              <Text style={styles.filterLabel}>Priority:</Text>
+              <View style={styles.filterGroup}>
+                <FilterButton title="All" value="all" activeValue={priorityFilter} onPress={() => setPriorityFilter('all')} />
+                <FilterButton title="High" value="high" activeValue={priorityFilter} onPress={() => setPriorityFilter('high')} />
+                <FilterButton title="Medium" value="medium" activeValue={priorityFilter} onPress={() => setPriorityFilter('medium')} />
+                <FilterButton title="Low" value="low" activeValue={priorityFilter} onPress={() => setPriorityFilter('low')} />
+              </View>
+            </View>
+          </ScrollView>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterTabs}>
+            <View style={styles.filterTabsContent}>
+              <Text style={styles.filterLabel}>Date:</Text>
+              <View style={styles.filterGroup}>
+                <FilterButton title="All" value="all" activeValue={dateFilter} onPress={() => setDateFilter('all')} />
+                <FilterButton title="Today" value="today" activeValue={dateFilter} onPress={() => setDateFilter('today')} />
+                <FilterButton title="Last 7 days" value="last7" activeValue={dateFilter} onPress={() => setDateFilter('last7')} />
+                <FilterButton title="Last 30 days" value="last30" activeValue={dateFilter} onPress={() => setDateFilter('last30')} />
+              </View>
+            </View>
           </ScrollView>
         </View>
 
@@ -115,84 +395,131 @@ export default function TicketsScreen() {
         <ScrollView
           style={styles.ticketsList}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#06b6d4" />
           }
+          showsVerticalScrollIndicator={false}
         >
-          {filteredTickets.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Ionicons name="ticket-outline" size={64} color="#64748b" />
-              <Text style={styles.emptyTitle}>No tickets found</Text>
-              <Text style={styles.emptyDescription}>
-                {searchQuery || statusFilter !== 'all' 
-                  ? 'Try adjusting your search or filters' 
-                  : 'Create your first ticket to get started'}
-              </Text>
-              {!searchQuery && statusFilter === 'all' && (
-                <TouchableOpacity
-                  style={styles.createTicketButton}
-                  onPress={() => router.push('/create-ticket')}
-                >
-                  <LinearGradient colors={['#06b6d4', '#3b82f6']} style={styles.createTicketGradient}>
-                    <Text style={styles.createTicketText}>Create First Ticket</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              )}
-            </View>
-          ) : (
-            filteredTickets.map((ticket: any) => (
+          <View style={styles.ticketsContainer}>
+            {filteredTickets.map((ticket) => (
               <TouchableOpacity
                 key={ticket.id}
                 style={styles.ticketCard}
-                onPress={() => router.push(`/ticket/${ticket.id}`)}
+                onPress={() => handleViewTicketDetails(ticket)}
               >
                 <View style={styles.ticketHeader}>
-                  <View style={styles.ticketInfo}>
-                    <Text style={styles.ticketTitle} numberOfLines={1}>
-                      {ticket.title}
-                    </Text>
-                    <Text style={styles.ticketId}>#{ticket.id}</Text>
+                  <View style={styles.ticketTitleContainer}>
+                    <Text style={styles.ticketTitle}>{ticket.title || 'Untitled Ticket'}</Text>
+                    <Text style={styles.ticketNumber}>#{ticket.id}</Text>
                   </View>
-                  <View style={styles.ticketBadges}>
-                    <View style={[styles.priorityBadge, 
-                      ticket.priority === 'high' && styles.highPriority,
-                      ticket.priority === 'medium' && styles.mediumPriority,
-                      ticket.priority === 'low' && styles.lowPriority
-                    ]}>
-                      <Text style={styles.priorityText}>{ticket.priority}</Text>
-                    </View>
-                  </View>
+                  <TouchableOpacity
+                    style={styles.ticketMenuButton}
+                    onPress={() => {
+                      const actions = getTicketActions(ticket);
+                      Alert.alert(
+                        'Ticket Actions',
+                        'What would you like to do?',
+                        [
+                          ...actions.map(action => ({
+                            text: action.text,
+                            onPress: action.onPress,
+                          })),
+                          { text: 'Cancel', style: 'cancel' as const }
+                        ]
+                      );
+                    }}
+                  >
+                    <Ionicons name="ellipsis-vertical" size={16} color="#94a3b8" />
+                  </TouchableOpacity>
                 </View>
 
-                <Text style={styles.ticketDescription} numberOfLines={2}>
-                  {ticket.description}
-                </Text>
+                <View style={styles.ticketBadges}>
+                  <View style={[styles.badge, { backgroundColor: getStatusColor(ticket.status) }]}>
+                    <Text style={styles.badgeText}>{ticket.status?.replace('_', ' ').replace('-', ' ')}</Text>
+                  </View>
+                  <View style={[styles.badge, { backgroundColor: getPriorityColor(ticket.priority), borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' }]}>
+                    <Text style={styles.badgeText}>{ticket.priority}</Text>
+                  </View>
+                  {ticket.assignedToMarketplace && (
+                    <View style={[styles.badge, { backgroundColor: '#7c3aed' }]}>
+                      <Text style={styles.badgeText}>Marketplace</Text>
+                    </View>
+                  )}
+                </View>
+
+                {ticket.description && (
+                  <Text style={styles.ticketDescription} numberOfLines={2}>
+                    {ticket.description}
+                  </Text>
+                )}
+
+                <View style={styles.ticketMeta}>
+                  {ticket.reporterName && (
+                    <View style={styles.metaItem}>
+                      <Ionicons name="person" size={12} color="#64748b" />
+                      <Text style={styles.metaText}>By {ticket.reporterName}</Text>
+                    </View>
+                  )}
+                  {ticket.assignedTo && (
+                    <View style={styles.metaItem}>
+                      <Ionicons name="checkmark-circle" size={12} color="#10b981" />
+                      <Text style={styles.metaText}>Assigned to {ticket.assignedTo}</Text>
+                    </View>
+                  )}
+                  {ticket.locationName && (
+                    <View style={styles.metaItem}>
+                      <Ionicons name="location" size={12} color="#64748b" />
+                      <Text style={styles.metaText}>{ticket.locationName}</Text>
+                    </View>
+                  )}
+                </View>
 
                 <View style={styles.ticketFooter}>
-                  <View style={[styles.statusBadge,
-                    ticket.status === 'pending' && styles.pendingStatus,
-                    ticket.status === 'accepted' && styles.acceptedStatus,
-                    ticket.status === 'in_progress' && styles.inProgressStatus,
-                    ticket.status === 'completed' && styles.completedStatus
-                  ]}>
-                    <Text style={styles.statusText}>{ticket.status}</Text>
-                  </View>
                   <Text style={styles.ticketDate}>
-                    {new Date(ticket.createdAt).toLocaleDateString()}
+                    {ticket.createdAt && new Date(ticket.createdAt).toLocaleDateString()}
                   </Text>
-                </View>
-
-                {ticket.assignedTo && (
-                  <View style={styles.assignedContainer}>
-                    <Ionicons name="person" size={16} color="#64748b" />
-                    <Text style={styles.assignedText}>
-                      Assigned to {ticket.assignedTo}
-                    </Text>
+                  <View style={styles.ticketIndicators}>
+                    {ticket.images && ticket.images.length > 0 && (
+                      <View style={styles.indicator}>
+                        <Ionicons name="image" size={12} color="#94a3b8" />
+                        <Text style={styles.indicatorText}>{ticket.images.length}</Text>
+                      </View>
+                    )}
+                    {allTicketsWorkOrders[ticket.id]?.length > 0 && (
+                      <View style={styles.indicator}>
+                        <Ionicons name="construct" size={12} color="#94a3b8" />
+                        <Text style={styles.indicatorText}>{allTicketsWorkOrders[ticket.id].length}</Text>
+                      </View>
+                    )}
                   </View>
-                )}
+                </View>
               </TouchableOpacity>
-            ))
-          )}
+            ))}
+
+            {filteredTickets.length === 0 && (
+              <View style={styles.emptyState}>
+                <Ionicons name="ticket-outline" size={48} color="#64748b" />
+                <Text style={styles.emptyTitle}>No Tickets Found</Text>
+                <Text style={styles.emptyText}>
+                  {searchQuery.trim() || statusFilter !== 'all' || priorityFilter !== 'all' || dateFilter !== 'all'
+                    ? 'No tickets match your current filters'
+                    : 'No tickets have been created yet'}
+                </Text>
+              </View>
+            )}
+          </View>
         </ScrollView>
+
+        {/* Floating Action Button */}
+        {user && (user.role === 'org_admin' || user.role === 'org_subadmin' || user.role === 'residential') && (
+          <TouchableOpacity
+            style={styles.fab}
+            onPress={() => router.push('/create-ticket')}
+          >
+            <LinearGradient colors={['#06b6d4', '#3b82f6']} style={styles.fabGradient}>
+              <Ionicons name="add" size={24} color="#ffffff" />
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
       </LinearGradient>
     </SafeAreaView>
   );
@@ -205,23 +532,29 @@ const styles = StyleSheet.create({
   gradient: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
+  },
+  loadingText: {
+    color: '#94a3b8',
+    fontSize: 16,
+    marginTop: 16,
+  },
+  header: {
+    padding: 20,
+    paddingBottom: 12,
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#ffffff',
   },
-  createButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 8,
-    padding: 8,
+  headerSubtitle: {
+    fontSize: 14,
+    color: '#94a3b8',
+    marginTop: 4,
   },
   filtersContainer: {
     paddingHorizontal: 20,
@@ -232,80 +565,70 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     marginBottom: 16,
-    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   searchIcon: {
-    marginRight: 12,
+    marginRight: 8,
   },
   searchInput: {
     flex: 1,
-    paddingVertical: 12,
-    fontSize: 16,
     color: '#ffffff',
+    fontSize: 16,
   },
-  statusFilters: {
+  filterTabs: {
+    marginBottom: 8,
+  },
+  filterTabsContent: {
     flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  statusButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 12,
-  },
-  activeStatusButton: {
-    backgroundColor: '#3b82f6',
-  },
-  statusButtonText: {
-    color: '#94a3b8',
+  filterLabel: {
+    color: '#ffffff',
     fontSize: 14,
     fontWeight: '600',
+    marginRight: 8,
   },
-  activeStatusButtonText: {
+  filterGroup: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  filterButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  activeFilterButton: {
+    backgroundColor: '#3b82f6',
+    borderColor: '#3b82f6',
+  },
+  filterButtonText: {
+    color: '#94a3b8',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  activeFilterButtonText: {
     color: '#ffffff',
   },
   ticketsList: {
     flex: 1,
-    paddingHorizontal: 20,
   },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 100,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyDescription: {
-    fontSize: 16,
-    color: '#94a3b8',
-    textAlign: 'center',
-    marginBottom: 32,
-    paddingHorizontal: 40,
-  },
-  createTicketButton: {
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  createTicketGradient: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-  },
-  createTicketText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
+  ticketsContainer: {
+    padding: 20,
+    paddingBottom: 100,
   },
   ticketCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
     padding: 16,
-    marginBottom: 12,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
   },
@@ -315,7 +638,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 8,
   },
-  ticketInfo: {
+  ticketTitleContainer: {
     flex: 1,
     marginRight: 12,
   },
@@ -323,31 +646,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#ffffff',
-    marginBottom: 4,
+    marginBottom: 2,
   },
-  ticketId: {
+  ticketNumber: {
     fontSize: 12,
-    color: '#64748b',
+    color: '#94a3b8',
+  },
+  ticketMenuButton: {
+    padding: 4,
   },
   ticketBadges: {
     flexDirection: 'row',
     gap: 8,
+    marginBottom: 8,
+    flexWrap: 'wrap',
   },
-  priorityBadge: {
+  badge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
   },
-  highPriority: {
-    backgroundColor: '#ef4444',
-  },
-  mediumPriority: {
-    backgroundColor: '#f59e0b',
-  },
-  lowPriority: {
-    backgroundColor: '#10b981',
-  },
-  priorityText: {
+  badgeText: {
     fontSize: 10,
     fontWeight: '600',
     color: '#ffffff',
@@ -359,47 +678,76 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     lineHeight: 18,
   },
+  ticketMeta: {
+    marginBottom: 12,
+    gap: 6,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  metaText: {
+    fontSize: 12,
+    color: '#64748b',
+  },
   ticketFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  pendingStatus: {
-    backgroundColor: '#f59e0b',
-  },
-  acceptedStatus: {
-    backgroundColor: '#8b5cf6',
-  },
-  inProgressStatus: {
-    backgroundColor: '#06b6d4',
-  },
-  completedStatus: {
-    backgroundColor: '#10b981',
-  },
-  statusText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#ffffff',
-    textTransform: 'uppercase',
   },
   ticketDate: {
     fontSize: 12,
     color: '#64748b',
   },
-  assignedContainer: {
+  ticketIndicators: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  indicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    gap: 4,
   },
-  assignedText: {
-    fontSize: 12,
-    color: '#64748b',
-    marginLeft: 6,
+  indicatorText: {
+    fontSize: 10,
+    color: '#94a3b8',
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#94a3b8',
+    textAlign: 'center',
+    paddingHorizontal: 40,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 30,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    overflow: 'hidden',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  fabGradient: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

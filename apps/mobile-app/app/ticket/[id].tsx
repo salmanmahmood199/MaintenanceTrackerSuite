@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,62 +8,65 @@ import {
   Image,
   Alert,
   ActivityIndicator,
+  Modal,
+  TextInput,
+  RefreshControl,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { apiRequest } from '../../src/services/api';
+import type { Ticket, TicketComment, WorkOrder, Location } from '../../src/types';
 
-interface Ticket {
-  id: number;
-  title: string;
-  description: string;
-  status: string;
-  priority: 'low' | 'medium' | 'high';
-  createdAt: string;
-  updatedAt: string;
-  reporterName?: string;
-  assignedTo?: string;
-  organizationName?: string;
-  locationName?: string;
-  locationAddress?: string;
-  images?: string[];
-  rejectionReason?: string;
+interface Part {
+  name: string;
+  customName?: string;
+  quantity: number;
+  cost: number;
 }
 
-interface Comment {
-  id: number;
-  content: string;
-  createdAt: string;
-  user: {
-    firstName: string;
-    lastName: string;
-    role: string;
-  };
-  images?: string[];
-}
-
-interface WorkOrder {
-  id: number;
+interface OtherCharge {
   description: string;
-  completionStatus: string;
-  technicianName: string;
-  timeIn?: string;
-  timeOut?: string;
-  createdAt: string;
-  parts?: any[];
-  otherCharges?: any[];
-  images?: string[];
+  cost: number;
 }
 
 export default function TicketDetailsScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, action } = useLocalSearchParams<{ id: string; action?: string }>();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<'details' | 'comments' | 'workorders'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'comments' | 'workorders' | 'progress'>('details');
+  const [showActionModal, setShowActionModal] = useState(false);
+  const [showWorkOrderModal, setShowWorkOrderModal] = useState(false);
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  
+  // Work order form state
+  const [workDescription, setWorkDescription] = useState('');
+  const [timeIn, setTimeIn] = useState('');
+  const [timeOut, setTimeOut] = useState('');
+  const [completionStatus, setCompletionStatus] = useState<'completed' | 'return_needed'>('completed');
+  const [parts, setParts] = useState<Part[]>([{ name: '', quantity: 1, cost: 0 }]);
+  const [otherCharges, setOtherCharges] = useState<OtherCharge[]>([{ description: '', cost: 0 }]);
+  
+  // Comment form state
+  const [commentText, setCommentText] = useState('');
+  
+  // Action modal state
+  const [rejectionReason, setRejectionReason] = useState('');
+  
+  useEffect(() => {
+    if (action === 'accept' || action === 'reject' || action === 'work-order') {
+      if (action === 'work-order') {
+        setShowWorkOrderModal(true);
+      } else {
+        setShowActionModal(true);
+      }
+    }
+  }, [action]);
 
   // Fetch ticket details
   const { data: ticket, isLoading: ticketLoading } = useQuery<Ticket>({
@@ -76,17 +79,23 @@ export default function TicketDetailsScreen() {
   });
 
   // Fetch ticket comments
-  const { data: comments = [] } = useQuery<Comment[]>({
+  const { data: comments = [], refetch: refetchComments } = useQuery<TicketComment[]>({
     queryKey: ['/api/tickets', id, 'comments'],
     queryFn: async () => {
       const response = await apiRequest('GET', `/api/tickets/${id}/comments`);
-      return await response.json() as Comment[];
+      return await response.json() as TicketComment[];
     },
     enabled: !!id,
   });
+  
+  // Fetch tickets (for refetch after actions)
+  const { refetch: refetchTickets } = useQuery({
+    queryKey: ['/api/tickets'],
+    enabled: false,
+  });
 
   // Fetch work orders
-  const { data: workOrders = [] } = useQuery<WorkOrder[]>({
+  const { data: workOrders = [], refetch: refetchWorkOrders } = useQuery<WorkOrder[]>({
     queryKey: ['/api/tickets', id, 'work-orders'],
     queryFn: async () => {
       const response = await apiRequest('GET', `/api/tickets/${id}/work-orders`);
@@ -94,6 +103,141 @@ export default function TicketDetailsScreen() {
     },
     enabled: !!id,
   });
+  
+  // Fetch location details
+  const { data: ticketLocation } = useQuery<Location>({
+    queryKey: ['/api/locations', ticket?.locationId],
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/locations/${ticket?.locationId}`);
+      return await response.json() as Location;
+    },
+    enabled: !!ticket?.locationId,
+  });
+  
+  // Ticket action mutations
+  const acceptTicketMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', `/api/tickets/${id}/accept`);
+      if (!response.ok) throw new Error('Failed to accept ticket');
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchTickets();
+      queryClient.invalidateQueries({ queryKey: ['/api/calendar/events'] });
+      setShowActionModal(false);
+      Alert.alert('Success', 'Ticket accepted successfully');
+    },
+    onError: () => {
+      Alert.alert('Error', 'Failed to accept ticket');
+    },
+  });
+  
+  const rejectTicketMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', `/api/tickets/${id}/reject`, {
+        rejectionReason,
+      });
+      if (!response.ok) throw new Error('Failed to reject ticket');
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchTickets();
+      setShowActionModal(false);
+      setRejectionReason('');
+      Alert.alert('Success', 'Ticket rejected successfully');
+    },
+    onError: () => {
+      Alert.alert('Error', 'Failed to reject ticket');
+    },
+  });
+  
+  const submitWorkOrderMutation = useMutation({
+    mutationFn: async () => {
+      const formData = new FormData();
+      
+      const workOrder = {
+        workDescription,
+        parts: parts.filter(p => p.name),
+        otherCharges: otherCharges.filter(c => c.description),
+        timeIn,
+        timeOut,
+        completionStatus,
+        completionNotes: completionStatus === 'return_needed' ? 'Return visit needed' : 'Work completed',
+        managerName: '',
+        managerSignature: ''
+      };
+      
+      formData.append('workOrder', JSON.stringify(workOrder));
+      
+      const response = await apiRequest('POST', `/api/tickets/${id}/complete`, formData);
+      if (!response.ok) throw new Error('Failed to submit work order');
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchTickets();
+      refetchWorkOrders();
+      setShowWorkOrderModal(false);
+      // Reset form
+      setWorkDescription('');
+      setTimeIn('');
+      setTimeOut('');
+      setCompletionStatus('completed');
+      setParts([{ name: '', quantity: 1, cost: 0 }]);
+      setOtherCharges([{ description: '', cost: 0 }]);
+      Alert.alert('Success', 'Work order submitted successfully');
+    },
+    onError: () => {
+      Alert.alert('Error', 'Failed to submit work order');
+    },
+  });
+  
+  const addCommentMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', `/api/tickets/${id}/comments`, {
+        content: commentText,
+      });
+      if (!response.ok) throw new Error('Failed to add comment');
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchComments();
+      setShowCommentModal(false);
+      setCommentText('');
+      Alert.alert('Success', 'Comment added successfully');
+    },
+    onError: () => {
+      Alert.alert('Error', 'Failed to add comment');
+    },
+  });
+  
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([
+      refetchTickets(),
+      refetchComments(),
+      refetchWorkOrders(),
+    ]);
+    setRefreshing(false);
+  };
+  
+  const calculateHours = (timeIn: string, timeOut: string) => {
+    if (!timeIn || !timeOut) return 0;
+    
+    const [inHour, inMinute] = timeIn.split(':').map(Number);
+    const [outHour, outMinute] = timeOut.split(':').map(Number);
+    
+    const inTime = inHour * 60 + inMinute;
+    const outTime = outHour * 60 + outMinute;
+    
+    const diffMinutes = outTime - inTime;
+    return Math.max(0, diffMinutes / 60);
+  };
+  
+  const calculateTotalCost = () => {
+    const partsCost = parts.reduce((sum, part) => sum + (part.quantity * part.cost), 0);
+    const chargesCost = otherCharges.reduce((sum, charge) => sum + charge.cost, 0);
+    return partsCost + chargesCost;
+  };
 
   if (ticketLoading) {
     return (
@@ -191,9 +335,21 @@ export default function TicketDetailsScreen() {
             active={activeTab === 'workorders'}
             onPress={() => setActiveTab('workorders')}
           />
+          <TabButton
+            tab="progress"
+            title="Progress"
+            active={activeTab === 'progress'}
+            onPress={() => setActiveTab('progress')}
+          />
         </View>
 
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          style={styles.content} 
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#06b6d4" />
+          }
+        >
           {activeTab === 'details' && (
             <View>
               {/* Ticket Header Card */}
@@ -207,6 +363,11 @@ export default function TicketDetailsScreen() {
                     <View style={[styles.statusBadge, { backgroundColor: getStatusColor(ticket.status) }]}>
                       <Text style={styles.badgeText}>{ticket.status}</Text>
                     </View>
+                    {ticket.assignedToMarketplace && (
+                      <View style={[styles.statusBadge, { backgroundColor: '#7c3aed' }]}>
+                        <Text style={styles.badgeText}>marketplace</Text>
+                      </View>
+                    )}
                   </View>
                 </View>
                 <Text style={styles.ticketDescription}>{ticket.description}</Text>
@@ -234,12 +395,13 @@ export default function TicketDetailsScreen() {
                       <Text style={styles.metaText}>{ticket.organizationName}</Text>
                     </View>
                   )}
-                  {ticket.locationName && (
+                  {(ticket.locationName || ticketLocation) && (
                     <View style={styles.metaRow}>
                       <Ionicons name="location" size={16} color="#64748b" />
                       <Text style={styles.metaText}>
-                        {ticket.locationName}
-                        {ticket.locationAddress && ` - ${ticket.locationAddress}`}
+                        {ticket.locationName || ticketLocation?.name}
+                        {(ticket.locationAddress || ticketLocation?.address) && 
+                          ` - ${ticket.locationAddress || ticketLocation?.address}`}
                       </Text>
                     </View>
                   )}
@@ -265,7 +427,7 @@ export default function TicketDetailsScreen() {
               {/* Images */}
               {ticket.images && ticket.images.length > 0 && (
                 <View style={styles.imagesCard}>
-                  <Text style={styles.cardTitle}>Attachments</Text>
+                  <Text style={styles.cardTitle}>Attachments ({ticket.images.length})</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     <View style={styles.imagesList}>
                       {ticket.images.map((imageUrl, index) => (
@@ -281,11 +443,75 @@ export default function TicketDetailsScreen() {
                   </ScrollView>
                 </View>
               )}
+
+              {/* Quick Actions */}
+              <View style={styles.quickActionsCard}>
+                <Text style={styles.cardTitle}>Actions</Text>
+                <View style={styles.actionButtons}>
+                  {/* Accept/Reject for org admins */}
+                  {((user?.role === 'org_admin') || 
+                    (user?.role === 'org_subadmin' && user.permissions?.includes('accept_ticket'))) && 
+                    (ticket.status === 'open' || ticket.status === 'pending') && (
+                    <>
+                      <TouchableOpacity 
+                        style={[styles.actionButton, { backgroundColor: '#10b981' }]}
+                        onPress={() => setShowActionModal(true)}
+                      >
+                        <Ionicons name="checkmark-circle" size={20} color="#ffffff" />
+                        <Text style={styles.actionButtonText}>Accept</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[styles.actionButton, { backgroundColor: '#ef4444' }]}
+                        onPress={() => setShowActionModal(true)}
+                      >
+                        <Ionicons name="close-circle" size={20} color="#ffffff" />
+                        <Text style={styles.actionButtonText}>Reject</Text>
+                      </TouchableOpacity>
+                    </>
+                  )}
+                  
+                  {/* Technician actions */}
+                  {user?.role === 'technician' && ticket.assigneeId === user.id && (
+                    <>
+                      {(ticket.status === 'accepted' || ticket.status === 'in_progress') && (
+                        <TouchableOpacity 
+                          style={[styles.actionButton, { backgroundColor: '#3b82f6' }]}
+                          onPress={() => setShowWorkOrderModal(true)}
+                        >
+                          <Ionicons name="construct" size={20} color="#ffffff" />
+                          <Text style={styles.actionButtonText}>
+                            {ticket.status === 'accepted' ? 'Start Work' : 'Complete Work'}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    </>
+                  )}
+                  
+                  {/* Add comment button */}
+                  <TouchableOpacity 
+                    style={[styles.actionButton, { backgroundColor: '#8b5cf6' }]}
+                    onPress={() => setShowCommentModal(true)}
+                  >
+                    <Ionicons name="chatbubble" size={20} color="#ffffff" />
+                    <Text style={styles.actionButtonText}>Add Comment</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
           )}
 
           {activeTab === 'comments' && (
             <View>
+              <View style={styles.tabHeader}>
+                <Text style={styles.tabHeaderTitle}>Comments & Updates</Text>
+                <TouchableOpacity 
+                  style={styles.addCommentButton}
+                  onPress={() => setShowCommentModal(true)}
+                >
+                  <Ionicons name="add" size={20} color="#ffffff" />
+                </TouchableOpacity>
+              </View>
+              
               {comments.length === 0 ? (
                 <View style={styles.emptyState}>
                   <Ionicons name="chatbubble-outline" size={48} color="#64748b" />
@@ -303,7 +529,12 @@ export default function TicketDetailsScreen() {
                         <Text style={styles.commentRole}>{comment.user.role}</Text>
                       </View>
                       <Text style={styles.commentDate}>
-                        {new Date(comment.createdAt).toLocaleDateString()}
+                        {new Date(comment.createdAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
                       </Text>
                     </View>
                     <Text style={styles.commentContent}>{comment.content}</Text>
@@ -322,6 +553,19 @@ export default function TicketDetailsScreen() {
 
           {activeTab === 'workorders' && (
             <View>
+              <View style={styles.tabHeader}>
+                <Text style={styles.tabHeaderTitle}>Work Orders</Text>
+                {user?.role === 'technician' && ticket.assigneeId === user.id && 
+                 (ticket.status === 'accepted' || ticket.status === 'in_progress') && (
+                  <TouchableOpacity 
+                    style={styles.addCommentButton}
+                    onPress={() => setShowWorkOrderModal(true)}
+                  >
+                    <Ionicons name="add" size={20} color="#ffffff" />
+                  </TouchableOpacity>
+                )}
+              </View>
+              
               {workOrders.length === 0 ? (
                 <View style={styles.emptyState}>
                   <Ionicons name="construct-outline" size={48} color="#64748b" />
@@ -334,7 +578,7 @@ export default function TicketDetailsScreen() {
                     <View style={styles.workOrderHeader}>
                       <Text style={styles.workOrderTitle}>Work Order #{workOrder.id}</Text>
                       <View style={[styles.statusBadge, { backgroundColor: getStatusColor(workOrder.completionStatus) }]}>
-                        <Text style={styles.badgeText}>{workOrder.completionStatus}</Text>
+                        <Text style={styles.badgeText}>{workOrder.completionStatus.replace('_', ' ')}</Text>
                       </View>
                     </View>
                     <Text style={styles.workOrderDescription}>{workOrder.description}</Text>
@@ -357,6 +601,12 @@ export default function TicketDetailsScreen() {
                           </Text>
                         </View>
                       )}
+                      {workOrder.parts && workOrder.parts.length > 0 && (
+                        <View style={styles.metaRow}>
+                          <Ionicons name="build" size={16} color="#64748b" />
+                          <Text style={styles.metaText}>{workOrder.parts.length} parts used</Text>
+                        </View>
+                      )}
                     </View>
                     {workOrder.images && workOrder.images.length > 0 && (
                       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.workOrderImages}>
@@ -370,7 +620,336 @@ export default function TicketDetailsScreen() {
               )}
             </View>
           )}
+
+          {activeTab === 'progress' && (
+            <View>
+              <Text style={styles.tabHeaderTitle}>Progress Tracker</Text>
+              <View style={styles.progressCard}>
+                <View style={styles.progressStep}>
+                  <View style={[styles.progressDot, { backgroundColor: '#10b981' }]} />
+                  <View style={styles.progressContent}>
+                    <Text style={styles.progressTitle}>Created</Text>
+                    <Text style={styles.progressDate}>
+                      {new Date(ticket.createdAt).toLocaleDateString()}
+                    </Text>
+                    <Text style={styles.progressDesc}>Ticket submitted by {ticket.reporterName}</Text>
+                  </View>
+                </View>
+                
+                {ticket.status !== 'pending' && ticket.status !== 'open' && (
+                  <View style={styles.progressStep}>
+                    <View style={[styles.progressDot, { backgroundColor: '#3b82f6' }]} />
+                    <View style={styles.progressContent}>
+                      <Text style={styles.progressTitle}>Accepted</Text>
+                      <Text style={styles.progressDate}>
+                        {new Date(ticket.updatedAt).toLocaleDateString()}
+                      </Text>
+                      <Text style={styles.progressDesc}>Ticket accepted and assigned</Text>
+                    </View>
+                  </View>
+                )}
+                
+                {workOrders.length > 0 && (
+                  <View style={styles.progressStep}>
+                    <View style={[styles.progressDot, { backgroundColor: '#f59e0b' }]} />
+                    <View style={styles.progressContent}>
+                      <Text style={styles.progressTitle}>Work Started</Text>
+                      <Text style={styles.progressDate}>
+                        {new Date(workOrders[0].createdAt).toLocaleDateString()}
+                      </Text>
+                      <Text style={styles.progressDesc}>Technician began work</Text>
+                    </View>
+                  </View>
+                )}
+                
+                {(ticket.status === 'completed' || ticket.status === 'confirmed') && (
+                  <View style={styles.progressStep}>
+                    <View style={[styles.progressDot, { backgroundColor: '#10b981' }]} />
+                    <View style={styles.progressContent}>
+                      <Text style={styles.progressTitle}>Completed</Text>
+                      <Text style={styles.progressDate}>
+                        {new Date(ticket.updatedAt).toLocaleDateString()}
+                      </Text>
+                      <Text style={styles.progressDesc}>Work completed successfully</Text>
+                    </View>
+                  </View>
+                )}
+              </View>
+            </View>
+          )}
         </ScrollView>
+
+        {/* Action Modal */}
+        <Modal
+          visible={showActionModal}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setShowActionModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Ticket Action</Text>
+                <TouchableOpacity onPress={() => setShowActionModal(false)}>
+                  <Ionicons name="close" size={24} color="#ffffff" />
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.modalContent}>
+                {action === 'reject' && (
+                  <View style={styles.formField}>
+                    <Text style={styles.fieldLabel}>Rejection Reason *</Text>
+                    <TextInput
+                      style={[styles.textInput, styles.textArea]}
+                      placeholder="Please provide a reason for rejection..."
+                      placeholderTextColor="#94a3b8"
+                      value={rejectionReason}
+                      onChangeText={setRejectionReason}
+                      multiline
+                      numberOfLines={3}
+                    />
+                  </View>
+                )}
+                
+                <Text style={styles.confirmText}>
+                  Are you sure you want to {action} this ticket?
+                </Text>
+              </View>
+
+              <View style={styles.modalFooter}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => setShowActionModal(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.submitButton, action === 'reject' && { backgroundColor: '#ef4444' }]}
+                  onPress={() => {
+                    if (action === 'accept') {
+                      acceptTicketMutation.mutate();
+                    } else if (action === 'reject') {
+                      if (!rejectionReason.trim()) {
+                        Alert.alert('Error', 'Please provide a rejection reason');
+                        return;
+                      }
+                      rejectTicketMutation.mutate();
+                    }
+                  }}
+                  disabled={acceptTicketMutation.isPending || rejectTicketMutation.isPending}
+                >
+                  <LinearGradient 
+                    colors={action === 'reject' ? ['#ef4444', '#dc2626'] : ['#06b6d4', '#3b82f6']} 
+                    style={styles.submitButtonGradient}
+                  >
+                    {(acceptTicketMutation.isPending || rejectTicketMutation.isPending) ? (
+                      <ActivityIndicator color="#ffffff" size="small" />
+                    ) : (
+                      <Text style={styles.submitButtonText}>
+                        {action === 'accept' ? 'Accept Ticket' : 'Reject Ticket'}
+                      </Text>
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Work Order Modal */}
+        <Modal
+          visible={showWorkOrderModal}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setShowWorkOrderModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Create Work Order</Text>
+                <TouchableOpacity onPress={() => setShowWorkOrderModal(false)}>
+                  <Ionicons name="close" size={24} color="#ffffff" />
+                </TouchableOpacity>
+              </View>
+              
+              <ScrollView style={styles.modalContent}>
+                <View style={styles.formField}>
+                  <Text style={styles.fieldLabel}>Work Description *</Text>
+                  <TextInput
+                    style={[styles.textInput, styles.textArea]}
+                    placeholder="Describe the work performed in detail..."
+                    placeholderTextColor="#94a3b8"
+                    value={workDescription}
+                    onChangeText={setWorkDescription}
+                    multiline
+                    numberOfLines={4}
+                  />
+                </View>
+
+                <View style={styles.formRow}>
+                  <View style={[styles.formField, { flex: 1, marginRight: 8 }]}>
+                    <Text style={styles.fieldLabel}>Time In *</Text>
+                    <TextInput
+                      style={styles.textInput}
+                      placeholder="09:00"
+                      placeholderTextColor="#94a3b8"
+                      value={timeIn}
+                      onChangeText={setTimeIn}
+                    />
+                  </View>
+                  <View style={[styles.formField, { flex: 1, marginLeft: 8 }]}>
+                    <Text style={styles.fieldLabel}>Time Out *</Text>
+                    <TextInput
+                      style={styles.textInput}
+                      placeholder="17:00"
+                      placeholderTextColor="#94a3b8"
+                      value={timeOut}
+                      onChangeText={setTimeOut}
+                    />
+                  </View>
+                </View>
+
+                {timeIn && timeOut && calculateHours(timeIn, timeOut) > 0 && (
+                  <View style={styles.hoursDisplay}>
+                    <Text style={styles.hoursText}>
+                      Total Hours: {calculateHours(timeIn, timeOut).toFixed(1)} hours
+                    </Text>
+                  </View>
+                )}
+
+                <View style={styles.formField}>
+                  <Text style={styles.fieldLabel}>Completion Status</Text>
+                  <View style={styles.statusButtons}>
+                    <TouchableOpacity
+                      style={[
+                        styles.statusButton,
+                        completionStatus === 'completed' && styles.activeStatusButton
+                      ]}
+                      onPress={() => setCompletionStatus('completed')}
+                    >
+                      <Text style={[
+                        styles.statusButtonText,
+                        completionStatus === 'completed' && styles.activeStatusButtonText
+                      ]}>
+                        Completed
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.statusButton,
+                        completionStatus === 'return_needed' && styles.activeStatusButton
+                      ]}
+                      onPress={() => setCompletionStatus('return_needed')}
+                    >
+                      <Text style={[
+                        styles.statusButtonText,
+                        completionStatus === 'return_needed' && styles.activeStatusButtonText
+                      ]}>
+                        Return Needed
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <View style={styles.totalCostDisplay}>
+                  <Text style={styles.totalCostText}>
+                    Total Cost: ${calculateTotalCost().toFixed(2)}
+                  </Text>
+                </View>
+              </ScrollView>
+
+              <View style={styles.modalFooter}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => setShowWorkOrderModal(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.submitButton}
+                  onPress={() => {
+                    if (!workDescription.trim() || !timeIn || !timeOut) {
+                      Alert.alert('Error', 'Please fill in all required fields');
+                      return;
+                    }
+                    submitWorkOrderMutation.mutate();
+                  }}
+                  disabled={submitWorkOrderMutation.isPending}
+                >
+                  <LinearGradient colors={['#06b6d4', '#3b82f6']} style={styles.submitButtonGradient}>
+                    {submitWorkOrderMutation.isPending ? (
+                      <ActivityIndicator color="#ffffff" size="small" />
+                    ) : (
+                      <Text style={styles.submitButtonText}>Submit Work Order</Text>
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Comment Modal */}
+        <Modal
+          visible={showCommentModal}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setShowCommentModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Add Comment</Text>
+                <TouchableOpacity onPress={() => setShowCommentModal(false)}>
+                  <Ionicons name="close" size={24} color="#ffffff" />
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.modalContent}>
+                <View style={styles.formField}>
+                  <Text style={styles.fieldLabel}>Comment *</Text>
+                  <TextInput
+                    style={[styles.textInput, styles.textArea]}
+                    placeholder="Add your comment or update..."
+                    placeholderTextColor="#94a3b8"
+                    value={commentText}
+                    onChangeText={setCommentText}
+                    multiline
+                    numberOfLines={4}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.modalFooter}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => setShowCommentModal(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.submitButton}
+                  onPress={() => {
+                    if (!commentText.trim()) {
+                      Alert.alert('Error', 'Please enter a comment');
+                      return;
+                    }
+                    addCommentMutation.mutate();
+                  }}
+                  disabled={addCommentMutation.isPending}
+                >
+                  <LinearGradient colors={['#06b6d4', '#3b82f6']} style={styles.submitButtonGradient}>
+                    {addCommentMutation.isPending ? (
+                      <ActivityIndicator color="#ffffff" size="small" />
+                    ) : (
+                      <Text style={styles.submitButtonText}>Add Comment</Text>
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </LinearGradient>
     </SafeAreaView>
   );
