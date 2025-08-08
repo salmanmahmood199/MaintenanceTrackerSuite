@@ -1642,6 +1642,41 @@ const MobilePage = () => {
       }
     };
 
+    // Generate time slots for booking based on selected duration
+    const generateTimeSlots = () => {
+      const slots = [];
+      const durationHours = selectedDuration;
+      const durationMinutes = durationHours * 60;
+      
+      // Generate slots every 30 minutes from 8 AM to 6 PM
+      for (let hour = 8; hour < 18; hour++) {
+        for (let minute = 0; minute < 60; minute += 30) {
+          const startHour = hour;
+          const startMinute = minute;
+          const startTime = `${startHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}`;
+          
+          // Calculate end time based on duration
+          const endTotalMinutes = startHour * 60 + startMinute + durationMinutes;
+          const endHour = Math.floor(endTotalMinutes / 60);
+          const endMinute = endTotalMinutes % 60;
+          
+          // Don't show slots that would end after 6 PM (18:00)
+          if (endHour > 18 || (endHour === 18 && endMinute > 0)) {
+            continue;
+          }
+          
+          const endTime = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
+          
+          slots.push({
+            start: startTime,
+            end: endTime,
+            label: `${formatTime(startTime)} - ${formatTime(endTime)}`
+          });
+        }
+      }
+      return slots;
+    };
+
     // Google Places API location search via backend proxy
   const searchLocations = async (query: string): Promise<string[]> => {
     if (query.trim().length < 2) return [];
