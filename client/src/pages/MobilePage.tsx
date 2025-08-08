@@ -30,6 +30,9 @@ import { EnhancedInvoiceCreator } from "@/components/enhanced-invoice-creator";
 import { TicketComments } from "@/components/ticket-comments";
 import { ProgressTrackerEmbedded } from "@/components/progress-tracker";
 import { WorkOrdersHistory } from "@/components/work-orders-history";
+import { AvailabilityModal } from "@/components/availability-modal";
+import { CreateEventModal } from "@/components/create-event-modal";
+import AvailabilityConfigModal from "@/components/availability-config-modal";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
@@ -387,6 +390,10 @@ const MobilePage = () => {
   const [timeOut, setTimeOut] = useState("");
   const [isWorkOrderHistoryOpen, setIsWorkOrderHistoryOpen] = useState(false);
   const [selectedImageForViewer, setSelectedImageForViewer] = useState<string | null>(null);
+  const [isAvailabilityModalOpen, setIsAvailabilityModalOpen] = useState(false);
+  const [isCreateEventModalOpen, setIsCreateEventModalOpen] = useState(false);
+  const [isAvailabilityConfigOpen, setIsAvailabilityConfigOpen] = useState(false);
+  const [selectedCalendarDateForEvent, setSelectedCalendarDateForEvent] = useState<Date | null>(null);
 
   // Work order submission mutation
   const submitWorkOrderMutation = useMutation({
@@ -1543,6 +1550,10 @@ const MobilePage = () => {
               isToday ? 'bg-primary/10 ring-1 ring-primary' : 'hover:bg-accent'
             }`}
             onClick={() => handleDateClick(currentDate)}
+            onDoubleClick={() => {
+              setSelectedCalendarDateForEvent(currentDate);
+              setIsCreateEventModalOpen(true);
+            }}
           >
             <div className={`font-medium mb-1 ${
               isToday ? 'text-primary font-bold' : 'text-foreground'
@@ -1793,21 +1804,40 @@ const MobilePage = () => {
 
         {/* Quick Actions */}
         <Card>
-          <CardContent className="p-4">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
             <div className="space-y-2">
               <Button 
                 size="sm" 
                 variant="outline" 
-                className="w-full justify-start"
+                className="w-full justify-start bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 border-blue-200 text-blue-700"
                 onClick={() => {
-                  toast({
-                    title: "Create Event",
-                    description: "Event creation feature will be integrated with the full calendar system",
-                  });
+                  setSelectedCalendarDateForEvent(null);
+                  setIsCreateEventModalOpen(true);
                 }}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Create New Event
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="w-full justify-start bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 border-green-200 text-green-700"
+                onClick={() => setIsAvailabilityModalOpen(true)}
+              >
+                <Clock className="h-4 w-4 mr-2" />
+                Set Availability
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="w-full justify-start bg-gradient-to-r from-orange-50 to-amber-50 hover:from-orange-100 hover:to-amber-100 border-orange-200 text-orange-700"
+                onClick={() => setIsAvailabilityConfigOpen(true)}
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Configure Schedule
               </Button>
               <Button 
                 size="sm" 
@@ -1824,8 +1854,8 @@ const MobilePage = () => {
                   });
                 }}
               >
-                <Clock className="h-4 w-4 mr-2" />
-                View Upcoming Events ({calendarEvents.filter((event: any) => new Date(event.startDate) >= today).length})
+                <List className="h-4 w-4 mr-2" />
+                View Upcoming ({calendarEvents.filter((event: any) => new Date(event.startDate) >= today).length})
               </Button>
               {(user?.role === 'maintenance_admin' || user?.role === 'technician') && (
                 <Button 
@@ -3207,6 +3237,32 @@ const MobilePage = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Calendar-related modals */}
+      <AvailabilityModal
+        isOpen={isAvailabilityModalOpen}
+        onClose={() => setIsAvailabilityModalOpen(false)}
+      />
+      
+      <CreateEventModal
+        open={isCreateEventModalOpen}
+        onOpenChange={setIsCreateEventModalOpen}
+        defaultDate={selectedCalendarDateForEvent}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['/api/calendar/events'] });
+          setIsCreateEventModalOpen(false);
+          setSelectedCalendarDateForEvent(null);
+          toast({
+            title: "Success",
+            description: "Event created successfully!",
+          });
+        }}
+      />
+      
+      <AvailabilityConfigModal
+        isOpen={isAvailabilityConfigOpen}
+        onClose={() => setIsAvailabilityConfigOpen(false)}
+      />
     </div>
   );
 };
