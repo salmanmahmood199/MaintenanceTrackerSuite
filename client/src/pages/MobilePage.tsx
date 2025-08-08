@@ -3839,8 +3839,8 @@ const MobilePage = () => {
           setLocationSearchTimeout(null);
         }
       }}>
-        <DialogContent className="max-w-full h-full m-0 p-0 rounded-none">
-          <div className="h-full flex flex-col bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <DialogContent className="max-w-full h-screen m-0 p-0 rounded-none border-0">
+          <div className="h-screen flex flex-col bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-white/20 bg-gradient-to-r from-blue-600 to-purple-600 text-white flex-shrink-0">
               <Button
@@ -3872,7 +3872,7 @@ const MobilePage = () => {
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-6">
+            <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-32">
               {/* Duration Selection */}
               <div className="space-y-3">
                 <Label className="text-sm font-medium text-white">Duration</Label>
@@ -4034,7 +4034,7 @@ const MobilePage = () => {
 
             {/* Footer */}
             {selectedTimeSlot && (
-              <div className="flex-shrink-0 p-4 border-t border-white/20 bg-gradient-to-r from-slate-900/90 to-purple-900/90 backdrop-blur-sm">
+              <div className="fixed bottom-0 left-0 right-0 p-4 border-t border-white/20 bg-gradient-to-r from-slate-900/95 to-purple-900/95 backdrop-blur-md z-50">
                 <div className="mb-3 p-3 bg-blue-500/20 border border-blue-400/30 rounded">
                   <p className="text-sm font-medium text-blue-100">
                     Selected: {formatTime(selectedTimeSlot.start)} - {formatTime(selectedTimeSlot.end)}
