@@ -2280,6 +2280,7 @@ const MobilePage = () => {
         <Dialog 
           open={showTimeSlotBooking} 
           onOpenChange={(open) => {
+            console.log('Time Slot Booking Modal onOpenChange:', { open, showTimeSlotBooking });
             if (!open) {
               // Clean up state when modal is closed
               setShowTimeSlotBooking(false);
@@ -2296,7 +2297,7 @@ const MobilePage = () => {
             }
           }}
         >
-          <DialogContent className="max-w-sm mx-4 max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-sm mx-4 max-h-[80vh] overflow-y-auto fixed inset-0 z-50 bg-white">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-blue-600" />
