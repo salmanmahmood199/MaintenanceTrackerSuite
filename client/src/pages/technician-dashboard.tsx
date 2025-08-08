@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Wrench, AlertTriangle, Check, LogOut, Calendar } from "lucide-react";
+import { Clock, Wrench, AlertTriangle, Check, LogOut, Calendar, Star, Zap, ArrowRight } from "lucide-react";
 import { TicketTable } from "@/components/ticket-table";
 import { TechnicianWorkOrderModal } from "@/components/technician-work-order-modal";
 import { apiRequest } from "@/lib/queryClient";
@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import { TicketFilters, type FilterState } from "@/components/ticket-filters";
 import { filterTickets } from "@/utils/ticket-filters";
+import { format, isToday, isThisWeek, startOfDay, endOfDay } from "date-fns";
 import type { Ticket } from "@shared/schema";
 
 interface TicketStats {
@@ -168,6 +169,76 @@ export default function TechnicianDashboard() {
     submitWorkOrderMutation.mutate({ id, workOrder, images });
   };
 
+  // Helper functions for today's focus
+  const getTodaysTickets = () => {
+    const today = new Date();
+    return tickets.filter(ticket => {
+      // Tickets scheduled for today
+      if (ticket.scheduledStartTime) {
+        const scheduledDate = new Date(ticket.scheduledStartTime);
+        if (isToday(scheduledDate)) {
+          return true;
+        }
+      }
+      
+      // High priority tickets that are active
+      if (ticket.priority === 'high' && ['accepted', 'in-progress', 'return_needed'].includes(ticket.status)) {
+        return true;
+      }
+      
+      // Return needed tickets (always priority)
+      if (ticket.status === 'return_needed') {
+        return true;
+      }
+      
+      // In-progress tickets
+      if (ticket.status === 'in-progress') {
+        return true;
+      }
+      
+      return false;
+    }).sort((a, b) => {
+      // Sort by priority: return_needed > scheduled today > high priority > in-progress
+      if (a.status === 'return_needed' && b.status !== 'return_needed') return -1;
+      if (b.status === 'return_needed' && a.status !== 'return_needed') return 1;
+      
+      // Then by scheduled time for today
+      const aScheduledToday = a.scheduledStartTime && isToday(new Date(a.scheduledStartTime));
+      const bScheduledToday = b.scheduledStartTime && isToday(new Date(b.scheduledStartTime));
+      
+      if (aScheduledToday && !bScheduledToday) return -1;
+      if (bScheduledToday && !aScheduledToday) return 1;
+      
+      // Then by priority
+      const priorityOrder = { high: 3, medium: 2, low: 1 };
+      const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
+      const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
+      
+      if (aPriority !== bPriority) return bPriority - aPriority;
+      
+      // Finally by creation date
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  };
+
+  const todaysTickets = getTodaysTickets();
+  
+  const getTicketUrgencyBadge = (ticket: Ticket) => {
+    if (ticket.status === 'return_needed') {
+      return <Badge className="bg-orange-500 text-white border-orange-500">Return Needed</Badge>;
+    }
+    if (ticket.scheduledStartTime && isToday(new Date(ticket.scheduledStartTime))) {
+      return <Badge className="bg-blue-500 text-white border-blue-500">Scheduled Today</Badge>;
+    }
+    if (ticket.priority === 'high') {
+      return <Badge className="bg-red-500 text-white border-red-500">High Priority</Badge>;
+    }
+    if (ticket.status === 'in-progress') {
+      return <Badge className="bg-yellow-500 text-white border-yellow-500">In Progress</Badge>;
+    }
+    return null;
+  };
+
   // Calculate stats
   const stats: TicketStats = {
     assigned: tickets.filter(t => t.status === 'accepted' || t.status === 'in-progress' || t.status === 'return_needed').length,
@@ -211,6 +282,124 @@ export default function TechnicianDashboard() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Today's Focus Section */}
+        {todaysTickets.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Zap className="h-5 w-5 text-yellow-500" />
+                <h2 className="text-xl font-semibold text-foreground">Today's Focus</h2>
+                <Badge variant="outline" className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700">
+                  {todaysTickets.length} {todaysTickets.length === 1 ? 'task' : 'tasks'}
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {format(new Date(), 'EEEE, MMMM d, yyyy')}
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {todaysTickets.slice(0, 6).map((ticket) => (
+                <Card key={ticket.id} className="p-4 border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50/50 to-white dark:from-blue-900/10 dark:to-gray-900 hover:shadow-md transition-all">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="font-medium text-foreground text-sm">
+                          #{ticket.ticketNumber}
+                        </h3>
+                        {getTicketUrgencyBadge(ticket)}
+                      </div>
+                      
+                      <h4 className="font-semibold text-foreground mb-1">{ticket.title}</h4>
+                      <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
+                        {ticket.description}
+                      </p>
+                      
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
+                        {ticket.scheduledStartTime && (
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            <span>
+                              {isToday(new Date(ticket.scheduledStartTime)) 
+                                ? format(new Date(ticket.scheduledStartTime), 'h:mm a')
+                                : format(new Date(ticket.scheduledStartTime), 'MMM d, h:mm a')
+                              }
+                            </span>
+                          </div>
+                        )}
+                        {ticket.location && (
+                          <div className="flex items-center gap-1">
+                            <span>{ticket.location}</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        {ticket.status === 'accepted' && (
+                          <Button
+                            size="sm"
+                            className="text-xs h-7 bg-green-600 hover:bg-green-700"
+                            onClick={() => handleStartWork(ticket.id)}
+                          >
+                            Start Work
+                          </Button>
+                        )}
+                        {(ticket.status === 'in-progress' || ticket.status === 'return_needed') && (
+                          <Button
+                            size="sm"
+                            className="text-xs h-7 bg-blue-600 hover:bg-blue-700"
+                            onClick={() => handleCompleteWork(ticket.id)}
+                          >
+                            Complete
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs h-7"
+                          onClick={() => {
+                            setSelectedTicket(ticket);
+                            setIsWorkOrderModalOpen(true);
+                          }}
+                        >
+                          View Details
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+            
+            {todaysTickets.length > 6 && (
+              <div className="mt-4 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Showing 6 of {todaysTickets.length} priority tasks. View all tickets below.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* No Tasks for Today */}
+        {todaysTickets.length === 0 && (
+          <div className="mb-8">
+            <Card className="p-6 text-center bg-gradient-to-r from-green-50/50 to-white dark:from-green-900/10 dark:to-gray-900">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
+                  <Check className="h-6 w-6 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground mb-1">All Caught Up!</h3>
+                  <p className="text-sm text-muted-foreground">
+                    No urgent tasks scheduled for today. Check your full ticket list below for future assignments.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card className="p-6">
