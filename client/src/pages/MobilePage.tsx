@@ -65,6 +65,16 @@ const MobileCreateTicketForm = ({ onClose, onSuccess, user }: { onClose: () => v
     enabled: !!user?.id,
   });
 
+  // Fetch location details for selected ticket
+  const { data: selectedTicketLocation } = useQuery<Location>({
+    queryKey: ["/api/locations", selectedTicketForDetails?.locationId],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/locations/${selectedTicketForDetails?.locationId}`);
+      return await response.json() as Location;
+    },
+    enabled: !!selectedTicketForDetails?.locationId,
+  });
+
   const form = useForm<InsertTicket>({
     resolver: zodResolver(insertTicketSchema.omit({ reporterId: true, organizationId: true })),
     defaultValues: {
@@ -2857,6 +2867,25 @@ const MobilePage = () => {
                             </div>
                           ))}
                         </div>
+                      </div>
+                    )}
+
+                    {/* Location */}
+                    {selectedTicketForDetails.locationId && (
+                      <div>
+                        <h3 className="font-semibold mb-2">Location</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {selectedTicketLocation ? (
+                            <>
+                              <strong>{selectedTicketLocation.name}</strong>
+                              {selectedTicketLocation.address && (
+                                <><br />{selectedTicketLocation.address}</>
+                              )}
+                            </>
+                          ) : (
+                            'Loading location...'
+                          )}
+                        </p>
                       </div>
                     )}
 

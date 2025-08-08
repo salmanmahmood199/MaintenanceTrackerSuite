@@ -124,8 +124,19 @@ export function VendorTicketActionModal({
         const [endHours, endMinutes] = selectedETA.endTime.split(':');
         endDateTime.setHours(parseInt(endHours), parseInt(endMinutes), 0, 0);
         
-        acceptData.scheduledStartTime = startDateTime.toISOString();
-        acceptData.scheduledEndTime = endDateTime.toISOString();
+        // Format without timezone conversion to preserve local time
+        const formatDateTimeWithoutTimezone = (date: Date) => {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          const hours = String(date.getHours()).padStart(2, '0');
+          const minutes = String(date.getMinutes()).padStart(2, '0');
+          const seconds = String(date.getSeconds()).padStart(2, '0');
+          return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+        };
+        
+        acceptData.scheduledStartTime = formatDateTimeWithoutTimezone(startDateTime);
+        acceptData.scheduledEndTime = formatDateTimeWithoutTimezone(endDateTime);
         acceptData.estimatedDuration = selectedETA.duration;
         acceptData.estimatedStartDate = format(selectedETA.date, 'yyyy-MM-dd');
         acceptData.estimatedEndDate = format(selectedETA.date, 'yyyy-MM-dd');
