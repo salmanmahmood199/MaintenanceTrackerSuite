@@ -417,6 +417,49 @@ const MobilePage = () => {
     };
   }, [locationSearchTimeout]);
 
+  // Format time for display
+  const formatTime = (time: string) => {
+    const [hour, minute] = time.split(':').map(Number);
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    return `${displayHour}:${minute.toString().padStart(2, '0')} ${period}`;
+  };
+
+  // Generate time slots for booking
+  const generateTimeSlots = () => {
+    const slots = [];
+    const durationHours = selectedDuration;
+    const durationMinutes = durationHours * 60;
+    
+    // Generate slots every 30 minutes from 8 AM to 6 PM
+    for (let hour = 8; hour < 18; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        const startHour = hour;
+        const startMinute = minute;
+        const startTime = `${startHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}`;
+        
+        // Calculate end time based on duration
+        const endTotalMinutes = startHour * 60 + startMinute + durationMinutes;
+        const endHour = Math.floor(endTotalMinutes / 60);
+        const endMinute = endTotalMinutes % 60;
+        
+        // Don't show slots that would end after 6 PM (18:00)
+        if (endHour > 18 || (endHour === 18 && endMinute > 0)) {
+          continue;
+        }
+        
+        const endTime = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
+        
+        slots.push({
+          start: startTime,
+          end: endTime,
+          label: `${formatTime(startTime)} - ${formatTime(endTime)}`
+        });
+      }
+    }
+    return slots;
+  };
+
   // Work order submission mutation
   const submitWorkOrderMutation = useMutation({
     mutationFn: async (workOrderData: any) => {
@@ -1742,51 +1785,9 @@ const MobilePage = () => {
     }
   };
 
-  // Format time for display
-  const formatTime = (time: string) => {
-    const [hour, minute] = time.split(':').map(Number);
-    const period = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-    return `${displayHour}:${minute.toString().padStart(2, '0')} ${period}`;
-  };
 
-  // Generate time slots for booking (similar to technician calendar widget)
-    const generateTimeSlots = () => {
-      const slots = [];
-      const durationHours = selectedDuration;
-      const durationMinutes = durationHours * 60;
-      
-      // Generate slots every 30 minutes from 8 AM to 6 PM
-      for (let hour = 8; hour < 18; hour++) {
-        for (let minute = 0; minute < 60; minute += 30) {
-          const startHour = hour;
-          const startMinute = minute;
-          const startTime = `${startHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}`;
-          
-          // Calculate end time based on duration
-          const endTotalMinutes = startHour * 60 + startMinute + durationMinutes;
-          const endHour = Math.floor(endTotalMinutes / 60);
-          const endMinute = endTotalMinutes % 60;
-          
-          // Don't show slots that would end after 6 PM (18:00)
-          if (endHour > 18 || (endHour === 18 && endMinute > 0)) {
-            continue;
-          }
-          
-          const endTime = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
-          
-          slots.push({
-            start: startTime,
-            end: endTime,
-            label: `${formatTime(startTime)} - ${formatTime(endTime)}`
-          });
-        }
-      }
-      return slots;
-    };
-
-    // Check if a time slot is available (no conflicting events)
-    const isTimeSlotAvailable = (startTime: string, endTime: string) => {
+  // Check if a time slot is available (no conflicting events)
+  const isTimeSlotAvailable = (startTime: string, endTime: string) => {
       if (!bookingDate) return true;
       
       const dayEvents = getEventsForDate(bookingDate);
