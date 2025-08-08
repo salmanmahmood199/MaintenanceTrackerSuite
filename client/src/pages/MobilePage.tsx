@@ -1810,7 +1810,7 @@ const MobilePage = () => {
         try {
           const eventData = {
             title: bookingForm.title,
-            description: bookingForm.description || `Booked for ${formatEventTime(selectedTimeSlot.start)} - ${formatEventTime(selectedTimeSlot.end)}`,
+            description: bookingForm.description || `Booked for ${formatTime(selectedTimeSlot.start)} - ${formatTime(selectedTimeSlot.end)}`,
             eventType: 'personal' as const,
             startDate: format(bookingDate, 'yyyy-MM-dd'),
             endDate: format(bookingDate, 'yyyy-MM-dd'),
@@ -3905,8 +3905,9 @@ const MobilePage = () => {
               {/* Time Slots */}
               <div className="space-y-3">
                 <Label className="text-sm font-medium text-white">Available Time Slots</Label>
-                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                <div className="grid grid-cols-2 gap-2">
                   {generateTimeSlots().map((slot, index) => {
+                    const isAvailable = isTimeSlotAvailable(slot.start, slot.end);
                     const isSelected = selectedTimeSlot?.start === slot.start && selectedTimeSlot?.end === slot.end;
                     return (
                       <Button
@@ -3914,13 +3915,18 @@ const MobilePage = () => {
                         type="button"
                         variant={isSelected ? "default" : "outline"}
                         size="sm"
+                        disabled={!isAvailable}
                         onClick={() => setSelectedTimeSlot(isSelected ? null : { start: slot.start, end: slot.end })}
-                        className={isSelected 
-                          ? "bg-purple-500 text-white border-purple-500" 
-                          : "bg-white/10 text-white border-white/20 hover:bg-white/20"
-                        }
+                        className={`${
+                          !isAvailable 
+                            ? "bg-red-500/20 text-red-300 border-red-500/30 cursor-not-allowed" 
+                            : isSelected 
+                            ? "bg-purple-500 text-white border-purple-500" 
+                            : "bg-white/10 text-white border-white/20 hover:bg-white/20"
+                        }`}
                       >
                         {slot.label}
+                        {!isAvailable && " (Booked)"}
                       </Button>
                     );
                   })}
