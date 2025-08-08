@@ -862,7 +862,16 @@ export class DatabaseStorage implements IStorage {
     // Create calendar event for technician if assigned with scheduling data
     if (ticket && acceptData.assigneeId && acceptData.scheduledStartTime && acceptData.scheduledEndTime) {
       try {
-        // Format dates for calendar event
+        // Get location information if available
+        let locationName = undefined;
+        if (ticket.locationId) {
+          const location = await this.getLocation(ticket.locationId);
+          if (location) {
+            locationName = `${location.name}${location.address ? ` - ${location.address}` : ''}`;
+          }
+        }
+        
+        // Format dates for calendar event - preserve original timezone
         const startDateTime = acceptData.scheduledStartTime instanceof Date 
           ? acceptData.scheduledStartTime 
           : new Date(acceptData.scheduledStartTime);
@@ -870,26 +879,41 @@ export class DatabaseStorage implements IStorage {
           ? acceptData.scheduledEndTime 
           : new Date(acceptData.scheduledEndTime);
         
+        // Format times without timezone conversion
+        const formatTimeWithoutTimezone = (date: Date) => {
+          const hours = date.getHours().toString().padStart(2, '0');
+          const minutes = date.getMinutes().toString().padStart(2, '0');
+          const seconds = date.getSeconds().toString().padStart(2, '0');
+          return `${hours}:${minutes}:${seconds}`;
+        };
+        
+        const formatDateWithoutTimezone = (date: Date) => {
+          const year = date.getFullYear();
+          const month = (date.getMonth() + 1).toString().padStart(2, '0');
+          const day = date.getDate().toString().padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        };
+        
         // Create calendar event for the technician
         const calendarEvent = {
           userId: acceptData.assigneeId,
           title: `Work Assignment: ${ticket.title}`,
-          description: `Scheduled work for ticket #${ticket.ticketNumber}${ticket.description ? `\n\nDescription: ${ticket.description}` : ''}`,
+          description: `Scheduled work for ticket #${ticket.ticketNumber}${ticket.description ? `\n\nDescription: ${ticket.description}` : ''}${locationName ? `\n\nLocation: ${locationName}` : ''}`,
           eventType: 'work_assignment' as const,
-          startDate: startDateTime.toISOString().split('T')[0], // YYYY-MM-DD format
-          startTime: startDateTime.toTimeString().split(' ')[0], // HH:MM:SS format
-          endDate: endDateTime.toISOString().split('T')[0],
-          endTime: endDateTime.toTimeString().split(' ')[0],
+          startDate: formatDateWithoutTimezone(startDateTime),
+          startTime: formatTimeWithoutTimezone(startDateTime),
+          endDate: formatDateWithoutTimezone(endDateTime),
+          endTime: formatTimeWithoutTimezone(endDateTime),
           isAllDay: false,
           relatedTicketId: ticket.id,
           priority: ticket.priority || 'medium',
           status: 'confirmed' as const,
           color: '#10B981', // Green color for work assignments
-          location: ticket.locationId ? 'Work Location' : undefined
+          location: locationName
         };
         
         await this.createCalendarEvent(calendarEvent);
-        console.log(`Created calendar event for technician ${acceptData.assigneeId} for ticket ${id}`);
+        console.log(`Created calendar event for technician ${acceptData.assigneeId} for ticket ${id} at location: ${locationName || 'No location'}`);
       } catch (error) {
         console.error(`Failed to create calendar event for ticket ${id}:`, error);
         // Continue without failing the ticket acceptance

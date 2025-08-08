@@ -280,6 +280,7 @@ export default function OrganizationView() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tickets/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/calendar/events"] });
       setIsTicketActionOpen(false);
       toast({
         title: "Success",

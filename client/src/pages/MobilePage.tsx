@@ -2975,6 +2975,7 @@ const MobilePage = () => {
                   setSelectedTicket(null);
                   setTicketAction(null);
                   refetchTickets();
+                  queryClient.invalidateQueries({ queryKey: ["/api/calendar/events"] });
                 } else {
                   const error = await response.json();
                   toast({

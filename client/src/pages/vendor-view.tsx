@@ -264,6 +264,7 @@ export function VendorView() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/calendar/events"] });
       setIsTicketActionModalOpen(false);
       setSelectedTicket(null);
       setTicketAction(null);
