@@ -859,6 +859,43 @@ export class DatabaseStorage implements IStorage {
       }
     }
     
+    // Create calendar event for technician if assigned with scheduling data
+    if (ticket && acceptData.assigneeId && acceptData.scheduledStartTime && acceptData.scheduledEndTime) {
+      try {
+        // Format dates for calendar event
+        const startDateTime = acceptData.scheduledStartTime instanceof Date 
+          ? acceptData.scheduledStartTime 
+          : new Date(acceptData.scheduledStartTime);
+        const endDateTime = acceptData.scheduledEndTime instanceof Date 
+          ? acceptData.scheduledEndTime 
+          : new Date(acceptData.scheduledEndTime);
+        
+        // Create calendar event for the technician
+        const calendarEvent = {
+          userId: acceptData.assigneeId,
+          title: `Work Assignment: ${ticket.title}`,
+          description: `Scheduled work for ticket #${ticket.ticketNumber}${ticket.description ? `\n\nDescription: ${ticket.description}` : ''}`,
+          eventType: 'work_assignment' as const,
+          startDate: startDateTime.toISOString().split('T')[0], // YYYY-MM-DD format
+          startTime: startDateTime.toTimeString().split(' ')[0], // HH:MM:SS format
+          endDate: endDateTime.toISOString().split('T')[0],
+          endTime: endDateTime.toTimeString().split(' ')[0],
+          isAllDay: false,
+          relatedTicketId: ticket.id,
+          priority: ticket.priority || 'medium',
+          status: 'confirmed' as const,
+          color: '#10B981', // Green color for work assignments
+          location: ticket.locationId ? 'Work Location' : undefined
+        };
+        
+        await this.createCalendarEvent(calendarEvent);
+        console.log(`Created calendar event for technician ${acceptData.assigneeId} for ticket ${id}`);
+      } catch (error) {
+        console.error(`Failed to create calendar event for ticket ${id}:`, error);
+        // Continue without failing the ticket acceptance
+      }
+    }
+    
     console.log(`Ticket ${id} updated result:`, { 
       id: ticket?.id, 
       status: ticket?.status, 
