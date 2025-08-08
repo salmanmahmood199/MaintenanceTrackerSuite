@@ -460,6 +460,37 @@ const MobilePage = () => {
     return slots;
   };
 
+  // Get events for a specific date
+  const getEventsForDate = (date: Date) => {
+    const dateString = format(date, 'yyyy-MM-dd');
+    return calendarEvents.filter((event: any) => {
+      if (event.eventType === 'availability') {
+        return false;
+      }
+      const eventStartDate = event.startDate.split('T')[0];
+      const eventEndDate = event.endDate.split('T')[0];
+      return dateString >= eventStartDate && dateString <= eventEndDate;
+    });
+  };
+
+  // Check if a time slot is available (no conflicting events)
+  const isTimeSlotAvailable = (startTime: string, endTime: string) => {
+    if (!bookingDate) return true;
+    
+    const dayEvents = getEventsForDate(bookingDate);
+    
+    for (const event of dayEvents) {
+      if (event.startTime && event.endTime) {
+        // Check for time overlap
+        if (startTime < event.endTime && endTime > event.startTime) {
+          return false;
+        }
+      }
+    }
+    
+    return true;
+  };
+
   // Work order submission mutation
   const submitWorkOrderMutation = useMutation({
     mutationFn: async (workOrderData: any) => {
@@ -1559,17 +1590,6 @@ const MobilePage = () => {
       "July", "August", "September", "October", "November", "December"
     ];
 
-    const getEventsForDate = (date: Date) => {
-      const dateString = format(date, 'yyyy-MM-dd');
-      return calendarEvents.filter((event: any) => {
-        if (event.eventType === 'availability') {
-          return false;
-        }
-        const eventStartDate = event.startDate.split('T')[0];
-        const eventEndDate = event.endDate.split('T')[0];
-        return dateString >= eventStartDate && dateString <= eventEndDate;
-      });
-    };
 
     const getEventTypeColor = (eventType: string) => {
       switch (eventType) {
@@ -1786,23 +1806,6 @@ const MobilePage = () => {
   };
 
 
-  // Check if a time slot is available (no conflicting events)
-  const isTimeSlotAvailable = (startTime: string, endTime: string) => {
-      if (!bookingDate) return true;
-      
-      const dayEvents = getEventsForDate(bookingDate);
-      
-      for (const event of dayEvents) {
-        if (event.startTime && event.endTime) {
-          // Check for time overlap
-          if (startTime < event.endTime && endTime > event.startTime) {
-            return false;
-          }
-        }
-      }
-      
-      return true;
-    };
 
     // Handle booking a selected time slot
     const handleBookTimeSlot = async () => {
