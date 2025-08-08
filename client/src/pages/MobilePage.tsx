@@ -1992,6 +1992,13 @@ const MobilePage = () => {
                       onClick={() => {
                         // Use the currently selected date from day detail
                         const dateToUse = selectedCalendarDate;
+                        console.log('Add Another Event clicked:', { 
+                          selectedCalendarDate, 
+                          dateToUse,
+                          showTimeSlotBooking,
+                          bookingDate 
+                        });
+                        
                         if (dateToUse) {
                           // Reset all booking-related state first
                           setSelectedTimeSlot(null);
@@ -2010,7 +2017,13 @@ const MobilePage = () => {
                           // Set booking date and show modal
                           setBookingDate(dateToUse);
                           setShowTimeSlotBooking(true);
+                          
+                          console.log('Should open modal now:', { 
+                            bookingDate: dateToUse, 
+                            showTimeSlotBooking: true 
+                          });
                         } else {
+                          console.error('No selected calendar date available:', { selectedCalendarDate });
                           toast({
                             title: "Error",
                             description: "Unable to determine selected date. Please try again.",
