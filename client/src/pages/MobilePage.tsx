@@ -401,6 +401,11 @@ const MobilePage = () => {
     description: '',
     location: ''
   });
+  
+  // Location autocomplete state
+  const [locationSuggestions, setLocationSuggestions] = useState<string[]>([]);
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+  const [locationSearchLoading, setLocationSearchLoading] = useState(false);
 
   // Work order submission mutation
   const submitWorkOrderMutation = useMutation({
@@ -1620,7 +1625,97 @@ const MobilePage = () => {
       }
     };
 
-    // Generate time slots for booking (similar to technician calendar widget)
+    // Mock location search function (simulates maps API)
+  const searchLocations = async (query: string): Promise<string[]> => {
+    if (query.trim().length < 2) return [];
+    
+    // Mock location database - in a real app, this would be an API call
+    const mockLocations = [
+      "2318 Halls Ferry Rd, St. Louis, MO 63136",
+      "2318 Hall Street, San Francisco, CA 94133",
+      "2318 Hallmark Drive, Austin, TX 78758",
+      "2318 Hallwood Ave, Chicago, IL 60647",
+      "231 Hall Plaza, New York, NY 10001",
+      "23 Halls Corner, Boston, MA 02134",
+      "2310 Hallfield Lane, Los Angeles, CA 90210",
+      "2320 Hallway Street, Miami, FL 33101",
+      "2300 Hall Boulevard, Seattle, WA 98101",
+      "2325 Hallmark Court, Denver, CO 80202",
+      "Main Street, Anytown USA",
+      "123 Business Ave, Corporate City",
+      "456 Office Park Dr, Commercial District",
+      "789 Industrial Blvd, Manufacturing Zone",
+      "321 Retail Plaza, Shopping Center",
+      "654 Restaurant Row, Food District",
+      "987 Medical Center Dr, Healthcare Complex",
+      "147 University Ave, Campus Area",
+      "258 Airport Rd, Transportation Hub",
+      "369 Hotel Circle, Hospitality District"
+    ];
+    
+    // Filter locations based on query (case insensitive)
+    const filtered = mockLocations.filter(location => 
+      location.toLowerCase().includes(query.toLowerCase())
+    );
+    
+    // Sort by relevance (exact matches first, then partial matches)
+    const sorted = filtered.sort((a, b) => {
+      const aLower = a.toLowerCase();
+      const bLower = b.toLowerCase();
+      const queryLower = query.toLowerCase();
+      
+      // Exact matches first
+      if (aLower.includes(queryLower) && !bLower.includes(queryLower)) return -1;
+      if (bLower.includes(queryLower) && !aLower.includes(queryLower)) return 1;
+      
+      // Then by string length (shorter addresses are more likely to be what user wants)
+      return a.length - b.length;
+    });
+    
+    // Return top 8 results
+    return sorted.slice(0, 8);
+  };
+  
+  // Handle location input change with debounce
+  const handleLocationChange = async (value: string) => {
+    setBookingForm(prev => ({ ...prev, location: value }));
+    
+    if (value.trim().length === 0) {
+      setLocationSuggestions([]);
+      setShowLocationSuggestions(false);
+      return;
+    }
+    
+    if (value.trim().length < 2) {
+      setShowLocationSuggestions(false);
+      return;
+    }
+    
+    setLocationSearchLoading(true);
+    setShowLocationSuggestions(true);
+    
+    // Simple debounce - in a real app you'd use a proper debounce function
+    setTimeout(async () => {
+      try {
+        const suggestions = await searchLocations(value);
+        setLocationSuggestions(suggestions);
+      } catch (error) {
+        console.error('Error searching locations:', error);
+        setLocationSuggestions([]);
+      } finally {
+        setLocationSearchLoading(false);
+      }
+    }, 300);
+  };
+  
+  // Handle selecting a location suggestion
+  const handleLocationSelect = (selectedLocation: string) => {
+    setBookingForm(prev => ({ ...prev, location: selectedLocation }));
+    setShowLocationSuggestions(false);
+    setLocationSuggestions([]);
+  };
+
+  // Generate time slots for booking (similar to technician calendar widget)
     const generateTimeSlots = () => {
       const slots = [];
       const durationHours = selectedDuration;
@@ -2219,15 +2314,71 @@ const MobilePage = () => {
                         />
                       </div>
 
-                      <div>
+                      <div className="relative">
                         <Label htmlFor="booking-location" className="text-xs">Location</Label>
                         <Input
                           id="booking-location"
-                          placeholder="Where will this take place? (optional)"
+                          placeholder="Type to search locations (e.g., 2318 halls...)"
                           value={bookingForm.location}
-                          onChange={(e) => setBookingForm(prev => ({ ...prev, location: e.target.value }))}
+                          onChange={(e) => handleLocationChange(e.target.value)}
+                          onFocus={() => {
+                            if (bookingForm.location.trim().length >= 2) {
+                              setShowLocationSuggestions(true);
+                            }
+                          }}
+                          onBlur={() => {
+                            // Delay hiding suggestions to allow clicking on them
+                            setTimeout(() => setShowLocationSuggestions(false), 200);
+                          }}
                           className="mt-1"
                         />
+                        
+                        {/* Location Suggestions Dropdown */}
+                        {showLocationSuggestions && (locationSuggestions.length > 0 || locationSearchLoading) && (
+                          <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                            {locationSearchLoading ? (
+                              <div className="p-3 text-center text-sm text-muted-foreground">
+                                <div className="flex items-center justify-center gap-2">
+                                  <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                  Searching locations...
+                                </div>
+                              </div>
+                            ) : locationSuggestions.length > 0 ? (
+                              <>
+                                {locationSuggestions.map((suggestion, index) => (
+                                  <button
+                                    key={index}
+                                    type="button"
+                                    className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 focus:outline-none transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                                    onMouseDown={(e) => e.preventDefault()} // Prevent input blur
+                                    onClick={() => handleLocationSelect(suggestion)}
+                                  >
+                                    <div className="flex items-start gap-2">
+                                      <MapPin className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                                      <div className="flex-1 min-w-0">
+                                        <div className="text-gray-900 dark:text-gray-100 truncate">
+                                          {suggestion.split(',')[0]} {/* First part (address number/name) */}
+                                        </div>
+                                        {suggestion.includes(',') && (
+                                          <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                            {suggestion.split(',').slice(1).join(',').trim()} {/* Rest of address */}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </button>
+                                ))}
+                                <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-750 border-t border-gray-100 dark:border-gray-700">
+                                  {locationSuggestions.length} location{locationSuggestions.length !== 1 ? 's' : ''} found
+                                </div>
+                              </>
+                            ) : (
+                              <div className="p-3 text-center text-sm text-muted-foreground">
+                                No locations found for "{bookingForm.location}"
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
