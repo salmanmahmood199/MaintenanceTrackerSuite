@@ -65,24 +65,28 @@ export function TicketActionModal({
       } else if (selectedVendorId.startsWith("tech_")) {
         // Handle technician assignment for maintenance admin
         const technicianId = parseInt(selectedVendorId.replace("tech_", ""));
+        
+        // Require scheduling when assigning a technician
+        if (!selectedSchedule) {
+          return; // Don't proceed without scheduling
+        }
+        
         const acceptData: any = {
           assigneeId: technicianId,
         };
         
-        // Include scheduling data if available
-        if (selectedSchedule) {
-          const scheduledStart = new Date(selectedSchedule.date);
-          const [startHour, startMinute] = selectedSchedule.startTime.split(':').map(Number);
-          scheduledStart.setHours(startHour, startMinute, 0, 0);
-          
-          const scheduledEnd = new Date(selectedSchedule.date);
-          const [endHour, endMinute] = selectedSchedule.endTime.split(':').map(Number);
-          scheduledEnd.setHours(endHour, endMinute, 0, 0);
-          
-          acceptData.scheduledStartTime = scheduledStart.toISOString();
-          acceptData.scheduledEndTime = scheduledEnd.toISOString();
-          acceptData.estimatedDuration = selectedSchedule.duration;
-        }
+        // Include required scheduling data
+        const scheduledStart = new Date(selectedSchedule.date);
+        const [startHour, startMinute] = selectedSchedule.startTime.split(':').map(Number);
+        scheduledStart.setHours(startHour, startMinute, 0, 0);
+        
+        const scheduledEnd = new Date(selectedSchedule.date);
+        const [endHour, endMinute] = selectedSchedule.endTime.split(':').map(Number);
+        scheduledEnd.setHours(endHour, endMinute, 0, 0);
+        
+        acceptData.scheduledStartTime = scheduledStart.toISOString();
+        acceptData.scheduledEndTime = scheduledEnd.toISOString();
+        acceptData.estimatedDuration = selectedSchedule.duration;
         
         onAccept(ticket.id, acceptData);
       } else {
@@ -313,7 +317,11 @@ export function TicketActionModal({
               </Button>
               <Button
                 onClick={handleSubmit}
-                disabled={isLoading || (action === "reject" && !rejectionReason.trim())}
+                disabled={
+                  isLoading || 
+                  (action === "reject" && !rejectionReason.trim()) ||
+                  (action === "accept" && selectedVendorId.startsWith("tech_") && !selectedSchedule)
+                }
                 className={action === "accept" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}
               >
                 {isLoading ? "Processing..." : action === "accept" ? "Accept Ticket" : "Reject Ticket"}

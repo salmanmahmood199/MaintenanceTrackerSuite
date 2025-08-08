@@ -107,6 +107,10 @@ export function VendorTicketActionModal({
       const acceptData: any = {};
       
       if (selectedTechnician) {
+        // Require scheduling when assigning a technician
+        if (!selectedETA) {
+          return; // Don't proceed without scheduling
+        }
         acceptData.assigneeId = parseInt(selectedTechnician);
       }
       
@@ -301,7 +305,8 @@ export function VendorTicketActionModal({
               disabled={
                 isLoading || 
                 (action === "reject" && !rejectionReason.trim()) ||
-                (action === "accept" && availabilityCheck.checked && !availabilityCheck.available)
+                (action === "accept" && availabilityCheck.checked && !availabilityCheck.available) ||
+                (action === "accept" && selectedTechnician && !selectedETA)
               }
               className={action === "accept" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}
             >
