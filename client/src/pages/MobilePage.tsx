@@ -396,6 +396,11 @@ const MobilePage = () => {
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<{start: string, end: string} | null>(null);
   const [selectedDuration, setSelectedDuration] = useState<number>(1); // Default 1 hour
   const [bookingDate, setBookingDate] = useState<Date | null>(null);
+  const [bookingForm, setBookingForm] = useState({
+    title: '',
+    description: '',
+    location: ''
+  });
 
   // Work order submission mutation
   const submitWorkOrderMutation = useMutation({
@@ -1522,12 +1527,14 @@ const MobilePage = () => {
       setSelectedCalendarDate(date);
       const eventsForDate = getEventsForDate(date);
       if (eventsForDate.length > 0) {
+        // Always show day view for dates with events
         setCalendarView('day');
       } else {
         // Show time slot booking for empty dates
         setBookingDate(date);
         setShowTimeSlotBooking(true);
         setSelectedTimeSlot(null);
+        setBookingForm({ title: '', description: '', location: '' });
       }
     };
 
@@ -1667,15 +1674,47 @@ const MobilePage = () => {
     };
 
     // Handle booking a selected time slot
-    const handleBookTimeSlot = () => {
-      if (bookingDate && selectedTimeSlot) {
-        // Create an event with the selected time slot
-        setSelectedCalendarDateForEvent(bookingDate);
-        setIsCreateEventModalOpen(true);
-        setShowTimeSlotBooking(false);
-        
-        // Pre-fill the event modal with the selected time
-        // The CreateEventModal will handle the actual event creation
+    const handleBookTimeSlot = async () => {
+      if (bookingDate && selectedTimeSlot && bookingForm.title.trim()) {
+        try {
+          const eventData = {
+            title: bookingForm.title,
+            description: bookingForm.description || `Booked for ${formatEventTime(selectedTimeSlot.start)} - ${formatEventTime(selectedTimeSlot.end)}`,
+            eventType: 'personal' as const,
+            startDate: format(bookingDate, 'yyyy-MM-dd'),
+            endDate: format(bookingDate, 'yyyy-MM-dd'),
+            startTime: selectedTimeSlot.start,
+            endTime: selectedTimeSlot.end,
+            isAllDay: false,
+            priority: 'medium' as const,
+            location: bookingForm.location || '',
+            color: '#6B7280',
+            timezone: 'America/New_York',
+            status: 'confirmed' as const
+          };
+
+          const response = await apiRequest("POST", "/api/calendar/events", eventData);
+          
+          toast({
+            title: "Event Booked!",
+            description: `Successfully booked ${bookingForm.title} for ${format(bookingDate, 'MMM d')} at ${formatEventTime(selectedTimeSlot.start)}`
+          });
+
+          // Reset form and close modal
+          setShowTimeSlotBooking(false);
+          setBookingForm({ title: '', description: '', location: '' });
+          setSelectedTimeSlot(null);
+          
+          // Refresh calendar events
+          queryClient.invalidateQueries({ queryKey: ["/api/calendar/events"] });
+        } catch (error) {
+          console.error('Error booking time slot:', error);
+          toast({
+            title: "Booking Failed",
+            description: "Failed to book the time slot. Please try again.",
+            variant: "destructive"
+          });
+        }
       }
     };
 
@@ -1694,82 +1733,132 @@ const MobilePage = () => {
                   className="flex items-center gap-2"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  Back to Month
+                  Back
                 </Button>
                 <CardTitle className="text-lg text-center">
-                  {format(selectedCalendarDate, 'EEEE, MMMM d, yyyy')}
+                  {format(selectedCalendarDate, 'EEEE, MMM d')}
                 </CardTitle>
-                <div className="w-20" /> {/* Spacer */}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    setBookingDate(selectedCalendarDate);
+                    setShowTimeSlotBooking(true);
+                    setSelectedTimeSlot(null);
+                    setBookingForm({ title: '', description: '', location: '' });
+                  }}
+                  className="text-xs"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
               </div>
             </CardHeader>
           </Card>
 
           {/* Day Events */}
           <Card>
-            <CardContent className="p-4">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center justify-between">
+                <span>Scheduled Events ({dayEvents.length})</span>
+                <div className="text-xs text-muted-foreground">
+                  {format(selectedCalendarDate, 'yyyy')}
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-2">
               {dayEvents.length === 0 ? (
-                <div className="text-center py-8">
-                  <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No events scheduled for this day</p>
+                <div className="text-center py-6">
+                  <Calendar className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground mb-3">No events scheduled for this day</p>
                   <Button 
                     size="sm" 
-                    variant="outline" 
-                    className="mt-4"
                     onClick={() => {
-                      toast({
-                        title: "Create Event",
-                        description: "Event creation feature coming soon",
-                      });
+                      setBookingDate(selectedCalendarDate);
+                      setShowTimeSlotBooking(true);
+                      setSelectedTimeSlot(null);
+                      setBookingForm({ title: '', description: '', location: '' });
                     }}
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Event
+                    Schedule Event
                   </Button>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <h3 className="font-semibold text-lg">Events ({dayEvents.length})</h3>
-                  {dayEvents.map((event: any) => (
+                  {dayEvents.map((event: any, index: number) => (
                     <div
-                      key={event.id}
+                      key={event.id || index}
                       className="p-3 border rounded-lg bg-card hover:bg-accent/50 transition-colors cursor-pointer"
                       onClick={() => handleEventClick(event)}
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <h4 className="font-medium text-sm">{event.title}</h4>
-                        <div className={`w-3 h-3 rounded-full ${getEventTypeColor(event.eventType)} flex-shrink-0`}></div>
+                        <div className="flex-1">
+                          <h4 className="font-medium text-sm text-card-foreground">{event.title}</h4>
+                          {event.startTime && (
+                            <p className="text-xs text-blue-600 font-medium mt-1">
+                              {formatEventTime(event.startTime)}
+                              {event.endTime && ` - ${formatEventTime(event.endTime)}`}
+                            </p>
+                          )}
+                        </div>
+                        <div className={`w-3 h-3 rounded-full ${getEventTypeColor(event.eventType)} flex-shrink-0 mt-1`}></div>
                       </div>
-                      {event.startTime && (
-                        <p className="text-xs text-muted-foreground mb-1">
-                          {formatEventTime(event.startTime)}
-                          {event.endTime && ` - ${formatEventTime(event.endTime)}`}
-                        </p>
-                      )}
+                      
                       {event.description && (
-                        <p className="text-xs text-muted-foreground">{event.description}</p>
+                        <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{event.description}</p>
                       )}
+                      
                       {event.location && (
-                        <div className="flex items-center gap-1 mt-2">
+                        <div className="flex items-center gap-1 mb-2">
                           <MapPin className="h-3 w-3 text-muted-foreground" />
                           <span className="text-xs text-muted-foreground">{event.location}</span>
                         </div>
                       )}
-                      <div className="flex items-center gap-2 mt-2">
-                        <Badge variant="secondary" className="text-xs">
+                      
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="text-xs capitalize">
                           {event.eventType.replace('_', ' ')}
                         </Badge>
                         {event.priority && (
                           <Badge variant="outline" className={`text-xs ${
-                            event.priority === 'high' ? 'border-red-200 text-red-700' :
-                            event.priority === 'medium' ? 'border-yellow-200 text-yellow-700' :
-                            'border-green-200 text-green-700'
+                            event.priority === 'high' ? 'border-red-200 text-red-700 bg-red-50' :
+                            event.priority === 'medium' ? 'border-yellow-200 text-yellow-700 bg-yellow-50' :
+                            'border-green-200 text-green-700 bg-green-50'
                           }`}>
                             {event.priority}
+                          </Badge>
+                        )}
+                        {event.status && (
+                          <Badge variant="outline" className={`text-xs ${
+                            event.status === 'confirmed' ? 'border-green-200 text-green-700' :
+                            event.status === 'tentative' ? 'border-yellow-200 text-yellow-700' :
+                            'border-red-200 text-red-700'
+                          }`}>
+                            {event.status}
                           </Badge>
                         )}
                       </div>
                     </div>
                   ))}
+                  
+                  {/* Add new event button */}
+                  <div className="pt-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setBookingDate(selectedCalendarDate);
+                        setShowTimeSlotBooking(true);
+                        setSelectedTimeSlot(null);
+                        setBookingForm({ title: '', description: '', location: '' });
+                      }}
+                      className="w-full text-blue-600 border-blue-200 hover:bg-blue-50"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Another Event
+                    </Button>
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -2093,13 +2182,54 @@ const MobilePage = () => {
                 </div>
 
                 {selectedTimeSlot && (
-                  <div className="p-3 bg-green-50 border border-green-200 rounded">
-                    <p className="text-sm font-medium text-green-900">
-                      Selected: {formatEventTime(selectedTimeSlot.start)} - {formatEventTime(selectedTimeSlot.end)}
-                    </p>
-                    <p className="text-xs text-green-700">
-                      Ready to schedule for {format(bookingDate, 'MMM d, yyyy')}
-                    </p>
+                  <div className="space-y-4">
+                    <div className="p-3 bg-green-50 border border-green-200 rounded">
+                      <p className="text-sm font-medium text-green-900">
+                        Selected: {formatEventTime(selectedTimeSlot.start)} - {formatEventTime(selectedTimeSlot.end)}
+                      </p>
+                      <p className="text-xs text-green-700">
+                        Ready to schedule for {format(bookingDate, 'MMM d, yyyy')}
+                      </p>
+                    </div>
+
+                    {/* Event Details Form */}
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-medium text-gray-700">Event Details:</h4>
+                      
+                      <div>
+                        <Label htmlFor="booking-title" className="text-xs">Title *</Label>
+                        <Input
+                          id="booking-title"
+                          placeholder="What's this event about?"
+                          value={bookingForm.title}
+                          onChange={(e) => setBookingForm(prev => ({ ...prev, title: e.target.value }))}
+                          className="mt-1"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="booking-description" className="text-xs">Description</Label>
+                        <Textarea
+                          id="booking-description"
+                          placeholder="Add details about the event (optional)"
+                          value={bookingForm.description}
+                          onChange={(e) => setBookingForm(prev => ({ ...prev, description: e.target.value }))}
+                          rows={2}
+                          className="mt-1"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="booking-location" className="text-xs">Location</Label>
+                        <Input
+                          id="booking-location"
+                          placeholder="Where will this take place? (optional)"
+                          value={bookingForm.location}
+                          onChange={(e) => setBookingForm(prev => ({ ...prev, location: e.target.value }))}
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -2113,10 +2243,10 @@ const MobilePage = () => {
                   </Button>
                   <Button
                     onClick={handleBookTimeSlot}
-                    disabled={!selectedTimeSlot}
-                    className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    disabled={!selectedTimeSlot || !bookingForm.title.trim()}
+                    className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:opacity-50"
                   >
-                    Book Slot
+                    {!bookingForm.title.trim() && selectedTimeSlot ? 'Enter Title' : 'Book Event'}
                   </Button>
                 </div>
               </div>
