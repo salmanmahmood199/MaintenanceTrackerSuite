@@ -1341,7 +1341,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied" });
       }
       
-      res.json(ticket);
+      // Enrich ticket with location details if locationId exists
+      let enrichedTicket = { ...ticket };
+      if (ticket.locationId) {
+        try {
+          const location = await storage.getLocation(ticket.locationId);
+          if (location) {
+            enrichedTicket.locationName = location.name;
+            enrichedTicket.locationAddress = location.streetAddress;
+            enrichedTicket.locationCity = location.city;
+            enrichedTicket.locationState = location.state;
+            enrichedTicket.locationZip = location.zipCode;
+          }
+        } catch (error) {
+          console.error("Error fetching location for ticket:", error);
+          // Continue without location data
+        }
+      }
+      
+      res.json(enrichedTicket);
     } catch (error) {
       console.error("Error fetching ticket:", error);
       res.status(500).json({ message: "Failed to fetch ticket" });

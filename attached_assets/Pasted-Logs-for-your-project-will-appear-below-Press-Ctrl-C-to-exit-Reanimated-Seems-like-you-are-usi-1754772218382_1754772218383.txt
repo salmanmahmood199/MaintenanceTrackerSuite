@@ -1,0 +1,45 @@
+Logs for your project will appear below. Press Ctrl+C to exit.
+| [Reanimated] Seems like you are using a Babel plugin `react-native-reanimated/plugin`. It was moved to `react-native-worklets` package. Please use `react-native-worklets/plugin` instead.
+iOS Bundled 823ms node_modules/expo-router/entry.js (1187 modules)
+ LOG  API Request - URL: https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev/api/auth/user
+ LOG  API Request - Method: GET
+ LOG  API Request - Headers: {
+  "Content-Type": "application/json"
+}
+ LOG  API Request - URL: https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev/api/auth/user
+ LOG  API Request - Method: GET
+ LOG  API Request - Headers: {
+  "Content-Type": "application/json"
+}
+ ERROR  API request failed: GET https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev/api/auth/user Not authenticated
+ ERROR  Auth check failed: [Error: Not authenticated]
+ ERROR  API request failed: GET https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev/api/auth/user Not authenticated
+ ERROR  Auth check failed: [Error: Not authenticated]
+ LOG  API Request - URL: https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev/api/auth/login
+ LOG  API Request - Method: POST
+ LOG  API Request - Headers: {
+  "Content-Type": "application/json"
+}
+ LOG  API Request - URL: https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev/api/tickets
+ LOG  API Request - Method: GET
+ LOG  API Request - Headers: {
+  "Content-Type": "application/json"
+}
+ LOG  Fetching ticket details for ID: 98
+ LOG  Fetching comments for ticket: 98
+ LOG  Fetching work orders for ticket: 98
+ LOG  Making API request to: https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev/api/tickets/98
+ LOG  Making API request to: https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev/api/tickets/98/comments
+ LOG  Making API request to: https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev/api/tickets/98/work-orders
+ LOG  API response from /api/tickets/98: 200
+ LOG  Ticket API response: {"assignedAt": null, "assigneeId": null, "completedAt": null, "confirmationFeedback": null, "confirmedAt": null, "createdAt": "2025-08-09T02:36:14.715Z", "description": "Test 1036", "estimatedDuration": null, "estimatedEndDate": null, "estimatedStartDate": null, "etaNotes": null, "etaProvidedAt": null, "etaProvidedBy": null, "forceCloseReason": null, "forceClosedAt": null, "forceClosedBy": null, "id": 98, "images": ["/uploads/images-1754706973831-643157946.jpg"], "locationId": 1, "maintenanceVendorId": null, "organizationId": 1, "priority": "medium", "rejectionFeedback": null, "rejectionReason": null, "reporterId": 6, "residentialAddress": null, "residentialCity": null, "residentialState": null, "residentialZip": null, "scheduledEndTime": null, "scheduledStartTime": null, "status": "pending", "ticketNumber": "NSRP-974694-0IF", "title": "Test 1036", "updatedAt": "2025-08-09T02:36:14.715Z"}
+ LOG  API response from /api/tickets/98/work-orders: 200
+ LOG  Work Orders API response: []
+ LOG  API response from /api/tickets/98/comments: 200
+ LOG  Comments API response: [{"content": "Hxjxnx", "createdAt": "2025-08-09T20:33:57.495Z", "id": 55, "images": null, "isSystem": false, "isSystemGenerated": false, "ticketId": 98, "updatedAt": "2025-08-09T20:33:57.495Z", "user": {"email": "placeticket@nsrpetro.com", "firstName": "place ", "id": 6, "lastName": "ticket"}, "userId": 6}]
+ WARN  [expo-image-picker] `ImagePicker.MediaTypeOptions` have been deprecated. Use `ImagePicker.MediaType` or an array of `ImagePicker.MediaType` instead.
+ LOG  Fetching comments for ticket: 98
+ LOG  Making API request to: https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev/api/tickets/98/comments
+ LOG  API response from /api/tickets/98/comments: 200
+ LOG  Comments API response: [{"content": "Hxjxnx", "createdAt": "2025-08-09T20:33:57.495Z", "id": 55, "images": null, "isSystem": false, "isSystemGenerated": false, "ticketId": 98, "updatedAt": "2025-08-09T20:33:57.495Z", "user": {"email": "placeticket@nsrpetro.com", "firstName": "place ", "id": 6, "lastName": "ticket"}, "userId": 6}, {"content": "Tedt comment", "createdAt": "2025-08-09T20:42:47.414Z", "id": 56, "images": ["/uploads/images-1754772167086-763042308.jpg"], "isSystem": false, "isSystemGenerated": false, "ticketId": 98, "updatedAt": "2025-08-09T20:42:47.414Z", "user": {"email": "placeticket@nsrpetro.com", "firstName": "place ", "id": 6, "lastName": "ticket"}, "userId": 6}]
+

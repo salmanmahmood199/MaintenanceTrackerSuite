@@ -18,9 +18,9 @@ function normalizeTicket(raw: any) {
   const location: Location | null = raw.locationId ? {
     name: raw.locationName || raw.location?.name,
     address: raw.locationAddress || raw.location?.address || raw.location?.streetAddress,
-    city: raw.location?.city,
-    state: raw.location?.state,
-    zip: raw.location?.zip || raw.location?.zipCode,
+    city: raw.locationCity || raw.location?.city,
+    state: raw.locationState || raw.location?.state,
+    zip: raw.locationZip || raw.location?.zip || raw.location?.zipCode,
   } : null;
 
   return {
@@ -304,22 +304,29 @@ export default function TicketDetailsScreen() {
               <View style={styles.imageSection}>
                 <Text style={styles.sectionTitle}>Attached Images ({ticket.images.length})</Text>
                 <View style={styles.imageGrid}>
-                  {ticket.images.map((imageUrl: string, index: number) => (
-                    <TouchableOpacity
-                      key={index}
-                      onPress={() => {
-                        setSelectedImage(imageUrl);
-                        setImageModalVisible(true);
-                      }}
-                      style={styles.imageCard}
-                    >
-                      <Image
-                        source={{ uri: imageUrl }}
-                        style={styles.imagePreview}
-                        resizeMode="cover"
-                      />
-                    </TouchableOpacity>
-                  ))}
+                  {ticket.images.map((imageUrl: string, index: number) => {
+                    // Handle both relative and absolute URLs for ticket images
+                    const fullImageUrl = imageUrl.startsWith('http') 
+                      ? imageUrl 
+                      : `${api.defaults.baseURL}${imageUrl}`;
+                    
+                    return (
+                      <TouchableOpacity
+                        key={index}
+                        onPress={() => {
+                          setSelectedImage(fullImageUrl);
+                          setImageModalVisible(true);
+                        }}
+                        style={styles.imageCard}
+                      >
+                        <Image
+                          source={{ uri: fullImageUrl }}
+                          style={styles.imagePreview}
+                          resizeMode="cover"
+                        />
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               </View>
             )}
@@ -452,22 +459,29 @@ export default function TicketDetailsScreen() {
                       {comment.images && comment.images.length > 0 && (
                         <View style={styles.commentImagesContainer}>
                           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                            {comment.images.map((imageUrl: string, imageIndex: number) => (
-                              <TouchableOpacity
-                                key={imageIndex}
-                                onPress={() => {
-                                  setSelectedImage(imageUrl);
-                                  setImageModalVisible(true);
-                                }}
-                                style={styles.commentImageWrapper}
-                              >
-                                <Image
-                                  source={{ uri: imageUrl }}
-                                  style={styles.commentImage}
-                                  resizeMode="cover"
-                                />
-                              </TouchableOpacity>
-                            ))}
+                            {comment.images.map((imageUrl: string, imageIndex: number) => {
+                              // Handle both relative and absolute URLs
+                              const fullImageUrl = imageUrl.startsWith('http') 
+                                ? imageUrl 
+                                : `${api.defaults.baseURL}${imageUrl}`;
+                              
+                              return (
+                                <TouchableOpacity
+                                  key={imageIndex}
+                                  onPress={() => {
+                                    setSelectedImage(fullImageUrl);
+                                    setImageModalVisible(true);
+                                  }}
+                                  style={styles.commentImageWrapper}
+                                >
+                                  <Image
+                                    source={{ uri: fullImageUrl }}
+                                    style={styles.commentImage}
+                                    resizeMode="cover"
+                                  />
+                                </TouchableOpacity>
+                              );
+                            })}
                           </ScrollView>
                         </View>
                       )}
