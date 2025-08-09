@@ -1,4 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
+import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
 import { registerRoutes } from "./routes";
@@ -7,6 +8,22 @@ import { setupVite, serveStatic, log } from "./vite";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
+
+// Configure CORS for mobile app access
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:8081',
+    'http://192.168.1.153:8081',
+    'exp://192.168.1.153:8081',
+    /^http:\/\/192\.168\.\d+\.\d+:8081$/,  // Allow any local network IP with port 8081
+    /^exp:\/\/192\.168\.\d+\.\d+:8081$/,   // Allow Expo URLs
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

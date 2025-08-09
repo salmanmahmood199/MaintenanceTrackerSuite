@@ -1,0 +1,96 @@
+Last login: Wed Jul 30 20:47:51 on ttys010
+salmanmahmood@MacBookPro ~ % cd /Users/salmanmahmood/Downloads/MaintenanceTracker-1/apps/mobile-app
+salmanmahmood@MacBookPro mobile-app % npm install
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+npm warn deprecated @xmldom/xmldom@0.7.13: this version is no longer supported, please update to at least 0.8.*
+npm warn deprecated react-native-vector-icons@10.3.0: react-native-vector-icons package has moved to a new model of per-icon-family packages. See the https://github.com/oblador/react-native-vector-icons/blob/master/MIGRATION.md on how to migrate
+
+added 754 packages, and audited 755 packages in 5s
+
+71 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+npm notice
+npm notice New major version of npm available! 10.8.2 -> 11.5.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.5.2
+npm notice To update run: npm install -g npm@11.5.2
+npm notice
+salmanmahmood@MacBookPro mobile-app % npm start
+
+> mobile-app@1.0.0 start
+> expo start
+
+Starting project at /Users/salmanmahmood/Downloads/MaintenanceTracker-1/apps/mobile-app
+Starting Metro Bundler
+The following packages should be updated for best compatibility with the installed expo version:
+  expo-constants@17.0.8 - expected version: ~17.1.7
+  expo-file-system@18.0.12 - expected version: ~18.1.11
+  expo-image-picker@16.0.6 - expected version: ~16.1.4
+  react-native-gesture-handler@2.28.0 - expected version: ~2.24.0
+  react-native-reanimated@4.0.2 - expected version: ~3.17.4
+  react-native-safe-area-context@5.6.0 - expected version: 5.4.0
+  react-native-screens@4.13.1 - expected version: ~4.11.1
+Your project may not work correctly until you install the expected versions of the packages.
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+█ ▄▄▄▄▄ █▄▄▄ ▀ ██ █ ▄▄▄▄▄ █
+█ █   █ ██▄▀ █  ▄▄█ █   █ █
+█ █▄▄▄█ ██▀▄ ▄▀██▀█ █▄▄▄█ █
+█▄▄▄▄▄▄▄█ ▀▄█ ▀▄▀ █▄▄▄▄▄▄▄█
+█ ▄▀▄▄█▄▀▀▄▀█▄▀█▀ █▄█▀█▀▀▄█
+██ ▄▀█▄▄▀█▄██▄▄▄▄ ▀███▄▀▀ █
+█▀█▀▀▀ ▄▄▀▄ █▀█▄ █ ▄▀▀█▀ ██
+█ ▄ ▄▀ ▄▄█▀██▀▄▀ ▄▀ ██▄▀  █
+█▄█▄██▄▄▄ █  ▄▄ █ ▄▄▄  ▄▀▄█
+█ ▄▄▄▄▄ ██ ▄▀▄  █ █▄█ ███ █
+█ █   █ █ ▀▀▄ ▀█▄ ▄  ▄ █▀▀█
+█ █▄▄▄█ █▀ █ ▀█▄ ▄█▀▀▄█   █
+█▄▄▄▄▄▄▄█▄▄█▄██▄▄▄▄█▄▄███▄█
+
+› Metro waiting on exp://192.168.1.153:8081
+› Scan the QR code above with Expo Go (Android) or the Camera app (iOS)
+
+› Using Expo Go
+› Press s │ switch to development build
+
+› Press a │ open Android
+› Press i │ open iOS simulator
+› Press w │ open web
+
+› Press j │ open debugger
+› Press r │ reload app
+› Press m │ toggle menu
+› shift+m │ more tools
+› Press o │ open project code in your editor
+
+› Press ? │ show all commands
+
+Logs for your project will appear below. Press Ctrl+C to exit.
+| [Reanimated] Seems like you are using a Babel plugin `react-native-reanimated/plugin`. It was moved to `react-native-worklets` package. Please use `react-native-worklets/plugin` instead.
+| [Reanimated] Seems like you are using a Babel plugin `react-native-reanimated/plugin`. It was moved to `react-native-worklets` package. Please use `react-native-worklets/plugin` instead.
+| [Reanimated] Seems like you are using a Babel plugin `react-native-reanimated/plugin`. It was moved to `react-native-worklets` package. Please use `react-native-worklets/plugin` instead.
+| [Reanimated] Seems like you are using a Babel plugin `react-native-reanimated/plugin`. It was moved to `react-native-worklets` package. Please use `react-native-worklets/plugin` instead.
+| [Reanimated] Seems like you are using a Babel plugin `react-native-reanimated/plugin`. It was moved to `react-native-worklets` package. Please use `react-native-worklets/plugin` instead.
+| [Reanimated] Seems like you are using a Babel plugin `react-native-reanimated/plugin`. It was moved to `react-native-worklets` package. Please use `react-native-worklets/plugin` instead.
+iOS Bundled 4683ms node_modules/expo-router/entry.js (1202 modules)
+ ERROR  API request failed: GET /api/auth/user [Error: Not authenticated]
+ ERROR  Auth check failed: [Error: Not authenticated]
+ ERROR  API request failed: GET /api/auth/user [Error: Not authenticated]
+ ERROR  Auth check failed: [Error: Not authenticated]
+ WARN  [expo-image-picker] `ImagePicker.MediaTypeOptions` have been deprecated. Use `ImagePicker.MediaType` or an array of `ImagePicker.MediaType` instead.
+ ERROR  Error creating ticket: [TypeError: Network request failed]
+ ERROR  Error creating ticket: [TypeError: Network request failed]
+ ERROR  Error creating ticket: [TypeError: Network request failed]
+ ERROR  API request failed: GET /api/auth/user [Error: Not authenticated]
+ ERROR  Auth check failed: [Error: Not authenticated]
+ LOG  {"assignedAt": "2025-08-08T04:03:10.608Z", "assigneeId": 13, "completedAt": null, "confirmationFeedback": null, "confirmedAt": null, "createdAt": "2025-08-08T04:01:56.066Z", "description": "new ticket 1201", "estimatedDuration": 1, "estimatedEndDate": null, "estimatedStartDate": null, "etaNotes": null, "etaProvidedAt": "2025-08-08T04:03:10.608Z", "etaProvidedBy": 4, "forceCloseReason": null, "forceClosedAt": null, "forceClosedBy": null, "id": 95, "images": ["/uploads/images-1754625715703-386930816.png"], "locationId": 1, "maintenanceVendorId": 1, "organizationId": 1, "priority": "medium", "rejectionFeedback": null, "rejectionReason": null, "reporterId": 6, "residentialAddress": null, "residentialCity": null, "residentialState": null, "residentialZip": null, "scheduledEndTime": "2025-08-14T13:00:00.000Z", "scheduledStartTime": "2025-08-14T12:00:00.000Z", "status": "accepted", "ticketNumber": "NSRP-716047-10A", "title": "new ticket 1201", "updatedAt": "2025-08-08T04:03:10.608Z"}
+ LOG  {"assignedAt": "2025-08-08T04:03:10.608Z", "assigneeId": 13, "completedAt": null, "confirmationFeedback": null, "confirmedAt": null, "createdAt": "2025-08-08T04:01:56.066Z", "description": "new ticket 1201", "estimatedDuration": 1, "estimatedEndDate": null, "estimatedStartDate": null, "etaNotes": null, "etaProvidedAt": "2025-08-08T04:03:10.608Z", "etaProvidedBy": 4, "forceCloseReason": null, "forceClosedAt": null, "forceClosedBy": null, "id": 95, "images": ["/uploads/images-1754625715703-386930816.png"], "locationId": 1, "maintenanceVendorId": 1, "organizationId": 1, "priority": "medium", "rejectionFeedback": null, "rejectionReason": null, "reporterId": 6, "residentialAddress": null, "residentialCity": null, "residentialState": null, "residentialZip": null, "scheduledEndTime": "2025-08-14T13:00:00.000Z", "scheduledStartTime": "2025-08-14T12:00:00.000Z", "status": "accepted", "ticketNumber": "NSRP-716047-10A", "title": "new ticket 1201", "updatedAt": "2025-08-08T04:03:10.608Z"}
+ LOG  {"assignedAt": "2025-08-08T04:03:10.608Z", "assigneeId": 13, "completedAt": null, "confirmationFeedback": null, "confirmedAt": null, "createdAt": "2025-08-08T04:01:56.066Z", "description": "new ticket 1201", "estimatedDuration": 1, "estimatedEndDate": null, "estimatedStartDate": null, "etaNotes": null, "etaProvidedAt": "2025-08-08T04:03:10.608Z", "etaProvidedBy": 4, "forceCloseReason": null, "forceClosedAt": null, "forceClosedBy": null, "id": 95, "images": ["/uploads/images-1754625715703-386930816.png"], "locationId": 1, "maintenanceVendorId": 1, "organizationId": 1, "priority": "medium", "rejectionFeedback": null, "rejectionReason": null, "reporterId": 6, "residentialAddress": null, "residentialCity": null, "residentialState": null, "residentialZip": null, "scheduledEndTime": "2025-08-14T13:00:00.000Z", "scheduledStartTime": "2025-08-14T12:00:00.000Z", "status": "accepted", "ticketNumber": "NSRP-716047-10A", "title": "new ticket 1201", "updatedAt": "2025-08-08T04:03:10.608Z"}
+ LOG  {"assignedAt": "2025-08-08T04:03:10.608Z", "assigneeId": 13, "completedAt": null, "confirmationFeedback": null, "confirmedAt": null, "createdAt": "2025-08-08T04:01:56.066Z", "description": "new ticket 1201", "estimatedDuration": 1, "estimatedEndDate": null, "estimatedStartDate": null, "etaNotes": null, "etaProvidedAt": "2025-08-08T04:03:10.608Z", "etaProvidedBy": 4, "forceCloseReason": null, "forceClosedAt": null, "forceClosedBy": null, "id": 95, "images": ["/uploads/images-1754625715703-386930816.png"], "locationId": 1, "maintenanceVendorId": 1, "organizationId": 1, "priority": "medium", "rejectionFeedback": null, "rejectionReason": null, "reporterId": 6, "residentialAddress": null, "residentialCity": null, "residentialState": null, "residentialZip": null, "scheduledEndTime": "2025-08-14T13:00:00.000Z", "scheduledStartTime": "2025-08-14T12:00:00.000Z", "status": "accepted", "ticketNumber": "NSRP-716047-10A", "title": "new ticket 1201", "updatedAt": "2025-08-08T04:03:10.608Z"}
+ LOG  {"assignedAt": "2025-08-08T04:03:10.608Z", "assigneeId": 13, "completedAt": null, "confirmationFeedback": null, "confirmedAt": null, "createdAt": "2025-08-08T04:01:56.066Z", "description": "new ticket 1201", "estimatedDuration": 1, "estimatedEndDate": null, "estimatedStartDate": null, "etaNotes": null, "etaProvidedAt": "2025-08-08T04:03:10.608Z", "etaProvidedBy": 4, "forceCloseReason": null, "forceClosedAt": null, "forceClosedBy": null, "id": 95, "images": ["/uploads/images-1754625715703-386930816.png"], "locationId": 1, "maintenanceVendorId": 1, "organizationId": 1, "priority": "medium", "rejectionFeedback": null, "rejectionReason": null, "reporterId": 6, "residentialAddress": null, "residentialCity": null, "residentialState": null, "residentialZip": null, "scheduledEndTime": "2025-08-14T13:00:00.000Z", "scheduledStartTime": "2025-08-14T12:00:00.000Z", "status": "accepted", "ticketNumber": "NSRP-716047-10A", "title": "new ticket 1201", "updatedAt": "2025-08-08T04:03:10.608Z"}
+
