@@ -1301,6 +1301,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Get single ticket with detailed information
+  app.get("/api/tickets/:id", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = req.user!;
+      
+      // Get the ticket with detailed information
+      const tickets = await storage.getTickets();
+      const ticket = tickets.find(t => t.id === id);
+      
+      if (!ticket) {
+        return res.status(404).json({ message: "Ticket not found" });
+      }
+      
+      // Check access permissions
+      let hasAccess = false;
+      if (user.role === "root") {
+        hasAccess = true;
+      } else if (user.role === "org_admin" && ticket.organizationId === user.organizationId) {
+        hasAccess = true;
+      } else if (user.role === "org_subadmin" && ticket.organizationId === user.organizationId) {
+        // Check if user has access to the ticket's location
+        const userLocations = await storage.getUserLocationAssignments(user.id);
+        const locationIds = userLocations.map((loc) => loc.id);
+        hasAccess = !ticket.locationId || locationIds.includes(ticket.locationId);
+      } else if (user.role === "maintenance_admin" && ticket.maintenanceVendorId === user.maintenanceVendorId) {
+        hasAccess = true;
+      } else if (user.role === "technician" && ticket.assigneeId === user.id) {
+        hasAccess = true;
+      } else if (user.role === "residential" && ticket.reporterId === user.id) {
+        hasAccess = true;
+      } else if (ticket.organizationId === user.organizationId) {
+        // Allow users from same organization to view tickets
+        hasAccess = true;
+      }
+      
+      if (!hasAccess) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      res.json(ticket);
+    } catch (error) {
+      console.error("Error fetching ticket:", error);
+      res.status(500).json({ message: "Failed to fetch ticket" });
+    }
+  });
+
   // Update ticket status
   app.patch("/api/tickets/:id", async (req, res) => {
     try {

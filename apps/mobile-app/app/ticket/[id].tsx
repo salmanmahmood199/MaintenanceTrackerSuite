@@ -4,6 +4,8 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -12,12 +14,13 @@ type Location = { name?: string; address?: string; city?: string; state?: string
 function normalizeTicket(raw: any) {
   if (!raw) return null;
   
-  const location: Location | null = raw.location ? {
-    name: raw.location.name || raw.location.locationName,
-    address: raw.location.address || raw.location.streetAddress,
-    city: raw.location.city,
-    state: raw.location.state,
-    zip: raw.location.zip || raw.location.zipCode,
+  // Handle location data - tickets from the API have locationId, locationName, and locationAddress
+  const location: Location | null = raw.locationId ? {
+    name: raw.locationName || raw.location?.name,
+    address: raw.locationAddress || raw.location?.address || raw.location?.streetAddress,
+    city: raw.location?.city,
+    state: raw.location?.state,
+    zip: raw.location?.zip || raw.location?.zipCode,
   } : null;
 
   return {
@@ -28,10 +31,14 @@ function normalizeTicket(raw: any) {
     status: raw.status,
     priority: raw.priority,
     createdAt: raw.createdAt,
+    updatedAt: raw.updatedAt,
     location,
+    locationId: raw.locationId,
     reporter: raw.reporter || raw.createdBy,
     createdBy: raw.createdBy,
     images: raw.images || [],
+    organizationId: raw.organizationId,
+    reporterId: raw.reporterId,
   };
 }
 
@@ -44,6 +51,8 @@ export default function TicketDetailsScreen() {
   const [newComment, setNewComment] = useState('');
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImages, setSelectedImages] = useState<any[]>([]);
+  const [imagePreviewModalVisible, setImagePreviewModalVisible] = useState(false);
 
   // Fetch ticket details
   const { data: ticket, isLoading: ticketLoading, refetch: refetchTicket, isError: ticketError, error: ticketErrorMsg } = useQuery({
@@ -87,29 +96,83 @@ export default function TicketDetailsScreen() {
     },
   });
 
-  // Add comment mutation
+  // Add comment mutation with image support
   const addCommentMutation = useMutation({
-    mutationFn: async (content: string) => {
-      const response = await api.post(`/api/tickets/${id}/comments`, { content });
-      return response.data;
+    mutationFn: async (data: { content: string; images?: any[] }) => {
+      const formData = new FormData();
+      formData.append('content', data.content);
+      
+      // Add images if present
+      if (data.images && data.images.length > 0) {
+        data.images.forEach((image) => {
+          formData.append('images', {
+            uri: image.uri,
+            type: image.type || 'image/jpeg',
+            name: image.name || 'image.jpg',
+          } as any);
+        });
+      }
+      
+      const response = await fetch(`${api.defaults.baseURL}/api/tickets/${id}/comments`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        throw new Error(errorData.message || `HTTP ${response.status}`);
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["comments", id] });
       setNewComment('');
+      setSelectedImages([]);
       Alert.alert('Success', 'Comment added successfully');
     },
     onError: (error: any) => {
       console.error('Comment error:', error);
-      Alert.alert('Error', error.response?.data?.message || 'Failed to add comment');
+      Alert.alert('Error', error.message || 'Failed to add comment');
     },
   });
 
   const handleAddComment = () => {
-    if (!newComment.trim()) {
-      Alert.alert('Error', 'Please enter a comment');
+    if (!newComment.trim() && selectedImages.length === 0) {
+      Alert.alert('Error', 'Please enter a comment or select an image');
       return;
     }
-    addCommentMutation.mutate(newComment.trim());
+    addCommentMutation.mutate({ 
+      content: newComment.trim() || 'Image attachment', 
+      images: selectedImages 
+    });
+  };
+
+  const pickImages = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsMultipleSelection: true,
+        quality: 0.8,
+        allowsEditing: false,
+      });
+
+      if (!result.canceled && result.assets) {
+        setSelectedImages([...selectedImages, ...result.assets]);
+      }
+    } catch (error) {
+      console.error('Error picking images:', error);
+      Alert.alert('Error', 'Failed to pick images');
+    }
+  };
+
+  const removeImage = (index: number) => {
+    const newImages = [...selectedImages];
+    newImages.splice(index, 1);
+    setSelectedImages(newImages);
   };
 
   const onRefresh = async () => {
@@ -297,23 +360,54 @@ export default function TicketDetailsScreen() {
                   onChangeText={setNewComment}
                   textAlignVertical="top"
                 />
-                <TouchableOpacity
-                  style={[
-                    styles.submitButton,
-                    { opacity: addCommentMutation.isPending || !newComment.trim() ? 0.5 : 1 }
-                  ]}
-                  onPress={handleAddComment}
-                  disabled={addCommentMutation.isPending || !newComment.trim()}
-                >
-                  {addCommentMutation.isPending ? (
-                    <ActivityIndicator size="small" color="white" />
-                  ) : (
-                    <View style={styles.buttonContent}>
-                      <Ionicons name="send" size={16} color="white" />
-                      <Text style={styles.buttonText}>Add Comment</Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
+                
+                {/* Image Preview */}
+                {selectedImages.length > 0 && (
+                  <View style={styles.imagePreviewContainer}>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                      {selectedImages.map((image, index) => (
+                        <View key={index} style={styles.imagePreviewWrapper}>
+                          <Image source={{ uri: image.uri }} style={styles.imagePreview} />
+                          <TouchableOpacity
+                            style={styles.removeImageButton}
+                            onPress={() => removeImage(index)}
+                          >
+                            <Ionicons name="close-circle" size={20} color="#ef4444" />
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
+                
+                {/* Buttons Row */}
+                <View style={styles.buttonRow}>
+                  <TouchableOpacity
+                    style={styles.imagePickerButton}
+                    onPress={pickImages}
+                  >
+                    <Ionicons name="camera" size={16} color="#3b82f6" />
+                    <Text style={styles.imagePickerText}>Add Images</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={[
+                      styles.submitButton,
+                      { opacity: addCommentMutation.isPending || (!newComment.trim() && selectedImages.length === 0) ? 0.5 : 1 }
+                    ]}
+                    onPress={handleAddComment}
+                    disabled={addCommentMutation.isPending || (!newComment.trim() && selectedImages.length === 0)}
+                  >
+                    {addCommentMutation.isPending ? (
+                      <ActivityIndicator size="small" color="white" />
+                    ) : (
+                      <View style={styles.buttonContent}>
+                        <Ionicons name="send" size={16} color="white" />
+                        <Text style={styles.buttonText}>Add Comment</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
 
@@ -353,6 +447,30 @@ export default function TicketDetailsScreen() {
                         </Text>
                       </View>
                       <Text style={styles.commentContent}>{comment.content || comment.text}</Text>
+                      
+                      {/* Comment Images */}
+                      {comment.images && comment.images.length > 0 && (
+                        <View style={styles.commentImagesContainer}>
+                          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                            {comment.images.map((imageUrl: string, imageIndex: number) => (
+                              <TouchableOpacity
+                                key={imageIndex}
+                                onPress={() => {
+                                  setSelectedImage(imageUrl);
+                                  setImageModalVisible(true);
+                                }}
+                                style={styles.commentImageWrapper}
+                              >
+                                <Image
+                                  source={{ uri: imageUrl }}
+                                  style={styles.commentImage}
+                                  resizeMode="cover"
+                                />
+                              </TouchableOpacity>
+                            ))}
+                          </ScrollView>
+                        </View>
+                      )}
                     </View>
                   ))}
                 </View>
@@ -865,6 +983,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   submitButton: {
+    flex: 1,
     backgroundColor: '#3b82f6',
     paddingVertical: 12,
     borderRadius: 8,
@@ -1051,6 +1170,59 @@ const styles = StyleSheet.create({
   workOrderDate: {
     fontSize: 12,
     color: '#94a3b8',
+  },
+  
+  // Comment Image Styles
+  imagePreviewContainer: {
+    marginVertical: 8,
+  },
+  imagePreviewWrapper: {
+    marginRight: 8,
+    position: 'relative',
+  },
+  imagePreview: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: 'white',
+    borderRadius: 10,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'center',
+  },
+  imagePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#3b82f6',
+    backgroundColor: 'white',
+  },
+  imagePickerText: {
+    color: '#3b82f6',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  commentImagesContainer: {
+    marginTop: 8,
+  },
+  commentImageWrapper: {
+    marginRight: 8,
+  },
+  commentImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
   },
   
   // Shared styles
