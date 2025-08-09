@@ -55,6 +55,15 @@ export async function apiRequest(
     ...options,
   };
 
+  // Add debugging for mobile development
+  if (process.env.NODE_ENV === "development") {
+    console.log(`[API REQUEST] ${method} ${url}`);
+    console.log(`[API REQUEST] Headers:`, config.headers);
+    if (data && !(data instanceof FormData)) {
+      console.log(`[API REQUEST] Body:`, JSON.stringify(data));
+    }
+  }
+
   // Handle FormData (for file uploads)
   if (data instanceof FormData) {
     // Remove Content-Type header to let browser set boundary for FormData
@@ -68,6 +77,12 @@ export async function apiRequest(
   try {
     const response = await fetch(url, config);
 
+    // Add debug logging for mobile development
+    if (process.env.NODE_ENV === "development") {
+      console.log(`[API RESPONSE] ${method} ${endpoint} - Status: ${response.status}`);
+      console.log(`[API RESPONSE] Headers:`, Object.fromEntries(response.headers.entries()));
+    }
+
     // Handle common HTTP errors
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -76,6 +91,11 @@ export async function apiRequest(
       ) as ApiError;
       error.status = response.status;
       error.data = errorData;
+      
+      if (process.env.NODE_ENV === "development") {
+        console.error(`[API ERROR] ${method} ${endpoint} - ${response.status}:`, errorData);
+      }
+      
       throw error;
     }
 
@@ -83,6 +103,11 @@ export async function apiRequest(
   } catch (error) {
     if (error instanceof Error) {
       console.error(`API request failed: ${method} ${endpoint}`, error);
+      if (process.env.NODE_ENV === "development") {
+        console.error(`[API DEBUG] Full error:`, error);
+        console.error(`[API DEBUG] Error type:`, error.constructor.name);
+        console.error(`[API DEBUG] Error message:`, error.message);
+      }
       throw error;
     }
     throw new Error("Unknown API error");
