@@ -11,17 +11,32 @@ const app = express();
 
 // Configure CORS for mobile app access
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:8081',
-    'http://192.168.1.153:8081',
-    'exp://192.168.1.153:8081',
-    /^http:\/\/192\.168\.\d+\.\d+:8081$/,  // Allow any local network IP with port 8081
-    /^exp:\/\/192\.168\.\d+\.\d+:8081$/,   // Allow Expo URLs
-  ],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps)
+    if (!origin) return callback(null, true);
+    
+    // Allow localhost and development URLs
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:8081',
+      'http://192.168.1.153:8081',
+      'exp://192.168.1.153:8081',
+    ];
+    
+    // Allow any local network IP with common ports
+    const localNetworkRegex = /^https?:\/\/(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.1[6-9]\.\d+\.\d+|172\.2[0-9]\.\d+\.\d+|172\.3[0-1]\.\d+\.\d+)(:\d+)?$/;
+    const expoRegex = /^exp:\/\/(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?$/;
+    
+    if (allowedOrigins.includes(origin) || localNetworkRegex.test(origin) || expoRegex.test(origin)) {
+      return callback(null, true);
+    }
+    
+    return callback(null, true); // Allow all origins in development
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
 }));
 
 app.use(express.json());
