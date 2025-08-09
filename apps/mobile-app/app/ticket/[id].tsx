@@ -509,64 +509,170 @@ export default function TicketDetailsScreen() {
                 <Text style={styles.progressText}>{getProgressPercentage()}% Complete</Text>
               </View>
               
-              {/* Progress Timeline - Web Style */}
-              <View style={styles.progressTimeline}>
-                <View style={styles.timelineItem}>
-                  <View style={[styles.timelineIcon, { backgroundColor: '#10b981' }]}>
-                    <Ionicons name="checkmark" size={16} color="white" />
+              {/* All Steps Progress Timeline - Web Style */}
+              <View style={styles.allStepsTimeline}>
+                {/* Step 1: Ticket Submitted */}
+                <View style={styles.stepContainer}>
+                  <View style={[styles.stepIcon, { backgroundColor: '#10b981' }]}>
+                    <Ionicons name="document-text" size={16} color="white" />
                   </View>
-                  <View style={styles.timelineContent}>
-                    <Text style={styles.timelineTitle}>Ticket Created</Text>
-                    <Text style={styles.timelineDescription}>Initial ticket submission</Text>
-                    <Text style={styles.timelineDate}>
+                  <View style={styles.stepContent}>
+                    <Text style={styles.stepTitle}>Ticket Submitted</Text>
+                    <Text style={styles.stepDescription}>Initial ticket creation and submission</Text>
+                    <Text style={styles.stepDate}>
                       {ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
+                        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
                       }) : 'Unknown'}
                     </Text>
                   </View>
+                  <View style={[styles.stepStatus, { backgroundColor: '#10b981' }]}>
+                    <Ionicons name="checkmark" size={12} color="white" />
+                  </View>
                 </View>
                 
-                {ticket.status !== 'pending' && (
-                  <View style={styles.timelineItem}>
-                    <View style={[styles.timelineIcon, { backgroundColor: '#3b82f6' }]}>
-                      <Ionicons name="checkmark" size={16} color="white" />
-                    </View>
-                    <View style={styles.timelineContent}>
-                      <Text style={styles.timelineTitle}>Ticket Accepted</Text>
-                      <Text style={styles.timelineDescription}>Approved for processing</Text>
-                      <Text style={styles.timelineDate}>Status: {ticket.status}</Text>
-                    </View>
-                  </View>
-                )}
+                {/* Connection Line */}
+                <View style={[styles.connectionLine, { 
+                  backgroundColor: ['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#10b981' : '#e5e7eb' 
+                }]} />
                 
-                {(['in_progress', 'in-progress', 'completed', 'confirmed'].includes(ticket.status)) && (
-                  <View style={styles.timelineItem}>
-                    <View style={[styles.timelineIcon, { backgroundColor: '#8b5cf6' }]}>
-                      <Ionicons name="construct" size={16} color="white" />
-                    </View>
-                    <View style={styles.timelineContent}>
-                      <Text style={styles.timelineTitle}>Work In Progress</Text>
-                      <Text style={styles.timelineDescription}>Maintenance work underway</Text>
-                      <Text style={styles.timelineDate}>Active</Text>
-                    </View>
+                {/* Step 2: Ticket Accepted */}
+                <View style={styles.stepContainer}>
+                  <View style={[styles.stepIcon, { 
+                    backgroundColor: ['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#3b82f6' : '#9ca3af' 
+                  }]}>
+                    <Ionicons name="checkmark-circle" size={16} color="white" />
                   </View>
-                )}
+                  <View style={styles.stepContent}>
+                    <Text style={[styles.stepTitle, { 
+                      color: ['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#1f2937' : '#6b7280' 
+                    }]}>Ticket Accepted</Text>
+                    <Text style={[styles.stepDescription, { 
+                      color: ['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#4b5563' : '#9ca3af' 
+                    }]}>Approved by organization and ready for vendor assignment</Text>
+                    <Text style={[styles.stepDate, { 
+                      color: ['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#6b7280' : '#9ca3af' 
+                    }]}>
+                      {['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? 'Completed' : 'Pending'}
+                    </Text>
+                  </View>
+                  <View style={[styles.stepStatus, { 
+                    backgroundColor: ['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#10b981' : '#e5e7eb' 
+                  }]}>
+                    {['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? (
+                      <Ionicons name="checkmark" size={12} color="white" />
+                    ) : (
+                      <View style={[styles.pendingDot, { backgroundColor: '#9ca3af' }]} />
+                    )}
+                  </View>
+                </View>
                 
-                {(['completed', 'confirmed'].includes(ticket.status)) && (
-                  <View style={styles.timelineItem}>
-                    <View style={[styles.timelineIcon, { backgroundColor: '#10b981' }]}>
-                      <Ionicons name="checkmark-done" size={16} color="white" />
-                    </View>
-                    <View style={styles.timelineContent}>
-                      <Text style={styles.timelineTitle}>Work Completed</Text>
-                      <Text style={styles.timelineDescription}>All tasks finished</Text>
-                      <Text style={styles.timelineDate}>Completed</Text>
-                    </View>
+                {/* Connection Line */}
+                <View style={[styles.connectionLine, { 
+                  backgroundColor: ['in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#10b981' : '#e5e7eb' 
+                }]} />
+                
+                {/* Step 3: Work In Progress */}
+                <View style={styles.stepContainer}>
+                  <View style={[styles.stepIcon, { 
+                    backgroundColor: ['in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#8b5cf6' : '#9ca3af' 
+                  }]}>
+                    <Ionicons name="construct" size={16} color="white" />
                   </View>
-                )}
+                  <View style={styles.stepContent}>
+                    <Text style={[styles.stepTitle, { 
+                      color: ['in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#1f2937' : '#6b7280' 
+                    }]}>Work In Progress</Text>
+                    <Text style={[styles.stepDescription, { 
+                      color: ['in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#4b5563' : '#9ca3af' 
+                    }]}>Technician assigned and active maintenance work</Text>
+                    <Text style={[styles.stepDate, { 
+                      color: ['in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#6b7280' : '#9ca3af' 
+                    }]}>
+                      {['in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? 'In Progress' : 'Pending'}
+                    </Text>
+                  </View>
+                  <View style={[styles.stepStatus, { 
+                    backgroundColor: ['in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#10b981' : '#e5e7eb' 
+                  }]}>
+                    {['in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? (
+                      <Ionicons name="checkmark" size={12} color="white" />
+                    ) : (
+                      <View style={[styles.pendingDot, { backgroundColor: '#9ca3af' }]} />
+                    )}
+                  </View>
+                </View>
+                
+                {/* Connection Line */}
+                <View style={[styles.connectionLine, { 
+                  backgroundColor: ['completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#10b981' : '#e5e7eb' 
+                }]} />
+                
+                {/* Step 4: Work Completed */}
+                <View style={styles.stepContainer}>
+                  <View style={[styles.stepIcon, { 
+                    backgroundColor: ['completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#10b981' : '#9ca3af' 
+                  }]}>
+                    <Ionicons name="checkmark-done" size={16} color="white" />
+                  </View>
+                  <View style={styles.stepContent}>
+                    <Text style={[styles.stepTitle, { 
+                      color: ['completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#1f2937' : '#6b7280' 
+                    }]}>Work Completed</Text>
+                    <Text style={[styles.stepDescription, { 
+                      color: ['completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#4b5563' : '#9ca3af' 
+                    }]}>All repair work finished, awaiting confirmation</Text>
+                    <Text style={[styles.stepDate, { 
+                      color: ['completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#6b7280' : '#9ca3af' 
+                    }]}>
+                      {['completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? 'Completed' : 'Pending'}
+                    </Text>
+                  </View>
+                  <View style={[styles.stepStatus, { 
+                    backgroundColor: ['completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#10b981' : '#e5e7eb' 
+                  }]}>
+                    {['completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? (
+                      <Ionicons name="checkmark" size={12} color="white" />
+                    ) : (
+                      <View style={[styles.pendingDot, { backgroundColor: '#9ca3af' }]} />
+                    )}
+                  </View>
+                </View>
+                
+                {/* Connection Line */}
+                <View style={[styles.connectionLine, { 
+                  backgroundColor: ['confirmed', 'billed'].includes(ticket.status) ? '#10b981' : '#e5e7eb' 
+                }]} />
+                
+                {/* Step 5: Work Confirmed & Billed */}
+                <View style={styles.stepContainer}>
+                  <View style={[styles.stepIcon, { 
+                    backgroundColor: ['confirmed', 'billed'].includes(ticket.status) ? '#10b981' : '#9ca3af' 
+                  }]}>
+                    <Ionicons name="receipt" size={16} color="white" />
+                  </View>
+                  <View style={styles.stepContent}>
+                    <Text style={[styles.stepTitle, { 
+                      color: ['confirmed', 'billed'].includes(ticket.status) ? '#1f2937' : '#6b7280' 
+                    }]}>Confirmed & Billed</Text>
+                    <Text style={[styles.stepDescription, { 
+                      color: ['confirmed', 'billed'].includes(ticket.status) ? '#4b5563' : '#9ca3af' 
+                    }]}>Customer confirmed work and invoice generated</Text>
+                    <Text style={[styles.stepDate, { 
+                      color: ['confirmed', 'billed'].includes(ticket.status) ? '#6b7280' : '#9ca3af' 
+                    }]}>
+                      {['confirmed', 'billed'].includes(ticket.status) ? 'Completed' : 'Pending'}
+                    </Text>
+                  </View>
+                  <View style={[styles.stepStatus, { 
+                    backgroundColor: ['confirmed', 'billed'].includes(ticket.status) ? '#10b981' : '#e5e7eb' 
+                  }]}>
+                    {['confirmed', 'billed'].includes(ticket.status) ? (
+                      <Ionicons name="checkmark" size={12} color="white" />
+                    ) : (
+                      <View style={[styles.pendingDot, { backgroundColor: '#9ca3af' }]} />
+                    )}
+                  </View>
+                </View>
               </View>
             </View>
           </View>
@@ -1130,6 +1236,62 @@ const styles = StyleSheet.create({
   timelineDate: {
     fontSize: 12,
     color: '#94a3b8',
+  },
+  
+  // All Steps Progress Timeline Styles
+  allStepsTimeline: {
+    marginTop: 20,
+  },
+  stepContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  stepIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  stepContent: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  stepTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: 4,
+  },
+  stepDescription: {
+    fontSize: 13,
+    color: '#4b5563',
+    marginBottom: 2,
+  },
+  stepDate: {
+    fontSize: 11,
+    color: '#6b7280',
+    fontWeight: '500',
+  },
+  stepStatus: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pendingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  connectionLine: {
+    width: 2,
+    height: 20,
+    marginLeft: 19,
+    marginVertical: -2,
   },
   
   // Web-style Work Orders Tab
