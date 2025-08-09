@@ -3,7 +3,7 @@ import { View, Text, ActivityIndicator, ScrollView } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 // If your '@' alias isn't set, change to '../../../lib/api'
-import { api } from "@/lib/api";
+import { api } from "../../../lib/api";
 
 type Location = { name?: string; address?: string; city?: string; state?: string; zip?: string };
 type Ticket = {
