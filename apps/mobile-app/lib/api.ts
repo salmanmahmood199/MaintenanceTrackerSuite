@@ -1,14 +1,14 @@
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Get API URL from environment or use default
 const getApiUrl = () => {
   const envUrl = process.env.EXPO_PUBLIC_API_URL;
   if (envUrl) return envUrl;
   
-  // For local development, use the local IP address
+  // For local development, use the main Replit URL
   if (process.env.NODE_ENV === "development") {
-    return 'http://192.168.1.153:5000';
+    // Use the main Replit domain which should serve both frontend and backend
+    return 'https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev';
   }
   
   // Use the Replit backend URL for production
@@ -26,34 +26,38 @@ export const api = axios.create({
   },
 });
 
-// Request interceptor to add auth token
+// Request interceptor to add debugging and better error handling
 api.interceptors.request.use(
   async (config) => {
-    try {
-      const token = await AsyncStorage.getItem('authToken');
-      if (token && token !== 'cookie-based') {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      // Always include credentials for cookie-based auth
-      config.withCredentials = true;
-    } catch (error) {
-      console.error('Error getting auth token:', error);
-    }
+    console.log(`Making API request to: ${config.baseURL}${config.url}`);
+    // For now, remove auth complexity and focus on basic connectivity
     return config;
   },
   (error) => {
+    console.error('Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
 
-// Response interceptor for error handling
+// Response interceptor for better error handling
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log(`API response from ${response.config.url}:`, response.status);
+    return response;
+  },
   (error) => {
-    if (error.response?.status === 401) {
-      // Handle unauthorized - could clear token and redirect to login
-      AsyncStorage.removeItem('authToken');
+    console.error('API Error Details:', {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      message: error.message,
+      data: error.response?.data
+    });
+    
+    if (error.code === 'NETWORK_ERROR' || error.message.includes('Network Error')) {
+      console.error('Network connectivity issue - check if backend is running on', API_BASE_URL);
     }
+    
     return Promise.reject(error);
   }
 );

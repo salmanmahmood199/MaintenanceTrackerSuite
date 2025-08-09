@@ -43,10 +43,19 @@ export default function TicketDetailsScreen() {
     queryKey: ["ticket", id],
     enabled: !!id,
     queryFn: async () => {
-      const response = await api.get(`/api/tickets/${id}`);
-      const raw = response.data?.ticket ?? response.data;
-      return normalizeTicket(raw);
+      try {
+        console.log('Fetching ticket details for ID:', id);
+        const response = await api.get(`/api/tickets/${id}`);
+        console.log('Ticket API response:', response.data);
+        const raw = response.data?.ticket ?? response.data;
+        return normalizeTicket(raw);
+      } catch (error) {
+        console.error('Error fetching ticket details:', error);
+        throw error;
+      }
     },
+    retry: 2,
+    retryDelay: 1000,
   });
 
   // Fetch ticket comments
@@ -78,7 +87,28 @@ export default function TicketDetailsScreen() {
   // Basic states
   if (!id) return <View style={styles.errorContainer}><Text style={styles.errorText}>Invalid route: no id.</Text></View>;
   if (ticketLoading) return <View style={styles.loadingContainer}><ActivityIndicator size="large" color="#3b82f6" /></View>;
-  if (ticketError) return <View style={styles.errorContainer}><Text style={styles.errorText}>Failed to load: {(ticketErrorMsg as any)?.message ?? "Unknown error"}</Text></View>;
+  if (ticketError) {
+    const errorMessage = (ticketErrorMsg as any)?.message ?? "Unknown error";
+    const isNetworkError = errorMessage.includes('Network Error') || (ticketErrorMsg as any)?.code === 'NETWORK_ERROR';
+    
+    return (
+      <View style={styles.errorContainer}>
+        <Ionicons name="warning-outline" size={48} color="#ef4444" />
+        <Text style={styles.errorTitle}>
+          {isNetworkError ? "Connection Error" : "Failed to Load"}
+        </Text>
+        <Text style={styles.errorText}>
+          {isNetworkError 
+            ? "Cannot connect to server. Make sure the backend is running on http://192.168.1.153:5000"
+            : errorMessage
+          }
+        </Text>
+        <TouchableOpacity style={styles.retryButton} onPress={() => refetchTicket()}>
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
   if (!ticket) return <View style={styles.errorContainer}><Text style={styles.errorText}>Ticket not found.</Text></View>;
 
   const getStatusColor = (status: string) => {
@@ -374,10 +404,31 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#f8fafc',
   },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#ef4444',
+    textAlign: 'center',
+    marginTop: 16,
+    marginBottom: 8,
+  },
   errorText: {
     fontSize: 16,
     color: '#ef4444',
     textAlign: 'center',
+    marginBottom: 20,
+    paddingHorizontal: 20,
+  },
+  retryButton: {
+    backgroundColor: '#3b82f6',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
   header: {
     backgroundColor: 'white',

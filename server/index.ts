@@ -14,10 +14,13 @@ app.use(cors({
   origin: [
     'http://localhost:3000',
     'http://localhost:8081',
+    'http://localhost:5000',
     'http://192.168.1.153:8081',
+    'http://192.168.1.153:5000', 
     'exp://192.168.1.153:8081',
-    /^http:\/\/192\.168\.\d+\.\d+:8081$/,  // Allow any local network IP with port 8081
+    /^http:\/\/192\.168\.\d+\.\d+:(8081|5000)$/,  // Allow any local network IP with port 8081 or 5000
     /^exp:\/\/192\.168\.\d+\.\d+:8081$/,   // Allow Expo URLs
+    /^http:\/\/.*\.replit\.dev$/,           // Allow Replit domains
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// Removed AsyncStorage dependency for now to fix mobile app connectivity
 
 // API configuration and utilities
 // Get the API URL from environment or use defaults
@@ -34,16 +34,10 @@ export async function apiRequest(
     ? endpoint
     : `${API_BASE_URL}${endpoint}`;
 
-  // Get stored auth token
-  const authToken = await AsyncStorage.getItem('authToken');
-  console.log('API Request - Auth token:', authToken ? (authToken === 'cookie-based' ? 'cookie-based' : 'Bearer token') : 'No token');
-  
   const config: RequestInit = {
     method,
     headers: {
       "Content-Type": "application/json",
-      // Add auth header if we have a token and it's not just a flag
-      ...(authToken && authToken !== 'cookie-based' ? { 'Authorization': `Bearer ${authToken}` } : {}),
       ...options?.headers,
     },
     // Use 'include' for cookie-based auth with Replit
