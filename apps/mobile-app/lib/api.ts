@@ -6,7 +6,12 @@ const getApiUrl = () => {
   const envUrl = process.env.EXPO_PUBLIC_API_URL;
   if (envUrl) return envUrl;
   
-  // Use the Replit backend URL
+  // For local development, use the local IP address
+  if (process.env.NODE_ENV === "development") {
+    return 'http://192.168.1.153:5000';
+  }
+  
+  // Use the Replit backend URL for production
   return 'https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev';
 };
 
