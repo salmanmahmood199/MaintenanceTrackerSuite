@@ -1,9 +1,11 @@
 import React, { useState } from "react";
-import { View, Text, ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, RefreshControl } from "react-native";
+import { View, Text, ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, Image, TextInput, Modal, Dimensions, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 import { Ionicons } from '@expo/vector-icons';
+
+const { width: screenWidth } = Dimensions.get('window');
 
 type Location = { name?: string; address?: string; city?: string; state?: string; zip?: string };
 
@@ -35,8 +37,12 @@ function normalizeTicket(raw: any) {
 export default function TicketDetailsScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'comments' | 'progress' | 'workorders'>('details');
+  const [newComment, setNewComment] = useState('');
+  const [imageModalVisible, setImageModalVisible] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   // Fetch ticket details
   const { data: ticket, isLoading: ticketLoading, refetch: refetchTicket, isError: ticketError, error: ticketErrorMsg } = useQuery({
@@ -77,6 +83,30 @@ export default function TicketDetailsScreen() {
       return response.data ?? [];
     },
   });
+
+  // Add comment mutation
+  const addCommentMutation = useMutation({
+    mutationFn: async (text: string) => {
+      const response = await api.post(`/api/tickets/${id}/comments`, { text });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["comments", id] });
+      setNewComment('');
+      Alert.alert('Success', 'Comment added successfully');
+    },
+    onError: (error: any) => {
+      Alert.alert('Error', error.response?.data?.message || 'Failed to add comment');
+    },
+  });
+
+  const handleAddComment = () => {
+    if (!newComment.trim()) {
+      Alert.alert('Error', 'Please enter a comment');
+      return;
+    }
+    addCommentMutation.mutate(newComment.trim());
+  };
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -129,6 +159,17 @@ export default function TicketDetailsScreen() {
       case 'high': return '#ef4444';
       case 'urgent': return '#dc2626';
       default: return '#6b7280';
+    }
+  };
+
+  const getProgressPercentage = () => {
+    switch (ticket?.status?.toLowerCase()) {
+      case 'pending': return 10;
+      case 'accepted': return 25;
+      case 'in_progress': return 60;
+      case 'completed': return 85;
+      case 'confirmed': return 100;
+      default: return 0;
     }
   };
 
@@ -220,31 +261,107 @@ export default function TicketDetailsScreen() {
                 )}
               </View>
             )}
+
+            {/* Images Section */}
+            {ticket.images && ticket.images.length > 0 && (
+              <View style={styles.infoSection}>
+                <Text style={styles.sectionTitle}>Attached Images</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imagesContainer}>
+                  {ticket.images.map((imageUrl: string, index: number) => (
+                    <TouchableOpacity
+                      key={index}
+                      onPress={() => {
+                        setSelectedImage(imageUrl);
+                        setImageModalVisible(true);
+                      }}
+                      style={styles.imageWrapper}
+                    >
+                      <Image
+                        source={{ uri: imageUrl }}
+                        style={styles.thumbnailImage}
+                        resizeMode="cover"
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
           </View>
         );
         
       case 'comments':
         return (
           <View style={styles.tabContent}>
-            {commentsLoading ? (
-              <ActivityIndicator size="small" color="#3b82f6" />
-            ) : comments.length === 0 ? (
-              <View style={styles.emptyState}>
-                <Ionicons name="chatbubble-outline" size={48} color="#94a3b8" />
-                <Text style={styles.emptyText}>No comments yet</Text>
-                <Text style={styles.emptySubtext}>Comments will appear here</Text>
+            {/* Add Comment Section */}
+            <View style={styles.addCommentSection}>
+              <Text style={styles.sectionTitle}>Add Comment</Text>
+              <View style={styles.commentInputContainer}>
+                <TextInput
+                  style={styles.commentInput}
+                  placeholder="Enter your comment..."
+                  multiline
+                  numberOfLines={3}
+                  value={newComment}
+                  onChangeText={setNewComment}
+                  textAlignVertical="top"
+                />
+                <TouchableOpacity
+                  style={[
+                    styles.addCommentButton,
+                    { opacity: addCommentMutation.isPending || !newComment.trim() ? 0.5 : 1 }
+                  ]}
+                  onPress={handleAddComment}
+                  disabled={addCommentMutation.isPending || !newComment.trim()}
+                >
+                  {addCommentMutation.isPending ? (
+                    <ActivityIndicator size="small" color="white" />
+                  ) : (
+                    <>
+                      <Ionicons name="send" size={16} color="white" />
+                      <Text style={styles.addCommentButtonText}>Add Comment</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
               </View>
-            ) : (
-              comments.map((comment: any, index: number) => (
-                <View key={index} style={styles.commentCard}>
-                  <View style={styles.commentHeader}>
-                    <Text style={styles.commentAuthor}>{comment.user?.firstName} {comment.user?.lastName}</Text>
-                    <Text style={styles.commentDate}>{new Date(comment.createdAt).toLocaleDateString()}</Text>
-                  </View>
-                  <Text style={styles.commentText}>{comment.text}</Text>
+            </View>
+
+            {/* Comments List */}
+            <View style={styles.commentsSection}>
+              <Text style={styles.sectionTitle}>
+                Comments {comments.length > 0 && `(${comments.length})`}
+              </Text>
+              {commentsLoading ? (
+                <ActivityIndicator size="small" color="#3b82f6" />
+              ) : comments.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Ionicons name="chatbubble-outline" size={48} color="#94a3b8" />
+                  <Text style={styles.emptyText}>No comments yet</Text>
+                  <Text style={styles.emptySubtext}>Be the first to add a comment</Text>
                 </View>
-              ))
-            )}
+              ) : (
+                comments.map((comment: any, index: number) => (
+                  <View key={comment.id || index} style={styles.commentCard}>
+                    <View style={styles.commentHeader}>
+                      <View style={styles.commentAuthorInfo}>
+                        <Text style={styles.commentAuthor}>
+                          {comment.user?.firstName} {comment.user?.lastName} {comment.user?.name}
+                        </Text>
+                        <Text style={styles.commentRole}>{comment.user?.role}</Text>
+                      </View>
+                      <Text style={styles.commentDate}>
+                        {new Date(comment.createdAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </Text>
+                    </View>
+                    <Text style={styles.commentText}>{comment.text}</Text>
+                  </View>
+                ))
+              )}
+            </View>
           </View>
         );
         
@@ -253,43 +370,66 @@ export default function TicketDetailsScreen() {
           <View style={styles.tabContent}>
             <View style={styles.progressSection}>
               <Text style={styles.sectionTitle}>Progress Tracker</Text>
-              <View style={styles.progressStep}>
-                <View style={[styles.progressDot, { backgroundColor: '#10b981' }]} />
-                <View style={styles.progressContent}>
-                  <Text style={styles.progressTitle}>Ticket Created</Text>
-                  <Text style={styles.progressDate}>{ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString() : 'Unknown'}</Text>
-                </View>
+              
+              {/* Progress Bar */}
+              <View style={styles.progressBar}>
+                <View style={[styles.progressFill, { 
+                  width: `${getProgressPercentage()}%` 
+                }]} />
               </View>
+              <Text style={styles.progressPercentage}>{getProgressPercentage()}% Complete</Text>
               
-              {ticket.status !== 'pending' && (
-                <View style={styles.progressStep}>
-                  <View style={[styles.progressDot, { backgroundColor: '#3b82f6' }]} />
-                  <View style={styles.progressContent}>
-                    <Text style={styles.progressTitle}>Ticket Accepted</Text>
-                    <Text style={styles.progressDate}>In Progress</Text>
-                  </View>
-                </View>
-              )}
-              
-              {(['in_progress', 'completed', 'confirmed'].includes(ticket.status)) && (
-                <View style={styles.progressStep}>
-                  <View style={[styles.progressDot, { backgroundColor: '#8b5cf6' }]} />
-                  <View style={styles.progressContent}>
-                    <Text style={styles.progressTitle}>Work In Progress</Text>
-                    <Text style={styles.progressDate}>Active</Text>
-                  </View>
-                </View>
-              )}
-              
-              {(['completed', 'confirmed'].includes(ticket.status)) && (
+              {/* Progress Steps */}
+              <View style={styles.progressSteps}>
                 <View style={styles.progressStep}>
                   <View style={[styles.progressDot, { backgroundColor: '#10b981' }]} />
+                  <View style={styles.progressLine} />
                   <View style={styles.progressContent}>
-                    <Text style={styles.progressTitle}>Work Completed</Text>
-                    <Text style={styles.progressDate}>Finished</Text>
+                    <Text style={styles.progressTitle}>Ticket Created</Text>
+                    <Text style={styles.progressDate}>
+                      {ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      }) : 'Unknown'}
+                    </Text>
                   </View>
                 </View>
-              )}
+                
+                {ticket.status !== 'pending' && (
+                  <View style={styles.progressStep}>
+                    <View style={[styles.progressDot, { backgroundColor: '#3b82f6' }]} />
+                    <View style={styles.progressLine} />
+                    <View style={styles.progressContent}>
+                      <Text style={styles.progressTitle}>Ticket Accepted</Text>
+                      <Text style={styles.progressDate}>Status: {ticket.status}</Text>
+                    </View>
+                  </View>
+                )}
+                
+                {(['in_progress', 'completed', 'confirmed'].includes(ticket.status)) && (
+                  <View style={styles.progressStep}>
+                    <View style={[styles.progressDot, { backgroundColor: '#8b5cf6' }]} />
+                    <View style={styles.progressLine} />
+                    <View style={styles.progressContent}>
+                      <Text style={styles.progressTitle}>Work In Progress</Text>
+                      <Text style={styles.progressDate}>Active</Text>
+                    </View>
+                  </View>
+                )}
+                
+                {(['completed', 'confirmed'].includes(ticket.status)) && (
+                  <View style={styles.progressStep}>
+                    <View style={[styles.progressDot, { backgroundColor: '#10b981' }]} />
+                    <View style={styles.progressLine} />
+                    <View style={styles.progressContent}>
+                      <Text style={styles.progressTitle}>Work Completed</Text>
+                      <Text style={styles.progressDate}>Finished</Text>
+                    </View>
+                  </View>
+                )}
+              </View>
             </View>
           </View>
         );
@@ -382,6 +522,30 @@ export default function TicketDetailsScreen() {
       >
         {renderTabContent()}
       </ScrollView>
+
+      {/* Image Modal */}
+      <Modal
+        visible={imageModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setImageModalVisible(false)}
+      >
+        <View style={styles.imageModalContainer}>
+          <TouchableOpacity
+            style={styles.imageModalClose}
+            onPress={() => setImageModalVisible(false)}
+          >
+            <Ionicons name="close" size={24} color="white" />
+          </TouchableOpacity>
+          {selectedImage && (
+            <Image
+              source={{ uri: selectedImage }}
+              style={styles.fullScreenImage}
+              resizeMode="contain"
+            />
+          )}
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -572,20 +736,17 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
   },
   commentCard: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: '#f8fafc',
+    borderRadius: 8,
+    padding: 12,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    borderLeftWidth: 3,
+    borderLeftColor: '#3b82f6',
   },
   commentHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 8,
   },
   commentAuthor: {
@@ -673,5 +834,127 @@ const styles = StyleSheet.create({
   workOrderDate: {
     fontSize: 12,
     color: '#64748b',
+  },
+  // New styles for enhanced functionality
+  imagesContainer: {
+    paddingVertical: 8,
+  },
+  imageWrapper: {
+    marginRight: 12,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  thumbnailImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+  },
+  imageModalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageModalClose: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 20,
+    padding: 8,
+  },
+  fullScreenImage: {
+    width: screenWidth,
+    height: '80%',
+  },
+  addCommentSection: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  commentInputContainer: {
+    flexDirection: 'column',
+    gap: 12,
+  },
+  commentInput: {
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 14,
+    color: '#1e293b',
+    backgroundColor: '#f8fafc',
+    minHeight: 80,
+  },
+  addCommentButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#3b82f6',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    gap: 8,
+  },
+  addCommentButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  commentsSection: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  commentAuthorInfo: {
+    flex: 1,
+  },
+  commentRole: {
+    fontSize: 12,
+    color: '#64748b',
+    textTransform: 'capitalize',
+  },
+  progressBar: {
+    height: 8,
+    backgroundColor: '#e2e8f0',
+    borderRadius: 4,
+    marginBottom: 8,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#3b82f6',
+    borderRadius: 4,
+  },
+  progressPercentage: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1e293b',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  progressSteps: {
+    marginTop: 16,
+  },
+  progressLine: {
+    position: 'absolute',
+    left: 6,
+    top: 12,
+    bottom: -16,
+    width: 1,
+    backgroundColor: '#e2e8f0',
+    zIndex: -1,
   },
 });
