@@ -1,0 +1,13 @@
+#!/bin/bash
+echo "Starting Mobile App Development Server..."
+echo "Note: Make sure you have Expo CLI installed globally: npm install -g @expo/cli"
+echo "Then run: cd apps/mobile && npm install && npm start"
+echo ""
+echo "Mobile App Setup Instructions:"
+echo "1. Install Expo CLI: npm install -g @expo/cli"
+echo "2. Navigate to mobile directory: cd apps/mobile"  
+echo "3. Install dependencies: npm install"
+echo "4. Start development server: npm start"
+echo "5. Scan QR code with Expo Go app on your phone"
+echo ""
+echo "The mobile app will connect to the web server running on port 5000"

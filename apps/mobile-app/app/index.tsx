@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,15 +11,15 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-} from "react-native";
-import { router } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useAuth } from "../src/contexts/AuthContext";
+} from 'react-native';
+import { router } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuth } from '../src/contexts/AuthContext';
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState("root@mail.com");
-  const [password, setPassword] = useState("admin");
+  const [email, setEmail] = useState('root@mail.com');
+  const [password, setPassword] = useState('admin');
   const [loading, setLoading] = useState(false);
   const { login, user, checkAuthStatus } = useAuth();
 
@@ -29,22 +29,22 @@ export default function LoginScreen() {
 
   useEffect(() => {
     if (user) {
-      router.replace("/(tabs)/dashboard");
+      router.replace('/(tabs)');
     }
   }, [user]);
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert("Error", "Please fill in all fields");
+      Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
     setLoading(true);
     try {
       await login(email, password);
-      router.replace("/(tabs)");
+      router.replace('/(tabs)');
     } catch (error: any) {
-      Alert.alert("Login Failed", error.message || "Invalid credentials");
+      Alert.alert('Login Failed', error.message || 'Invalid credentials');
     } finally {
       setLoading(false);
     }
@@ -53,11 +53,11 @@ export default function LoginScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient
-        colors={["#1e293b", "#7c3aed", "#1e293b"]}
+        colors={['#1e293b', '#7c3aed', '#1e293b']}
         style={styles.gradient}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardView}
         >
           <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -102,15 +102,12 @@ export default function LoginScreen() {
               </View>
 
               <TouchableOpacity
-                style={[
-                  styles.loginButton,
-                  loading && styles.loginButtonDisabled,
-                ]}
+                style={[styles.loginButton, loading && styles.loginButtonDisabled]}
                 onPress={handleLogin}
                 disabled={loading}
               >
                 <LinearGradient
-                  colors={["#06b6d4", "#3b82f6"]}
+                  colors={['#06b6d4', '#3b82f6']}
                   style={styles.loginButtonGradient}
                 >
                   {loading ? (
@@ -129,8 +126,7 @@ export default function LoginScreen() {
 
               <TouchableOpacity style={styles.registerButton}>
                 <Text style={styles.registerButtonText}>
-                  Don't have an account?{" "}
-                  <Text style={styles.registerLink}>Sign up</Text>
+                  Don't have an account? <Text style={styles.registerLink}>Sign up</Text>
                 </Text>
               </TouchableOpacity>
             </View>
@@ -153,46 +149,46 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: "center",
+    justifyContent: 'center',
     padding: 20,
   },
   logoSection: {
-    alignItems: "center",
+    alignItems: 'center',
     marginBottom: 50,
   },
   logoContainer: {
-    alignItems: "center",
+    alignItems: 'center',
   },
   logoText: {
     fontSize: 36,
-    fontWeight: "bold",
-    color: "#ffffff",
-    textAlign: "center",
+    fontWeight: 'bold',
+    color: '#ffffff',
+    textAlign: 'center',
   },
   logoSubtext: {
     fontSize: 18,
-    color: "#94a3b8",
-    textAlign: "center",
+    color: '#94a3b8',
+    textAlign: 'center',
     marginTop: 4,
   },
   formContainer: {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 20,
     padding: 24,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   title: {
     fontSize: 24,
-    fontWeight: "bold",
-    color: "#ffffff",
-    textAlign: "center",
+    fontWeight: 'bold',
+    color: '#ffffff',
+    textAlign: 'center',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: "#94a3b8",
-    textAlign: "center",
+    color: '#94a3b8',
+    textAlign: 'center',
     marginBottom: 32,
   },
   inputContainer: {
@@ -200,23 +196,23 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 14,
-    fontWeight: "600",
-    color: "#ffffff",
+    fontWeight: '600',
+    color: '#ffffff',
     marginBottom: 8,
   },
   input: {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
-    color: "#ffffff",
+    color: '#ffffff',
   },
   loginButton: {
     borderRadius: 12,
-    overflow: "hidden",
+    overflow: 'hidden',
     marginBottom: 24,
   },
   loginButtonDisabled: {
@@ -224,38 +220,38 @@ const styles = StyleSheet.create({
   },
   loginButtonGradient: {
     paddingVertical: 16,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   loginButtonText: {
-    color: "#ffffff",
+    color: '#ffffff',
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
   },
   divider: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginVertical: 20,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   dividerText: {
-    color: "#94a3b8",
+    color: '#94a3b8',
     marginHorizontal: 16,
     fontSize: 14,
   },
   registerButton: {
-    alignItems: "center",
+    alignItems: 'center',
   },
   registerButtonText: {
-    color: "#94a3b8",
+    color: '#94a3b8',
     fontSize: 14,
   },
   registerLink: {
-    color: "#06b6d4",
-    fontWeight: "600",
+    color: '#06b6d4',
+    fontWeight: '600',
   },
 });

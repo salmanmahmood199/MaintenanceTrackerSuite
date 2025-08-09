@@ -1,5 +1,4 @@
 import express, { type Request, Response, NextFunction } from "express";
-import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
 import { registerRoutes } from "./routes";
@@ -8,32 +7,6 @@ import { setupVite, serveStatic, log } from "./vite";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
-
-// Configure CORS for mobile app access - Allow all origins in development
-app.use(cors({
-  origin: true, // Allow all origins in development
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type', 
-    'Authorization', 
-    'X-Requested-With', 
-    'Accept', 
-    'Origin',
-    'Cache-Control',
-    'X-File-Name'
-  ],
-  optionsSuccessStatus: 200
-}));
-
-// Add debug logging for CORS requests
-app.use((req, res, next) => {
-  if (req.method === 'OPTIONS' || req.path.startsWith('/api')) {
-    console.log(`[CORS DEBUG] ${req.method} ${req.path} - Origin: ${req.headers.origin || 'none'}`);
-  }
-  next();
-});
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

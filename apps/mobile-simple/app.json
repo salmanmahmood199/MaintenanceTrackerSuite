@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "TaskScout Mobile",
+    "slug": "taskscout-mobile",
+    "version": "1.0.0",
+    "platforms": ["web"],
+    "web": {
+      "bundler": "webpack"
+    }
+  }
+}
