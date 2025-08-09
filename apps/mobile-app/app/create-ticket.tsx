@@ -17,7 +17,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../src/contexts/AuthContext';
-import { apiRequest } from '../src/services/api';
+import { apiRequest, ticketsApi } from '../src/services/api';
 
 interface Location {
   id: number;
@@ -153,11 +153,7 @@ export default function CreateTicketScreen() {
         } as any);
       });
 
-      const response = await fetch('http://localhost:5000/api/tickets', {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      });
+      const response = await ticketsApi.create(formData);
 
       if (response.ok) {
         Alert.alert('Success', 'Ticket created successfully!', [

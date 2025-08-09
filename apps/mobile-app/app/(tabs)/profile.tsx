@@ -11,6 +11,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../src/contexts/AuthContext";
+import { Header } from "../../src/components/ui/Header";
+import { Card } from "../../src/components/ui/Card";
+import { Button } from "../../src/components/ui/Button";
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
@@ -69,19 +72,16 @@ export default function ProfileScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <LinearGradient
-        colors={["#1e293b", "#7c3aed", "#1e293b"]}
-        style={styles.gradient}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Profile</Text>
-        </View>
-
-        <ScrollView style={styles.content}>
+    <View style={styles.container}>
+      <Header 
+        title="Profile" 
+        subtitle="Manage your account settings"
+        variant="gradient"
+      />
+      
+      <ScrollView style={styles.content}>
           {/* Profile Card */}
-          <View style={styles.profileCard}>
+          <Card style={styles.profileCard}>
             <View style={styles.avatarContainer}>
               <LinearGradient
                 colors={["#3b82f6", "#8b5cf6"]}
@@ -98,12 +98,12 @@ export default function ProfileScreen() {
             </Text>
             <Text style={styles.userRole}>{getUserRoleDisplay()}</Text>
             <Text style={styles.userEmail}>{user?.email}</Text>
-          </View>
+          </Card>
 
           {/* Profile Information */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Account Information</Text>
-            <View style={styles.sectionContent}>
+            <Card>
               <ProfileItem
                 icon="person"
                 title="Full Name"
@@ -125,7 +125,7 @@ export default function ProfileScreen() {
                   value={`${user?.address || ""} ${user?.city || ""} ${user?.state || ""} ${user?.zipCode || ""}`.trim()}
                 />
               )}
-            </View>
+            </Card>
           </View>
 
           {/* Organization/Vendor Information */}
@@ -134,20 +134,20 @@ export default function ProfileScreen() {
               <Text style={styles.sectionTitle}>
                 {user?.organizationId ? "Organization" : "Vendor"} Information
               </Text>
-              <View style={styles.sectionContent}>
+              <Card>
                 <ProfileItem
                   icon="business"
                   title={user?.organizationId ? "Organization ID" : "Vendor ID"}
                   value={user?.organizationId || user?.maintenanceVendorId}
                 />
-              </View>
+              </Card>
             </View>
           )}
 
           {/* Settings */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Settings</Text>
-            <View style={styles.sectionContent}>
+            <Card>
               <ActionItem
                 icon="notifications"
                 title="Notifications"
@@ -188,56 +188,37 @@ export default function ProfileScreen() {
                   )
                 }
               />
-            </View>
+            </Card>
           </View>
 
           {/* Logout */}
           <View style={styles.section}>
-            <View style={styles.sectionContent}>
+            <Card>
               <ActionItem
                 icon="log-out"
                 title="Logout"
                 onPress={handleLogout}
                 color="#ef4444"
               />
-            </View>
+            </Card>
           </View>
         </ScrollView>
-      </LinearGradient>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#1e293b",
+    backgroundColor: "#0f172a",
     flex: 1,
-  },
-  gradient: {
-    flex: 1,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#ffffff",
   },
   content: {
     flex: 1,
     paddingHorizontal: 20,
   },
   profileCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 16,
-    padding: 24,
     alignItems: "center",
     marginBottom: 24,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
   },
   avatarContainer: {
     marginBottom: 16,

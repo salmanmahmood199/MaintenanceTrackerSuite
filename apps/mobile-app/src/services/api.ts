@@ -1,3 +1,5 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 // API configuration and utilities
 // Get the API URL from environment or use defaults
 const getApiUrl = () => {
@@ -6,10 +8,10 @@ const getApiUrl = () => {
     return process.env.EXPO_PUBLIC_API_URL;
   }
   
-  // In development, use the local network IP
+  // In development, use the Replit URL
   if (process.env.NODE_ENV === "development") {
-    // For Expo Go, we need to use the actual IP address
-    return "http://192.168.1.153:5000";
+    // Use your Replit app URL
+    return "https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev";
   }
   
   return "https://taskscout.ai";
@@ -32,15 +34,26 @@ export async function apiRequest(
     ? endpoint
     : `${API_BASE_URL}${endpoint}`;
 
+  // Get stored auth token
+  const authToken = await AsyncStorage.getItem('authToken');
+  console.log('API Request - Auth token:', authToken ? (authToken === 'cookie-based' ? 'cookie-based' : 'Bearer token') : 'No token');
+  
   const config: RequestInit = {
     method,
     headers: {
       "Content-Type": "application/json",
+      // Add auth header if we have a token and it's not just a flag
+      ...(authToken && authToken !== 'cookie-based' ? { 'Authorization': `Bearer ${authToken}` } : {}),
       ...options?.headers,
     },
-    credentials: "include", // Include cookies for session management
+    // Use 'include' for cookie-based auth with Replit
+    credentials: "include",
     ...options,
   };
+  
+  console.log('API Request - URL:', url);
+  console.log('API Request - Method:', method);
+  console.log('API Request - Headers:', JSON.stringify(config.headers, null, 2));
 
   // Handle FormData (for file uploads)
   if (data instanceof FormData) {
@@ -69,7 +82,11 @@ export async function apiRequest(
     return response;
   } catch (error) {
     if (error instanceof Error) {
-      console.error(`API request failed: ${method} ${endpoint}`, error);
+      console.error(`API request failed: ${method} ${url}`, error.message);
+      // Check if it's a network error
+      if (error.message.includes('Network request failed')) {
+        console.error('Network error - check if backend is accessible:', url);
+      }
       throw error;
     }
     throw new Error("Unknown API error");
@@ -78,27 +95,87 @@ export async function apiRequest(
 
 // Specific API functions
 export const ticketsApi = {
-  getAll: () => apiRequest("GET", "/api/tickets"),
-  getById: (id: number) => apiRequest("GET", `/api/tickets/${id}`),
-  create: (data: FormData) => apiRequest("POST", "/api/tickets", data),
-  update: (id: number, data: any) =>
-    apiRequest("PATCH", `/api/tickets/${id}`, data),
-  delete: (id: number) => apiRequest("DELETE", `/api/tickets/${id}`),
-  accept: (id: number, data: any) =>
-    apiRequest("POST", `/api/tickets/${id}/accept`, data),
-  reject: (id: number, data: any) =>
-    apiRequest("POST", `/api/tickets/${id}/reject`, data),
-  complete: (id: number, data: any) =>
-    apiRequest("POST", `/api/tickets/${id}/complete`, data),
-  confirm: (id: number, data: any) =>
-    apiRequest("POST", `/api/tickets/${id}/confirm`, data),
-  getComments: (id: number) => apiRequest("GET", `/api/tickets/${id}/comments`),
-  addComment: (id: number, data: any) =>
-    apiRequest("POST", `/api/tickets/${id}/comments`, data),
-  getWorkOrders: (id: number) =>
-    apiRequest("GET", `/api/tickets/${id}/work-orders`),
-  createWorkOrder: (id: number, data: FormData) =>
-    apiRequest("POST", `/api/tickets/${id}/work-orders`, data),
+  getAll: async (params?: any) => {
+    const queryString = params ? `?${new URLSearchParams(params).toString()}` : "";
+    const response = await apiRequest("GET", `/api/tickets${queryString}`);
+    return response.json();
+  },
+  getById: async (id: number) => {
+    const response = await apiRequest("GET", `/api/tickets/${id}`);
+    return response.json();
+  },
+  getTicketDetails: async (id: string) => {
+    const response = await apiRequest("GET", `/api/tickets/${id}/details`);
+    return response.json();
+  },
+  getTicketComments: async (id: string) => {
+    const response = await apiRequest("GET", `/api/tickets/${id}/comments`);
+    return response.json();
+  },
+  getTicketWorkOrders: async (id: string) => {
+    const response = await apiRequest("GET", `/api/tickets/${id}/work-orders`);
+    return response.json();
+  },
+  create: async (data: any) => {
+    const response = await apiRequest("POST", "/api/tickets", data);
+    return response.json();
+  },
+  update: async (id: number, data: any) => {
+    const response = await apiRequest("PATCH", `/api/tickets/${id}`, data);
+    return response.json();
+  },
+  delete: async (id: number) => {
+    const response = await apiRequest("DELETE", `/api/tickets/${id}`);
+    return response.json();
+  },
+  updateStatus: async (id: number, status: string, data?: any) => {
+    const response = await apiRequest("PATCH", `/api/tickets/${id}/status`, { status, ...data });
+    return response.json();
+  },
+  addComment: async (id: number, data: any) => {
+    const response = await apiRequest("POST", `/api/tickets/${id}/comments`, data);
+    return response.json();
+  },
+  getComments: async (id: number) => {
+    const response = await apiRequest("GET", `/api/tickets/${id}/comments`);
+    return response.json();
+  },
+  uploadImage: async (id: number, formData: FormData) => {
+    const response = await apiRequest("POST", `/api/tickets/${id}/images`, formData);
+    return response.json();
+  },
+  assignVendor: async (id: number, vendorId: number) => {
+    const response = await apiRequest("POST", `/api/tickets/${id}/assign`, { vendorId });
+    return response.json();
+  },
+  accept: async (id: number) => {
+    const response = await apiRequest("POST", `/api/tickets/${id}/accept`);
+    return response.json();
+  },
+  reject: async (id: number, reason?: string) => {
+    const response = await apiRequest("POST", `/api/tickets/${id}/reject`, { reason });
+    return response.json();
+  },
+  complete: async (id: number, data?: any) => {
+    const response = await apiRequest("POST", `/api/tickets/${id}/complete`, data);
+    return response.json();
+  },
+  getProgress: async (id: number) => {
+    const response = await apiRequest("GET", `/api/tickets/${id}/progress`);
+    return response.json();
+  },
+  updateProgress: async (id: number, data: any) => {
+    const response = await apiRequest("POST", `/api/tickets/${id}/progress`, data);
+    return response.json();
+  },
+  getWorkOrders: async (id: number) => {
+    const response = await apiRequest("GET", `/api/tickets/${id}/work-orders`);
+    return response.json();
+  },
+  createWorkOrder: async (id: number, data: any) => {
+    const response = await apiRequest("POST", `/api/tickets/${id}/work-orders`, data);
+    return response.json();
+  },
 };
 
 export const authApi = {

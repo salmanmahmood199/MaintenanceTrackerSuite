@@ -21,7 +21,7 @@ export interface Ticket {
   title: string;
   description: string;
   status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'rejected';
-  priority: 'low' | 'medium' | 'high';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
   createdAt: string;
   updatedAt: string;
   reporterId: number;
@@ -36,6 +36,35 @@ export interface Ticket {
   organizationName?: string;
   locationName?: string;
   locationAddress?: string;
+  // Additional fields from API response
+  ticketNumber?: string;
+  assignedAt?: string | null;
+  assignee?: User | null;
+  completedAt?: string | null;
+  confirmedAt?: string | null;
+  confirmationFeedback?: string | null;
+  rejectionFeedback?: string | null;
+  forceClosedAt?: string | null;
+  forceClosedBy?: number | null;
+  forceCloseReason?: string | null;
+  estimatedStartDate?: string | null;
+  estimatedEndDate?: string | null;
+  estimatedDuration?: number | null;
+  scheduledStartTime?: string | null;
+  scheduledEndTime?: string | null;
+  etaProvidedAt?: string | null;
+  etaProvidedBy?: number | null;
+  etaNotes?: string | null;
+  residentialAddress?: string | null;
+  residentialCity?: string | null;
+  residentialState?: string | null;
+  residentialZip?: string | null;
+  // Related objects from API response
+  reporter?: User;
+  organization?: Organization;
+  maintenanceVendor?: MaintenanceVendor | null;
+  comments?: TicketComment[];
+  workOrders?: WorkOrder[];
 }
 
 export interface Organization {

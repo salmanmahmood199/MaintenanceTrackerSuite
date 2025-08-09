@@ -17,7 +17,18 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.taskscout.mobile"
+      "bundleIdentifier": "com.taskscout.mobile",
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSExceptionDomains": {
+            "replit.dev": {
+              "NSExceptionAllowsInsecureHTTPLoads": false,
+              "NSExceptionMinimumTLSVersion": "TLSv1.2",
+              "NSIncludesSubdomains": true
+            }
+          }
+        }
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -25,7 +36,8 @@
         "backgroundColor": "#3B82F6"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.taskscout.mobile"
+      "package": "com.taskscout.mobile",
+      "usesCleartextTraffic": false
     },
     "web": {
       "favicon": "./assets/favicon.png",
