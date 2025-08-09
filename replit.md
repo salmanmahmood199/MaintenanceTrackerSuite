@@ -3,6 +3,12 @@
 ## Overview
 This is a full-stack maintenance ticketing application for commercial businesses, featuring hierarchical user management, robust ticket tracking with media attachments, and integrated financial workflows. The system supports root administration, organizational management, and maintenance vendor coordination, enabling efficient management of various business maintenance needs. Key capabilities include multi-role user system, comprehensive ticket lifecycle management (from creation to billing), location-based services, a marketplace for vendor bidding, and detailed work order tracking. The vision is to provide a comprehensive, intuitive platform for commercial maintenance, transforming how businesses manage their assets and service providers.
 
+## Recent Changes (August 2025)
+- **Mobile App Connection Fixed**: Resolved "Network request failed" errors in Expo mobile app
+- **CORS Configuration Added**: Backend now properly accepts cross-origin requests from mobile devices
+- **API URL Configuration**: Mobile app now correctly connects to local development server (192.168.1.153:5000)
+- **Environment Setup**: Added flexible environment configuration for mobile app development vs production
+
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 UI Design: TaskScout.ai inspired color scheme with blue (#3B82F6) and purple (#7C3AED) gradients

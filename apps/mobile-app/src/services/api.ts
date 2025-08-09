@@ -1,8 +1,21 @@
 // API configuration and utilities
-const API_BASE_URL =
-  process.env.NODE_ENV === "development"
-    ? "https://taskscout.ai"
-    : "https://taskscout.ai";
+// Get the API URL from environment or use defaults
+const getApiUrl = () => {
+  // Use environment variable if available (for different environments)
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL;
+  }
+  
+  // In development, use the local network IP
+  if (process.env.NODE_ENV === "development") {
+    // For Expo Go, we need to use the actual IP address
+    return "http://192.168.1.153:5000";
+  }
+  
+  return "https://taskscout.ai";
+};
+
+const API_BASE_URL = getApiUrl();
 
 export interface ApiError extends Error {
   status?: number;
@@ -32,7 +45,8 @@ export async function apiRequest(
   // Handle FormData (for file uploads)
   if (data instanceof FormData) {
     // Remove Content-Type header to let browser set boundary for FormData
-    delete config.headers?.["Content-Type"];
+    const headers = config.headers as Record<string, string>;
+    delete headers["Content-Type"];
     config.body = data;
   } else if (data && method !== "GET") {
     config.body = JSON.stringify(data);
