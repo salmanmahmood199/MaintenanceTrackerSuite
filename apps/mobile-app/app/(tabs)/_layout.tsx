@@ -35,7 +35,6 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="ticket" size={size} color={color} />
           ),
-          href: '/(tabs)/tickets/',
         }}
       />
       <Tabs.Screen
