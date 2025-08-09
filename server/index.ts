@@ -9,35 +9,30 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 
-// Configure CORS for mobile app access
+// Configure CORS for mobile app access - Allow all origins in development
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps)
-    if (!origin) return callback(null, true);
-    
-    // Allow localhost and development URLs
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:8081',
-      'http://192.168.1.153:8081',
-      'exp://192.168.1.153:8081',
-    ];
-    
-    // Allow any local network IP with common ports
-    const localNetworkRegex = /^https?:\/\/(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.1[6-9]\.\d+\.\d+|172\.2[0-9]\.\d+\.\d+|172\.3[0-1]\.\d+\.\d+)(:\d+)?$/;
-    const expoRegex = /^exp:\/\/(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?$/;
-    
-    if (allowedOrigins.includes(origin) || localNetworkRegex.test(origin) || expoRegex.test(origin)) {
-      return callback(null, true);
-    }
-    
-    return callback(null, true); // Allow all origins in development
-  },
+  origin: true, // Allow all origins in development
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
-  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'X-Requested-With', 
+    'Accept', 
+    'Origin',
+    'Cache-Control',
+    'X-File-Name'
+  ],
+  optionsSuccessStatus: 200
 }));
+
+// Add debug logging for CORS requests
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS' || req.path.startsWith('/api')) {
+    console.log(`[CORS DEBUG] ${req.method} ${req.path} - Origin: ${req.headers.origin || 'none'}`);
+  }
+  next();
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));

@@ -86,16 +86,62 @@ To test if the connection is working:
 - File size limit is 50MB
 - Supported formats: images/* and videos/*
 
+## Troubleshooting 403 Errors
+
+If you're still getting 403 errors, try these solutions:
+
+### 1. Find Your Correct IP Address
+Run this command on your computer to find your local IP:
+```bash
+# On Mac/Linux:
+ifconfig | grep "inet " | grep -v 127.0.0.1
+
+# On Windows:
+ipconfig | findstr IPv4
+```
+
+### 2. Update Mobile App IP Address
+Edit `apps/mobile-app/src/services/api.ts` and change the IP in line 13:
+```javascript
+"http://YOUR_ACTUAL_IP:5000",  // Replace with your IP
+```
+
+### 3. Alternative: Use Expo Dev Server IP
+When you run `npm start` in the mobile app, Expo shows:
+```
+Metro waiting on exp://192.168.x.x:8081
+```
+Use that same IP but with port 5000:
+```javascript
+"http://192.168.x.x:5000",
+```
+
+### 4. Test Connection
+Create a test file to verify connection:
+```bash
+cd apps/mobile-app
+node debug-connection.js
+```
+
 ## Current Status
 
-✅ Backend CORS configuration added
-✅ Mobile app API URL configuration fixed
+✅ Backend CORS configuration added (allows all origins in development)
+✅ Mobile app API URL configuration with debugging
 ✅ TypeScript errors resolved
 ✅ Environment configuration created
-🔄 Ready for testing
+✅ Debug logging added to server
+🔄 IP address may need manual adjustment
 
 The mobile app should now be able to:
 - Connect to the local development server
-- Authenticate users
+- Authenticate users  
 - Create tickets with media attachments
 - Access all API endpoints
+
+## Quick Fix Summary
+
+1. **Start backend**: `npm run dev` (from project root)
+2. **Find your IP**: Use `ifconfig` or `ipconfig` 
+3. **Update mobile config**: Edit the IP in `apps/mobile-app/src/services/api.ts`
+4. **Start mobile app**: `npm start` (from `apps/mobile-app` folder)
+5. **Test**: Try logging in with `placeticket@nsrpetro.com`

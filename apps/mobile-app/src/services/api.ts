@@ -6,16 +6,29 @@ const getApiUrl = () => {
     return process.env.EXPO_PUBLIC_API_URL;
   }
   
-  // In development, use the local network IP
+  // In development, try to auto-detect the correct IP or use localhost
   if (process.env.NODE_ENV === "development") {
     // For Expo Go, we need to use the actual IP address
-    return "http://192.168.1.153:5000";
+    // You may need to update this IP to match your network
+    const possibleIPs = [
+      "http://192.168.1.153:5000",  // Your current network IP
+      "http://localhost:5000",       // Fallback to localhost
+      "http://127.0.0.1:5000",      // Alternative localhost
+    ];
+    
+    // Return the first IP (you can change this manually if needed)
+    return possibleIPs[0];
   }
   
   return "https://taskscout.ai";
 };
 
 const API_BASE_URL = getApiUrl();
+
+// Add debugging for mobile development
+if (process.env.NODE_ENV === "development") {
+  console.log("Mobile App API URL:", API_BASE_URL);
+}
 
 export interface ApiError extends Error {
   status?: number;
