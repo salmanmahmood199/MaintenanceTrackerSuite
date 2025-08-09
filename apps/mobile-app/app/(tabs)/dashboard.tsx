@@ -156,7 +156,7 @@ export default function DashboardScreen() {
               <TicketCard
                 key={ticket.id}
                 ticket={ticket}
-                onPress={() => router.push(`/ticket/${ticket.id}`)}
+                onPress={() => router.push(`/tickets/${ticket.id}`)}
               />
             ))
           ) : (

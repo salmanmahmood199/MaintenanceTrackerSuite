@@ -44,12 +44,8 @@ export default function TicketsScreen() {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={{ paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderColor: "#f3f3f3" }}
-            onPress={() =>
-              router.push({
-                pathname: "/(tabs)/tickets/[id]",
-                params: { id: String((item as any).id ?? (item as any)._id) },
-              })
-            }
+            onPress={() => router.push(`/tickets/${String((item as any).id ?? (item as any)._id)}`)}
+            
           >
             <Text style={{ fontSize: 16, fontWeight: "500" }}>
               {(item as any).title ?? `Ticket #${(item as any).id ?? (item as any)._id}`}
