@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, Image, TextInput, Modal, Dimensions, Alert } from "react-native";
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, RefreshControl, Image, TextInput, Modal, Dimensions, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
@@ -31,6 +31,7 @@ function normalizeTicket(raw: any) {
     location,
     reporter: raw.reporter || raw.createdBy,
     createdBy: raw.createdBy,
+    images: raw.images || [],
   };
 }
 
@@ -56,38 +57,40 @@ export default function TicketDetailsScreen() {
         const raw = response.data?.ticket ?? response.data;
         return normalizeTicket(raw);
       } catch (error) {
-        console.error('Error fetching ticket details:', error);
+        console.error('Error fetching ticket:', error);
         throw error;
       }
     },
-    retry: 2,
-    retryDelay: 1000,
   });
 
-  // Fetch ticket comments
+  // Fetch comments
   const { data: comments = [], isLoading: commentsLoading, refetch: refetchComments } = useQuery({
-    queryKey: ["ticket-comments", id],
+    queryKey: ["comments", id],
     enabled: !!id,
     queryFn: async () => {
+      console.log('Fetching comments for ticket:', id);
       const response = await api.get(`/api/tickets/${id}/comments`);
+      console.log('Comments API response:', response.data);
       return response.data ?? [];
     },
   });
 
   // Fetch work orders
   const { data: workOrders = [], isLoading: workOrdersLoading, refetch: refetchWorkOrders } = useQuery({
-    queryKey: ["ticket-workorders", id],
+    queryKey: ["workorders", id],
     enabled: !!id,
     queryFn: async () => {
+      console.log('Fetching work orders for ticket:', id);
       const response = await api.get(`/api/tickets/${id}/work-orders`);
+      console.log('Work Orders API response:', response.data);
       return response.data ?? [];
     },
   });
 
   // Add comment mutation
   const addCommentMutation = useMutation({
-    mutationFn: async (text: string) => {
-      const response = await api.post(`/api/tickets/${id}/comments`, { text });
+    mutationFn: async (content: string) => {
+      const response = await api.post(`/api/tickets/${id}/comments`, { content });
       return response.data;
     },
     onSuccess: () => {
@@ -96,6 +99,7 @@ export default function TicketDetailsScreen() {
       Alert.alert('Success', 'Comment added successfully');
     },
     onError: (error: any) => {
+      console.error('Comment error:', error);
       Alert.alert('Error', error.response?.data?.message || 'Failed to add comment');
     },
   });
@@ -129,7 +133,7 @@ export default function TicketDetailsScreen() {
         </Text>
         <Text style={styles.errorText}>
           {isNetworkError 
-            ? "Cannot connect to server. Make sure the backend is running on http://192.168.1.153:5000"
+            ? "Cannot connect to server. Make sure the backend is running"
             : errorMessage
           }
         </Text>
@@ -145,7 +149,7 @@ export default function TicketDetailsScreen() {
     switch (status?.toLowerCase()) {
       case 'pending': return '#f59e0b';
       case 'accepted': return '#3b82f6';
-      case 'in_progress': return '#8b5cf6';
+      case 'in_progress': case 'in-progress': return '#8b5cf6';
       case 'completed': return '#10b981';
       case 'confirmed': return '#059669';
       default: return '#6b7280';
@@ -166,7 +170,7 @@ export default function TicketDetailsScreen() {
     switch (ticket?.status?.toLowerCase()) {
       case 'pending': return 10;
       case 'accepted': return 25;
-      case 'in_progress': return 60;
+      case 'in_progress': case 'in-progress': return 60;
       case 'completed': return 85;
       case 'confirmed': return 100;
       default: return 0;
@@ -178,95 +182,65 @@ export default function TicketDetailsScreen() {
       case 'details':
         return (
           <View style={styles.tabContent}>
-            {/* Basic Information */}
-            <View style={styles.infoSection}>
-              <Text style={styles.sectionTitle}>Basic Information</Text>
-              
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Ticket Number</Text>
-                <Text style={styles.infoValue}>{ticket.ticketNumber ?? `#${ticket.id}`}</Text>
-              </View>
-              
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Title</Text>
-                <Text style={styles.infoValue}>{ticket.title ?? "No title"}</Text>
-              </View>
-              
-              {ticket.description && (
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Description</Text>
-                  <Text style={styles.infoDescription}>{ticket.description}</Text>
-                </View>
-              )}
-              
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Status</Text>
-                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(ticket.status) }]}>
-                  <Text style={styles.statusText}>{ticket.status ?? "Unknown"}</Text>
-                </View>
-              </View>
-              
-              {ticket.priority && (
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Priority</Text>
-                  <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(ticket.priority) }]}>
-                    <Text style={styles.priorityText}>{ticket.priority}</Text>
+            {/* Header Section with Status & Priority - Web Style */}
+            <View style={styles.headerSection}>
+              <View style={styles.titleSection}>
+                <Text style={styles.ticketTitle}>{ticket.title || "Untitled Ticket"}</Text>
+                <View style={styles.badgeContainer}>
+                  <View style={[styles.badge, { backgroundColor: getPriorityColor(ticket.priority) }]}>
+                    <Text style={styles.badgeText}>{ticket.priority?.toUpperCase() || "NORMAL"} PRIORITY</Text>
+                  </View>
+                  <View style={[styles.badge, { backgroundColor: getStatusColor(ticket.status) }]}>
+                    <Text style={styles.badgeText}>{ticket.status?.replace('_', ' ').replace('-', ' ').toUpperCase() || "UNKNOWN"}</Text>
                   </View>
                 </View>
-              )}
-              
-              {ticket.createdAt && (
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Created</Text>
-                  <Text style={styles.infoValue}>{new Date(ticket.createdAt).toLocaleDateString()}</Text>
-                </View>
-              )}
+              </View>
             </View>
 
-            {/* Location Information */}
-            {ticket.location && (
-              <View style={styles.infoSection}>
-                <Text style={styles.sectionTitle}>Location</Text>
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Name</Text>
-                  <Text style={styles.infoValue}>{ticket.location.name ?? "—"}</Text>
-                </View>
-                {ticket.location.address && (
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Address</Text>
-                    <Text style={styles.infoValue}>
-                      {ticket.location.address}
-                      {ticket.location.city ? `, ${ticket.location.city}` : ""}
-                      {ticket.location.state ? `, ${ticket.location.state}` : ""}
-                      {ticket.location.zip ? ` ${ticket.location.zip}` : ""}
-                    </Text>
+            {/* Details Grid - Web Style */}
+            <View style={styles.detailsGrid}>
+              <View style={styles.detailRow}>
+                <View style={styles.detailItem}>
+                  <View style={styles.detailHeader}>
+                    <Ionicons name="bookmark-outline" size={18} color="#64748b" />
+                    <Text style={styles.detailLabel}>Ticket Number</Text>
                   </View>
-                )}
+                  <Text style={styles.detailValue}>{ticket.ticketNumber || `#${ticket.id}`}</Text>
+                </View>
+                
+                <View style={styles.detailItem}>
+                  <View style={styles.detailHeader}>
+                    <Ionicons name="calendar-outline" size={18} color="#64748b" />
+                    <Text style={styles.detailLabel}>Created</Text>
+                  </View>
+                  <Text style={styles.detailValue}>
+                    {ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    }) : 'Unknown'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Description Section - Web Style */}
+            {ticket.description && (
+              <View style={styles.descriptionSection}>
+                <Text style={styles.sectionTitle}>Description</Text>
+                <View style={styles.descriptionContent}>
+                  <Text style={styles.descriptionText}>{ticket.description}</Text>
+                </View>
               </View>
             )}
 
-            {/* Reporter Information */}
-            {(ticket.reporter?.name || ticket.createdBy?.name) && (
-              <View style={styles.infoSection}>
-                <Text style={styles.sectionTitle}>Reporter</Text>
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Name</Text>
-                  <Text style={styles.infoValue}>{ticket.reporter?.name ?? ticket.createdBy?.name ?? "Unknown"}</Text>
-                </View>
-                {(ticket.reporter?.email || ticket.createdBy?.email) && (
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Email</Text>
-                    <Text style={styles.infoValue}>{ticket.reporter?.email ?? ticket.createdBy?.email}</Text>
-                  </View>
-                )}
-              </View>
-            )}
-
-            {/* Images Section */}
+            {/* Images Section - Web Style */}
             {ticket.images && ticket.images.length > 0 && (
-              <View style={styles.infoSection}>
-                <Text style={styles.sectionTitle}>Attached Images</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imagesContainer}>
+              <View style={styles.imageSection}>
+                <Text style={styles.sectionTitle}>Attached Images ({ticket.images.length})</Text>
+                <View style={styles.imageGrid}>
                   {ticket.images.map((imageUrl: string, index: number) => (
                     <TouchableOpacity
                       key={index}
@@ -274,16 +248,34 @@ export default function TicketDetailsScreen() {
                         setSelectedImage(imageUrl);
                         setImageModalVisible(true);
                       }}
-                      style={styles.imageWrapper}
+                      style={styles.imageCard}
                     >
                       <Image
                         source={{ uri: imageUrl }}
-                        style={styles.thumbnailImage}
+                        style={styles.imagePreview}
                         resizeMode="cover"
                       />
                     </TouchableOpacity>
                   ))}
-                </ScrollView>
+                </View>
+              </View>
+            )}
+
+            {/* Location Section - Web Style */}
+            {ticket.location && (
+              <View style={styles.locationSection}>
+                <Text style={styles.sectionTitle}>Location</Text>
+                <View style={styles.locationContent}>
+                  <Text style={styles.locationName}>{ticket.location.name || "—"}</Text>
+                  {ticket.location.address && (
+                    <Text style={styles.locationAddress}>
+                      {ticket.location.address}
+                      {ticket.location.city ? `, ${ticket.location.city}` : ""}
+                      {ticket.location.state ? `, ${ticket.location.state}` : ""}
+                      {ticket.location.zip ? ` ${ticket.location.zip}` : ""}
+                    </Text>
+                  )}
+                </View>
               </View>
             )}
           </View>
@@ -292,22 +284,22 @@ export default function TicketDetailsScreen() {
       case 'comments':
         return (
           <View style={styles.tabContent}>
-            {/* Add Comment Section */}
-            <View style={styles.addCommentSection}>
+            {/* Add Comment Section - Web Style */}
+            <View style={styles.addCommentCard}>
               <Text style={styles.sectionTitle}>Add Comment</Text>
-              <View style={styles.commentInputContainer}>
+              <View style={styles.commentForm}>
                 <TextInput
                   style={styles.commentInput}
                   placeholder="Enter your comment..."
                   multiline
-                  numberOfLines={3}
+                  numberOfLines={4}
                   value={newComment}
                   onChangeText={setNewComment}
                   textAlignVertical="top"
                 />
                 <TouchableOpacity
                   style={[
-                    styles.addCommentButton,
+                    styles.submitButton,
                     { opacity: addCommentMutation.isPending || !newComment.trim() ? 0.5 : 1 }
                   ]}
                   onPress={handleAddComment}
@@ -316,22 +308,22 @@ export default function TicketDetailsScreen() {
                   {addCommentMutation.isPending ? (
                     <ActivityIndicator size="small" color="white" />
                   ) : (
-                    <>
+                    <View style={styles.buttonContent}>
                       <Ionicons name="send" size={16} color="white" />
-                      <Text style={styles.addCommentButtonText}>Add Comment</Text>
-                    </>
+                      <Text style={styles.buttonText}>Add Comment</Text>
+                    </View>
                   )}
                 </TouchableOpacity>
               </View>
             </View>
 
-            {/* Comments List */}
-            <View style={styles.commentsSection}>
+            {/* Comments List - Web Style */}
+            <View style={styles.commentsCard}>
               <Text style={styles.sectionTitle}>
                 Comments {comments.length > 0 && `(${comments.length})`}
               </Text>
               {commentsLoading ? (
-                <ActivityIndicator size="small" color="#3b82f6" />
+                <ActivityIndicator size="small" color="#3b82f6" style={styles.loader} />
               ) : comments.length === 0 ? (
                 <View style={styles.emptyState}>
                   <Ionicons name="chatbubble-outline" size={48} color="#94a3b8" />
@@ -339,27 +331,31 @@ export default function TicketDetailsScreen() {
                   <Text style={styles.emptySubtext}>Be the first to add a comment</Text>
                 </View>
               ) : (
-                comments.map((comment: any, index: number) => (
-                  <View key={comment.id || index} style={styles.commentCard}>
-                    <View style={styles.commentHeader}>
-                      <View style={styles.commentAuthorInfo}>
-                        <Text style={styles.commentAuthor}>
-                          {comment.user?.firstName} {comment.user?.lastName} {comment.user?.name}
+                <View style={styles.commentsList}>
+                  {comments.map((comment: any, index: number) => (
+                    <View key={comment.id || index} style={styles.commentItem}>
+                      <View style={styles.commentHeader}>
+                        <View style={styles.commentAuthorSection}>
+                          <Text style={styles.commentAuthor}>
+                            {comment.user?.firstName} {comment.user?.lastName} {comment.user?.name}
+                          </Text>
+                          {comment.user?.role && (
+                            <Text style={styles.commentRole}>{comment.user.role.replace('_', ' ')}</Text>
+                          )}
+                        </View>
+                        <Text style={styles.commentDate}>
+                          {new Date(comment.createdAt).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
                         </Text>
-                        <Text style={styles.commentRole}>{comment.user?.role}</Text>
                       </View>
-                      <Text style={styles.commentDate}>
-                        {new Date(comment.createdAt).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </Text>
+                      <Text style={styles.commentContent}>{comment.content || comment.text}</Text>
                     </View>
-                    <Text style={styles.commentText}>{comment.text}</Text>
-                  </View>
-                ))
+                  ))}
+                </View>
               )}
             </View>
           </View>
@@ -368,25 +364,29 @@ export default function TicketDetailsScreen() {
       case 'progress':
         return (
           <View style={styles.tabContent}>
-            <View style={styles.progressSection}>
+            <View style={styles.progressCard}>
               <Text style={styles.sectionTitle}>Progress Tracker</Text>
               
-              {/* Progress Bar */}
-              <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { 
-                  width: `${getProgressPercentage()}%` 
-                }]} />
+              {/* Progress Bar - Web Style */}
+              <View style={styles.progressBarContainer}>
+                <View style={styles.progressBar}>
+                  <View style={[styles.progressFill, { 
+                    width: `${getProgressPercentage()}%` 
+                  }]} />
+                </View>
+                <Text style={styles.progressText}>{getProgressPercentage()}% Complete</Text>
               </View>
-              <Text style={styles.progressPercentage}>{getProgressPercentage()}% Complete</Text>
               
-              {/* Progress Steps */}
-              <View style={styles.progressSteps}>
-                <View style={styles.progressStep}>
-                  <View style={[styles.progressDot, { backgroundColor: '#10b981' }]} />
-                  <View style={styles.progressLine} />
-                  <View style={styles.progressContent}>
-                    <Text style={styles.progressTitle}>Ticket Created</Text>
-                    <Text style={styles.progressDate}>
+              {/* Progress Timeline - Web Style */}
+              <View style={styles.progressTimeline}>
+                <View style={styles.timelineItem}>
+                  <View style={[styles.timelineIcon, { backgroundColor: '#10b981' }]}>
+                    <Ionicons name="checkmark" size={16} color="white" />
+                  </View>
+                  <View style={styles.timelineContent}>
+                    <Text style={styles.timelineTitle}>Ticket Created</Text>
+                    <Text style={styles.timelineDescription}>Initial ticket submission</Text>
+                    <Text style={styles.timelineDate}>
                       {ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
@@ -398,34 +398,40 @@ export default function TicketDetailsScreen() {
                 </View>
                 
                 {ticket.status !== 'pending' && (
-                  <View style={styles.progressStep}>
-                    <View style={[styles.progressDot, { backgroundColor: '#3b82f6' }]} />
-                    <View style={styles.progressLine} />
-                    <View style={styles.progressContent}>
-                      <Text style={styles.progressTitle}>Ticket Accepted</Text>
-                      <Text style={styles.progressDate}>Status: {ticket.status}</Text>
+                  <View style={styles.timelineItem}>
+                    <View style={[styles.timelineIcon, { backgroundColor: '#3b82f6' }]}>
+                      <Ionicons name="checkmark" size={16} color="white" />
+                    </View>
+                    <View style={styles.timelineContent}>
+                      <Text style={styles.timelineTitle}>Ticket Accepted</Text>
+                      <Text style={styles.timelineDescription}>Approved for processing</Text>
+                      <Text style={styles.timelineDate}>Status: {ticket.status}</Text>
                     </View>
                   </View>
                 )}
                 
-                {(['in_progress', 'completed', 'confirmed'].includes(ticket.status)) && (
-                  <View style={styles.progressStep}>
-                    <View style={[styles.progressDot, { backgroundColor: '#8b5cf6' }]} />
-                    <View style={styles.progressLine} />
-                    <View style={styles.progressContent}>
-                      <Text style={styles.progressTitle}>Work In Progress</Text>
-                      <Text style={styles.progressDate}>Active</Text>
+                {(['in_progress', 'in-progress', 'completed', 'confirmed'].includes(ticket.status)) && (
+                  <View style={styles.timelineItem}>
+                    <View style={[styles.timelineIcon, { backgroundColor: '#8b5cf6' }]}>
+                      <Ionicons name="construct" size={16} color="white" />
+                    </View>
+                    <View style={styles.timelineContent}>
+                      <Text style={styles.timelineTitle}>Work In Progress</Text>
+                      <Text style={styles.timelineDescription}>Maintenance work underway</Text>
+                      <Text style={styles.timelineDate}>Active</Text>
                     </View>
                   </View>
                 )}
                 
                 {(['completed', 'confirmed'].includes(ticket.status)) && (
-                  <View style={styles.progressStep}>
-                    <View style={[styles.progressDot, { backgroundColor: '#10b981' }]} />
-                    <View style={styles.progressLine} />
-                    <View style={styles.progressContent}>
-                      <Text style={styles.progressTitle}>Work Completed</Text>
-                      <Text style={styles.progressDate}>Finished</Text>
+                  <View style={styles.timelineItem}>
+                    <View style={[styles.timelineIcon, { backgroundColor: '#10b981' }]}>
+                      <Ionicons name="checkmark-done" size={16} color="white" />
+                    </View>
+                    <View style={styles.timelineContent}>
+                      <Text style={styles.timelineTitle}>Work Completed</Text>
+                      <Text style={styles.timelineDescription}>All tasks finished</Text>
+                      <Text style={styles.timelineDate}>Completed</Text>
                     </View>
                   </View>
                 )}
@@ -437,30 +443,44 @@ export default function TicketDetailsScreen() {
       case 'workorders':
         return (
           <View style={styles.tabContent}>
-            {workOrdersLoading ? (
-              <ActivityIndicator size="small" color="#3b82f6" />
-            ) : workOrders.length === 0 ? (
-              <View style={styles.emptyState}>
-                <Ionicons name="construct-outline" size={48} color="#94a3b8" />
-                <Text style={styles.emptyText}>No work orders yet</Text>
-                <Text style={styles.emptySubtext}>Work orders will appear here</Text>
-              </View>
-            ) : (
-              workOrders.map((workOrder: any, index: number) => (
-                <View key={index} style={styles.workOrderCard}>
-                  <View style={styles.workOrderHeader}>
-                    <Text style={styles.workOrderTitle}>Work Order #{workOrder.id}</Text>
-                    <Text style={styles.workOrderStatus}>{workOrder.status}</Text>
-                  </View>
-                  {workOrder.description && (
-                    <Text style={styles.workOrderDescription}>{workOrder.description}</Text>
-                  )}
-                  <Text style={styles.workOrderDate}>
-                    Created: {new Date(workOrder.createdAt).toLocaleDateString()}
-                  </Text>
+            <View style={styles.workOrdersCard}>
+              <Text style={styles.sectionTitle}>
+                Work Orders {workOrders.length > 0 && `(${workOrders.length})`}
+              </Text>
+              {workOrdersLoading ? (
+                <ActivityIndicator size="small" color="#3b82f6" style={styles.loader} />
+              ) : workOrders.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Ionicons name="construct-outline" size={48} color="#94a3b8" />
+                  <Text style={styles.emptyText}>No work orders yet</Text>
+                  <Text style={styles.emptySubtext}>Work orders will appear here</Text>
                 </View>
-              ))
-            )}
+              ) : (
+                <View style={styles.workOrdersList}>
+                  {workOrders.map((workOrder: any, index: number) => (
+                    <View key={workOrder.id || index} style={styles.workOrderItem}>
+                      <View style={styles.workOrderHeader}>
+                        <Text style={styles.workOrderTitle}>Work Order #{workOrder.id}</Text>
+                        <View style={[styles.workOrderStatus, { backgroundColor: getStatusColor(workOrder.status) }]}>
+                          <Text style={styles.workOrderStatusText}>{workOrder.status}</Text>
+                        </View>
+                      </View>
+                      {workOrder.description && (
+                        <Text style={styles.workOrderDescription}>{workOrder.description}</Text>
+                      )}
+                      <Text style={styles.workOrderDate}>
+                        Created: {new Date(workOrder.createdAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
           </View>
         );
         
@@ -471,18 +491,22 @@ export default function TicketDetailsScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {/* Header - Web Style */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#1e293b" />
         </TouchableOpacity>
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>{ticket.title ?? `Ticket #${ticket.id}`}</Text>
-          <Text style={styles.headerSubtitle}>{ticket.ticketNumber ?? `#${ticket.id}`}</Text>
+          <Text style={styles.headerTitle}>
+            {ticket.title || 'Ticket Details'}
+          </Text>
+          <Text style={styles.headerSubtitle}>
+            {ticket.ticketNumber || `#${ticket.id}`}
+          </Text>
         </View>
       </View>
 
-      {/* Tab Navigation */}
+      {/* Tab Navigation - Web Style */}
       <View style={styles.tabContainer}>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'details' && styles.activeTab]}
@@ -603,6 +627,11 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   backButton: {
     padding: 8,
@@ -629,7 +658,7 @@ const styles = StyleSheet.create({
   },
   tab: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 8,
     alignItems: 'center',
     borderBottomWidth: 2,
@@ -653,7 +682,46 @@ const styles = StyleSheet.create({
   tabContent: {
     padding: 16,
   },
-  infoSection: {
+  
+  // Web-style Details Tab
+  headerSection: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  titleSection: {
+    marginBottom: 8,
+  },
+  ticketTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: 12,
+    lineHeight: 32,
+  },
+  badgeContainer: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  badge: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: 'white',
+    letterSpacing: 0.5,
+  },
+  
+  detailsGrid: {
     backgroundColor: 'white',
     borderRadius: 12,
     padding: 16,
@@ -661,86 +729,177 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  detailItem: {
+    flex: 1,
+  },
+  detailHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  detailLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#64748b',
+  },
+  detailValue: {
+    fontSize: 16,
+    color: '#1e293b',
+    fontWeight: '500',
+  },
+  
+  descriptionSection: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
     elevation: 2,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: '#1e293b',
-    marginBottom: 16,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
     marginBottom: 12,
   },
-  infoLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#64748b',
-    flex: 1,
-    marginRight: 12,
+  descriptionContent: {
+    backgroundColor: '#f1f5f9',
+    borderRadius: 8,
+    padding: 16,
   },
-  infoValue: {
-    fontSize: 14,
+  descriptionText: {
+    fontSize: 16,
     color: '#1e293b',
-    flex: 2,
-    textAlign: 'right',
+    lineHeight: 24,
   },
-  infoDescription: {
-    fontSize: 14,
-    color: '#1e293b',
-    flex: 2,
-    textAlign: 'right',
-    lineHeight: 20,
+  
+  imageSection: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+  imageGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
   },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: 'white',
-    textTransform: 'capitalize',
+  imageCard: {
+    width: (screenWidth - 80) / 2,
+    aspectRatio: 1,
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
-  priorityBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 4,
+  imagePreview: {
+    width: '100%',
+    height: '100%',
   },
-  priorityText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: 'white',
-    textTransform: 'uppercase',
+  
+  locationSection: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 60,
+  locationContent: {
+    gap: 4,
   },
-  emptyText: {
+  locationName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#64748b',
-    marginTop: 12,
-    marginBottom: 4,
+    color: '#1e293b',
   },
-  emptySubtext: {
+  locationAddress: {
     fontSize: 14,
-    color: '#94a3b8',
+    color: '#64748b',
+    lineHeight: 20,
   },
-  commentCard: {
+  
+  // Web-style Comments Tab
+  addCommentCard: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  commentForm: {
+    gap: 12,
+  },
+  commentInput: {
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: '#1e293b',
+    backgroundColor: '#f8fafc',
+    minHeight: 100,
+    textAlignVertical: 'top',
+  },
+  submitButton: {
+    backgroundColor: '#3b82f6',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  
+  commentsCard: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  commentsList: {
+    gap: 16,
+  },
+  commentItem: {
     backgroundColor: '#f8fafc',
     borderRadius: 8,
     padding: 12,
-    marginBottom: 12,
-    borderLeftWidth: 3,
+    borderLeftWidth: 4,
     borderLeftColor: '#3b82f6',
   },
   commentHeader: {
@@ -749,64 +908,117 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 8,
   },
+  commentAuthorSection: {
+    flex: 1,
+  },
   commentAuthor: {
     fontSize: 14,
     fontWeight: '600',
     color: '#1e293b',
   },
+  commentRole: {
+    fontSize: 12,
+    color: '#64748b',
+    textTransform: 'capitalize',
+    marginTop: 2,
+  },
   commentDate: {
     fontSize: 12,
     color: '#64748b',
   },
-  commentText: {
+  commentContent: {
     fontSize: 14,
     color: '#374151',
     lineHeight: 20,
   },
-  progressSection: {
+  
+  // Web-style Progress Tab
+  progressCard: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  progressBarContainer: {
+    marginBottom: 24,
+    alignItems: 'center',
+  },
+  progressBar: {
+    width: '100%',
+    height: 8,
+    backgroundColor: '#e2e8f0',
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#3b82f6',
+    borderRadius: 4,
+  },
+  progressText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1e293b',
+  },
+  progressTimeline: {
+    gap: 20,
+  },
+  timelineItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 16,
+  },
+  timelineIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  timelineContent: {
+    flex: 1,
+  },
+  timelineTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: 4,
+  },
+  timelineDescription: {
+    fontSize: 14,
+    color: '#64748b',
+    marginBottom: 2,
+  },
+  timelineDate: {
+    fontSize: 12,
+    color: '#94a3b8',
+  },
+  
+  // Web-style Work Orders Tab
+  workOrdersCard: {
     backgroundColor: 'white',
     borderRadius: 12,
     padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowRadius: 2,
     elevation: 2,
   },
-  progressStep: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
+  workOrdersList: {
+    gap: 12,
   },
-  progressDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 16,
-  },
-  progressContent: {
-    flex: 1,
-  },
-  progressTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1e293b',
-    marginBottom: 2,
-  },
-  progressDate: {
-    fontSize: 12,
-    color: '#64748b',
-  },
-  workOrderCard: {
-    backgroundColor: 'white',
-    borderRadius: 12,
+  workOrderItem: {
+    backgroundColor: '#f8fafc',
+    borderRadius: 8,
     padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   workOrderHeader: {
     flexDirection: 'row',
@@ -815,40 +1027,53 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   workOrderTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
     color: '#1e293b',
   },
   workOrderStatus: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  workOrderStatusText: {
     fontSize: 12,
-    fontWeight: '500',
-    color: '#64748b',
+    fontWeight: '600',
+    color: 'white',
     textTransform: 'capitalize',
   },
   workOrderDescription: {
     fontSize: 14,
-    color: '#374151',
-    lineHeight: 20,
+    color: '#64748b',
     marginBottom: 8,
+    lineHeight: 20,
   },
   workOrderDate: {
     fontSize: 12,
+    color: '#94a3b8',
+  },
+  
+  // Shared styles
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: '600',
     color: '#64748b',
+    marginTop: 16,
+    marginBottom: 4,
   },
-  // New styles for enhanced functionality
-  imagesContainer: {
-    paddingVertical: 8,
+  emptySubtext: {
+    fontSize: 14,
+    color: '#94a3b8',
   },
-  imageWrapper: {
-    marginRight: 12,
-    borderRadius: 8,
-    overflow: 'hidden',
+  loader: {
+    marginVertical: 20,
   },
-  thumbnailImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-  },
+  
+  // Image Modal
   imageModalContainer: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.9)',
@@ -867,94 +1092,5 @@ const styles = StyleSheet.create({
   fullScreenImage: {
     width: screenWidth,
     height: '80%',
-  },
-  addCommentSection: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  commentInputContainer: {
-    flexDirection: 'column',
-    gap: 12,
-  },
-  commentInput: {
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 14,
-    color: '#1e293b',
-    backgroundColor: '#f8fafc',
-    minHeight: 80,
-  },
-  addCommentButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#3b82f6',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    gap: 8,
-  },
-  addCommentButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  commentsSection: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  commentAuthorInfo: {
-    flex: 1,
-  },
-  commentRole: {
-    fontSize: 12,
-    color: '#64748b',
-    textTransform: 'capitalize',
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: '#e2e8f0',
-    borderRadius: 4,
-    marginBottom: 8,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#3b82f6',
-    borderRadius: 4,
-  },
-  progressPercentage: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1e293b',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  progressSteps: {
-    marginTop: 16,
-  },
-  progressLine: {
-    position: 'absolute',
-    left: 6,
-    top: 12,
-    bottom: -16,
-    width: 1,
-    backgroundColor: '#e2e8f0',
-    zIndex: -1,
   },
 });
