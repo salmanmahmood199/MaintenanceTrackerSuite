@@ -2,7 +2,8 @@ import React from "react";
 import { View, Text, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { api } from "../../../lib/api";
+// If your '@' alias isn't set, change this to a relative path like '../../lib/api'
+import { api } from "@/lib/api";
 
 export default function TicketsScreen() {
   const router = useRouter();
@@ -38,25 +39,23 @@ export default function TicketsScreen() {
       </View>
 
       <FlatList
-        data={data}
-        keyExtractor={(item) => String(item.id ?? item._id)}
-        refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
-        }
+        data={(data as any[])}
+        keyExtractor={(item) => String((item as any).id ?? (item as any)._id)}
+        refreshControl={<RefreshControl refreshing={!!isRefetching} onRefresh={refetch} />}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={{ paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderColor: "#f3f3f3" }}
             onPress={() =>
               router.push({
                 pathname: "/(tabs)/tickets/[id]",
-                params: { id: String(item.id ?? item._id) },
+                params: { id: String((item as any).id ?? (item as any)._id) },
               })
             }
           >
             <Text style={{ fontSize: 16, fontWeight: "500" }}>
-              {item.title ?? `Ticket #${item.id ?? item._id}`}
+              {(item as any).title ?? `Ticket #${(item as any).id ?? (item as any)._id}`}
             </Text>
-            <Text style={{ color: "#666", marginTop: 2 }}>{item.status ?? "open"}</Text>
+            <Text style={{ color: "#666", marginTop: 2 }}>{(item as any).status ?? "open"}</Text>
           </TouchableOpacity>
         )}
         ListEmptyComponent={<Text style={{ padding: 16, color: "#666" }}>No tickets.</Text>}
