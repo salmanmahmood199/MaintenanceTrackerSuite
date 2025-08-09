@@ -14,8 +14,7 @@ export default function TicketsLayout() {
         name="[id]" 
         options={{ 
           title: 'Ticket Details',
-          headerShown: true,
-          headerBackTitle: 'Back'
+          headerShown: false
         }} 
       />
     </Stack>

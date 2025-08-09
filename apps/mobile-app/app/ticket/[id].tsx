@@ -1,0 +1,626 @@
+import React, { useState } from "react";
+import { View, Text, ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, RefreshControl } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "../../lib/api";
+import { Ionicons } from '@expo/vector-icons';
+
+type Location = { name?: string; address?: string; city?: string; state?: string; zip?: string };
+
+function normalizeTicket(raw: any) {
+  if (!raw) return null;
+  
+  const location: Location | null = raw.location ? {
+    name: raw.location.name || raw.location.locationName,
+    address: raw.location.address || raw.location.streetAddress,
+    city: raw.location.city,
+    state: raw.location.state,
+    zip: raw.location.zip || raw.location.zipCode,
+  } : null;
+
+  return {
+    id: raw.id,
+    ticketNumber: raw.ticketNumber,
+    title: raw.title,
+    description: raw.description,
+    status: raw.status,
+    priority: raw.priority,
+    createdAt: raw.createdAt,
+    location,
+    reporter: raw.reporter || raw.createdBy,
+    createdBy: raw.createdBy,
+  };
+}
+
+export default function TicketDetailsScreen() {
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const router = useRouter();
+  const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState<'details' | 'comments' | 'progress' | 'workorders'>('details');
+
+  // Fetch ticket details
+  const { data: ticket, isLoading: ticketLoading, refetch: refetchTicket, isError: ticketError, error: ticketErrorMsg } = useQuery({
+    queryKey: ["ticket", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const response = await api.get(`/api/tickets/${id}`);
+      const raw = response.data?.ticket ?? response.data;
+      return normalizeTicket(raw);
+    },
+  });
+
+  // Fetch ticket comments
+  const { data: comments = [], isLoading: commentsLoading, refetch: refetchComments } = useQuery({
+    queryKey: ["ticket-comments", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const response = await api.get(`/api/tickets/${id}/comments`);
+      return response.data ?? [];
+    },
+  });
+
+  // Fetch work orders
+  const { data: workOrders = [], isLoading: workOrdersLoading, refetch: refetchWorkOrders } = useQuery({
+    queryKey: ["ticket-workorders", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const response = await api.get(`/api/tickets/${id}/work-orders`);
+      return response.data ?? [];
+    },
+  });
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([refetchTicket(), refetchComments(), refetchWorkOrders()]);
+    setRefreshing(false);
+  };
+
+  // Basic states
+  if (!id) return <View style={styles.errorContainer}><Text style={styles.errorText}>Invalid route: no id.</Text></View>;
+  if (ticketLoading) return <View style={styles.loadingContainer}><ActivityIndicator size="large" color="#3b82f6" /></View>;
+  if (ticketError) return <View style={styles.errorContainer}><Text style={styles.errorText}>Failed to load: {(ticketErrorMsg as any)?.message ?? "Unknown error"}</Text></View>;
+  if (!ticket) return <View style={styles.errorContainer}><Text style={styles.errorText}>Ticket not found.</Text></View>;
+
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'pending': return '#f59e0b';
+      case 'accepted': return '#3b82f6';
+      case 'in_progress': return '#8b5cf6';
+      case 'completed': return '#10b981';
+      case 'confirmed': return '#059669';
+      default: return '#6b7280';
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority?.toLowerCase()) {
+      case 'low': return '#10b981';
+      case 'medium': return '#f59e0b';
+      case 'high': return '#ef4444';
+      case 'urgent': return '#dc2626';
+      default: return '#6b7280';
+    }
+  };
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'details':
+        return (
+          <View style={styles.tabContent}>
+            {/* Basic Information */}
+            <View style={styles.infoSection}>
+              <Text style={styles.sectionTitle}>Basic Information</Text>
+              
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Ticket Number</Text>
+                <Text style={styles.infoValue}>{ticket.ticketNumber ?? `#${ticket.id}`}</Text>
+              </View>
+              
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Title</Text>
+                <Text style={styles.infoValue}>{ticket.title ?? "No title"}</Text>
+              </View>
+              
+              {ticket.description && (
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Description</Text>
+                  <Text style={styles.infoDescription}>{ticket.description}</Text>
+                </View>
+              )}
+              
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Status</Text>
+                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(ticket.status) }]}>
+                  <Text style={styles.statusText}>{ticket.status ?? "Unknown"}</Text>
+                </View>
+              </View>
+              
+              {ticket.priority && (
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Priority</Text>
+                  <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(ticket.priority) }]}>
+                    <Text style={styles.priorityText}>{ticket.priority}</Text>
+                  </View>
+                </View>
+              )}
+              
+              {ticket.createdAt && (
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Created</Text>
+                  <Text style={styles.infoValue}>{new Date(ticket.createdAt).toLocaleDateString()}</Text>
+                </View>
+              )}
+            </View>
+
+            {/* Location Information */}
+            {ticket.location && (
+              <View style={styles.infoSection}>
+                <Text style={styles.sectionTitle}>Location</Text>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Name</Text>
+                  <Text style={styles.infoValue}>{ticket.location.name ?? "—"}</Text>
+                </View>
+                {ticket.location.address && (
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Address</Text>
+                    <Text style={styles.infoValue}>
+                      {ticket.location.address}
+                      {ticket.location.city ? `, ${ticket.location.city}` : ""}
+                      {ticket.location.state ? `, ${ticket.location.state}` : ""}
+                      {ticket.location.zip ? ` ${ticket.location.zip}` : ""}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
+
+            {/* Reporter Information */}
+            {(ticket.reporter?.name || ticket.createdBy?.name) && (
+              <View style={styles.infoSection}>
+                <Text style={styles.sectionTitle}>Reporter</Text>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Name</Text>
+                  <Text style={styles.infoValue}>{ticket.reporter?.name ?? ticket.createdBy?.name ?? "Unknown"}</Text>
+                </View>
+                {(ticket.reporter?.email || ticket.createdBy?.email) && (
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Email</Text>
+                    <Text style={styles.infoValue}>{ticket.reporter?.email ?? ticket.createdBy?.email}</Text>
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
+        );
+        
+      case 'comments':
+        return (
+          <View style={styles.tabContent}>
+            {commentsLoading ? (
+              <ActivityIndicator size="small" color="#3b82f6" />
+            ) : comments.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Ionicons name="chatbubble-outline" size={48} color="#94a3b8" />
+                <Text style={styles.emptyText}>No comments yet</Text>
+                <Text style={styles.emptySubtext}>Comments will appear here</Text>
+              </View>
+            ) : (
+              comments.map((comment: any, index: number) => (
+                <View key={index} style={styles.commentCard}>
+                  <View style={styles.commentHeader}>
+                    <Text style={styles.commentAuthor}>{comment.user?.firstName} {comment.user?.lastName}</Text>
+                    <Text style={styles.commentDate}>{new Date(comment.createdAt).toLocaleDateString()}</Text>
+                  </View>
+                  <Text style={styles.commentText}>{comment.text}</Text>
+                </View>
+              ))
+            )}
+          </View>
+        );
+        
+      case 'progress':
+        return (
+          <View style={styles.tabContent}>
+            <View style={styles.progressSection}>
+              <Text style={styles.sectionTitle}>Progress Tracker</Text>
+              <View style={styles.progressStep}>
+                <View style={[styles.progressDot, { backgroundColor: '#10b981' }]} />
+                <View style={styles.progressContent}>
+                  <Text style={styles.progressTitle}>Ticket Created</Text>
+                  <Text style={styles.progressDate}>{ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString() : 'Unknown'}</Text>
+                </View>
+              </View>
+              
+              {ticket.status !== 'pending' && (
+                <View style={styles.progressStep}>
+                  <View style={[styles.progressDot, { backgroundColor: '#3b82f6' }]} />
+                  <View style={styles.progressContent}>
+                    <Text style={styles.progressTitle}>Ticket Accepted</Text>
+                    <Text style={styles.progressDate}>In Progress</Text>
+                  </View>
+                </View>
+              )}
+              
+              {(['in_progress', 'completed', 'confirmed'].includes(ticket.status)) && (
+                <View style={styles.progressStep}>
+                  <View style={[styles.progressDot, { backgroundColor: '#8b5cf6' }]} />
+                  <View style={styles.progressContent}>
+                    <Text style={styles.progressTitle}>Work In Progress</Text>
+                    <Text style={styles.progressDate}>Active</Text>
+                  </View>
+                </View>
+              )}
+              
+              {(['completed', 'confirmed'].includes(ticket.status)) && (
+                <View style={styles.progressStep}>
+                  <View style={[styles.progressDot, { backgroundColor: '#10b981' }]} />
+                  <View style={styles.progressContent}>
+                    <Text style={styles.progressTitle}>Work Completed</Text>
+                    <Text style={styles.progressDate}>Finished</Text>
+                  </View>
+                </View>
+              )}
+            </View>
+          </View>
+        );
+        
+      case 'workorders':
+        return (
+          <View style={styles.tabContent}>
+            {workOrdersLoading ? (
+              <ActivityIndicator size="small" color="#3b82f6" />
+            ) : workOrders.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Ionicons name="construct-outline" size={48} color="#94a3b8" />
+                <Text style={styles.emptyText}>No work orders yet</Text>
+                <Text style={styles.emptySubtext}>Work orders will appear here</Text>
+              </View>
+            ) : (
+              workOrders.map((workOrder: any, index: number) => (
+                <View key={index} style={styles.workOrderCard}>
+                  <View style={styles.workOrderHeader}>
+                    <Text style={styles.workOrderTitle}>Work Order #{workOrder.id}</Text>
+                    <Text style={styles.workOrderStatus}>{workOrder.status}</Text>
+                  </View>
+                  {workOrder.description && (
+                    <Text style={styles.workOrderDescription}>{workOrder.description}</Text>
+                  )}
+                  <Text style={styles.workOrderDate}>
+                    Created: {new Date(workOrder.createdAt).toLocaleDateString()}
+                  </Text>
+                </View>
+              ))
+            )}
+          </View>
+        );
+        
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#1e293b" />
+        </TouchableOpacity>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>{ticket.title ?? `Ticket #${ticket.id}`}</Text>
+          <Text style={styles.headerSubtitle}>{ticket.ticketNumber ?? `#${ticket.id}`}</Text>
+        </View>
+      </View>
+
+      {/* Tab Navigation */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'details' && styles.activeTab]}
+          onPress={() => setActiveTab('details')}
+        >
+          <Text style={[styles.tabText, activeTab === 'details' && styles.activeTabText]}>Details</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'comments' && styles.activeTab]}
+          onPress={() => setActiveTab('comments')}
+        >
+          <Text style={[styles.tabText, activeTab === 'comments' && styles.activeTabText]}>
+            Comments {comments.length > 0 && `(${comments.length})`}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'progress' && styles.activeTab]}
+          onPress={() => setActiveTab('progress')}
+        >
+          <Text style={[styles.tabText, activeTab === 'progress' && styles.activeTabText]}>Progress</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'workorders' && styles.activeTab]}
+          onPress={() => setActiveTab('workorders')}
+        >
+          <Text style={[styles.tabText, activeTab === 'workorders' && styles.activeTabText]}>
+            Work Orders {workOrders.length > 0 && `(${workOrders.length})`}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Content */}
+      <ScrollView
+        style={styles.scrollView}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        showsVerticalScrollIndicator={false}
+      >
+        {renderTabContent()}
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#f8fafc',
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#ef4444',
+    textAlign: 'center',
+  },
+  header: {
+    backgroundColor: 'white',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    paddingTop: 50,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+  },
+  backButton: {
+    padding: 8,
+    marginRight: 12,
+  },
+  headerContent: {
+    flex: 1,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: 2,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: '#64748b',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  activeTab: {
+    borderBottomColor: '#3b82f6',
+  },
+  tabText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748b',
+    textAlign: 'center',
+  },
+  activeTabText: {
+    color: '#3b82f6',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  tabContent: {
+    padding: 16,
+  },
+  infoSection: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: 16,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  infoLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#64748b',
+    flex: 1,
+    marginRight: 12,
+  },
+  infoValue: {
+    fontSize: 14,
+    color: '#1e293b',
+    flex: 2,
+    textAlign: 'right',
+  },
+  infoDescription: {
+    fontSize: 14,
+    color: '#1e293b',
+    flex: 2,
+    textAlign: 'right',
+    lineHeight: 20,
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: 'white',
+    textTransform: 'capitalize',
+  },
+  priorityBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 4,
+  },
+  priorityText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: 'white',
+    textTransform: 'uppercase',
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#64748b',
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#94a3b8',
+  },
+  commentCard: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  commentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  commentAuthor: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1e293b',
+  },
+  commentDate: {
+    fontSize: 12,
+    color: '#64748b',
+  },
+  commentText: {
+    fontSize: 14,
+    color: '#374151',
+    lineHeight: 20,
+  },
+  progressSection: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  progressStep: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  progressDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 16,
+  },
+  progressContent: {
+    flex: 1,
+  },
+  progressTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: 2,
+  },
+  progressDate: {
+    fontSize: 12,
+    color: '#64748b',
+  },
+  workOrderCard: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  workOrderHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  workOrderTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1e293b',
+  },
+  workOrderStatus: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#64748b',
+    textTransform: 'capitalize',
+  },
+  workOrderDescription: {
+    fontSize: 14,
+    color: '#374151',
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  workOrderDate: {
+    fontSize: 12,
+    color: '#64748b',
+  },
+});

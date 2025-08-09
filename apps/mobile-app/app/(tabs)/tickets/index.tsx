@@ -77,12 +77,12 @@ export default function TicketsScreen() {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.ticketCard}
-            onPress={() =>
-              router.push({
-                pathname: "/(tabs)/tickets/[id]",
-                params: { id: String(item.id ?? item._id) },
-              })
-            }
+            onPress={() => {
+              const ticketId = item.id ?? item._id;
+              console.log('Navigating to ticket:', ticketId);
+              // Use the simpler route structure
+              router.push(`/ticket/${ticketId}`);
+            }}
           >
             <View style={styles.ticketHeader}>
               <Text style={styles.ticketNumber}>
