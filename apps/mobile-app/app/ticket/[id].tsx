@@ -255,24 +255,56 @@ export default function TicketDetailsScreen() {
       console.log('User details:', { role: user?.role, permissions: user?.permissions, organizationId: user?.organizationId });
       console.log('Raw vendors list:', vendorsList);
       
-      if (availableVendors.length === 0) {
-        console.log('Detailed vendor analysis:');
-        vendorsList.forEach((v, index) => {
-          const vendor = v.vendor;
-          const tier = v.tier;
-          console.log(`Vendor ${index}:`, {
-            vendor: vendor,
-            tier: tier,
-            isActive: vendor?.isActive,
-            is_active: vendor?.is_active,
-            hasVendor: !!vendor,
-            userRole: user?.role,
-            userPermissions: user?.permissions,
-            passesActiveCheck: !(!vendor || (vendor.isActive === false || vendor.is_active === false)),
-            passesRoleCheck: user?.role === "org_subadmin" && user?.permissions?.includes("accept_ticket")
-          });
+      // Debug logging
+      console.log('Detailed vendor analysis:');
+      vendorsList.forEach((v, index) => {
+        const vendor = v.vendor;
+        const tier = v.tier;
+        console.log(`Vendor ${index}:`, {
+          vendor: vendor,
+          tier: tier,
+          isActive: vendor?.isActive,
+          is_active: vendor?.is_active,
+          hasVendor: !!vendor,
+          userRole: user?.role,
+          userPermissions: user?.permissions,
+          passesActiveCheck: !(!vendor || (vendor.isActive === false || vendor.is_active === false)),
+          passesRoleCheck: user?.role === "org_subadmin" && user?.permissions?.includes("accept_ticket")
         });
-        Alert.alert('Debug Info', `Found ${vendorsList.length} vendors but 0 after filtering. User: ${user?.role}, Permissions: ${user?.permissions?.join(',') || 'none'}`);
+      });
+      
+      if (availableVendors.length === 0) {
+        console.log(`Found ${vendorsList.length} vendors but 0 after filtering. User: ${user?.role}, Permissions: ${user?.permissions?.join(',') || 'none'}`);
+        // Still show marketplace option even if no direct vendors
+        const vendorOptions = [{ label: 'Assign to Marketplace', value: 'marketplace' }];
+        
+        Alert.alert(
+          'Select Vendor Assignment',
+          'Only marketplace assignment is available:',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Assign to Marketplace',
+              onPress: async () => {
+                try {
+                  const acceptData = { marketplace: true };
+                  console.log('Accepting ticket with marketplace assignment:', acceptData);
+                  
+                  const response = await apiRequest('PATCH', `/api/tickets/${ticket.id}/accept`, acceptData);
+                  if (!response.ok) {
+                    throw new Error(`Failed to accept ticket: ${response.status}`);
+                  }
+                  
+                  Alert.alert('Success', 'Ticket assigned to marketplace successfully');
+                  refetch(); // Refresh ticket data
+                } catch (error) {
+                  console.error('Error accepting ticket:', error);
+                  Alert.alert('Error', 'Failed to accept ticket. Please try again.');
+                }
+              }
+            }
+          ]
+        );
         return;
       }
 
