@@ -217,13 +217,76 @@ export default function TicketDetailsScreen() {
   // Action functions
   const acceptTicket = async () => {
     try {
-      const response = await api.post(`/api/tickets/${id}/accept`, {});
-      if (response.status === 200) {
-        queryClient.invalidateQueries({ queryKey: ["ticket", id] });
-        Alert.alert('Success', 'Ticket accepted successfully');
+      // Fetch available vendors first
+      const vendorsResponse = await api.get('/api/maintenance-vendors');
+      const availableVendors = vendorsResponse.data.filter((v: any) => {
+        if (!v.isActive) return false;
+        
+        // Root and org admins can see all active vendors
+        if (user?.role === "root" || user?.role === "org_admin") return true;
+        
+        // Sub-admins with accept_ticket permission can see vendors based on their tier permissions
+        if (user?.role === "org_subadmin" && user?.permissions?.includes("accept_ticket")) {
+          // Check if user has access to this vendor tier
+          if (!user?.vendorTiers || user.vendorTiers.length === 0) {
+            return ["tier_1", "tier_2", "tier_3"].includes(v.tier);
+          }
+          return user.vendorTiers.includes(v.tier);
+        }
+        
+        // Maintenance admins can see all vendors assigned to their organization
+        if (user?.role === "maintenance_admin") return true;
+        
+        return false;
+      });
+
+      if (availableVendors.length === 0) {
+        Alert.alert('No Vendors Available', 'No maintenance vendors are available for this ticket.');
+        return;
       }
+
+      // Create vendor selection options
+      const vendorOptions = [
+        { label: 'Assign to Marketplace', value: 'marketplace' },
+        ...availableVendors.map((v: any) => ({
+          label: `${v.companyName} (${v.tier.replace('tier_', 'Tier ').toUpperCase()})`,
+          value: v.id.toString()
+        }))
+      ];
+
+      // Show vendor selection picker
+      Alert.alert(
+        'Select Vendor Assignment',
+        'Choose how to assign this ticket:',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          ...vendorOptions.map(option => ({
+            text: option.label,
+            onPress: async () => {
+              try {
+                const acceptData: any = {};
+                
+                if (option.value === 'marketplace') {
+                  acceptData.marketplace = true;
+                } else {
+                  acceptData.maintenanceVendorId = parseInt(option.value);
+                }
+
+                const response = await api.post(`/api/tickets/${id}/accept`, acceptData);
+                if (response.status === 200) {
+                  queryClient.invalidateQueries({ queryKey: ["ticket", id] });
+                  Alert.alert('Success', `Ticket accepted and assigned to ${option.label}`);
+                }
+              } catch (error: any) {
+                Alert.alert('Error', error.response?.data?.message || 'Failed to accept ticket');
+              }
+            }
+          }))
+        ]
+      );
+
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to accept ticket');
+      Alert.alert('Error', error.response?.data?.message || 'Failed to fetch vendors');
     }
   };
 
@@ -259,19 +322,7 @@ export default function TicketDetailsScreen() {
     );
   };
 
-  const acceptAndAssignTicket = async () => {
-    try {
-      const response = await api.post(`/api/tickets/${id}/accept`, {
-        maintenanceVendorId: user?.maintenanceVendorId
-      });
-      if (response.status === 200) {
-        queryClient.invalidateQueries({ queryKey: ["ticket", id] });
-        Alert.alert('Success', 'Ticket accepted and vendor assigned');
-      }
-    } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to accept ticket');
-    }
-  };
+
 
   const startWork = async () => {
     try {
@@ -438,10 +489,10 @@ export default function TicketDetailsScreen() {
          (user.role === 'org_subadmin' && (user.permissions?.includes('accept_ticket') || (user.email && user.email.includes('marketplace')))))) {
       actions.push({
         id: 'accept',
-        label: 'Accept Ticket',
+        label: 'Accept & Assign Ticket',
         icon: 'checkmark-circle',
         style: { backgroundColor: '#10b981' },
-        action: () => acceptTicket()
+        action: () => acceptAndAssignTicket()
       });
       
       actions.push({
