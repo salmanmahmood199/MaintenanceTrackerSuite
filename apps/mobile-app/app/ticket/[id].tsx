@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, RefreshControl, Image, TextInput, Modal, Dimensions, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "../../lib/api";
+import { apiRequest } from "../../src/services/api";
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
@@ -94,9 +94,10 @@ export default function TicketDetailsScreen() {
     queryFn: async () => {
       try {
         console.log('Fetching ticket details for ID:', id);
-        const response = await api.get(`/api/tickets/${id}`);
-        console.log('Ticket API response:', response.data);
-        const raw = response.data?.ticket ?? response.data;
+        const response = await apiRequest('GET', `/api/tickets/${id}`);
+        const data = await response.json();
+        console.log('Ticket API response:', data);
+        const raw = data?.ticket ?? data;
         return normalizeTicket(raw);
       } catch (error) {
         console.error('Error fetching ticket:', error);
@@ -111,9 +112,10 @@ export default function TicketDetailsScreen() {
     enabled: !!id,
     queryFn: async () => {
       console.log('Fetching comments for ticket:', id);
-      const response = await api.get(`/api/tickets/${id}/comments`);
-      console.log('Comments API response:', response.data);
-      return response.data ?? [];
+      const response = await apiRequest('GET', `/api/tickets/${id}/comments`);
+      const data = await response.json();
+      console.log('Comments API response:', data);
+      return data ?? [];
     },
   });
 
@@ -123,9 +125,10 @@ export default function TicketDetailsScreen() {
     enabled: !!id,
     queryFn: async () => {
       console.log('Fetching work orders for ticket:', id);
-      const response = await api.get(`/api/tickets/${id}/work-orders`);
-      console.log('Work Orders API response:', response.data);
-      return response.data ?? [];
+      const response = await apiRequest('GET', `/api/tickets/${id}/work-orders`);
+      const data = await response.json();
+      console.log('Work Orders API response:', data);
+      return data ?? [];
     },
   });
 
@@ -146,13 +149,7 @@ export default function TicketDetailsScreen() {
         });
       }
       
-      const response = await fetch(`${api.defaults.baseURL}/api/tickets/${id}/comments`, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await apiRequest('POST', `/api/tickets/${id}/comments`, formData);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
@@ -218,13 +215,19 @@ export default function TicketDetailsScreen() {
   const acceptTicket = async () => {
     try {
       // Fetch available vendors first
-      const vendorsResponse = await api.get('/api/maintenance-vendors');
-      console.log('Vendors API response:', vendorsResponse.data);
+      console.log('Fetching vendors for user:', user?.role, user?.organizationId);
+      const vendorsResponse = await apiRequest('GET', '/api/maintenance-vendors');
+      if (!vendorsResponse.ok) {
+        throw new Error(`Failed to fetch vendors: ${vendorsResponse.status}`);
+      }
+
+      const vendorsData = await vendorsResponse.json();
+      console.log('Vendors API response:', vendorsData);
       
       // Handle both array and object response formats
-      const vendorsData = Array.isArray(vendorsResponse.data) ? vendorsResponse.data : vendorsResponse.data.vendors || [];
+      const vendorsList = Array.isArray(vendorsData) ? vendorsData : vendorsData.vendors || [];
       
-      const availableVendors = vendorsData.filter((v: any) => {
+      const availableVendors = vendorsList.filter((v: any) => {
         // Handle both direct vendor objects and vendor with tier wrapper objects  
         const vendor = v.vendor || v;
         const isActive = v.isActive !== undefined ? v.isActive : vendor.isActive;
