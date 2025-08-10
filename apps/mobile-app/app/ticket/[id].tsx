@@ -6,6 +6,7 @@ import { api } from "../../lib/api";
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
+import { useAuth } from '../../src/contexts/AuthContext';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -42,12 +43,40 @@ function normalizeTicket(raw: any) {
   };
 }
 
+// Helper functions for permissions and actions
+function hasActionsPermission(user: any, ticket: any): boolean {
+  if (!user || !ticket) return false;
+  
+  // Root admin can perform all actions
+  if (user.role === 'root') return true;
+  
+  // Org admin can perform actions on their organization tickets
+  if (user.role === 'org_admin' && ticket.organizationId === user.organizationId) return true;
+  
+  // Maintenance admin can perform actions on assigned tickets
+  if (user.role === 'maintenance_admin' && ticket.maintenanceVendorId === user.maintenanceVendorId) return true;
+  
+  // Sub admin with accept permissions
+  if (user.role === 'org_subadmin' && user.permissions?.includes('accept_ticket') && ticket.organizationId === user.organizationId) return true;
+  
+  // Technician can perform actions on their assigned tickets
+  if (user.role === 'technician' && ticket.assigneeId === user.id) return true;
+  
+  // Original ticket requester can confirm completion
+  if (ticket.reporterId === user.id && ticket.status === 'pending_confirmation') return true;
+  
+  return false;
+}
+
+// Helper function moved outside component for performance
+
 export default function TicketDetailsScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'details' | 'comments' | 'progress' | 'workorders'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'comments' | 'progress' | 'workorders' | 'actions'>('details');
   const [newComment, setNewComment] = useState('');
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -179,6 +208,324 @@ export default function TicketDetailsScreen() {
     setRefreshing(true);
     await Promise.all([refetchTicket(), refetchComments(), refetchWorkOrders()]);
     setRefreshing(false);
+  };
+
+  // Action functions
+  const acceptTicket = async () => {
+    try {
+      const response = await api.post(`/api/tickets/${id}/accept`, {});
+      if (response.status === 200) {
+        queryClient.invalidateQueries({ queryKey: ["ticket", id] });
+        Alert.alert('Success', 'Ticket accepted successfully');
+      }
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.message || 'Failed to accept ticket');
+    }
+  };
+
+  const rejectTicket = async () => {
+    Alert.prompt(
+      'Reject Ticket',
+      'Please provide a reason for rejecting this ticket:',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reject',
+          style: 'destructive',
+          onPress: async (reason) => {
+            if (!reason?.trim()) {
+              Alert.alert('Error', 'Rejection reason is required');
+              return;
+            }
+            try {
+              const response = await api.post(`/api/tickets/${id}/reject`, {
+                rejectionReason: reason.trim()
+              });
+              if (response.status === 200) {
+                queryClient.invalidateQueries({ queryKey: ["ticket", id] });
+                Alert.alert('Success', 'Ticket rejected successfully');
+              }
+            } catch (error: any) {
+              Alert.alert('Error', error.response?.data?.message || 'Failed to reject ticket');
+            }
+          }
+        }
+      ],
+      'plain-text'
+    );
+  };
+
+  const acceptAndAssignTicket = async () => {
+    try {
+      const response = await api.post(`/api/tickets/${id}/accept`, {
+        maintenanceVendorId: user?.maintenanceVendorId
+      });
+      if (response.status === 200) {
+        queryClient.invalidateQueries({ queryKey: ["ticket", id] });
+        Alert.alert('Success', 'Ticket accepted and vendor assigned');
+      }
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.message || 'Failed to accept ticket');
+    }
+  };
+
+  const startWork = async () => {
+    try {
+      const response = await api.post(`/api/tickets/${id}/start`, {});
+      if (response.status === 200) {
+        queryClient.invalidateQueries({ queryKey: ["ticket", id] });
+        Alert.alert('Success', 'Work started successfully');
+      }
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.message || 'Failed to start work');
+    }
+  };
+
+  const completeWork = async () => {
+    Alert.alert(
+      'Complete Work',
+      'Are you sure you want to mark this work as completed?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Complete',
+          onPress: async () => {
+            try {
+              const response = await api.post(`/api/tickets/${id}/complete`, {
+                workOrder: {
+                  workDescription: 'Mobile app completion',
+                  completionStatus: 'complete',
+                  completionNotes: 'Work completed via mobile app'
+                }
+              });
+              if (response.status === 200) {
+                queryClient.invalidateQueries({ queryKey: ["ticket", id] });
+                Alert.alert('Success', 'Work completed successfully');
+              }
+            } catch (error: any) {
+              Alert.alert('Error', error.response?.data?.message || 'Failed to complete work');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const confirmCompletion = async () => {
+    Alert.alert(
+      'Confirm Completion',
+      'Are you satisfied with the completed work?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm',
+          onPress: async () => {
+            try {
+              const response = await api.post(`/api/tickets/${id}/confirm`, {
+                confirmed: true,
+                feedback: 'Confirmed via mobile app'
+              });
+              if (response.status === 200) {
+                queryClient.invalidateQueries({ queryKey: ["ticket", id] });
+                Alert.alert('Success', 'Work completion confirmed');
+              }
+            } catch (error: any) {
+              Alert.alert('Error', error.response?.data?.message || 'Failed to confirm completion');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const rejectCompletion = async () => {
+    Alert.prompt(
+      'Reject Completion',
+      'Please provide feedback on what needs to be fixed:',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reject',
+          style: 'destructive',
+          onPress: async (feedback) => {
+            try {
+              const response = await api.post(`/api/tickets/${id}/confirm`, {
+                confirmed: false,
+                feedback: feedback || 'Work needs to be redone'
+              });
+              if (response.status === 200) {
+                queryClient.invalidateQueries({ queryKey: ["ticket", id] });
+                Alert.alert('Success', 'Completion rejected - work returned to technician');
+              }
+            } catch (error: any) {
+              Alert.alert('Error', error.response?.data?.message || 'Failed to reject completion');
+            }
+          }
+        }
+      ],
+      'plain-text'
+    );
+  };
+
+  const forceCloseTicket = async () => {
+    Alert.prompt(
+      'Force Close Ticket',
+      'Please provide a reason for force closing this ticket:',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Force Close',
+          style: 'destructive',
+          onPress: async (reason) => {
+            if (!reason?.trim()) {
+              Alert.alert('Error', 'Reason is required for force closing');
+              return;
+            }
+            try {
+              const response = await api.post(`/api/tickets/${id}/force-close`, {
+                reason: reason.trim()
+              });
+              if (response.status === 200) {
+                queryClient.invalidateQueries({ queryKey: ["ticket", id] });
+                Alert.alert('Success', 'Ticket force closed successfully');
+              }
+            } catch (error: any) {
+              Alert.alert('Error', error.response?.data?.message || 'Failed to force close ticket');
+            }
+          }
+        }
+      ],
+      'plain-text'
+    );
+  };
+
+  const getAvailableActions = (user: any, ticket: any) => {
+    const actions: any[] = [];
+    
+    if (!user || !ticket) return actions;
+    
+    // Accept ticket actions (org_admin, maintenance_admin, org_subadmin with permissions)
+    if (ticket.status === 'pending' && 
+        (['org_admin', 'maintenance_admin'].includes(user.role) || 
+         (user.role === 'org_subadmin' && user.permissions?.includes('accept_ticket')))) {
+      actions.push({
+        id: 'accept',
+        label: 'Accept Ticket',
+        icon: 'checkmark-circle',
+        style: { backgroundColor: '#10b981' },
+        action: () => acceptTicket()
+      });
+      
+      actions.push({
+        id: 'reject',
+        label: 'Reject Ticket',
+        icon: 'close-circle',
+        style: { backgroundColor: '#ef4444' },
+        action: () => rejectTicket()
+      });
+    }
+    
+    // Vendor can accept assigned tickets
+    if (ticket.status === 'accepted' && user.role === 'maintenance_admin' && ticket.maintenanceVendorId === user.maintenanceVendorId) {
+      actions.push({
+        id: 'accept_vendor',
+        label: 'Accept & Assign',
+        icon: 'checkmark-circle',
+        style: { backgroundColor: '#10b981' },
+        action: () => acceptAndAssignTicket()
+      });
+    }
+    
+    // Technician actions
+    if (user.role === 'technician' && ticket.assigneeId === user.id) {
+      if (ticket.status === 'accepted' || ticket.status === 'in-progress') {
+        actions.push({
+          id: 'start_work',
+          label: 'Start Work',
+          icon: 'play-circle',
+          style: { backgroundColor: '#3b82f6' },
+          action: () => startWork()
+        });
+      }
+      
+      if (ticket.status === 'in-progress') {
+        actions.push({
+          id: 'complete_work',
+          label: 'Complete Work',
+          icon: 'checkmark-done-circle',
+          style: { backgroundColor: '#10b981' },
+          action: () => completeWork()
+        });
+      }
+    }
+    
+    // Confirmation actions (original requester or admins)
+    if (ticket.status === 'pending_confirmation' && 
+        (ticket.reporterId === user.id || 
+         ['root', 'org_admin'].includes(user.role) ||
+         (user.role === 'org_subadmin' && user.permissions?.includes('accept_ticket')))) {
+      actions.push({
+        id: 'confirm_completion',
+        label: 'Confirm Completion',
+        icon: 'thumbs-up',
+        style: { backgroundColor: '#3b82f6' },
+        action: () => confirmCompletion()
+      });
+      
+      actions.push({
+        id: 'reject_completion',
+        label: 'Reject Completion',
+        icon: 'thumbs-down',
+        style: { backgroundColor: '#f59e0b' },
+        action: () => rejectCompletion()
+      });
+    }
+    
+    // Force close (admins only)
+    if (['root', 'org_admin', 'maintenance_admin'].includes(user.role) ||
+        (user.role === 'org_subadmin' && user.permissions?.includes('accept_ticket'))) {
+      actions.push({
+        id: 'force_close',
+        label: 'Force Close',
+        icon: 'close-circle',
+        style: { backgroundColor: '#ef4444' },
+        action: () => forceCloseTicket()
+      });
+    }
+    
+    return actions;
+  };
+
+  const renderActions = (user: any, ticket: any) => {
+    const availableActions = getAvailableActions(user, ticket);
+    
+    if (availableActions.length === 0) {
+      return (
+        <View style={styles.emptyState}>
+          <Ionicons name="information-circle-outline" size={48} color="#9ca3af" />
+          <Text style={styles.emptyStateTitle}>No Actions Available</Text>
+          <Text style={styles.emptyStateText}>
+            You don't have any actions available for this ticket based on your role and the ticket's current status.
+          </Text>
+        </View>
+      );
+    }
+    
+    return (
+      <View style={styles.actionsList}>
+        {availableActions.map((action) => (
+          <TouchableOpacity
+            key={action.id}
+            style={[styles.actionButton, action.style]}
+            onPress={action.action}
+            disabled={action.disabled}
+          >
+            <Ionicons name={action.icon as any} size={20} color="white" />
+            <Text style={styles.actionButtonText}>{action.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
   };
 
   // Basic states
@@ -855,6 +1202,16 @@ export default function TicketDetailsScreen() {
             </View>
           </View>
         );
+
+      case 'actions':
+        return (
+          <View style={styles.tabContent}>
+            <View style={styles.actionsCard}>
+              <Text style={styles.sectionTitle}>Available Actions</Text>
+              {renderActions(user, ticket)}
+            </View>
+          </View>
+        );
         
       default:
         return null;
@@ -908,6 +1265,18 @@ export default function TicketDetailsScreen() {
             Work Orders {workOrders.length > 0 && `(${workOrders.length})`}
           </Text>
         </TouchableOpacity>
+        
+        {/* Actions Tab - Only show for users with permissions */}
+        {user && hasActionsPermission(user, ticket) && (
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'actions' && styles.activeTab]}
+            onPress={() => setActiveTab('actions')}
+          >
+            <Text style={[styles.tabText, activeTab === 'actions' && styles.activeTabText]}>
+              Actions
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Content */}
@@ -1582,5 +1951,58 @@ const styles = StyleSheet.create({
   fullScreenImage: {
     width: screenWidth,
     height: '80%',
+  },
+
+  // Actions Tab Styles
+  actionsCard: {
+    backgroundColor: '#1f2937',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#374151',
+  },
+
+  actionsList: {
+    marginTop: 16,
+  },
+
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 2,
+  },
+
+  actionButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 16,
+    marginLeft: 8,
+  },
+
+  emptyStateTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#9ca3af',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+
+  emptyStateText: {
+    fontSize: 14,
+    color: '#6b7280',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
