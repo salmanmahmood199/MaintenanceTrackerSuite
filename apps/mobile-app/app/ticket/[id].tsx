@@ -13,34 +13,45 @@ const { width: screenWidth } = Dimensions.get('window');
 type Location = { name?: string; address?: string; city?: string; state?: string; zip?: string };
 
 function normalizeTicket(raw: any) {
-  if (!raw) return null;
+  if (!raw) {
+    console.warn('normalizeTicket: received null/undefined data');
+    return null;
+  }
   
-  // Handle location data - tickets from the API have locationId, locationName, and locationAddress
-  const location: Location | null = raw.locationId ? {
-    name: raw.locationName || raw.location?.name,
-    address: raw.locationAddress || raw.location?.address || raw.location?.streetAddress,
-    city: raw.locationCity || raw.location?.city,
-    state: raw.locationState || raw.location?.state,
-    zip: raw.locationZip || raw.location?.zip || raw.location?.zipCode,
-  } : null;
+  try {
+    // Handle location data - tickets from the API have locationId, locationName, and locationAddress
+    const location: Location | null = raw.locationId ? {
+      name: raw.locationName || raw.location?.name || 'Unknown Location',
+      address: raw.locationAddress || raw.location?.address || raw.location?.streetAddress || '',
+      city: raw.locationCity || raw.location?.city || '',
+      state: raw.locationState || raw.location?.state || '',
+      zip: raw.locationZip || raw.location?.zip || raw.location?.zipCode || '',
+    } : null;
 
-  return {
-    id: raw.id,
-    ticketNumber: raw.ticketNumber,
-    title: raw.title,
-    description: raw.description,
-    status: raw.status,
-    priority: raw.priority,
-    createdAt: raw.createdAt,
-    updatedAt: raw.updatedAt,
-    location,
-    locationId: raw.locationId,
-    reporter: raw.reporter || raw.createdBy,
-    createdBy: raw.createdBy,
-    images: raw.images || [],
-    organizationId: raw.organizationId,
-    reporterId: raw.reporterId,
-  };
+    const normalized = {
+      id: raw.id || 0,
+      ticketNumber: raw.ticketNumber || 'Unknown',
+      title: raw.title || 'Untitled',
+      description: raw.description || 'No description',
+      status: raw.status || 'unknown',
+      priority: raw.priority || 'medium',
+      createdAt: raw.createdAt || new Date().toISOString(),
+      updatedAt: raw.updatedAt || new Date().toISOString(),
+      location,
+      locationId: raw.locationId || null,
+      reporter: raw.reporter || raw.createdBy || null,
+      createdBy: raw.createdBy || null,
+      images: Array.isArray(raw.images) ? raw.images : [],
+      organizationId: raw.organizationId || null,
+      reporterId: raw.reporterId || null,
+    };
+
+    console.log('normalizeTicket: successfully normalized', { id: normalized.id, title: normalized.title });
+    return normalized;
+  } catch (error) {
+    console.error('normalizeTicket: error normalizing ticket data', error, raw);
+    return null;
+  }
 }
 
 // Helper functions for permissions and actions
@@ -635,32 +646,67 @@ export default function TicketDetailsScreen() {
     );
   };
 
-  // Basic states
-  if (!id) return <View style={styles.errorContainer}><Text style={styles.errorText}>Invalid route: no id.</Text></View>;
-  if (ticketLoading) return <View style={styles.loadingContainer}><ActivityIndicator size="large" color="#3b82f6" /></View>;
+  // Basic states with better error handling
+  if (!id) {
+    console.error('TicketDetailsScreen: No ID provided');
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Invalid route: no ticket ID provided.</Text>
+      </View>
+    );
+  }
+  
+  if (ticketLoading) {
+    console.log('TicketDetailsScreen: Loading ticket data...');
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#3b82f6" />
+        <Text style={styles.loadingText}>Loading ticket details...</Text>
+      </View>
+    );
+  }
+  
   if (ticketError) {
     const errorMessage = (ticketErrorMsg as any)?.message ?? "Unknown error";
-    const isNetworkError = errorMessage.includes('Network Error') || (ticketErrorMsg as any)?.code === 'NETWORK_ERROR';
+    const isNetworkError = errorMessage.includes('Network Error') || errorMessage.includes('Failed to fetch') || (ticketErrorMsg as any)?.code === 'NETWORK_ERROR';
+    
+    console.error('TicketDetailsScreen: Error loading ticket', { errorMessage, ticketErrorMsg });
     
     return (
       <View style={styles.errorContainer}>
         <Ionicons name="warning-outline" size={48} color="#ef4444" />
         <Text style={styles.errorTitle}>
-          {isNetworkError ? "Connection Error" : "Failed to Load"}
+          {isNetworkError ? "Connection Error" : "Failed to Load Ticket"}
         </Text>
         <Text style={styles.errorText}>
           {isNetworkError 
-            ? "Cannot connect to server. Make sure the backend is running"
-            : errorMessage
+            ? "Cannot connect to server. Please check your connection and try again."
+            : `Error: ${errorMessage}`
           }
         </Text>
+        <TouchableOpacity style={styles.retryButton} onPress={() => {
+          console.log('Retrying ticket fetch...');
+          refetchTicket();
+        }}>
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+  
+  if (!ticket) {
+    console.error('TicketDetailsScreen: Ticket data is null after successful fetch');
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Ticket not found or could not be loaded.</Text>
         <TouchableOpacity style={styles.retryButton} onPress={() => refetchTicket()}>
           <Text style={styles.retryButtonText}>Retry</Text>
         </TouchableOpacity>
       </View>
     );
   }
-  if (!ticket) return <View style={styles.errorContainer}><Text style={styles.errorText}>Ticket not found.</Text></View>;
+
+  console.log('TicketDetailsScreen: Successfully loaded ticket', { id: ticket.id, title: ticket.title });
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
