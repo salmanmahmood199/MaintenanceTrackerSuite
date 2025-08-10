@@ -95,10 +95,19 @@ export default function TicketDetailsScreen() {
       try {
         console.log('Fetching ticket details for ID:', id);
         const response = await apiRequest('GET', `/api/tickets/${id}`);
+        
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => 'Unknown error');
+          console.error('Ticket API error:', response.status, response.statusText, errorText);
+          throw new Error(`HTTP ${response.status}: ${errorText || response.statusText}`);
+        }
+        
         const data = await response.json();
         console.log('Ticket API response:', data);
         const raw = data?.ticket ?? data;
-        return normalizeTicket(raw);
+        const normalized = normalizeTicket(raw);
+        console.log('Normalized ticket:', normalized);
+        return normalized;
       } catch (error) {
         console.error('Error fetching ticket:', error);
         throw error;
@@ -109,26 +118,48 @@ export default function TicketDetailsScreen() {
   // Fetch comments
   const { data: comments = [], isLoading: commentsLoading, refetch: refetchComments } = useQuery({
     queryKey: ["comments", id],
-    enabled: !!id,
+    enabled: !!id && !!ticket,
     queryFn: async () => {
-      console.log('Fetching comments for ticket:', id);
-      const response = await apiRequest('GET', `/api/tickets/${id}/comments`);
-      const data = await response.json();
-      console.log('Comments API response:', data);
-      return data ?? [];
+      try {
+        console.log('Fetching comments for ticket:', id);
+        const response = await apiRequest('GET', `/api/tickets/${id}/comments`);
+        
+        if (!response.ok) {
+          console.warn('Comments fetch failed:', response.status, response.statusText);
+          return [];
+        }
+        
+        const data = await response.json();
+        console.log('Comments API response:', data);
+        return data ?? [];
+      } catch (error) {
+        console.error('Error fetching comments:', error);
+        return [];
+      }
     },
   });
 
   // Fetch work orders
   const { data: workOrders = [], isLoading: workOrdersLoading, refetch: refetchWorkOrders } = useQuery({
     queryKey: ["workorders", id],
-    enabled: !!id,
+    enabled: !!id && !!ticket,
     queryFn: async () => {
-      console.log('Fetching work orders for ticket:', id);
-      const response = await apiRequest('GET', `/api/tickets/${id}/work-orders`);
-      const data = await response.json();
-      console.log('Work Orders API response:', data);
-      return data ?? [];
+      try {
+        console.log('Fetching work orders for ticket:', id);
+        const response = await apiRequest('GET', `/api/tickets/${id}/work-orders`);
+        
+        if (!response.ok) {
+          console.warn('Work orders fetch failed:', response.status, response.statusText);
+          return [];
+        }
+        
+        const data = await response.json();
+        console.log('Work Orders API response:', data);
+        return data ?? [];
+      } catch (error) {
+        console.error('Error fetching work orders:', error);
+        return [];
+      }
     },
   });
 
