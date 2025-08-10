@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { View, Text, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, StyleSheet } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import { apiRequest } from "../../../src/services/api";
 
 export default function TicketsScreen() {
@@ -9,6 +10,8 @@ export default function TicketsScreen() {
 
   const { data: tickets = [], isLoading, isRefetching, refetch, isError, error } = useQuery({
     queryKey: ["tickets"],
+    staleTime: 0, // Always refetch when navigating back to this screen
+    refetchOnMount: true,
     queryFn: async () => {
       try {
         const response = await apiRequest('GET', "/api/tickets");
@@ -24,6 +27,13 @@ export default function TicketsScreen() {
       }
     },
   });
+
+  // Refresh tickets when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
 
   if (isLoading) {
     return (

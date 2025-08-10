@@ -161,7 +161,7 @@ export default function CreateTicketScreen() {
           {
             text: 'OK',
             onPress: () => {
-              queryClient.invalidateQueries({ queryKey: ['/api/tickets'] });
+              queryClient.invalidateQueries({ queryKey: ['tickets'] });
               router.back();
             }
           }
