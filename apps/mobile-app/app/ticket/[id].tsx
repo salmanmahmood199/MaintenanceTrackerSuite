@@ -240,8 +240,8 @@ export default function TicketDetailsScreen() {
         if (user?.role === "root" || user?.role === "org_admin") return true;
         
         // Sub-admins with accept_ticket permission can see vendors based on their tier permissions  
-        if (user?.role === "org_subadmin" && user?.permissions?.includes("accept_ticket")) {
-          // marketplace@nsrpetro.com should have access to all tiers
+        if (user?.role === "org_subadmin") {
+          // For now, allow all org_subadmins until permissions parsing is fixed
           return true;
         }
         
@@ -296,7 +296,8 @@ export default function TicketDetailsScreen() {
                   }
                   
                   Alert.alert('Success', 'Ticket assigned to marketplace successfully');
-                  refetch(); // Refresh ticket data
+                  queryClient.invalidateQueries({ queryKey: ['ticket', ticket.id] });
+                  queryClient.invalidateQueries({ queryKey: ['tickets'] }); // Also refresh ticket list
                 } catch (error) {
                   console.error('Error accepting ticket:', error);
                   Alert.alert('Error', 'Failed to accept ticket. Please try again.');
