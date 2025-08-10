@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { View, Text, ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, RefreshControl } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "../../../lib/api";
+import { apiRequest } from "../../../src/services/api";
 import { Ionicons } from '@expo/vector-icons';
 
 type Location = { name?: string; address?: string; city?: string; state?: string; zip?: string };
@@ -50,8 +50,9 @@ export default function TicketDetailsScreen() {
     queryKey: ["ticket", id],
     enabled: !!id,
     queryFn: async () => {
-      const response = await api.get(`/api/tickets/${id}`);
-      const raw = response.data?.ticket ?? response.data;
+      const response = await apiRequest('GET', `/api/tickets/${id}`);
+      const data = await response.json();
+      const raw = data?.ticket ?? data;
       return normalizeTicket(raw);
     },
   });
@@ -61,8 +62,9 @@ export default function TicketDetailsScreen() {
     queryKey: ["ticket-comments", id],
     enabled: !!id,
     queryFn: async () => {
-      const response = await api.get(`/api/tickets/${id}/comments`);
-      return response.data ?? [];
+      const response = await apiRequest('GET', `/api/tickets/${id}/comments`);
+      const data = await response.json();
+      return data ?? [];
     },
   });
 
@@ -71,8 +73,9 @@ export default function TicketDetailsScreen() {
     queryKey: ["ticket-workorders", id],
     enabled: !!id,
     queryFn: async () => {
-      const response = await api.get(`/api/tickets/${id}/work-orders`);
-      return response.data ?? [];
+      const response = await apiRequest('GET', `/api/tickets/${id}/work-orders`);
+      const data = await response.json();
+      return data ?? [];
     },
   });
 

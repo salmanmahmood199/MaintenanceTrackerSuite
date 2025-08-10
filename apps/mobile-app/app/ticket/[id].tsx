@@ -289,7 +289,7 @@ export default function TicketDetailsScreen() {
                   acceptData.maintenanceVendorId = parseInt(option.value);
                 }
 
-                const response = await api.post(`/api/tickets/${id}/accept`, acceptData);
+                const response = await apiRequest('POST', `/api/tickets/${id}/accept`, acceptData);
                 if (response.status === 200) {
                   queryClient.invalidateQueries({ queryKey: ["ticket", id] });
                   Alert.alert('Success', `Ticket accepted and assigned to ${option.label}`);
@@ -322,7 +322,7 @@ export default function TicketDetailsScreen() {
               return;
             }
             try {
-              const response = await api.post(`/api/tickets/${id}/reject`, {
+              const response = await apiRequest('POST', `/api/tickets/${id}/reject`, {
                 rejectionReason: reason.trim()
               });
               if (response.status === 200) {
@@ -343,7 +343,7 @@ export default function TicketDetailsScreen() {
 
   const startWork = async () => {
     try {
-      const response = await api.post(`/api/tickets/${id}/start`, {});
+      const response = await apiRequest('POST', `/api/tickets/${id}/start`, {});
       if (response.status === 200) {
         queryClient.invalidateQueries({ queryKey: ["ticket", id] });
         Alert.alert('Success', 'Work started successfully');
@@ -363,7 +363,7 @@ export default function TicketDetailsScreen() {
           text: 'Complete',
           onPress: async () => {
             try {
-              const response = await api.post(`/api/tickets/${id}/complete`, {
+              const response = await apiRequest('POST', `/api/tickets/${id}/complete`, {
                 workOrder: {
                   workDescription: 'Mobile app completion',
                   completionStatus: 'complete',
@@ -393,7 +393,7 @@ export default function TicketDetailsScreen() {
           text: 'Confirm',
           onPress: async () => {
             try {
-              const response = await api.post(`/api/tickets/${id}/confirm`, {
+              const response = await apiRequest('POST', `/api/tickets/${id}/confirm`, {
                 confirmed: true,
                 feedback: 'Confirmed via mobile app'
               });
@@ -421,7 +421,7 @@ export default function TicketDetailsScreen() {
           style: 'destructive',
           onPress: async (feedback) => {
             try {
-              const response = await api.post(`/api/tickets/${id}/confirm`, {
+              const response = await apiRequest('POST', `/api/tickets/${id}/confirm`, {
                 confirmed: false,
                 feedback: feedback || 'Work needs to be redone'
               });
@@ -454,7 +454,7 @@ export default function TicketDetailsScreen() {
               return;
             }
             try {
-              const response = await api.post(`/api/tickets/${id}/force-close`, {
+              const response = await apiRequest('POST', `/api/tickets/${id}/force-close`, {
                 reason: reason.trim()
               });
               if (response.status === 200) {
@@ -731,7 +731,7 @@ export default function TicketDetailsScreen() {
                     // Handle both relative and absolute URLs for ticket images
                     const fullImageUrl = imageUrl.startsWith('http') 
                       ? imageUrl 
-                      : `${api.defaults.baseURL}${imageUrl}`;
+                      : `https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev${imageUrl}`;
                     
                     return (
                       <TouchableOpacity
@@ -886,7 +886,7 @@ export default function TicketDetailsScreen() {
                               // Handle both relative and absolute URLs
                               const fullImageUrl = imageUrl.startsWith('http') 
                                 ? imageUrl 
-                                : `${api.defaults.baseURL}${imageUrl}`;
+                                : `https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev${imageUrl}`;
                               
                               return (
                                 <TouchableOpacity

@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, StyleSheet } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { api } from "../../../lib/api";
+import { apiRequest } from "../../../src/services/api";
 
 export default function TicketsScreen() {
   const router = useRouter();
@@ -11,10 +11,11 @@ export default function TicketsScreen() {
     queryKey: ["tickets"],
     queryFn: async () => {
       try {
-        const response = await api.get("/api/tickets");
-        console.log('Tickets API response:', response.data);
+        const response = await apiRequest('GET', "/api/tickets");
+        const data = await response.json();
+        console.log('Tickets API response:', data);
         // Handle different response formats from the API
-        const ticketsData = response.data?.tickets ?? response.data ?? [];
+        const ticketsData = data?.tickets ?? data ?? [];
         // Ensure we always return an array
         return Array.isArray(ticketsData) ? ticketsData : [];
       } catch (err) {
