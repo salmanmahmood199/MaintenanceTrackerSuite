@@ -233,8 +233,8 @@ export default function TicketDetailsScreen() {
         const vendor = v.vendor;
         const tier = v.tier;
         
-        // Check if vendor is active
-        if (!vendor || !vendor.isActive) return false;
+        // Check if vendor is active (note: API uses isActive but DB uses is_active)
+        if (!vendor || (vendor.isActive === false || vendor.is_active === false)) return false;
         
         // Root and org admins can see all active vendors
         if (user?.role === "root" || user?.role === "org_admin") return true;
@@ -264,9 +264,12 @@ export default function TicketDetailsScreen() {
             vendor: vendor,
             tier: tier,
             isActive: vendor?.isActive,
+            is_active: vendor?.is_active,
             hasVendor: !!vendor,
             userRole: user?.role,
-            userPermissions: user?.permissions
+            userPermissions: user?.permissions,
+            passesActiveCheck: !(!vendor || (vendor.isActive === false || vendor.is_active === false)),
+            passesRoleCheck: user?.role === "org_subadmin" && user?.permissions?.includes("accept_ticket")
           });
         });
         Alert.alert('Debug Info', `Found ${vendorsList.length} vendors but 0 after filtering. User: ${user?.role}, Permissions: ${user?.permissions?.join(',') || 'none'}`);
