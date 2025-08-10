@@ -253,9 +253,23 @@ export default function TicketDetailsScreen() {
 
       console.log('Available vendors after filtering:', availableVendors);
       console.log('User details:', { role: user?.role, permissions: user?.permissions, organizationId: user?.organizationId });
+      console.log('Raw vendors list:', vendorsList);
       
       if (availableVendors.length === 0) {
-        Alert.alert('No Vendors Available', `No maintenance vendors are available for this ticket. Raw data: ${JSON.stringify(vendorsList.slice(0, 2))}`);
+        console.log('Detailed vendor analysis:');
+        vendorsList.forEach((v, index) => {
+          const vendor = v.vendor;
+          const tier = v.tier;
+          console.log(`Vendor ${index}:`, {
+            vendor: vendor,
+            tier: tier,
+            isActive: vendor?.isActive,
+            hasVendor: !!vendor,
+            userRole: user?.role,
+            userPermissions: user?.permissions
+          });
+        });
+        Alert.alert('Debug Info', `Found ${vendorsList.length} vendors but 0 after filtering. User: ${user?.role}, Permissions: ${user?.permissions?.join(',') || 'none'}`);
         return;
       }
 
