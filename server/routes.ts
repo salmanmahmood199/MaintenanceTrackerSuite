@@ -457,24 +457,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get(
     "/api/maintenance-vendors",
     authenticateUser,
-    requireRole(["root", "maintenance_admin"]),
+    requireRole(["root", "maintenance_admin", "org_admin", "org_subadmin"]),
     async (req, res) => {
       try {
-        // If user is maintenance_admin, only return their vendor
-        if (req.user!.role === "maintenance_admin") {
-          const vendor = await storage.getMaintenanceVendor(
-            req.user!.maintenanceVendorId!,
-          );
+        const user = req.user!;
+        
+        if (user.role === "maintenance_admin") {
+          // Return only their own vendor
+          const vendor = await storage.getMaintenanceVendor(user.maintenanceVendorId!);
           res.json(vendor ? [vendor] : []);
+        } else if (user.role === "org_admin" || user.role === "org_subadmin") {
+          // For organization users, return vendors assigned to their organization with tiers
+          const vendorsWithTiers = await storage.getOrganizationVendors(user.organizationId!);
+          res.json(vendorsWithTiers);
         } else {
-          // Root user gets all vendors
+          // Root can see all vendors
           const vendors = await storage.getMaintenanceVendors();
           res.json(vendors);
         }
       } catch (error) {
-        res
-          .status(500)
-          .json({ message: "Failed to fetch maintenance vendors" });
+        console.error("Error fetching maintenance vendors:", error);
+        res.status(500).json({ message: "Failed to fetch maintenance vendors" });
       }
     },
   );

@@ -219,8 +219,18 @@ export default function TicketDetailsScreen() {
     try {
       // Fetch available vendors first
       const vendorsResponse = await api.get('/api/maintenance-vendors');
-      const availableVendors = vendorsResponse.data.filter((v: any) => {
-        if (!v.isActive) return false;
+      console.log('Vendors API response:', vendorsResponse.data);
+      
+      // Handle both array and object response formats
+      const vendorsData = Array.isArray(vendorsResponse.data) ? vendorsResponse.data : vendorsResponse.data.vendors || [];
+      
+      const availableVendors = vendorsData.filter((v: any) => {
+        // Handle both direct vendor objects and vendor with tier wrapper objects  
+        const vendor = v.vendor || v;
+        const isActive = v.isActive !== undefined ? v.isActive : vendor.isActive;
+        const tier = v.tier || vendor.tier;
+        
+        if (!isActive) return false;
         
         // Root and org admins can see all active vendors
         if (user?.role === "root" || user?.role === "org_admin") return true;
@@ -229,9 +239,9 @@ export default function TicketDetailsScreen() {
         if (user?.role === "org_subadmin" && user?.permissions?.includes("accept_ticket")) {
           // Check if user has access to this vendor tier
           if (!user?.vendorTiers || user.vendorTiers.length === 0) {
-            return ["tier_1", "tier_2", "tier_3"].includes(v.tier);
+            return ["tier_1", "tier_2", "tier_3"].includes(tier);
           }
-          return user.vendorTiers.includes(v.tier);
+          return user.vendorTiers.includes(tier);
         }
         
         // Maintenance admins can see all vendors assigned to their organization
@@ -248,10 +258,14 @@ export default function TicketDetailsScreen() {
       // Create vendor selection options
       const vendorOptions = [
         { label: 'Assign to Marketplace', value: 'marketplace' },
-        ...availableVendors.map((v: any) => ({
-          label: `${v.companyName} (${v.tier.replace('tier_', 'Tier ').toUpperCase()})`,
-          value: v.id.toString()
-        }))
+        ...availableVendors.map((v: any) => {
+          const vendor = v.vendor || v;
+          const tier = v.tier || vendor.tier || 'tier_1';
+          return {
+            label: `${vendor.name || vendor.companyName || 'Unnamed Vendor'} (${tier.replace('tier_', 'Tier ').toUpperCase()})`,
+            value: vendor.id.toString()
+          };
+        })
       ];
 
       // Show vendor selection picker
@@ -454,29 +468,7 @@ export default function TicketDetailsScreen() {
     );
   };
 
-  const assignToMarketplace = async () => {
-    Alert.alert(
-      'Assign to Marketplace',
-      'This will make the ticket available for vendor bidding in the marketplace.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Assign',
-          onPress: async () => {
-            try {
-              const response = await api.post(`/api/tickets/${id}/assign-marketplace`, {});
-              if (response.status === 200) {
-                queryClient.invalidateQueries({ queryKey: ["ticket", id] });
-                Alert.alert('Success', 'Ticket assigned to marketplace successfully');
-              }
-            } catch (error: any) {
-              Alert.alert('Error', error.response?.data?.message || 'Failed to assign to marketplace');
-            }
-          }
-        }
-      ]
-    );
-  };
+
 
   const getAvailableActions = (user: any, ticket: any) => {
     const actions: any[] = [];
@@ -560,18 +552,7 @@ export default function TicketDetailsScreen() {
       });
     }
     
-    // Marketplace actions for org_subadmin marketplace users
-    if (user.role === 'org_subadmin' && user.email && user.email.includes('marketplace') && ticket.organizationId === user.organizationId) {
-      if (ticket.status === 'pending') {
-        actions.push({
-          id: 'assign_to_marketplace',
-          label: 'Assign to Marketplace',
-          icon: 'storefront',
-          style: { backgroundColor: '#8b5cf6' },
-          action: () => assignToMarketplace()
-        });
-      }
-    }
+
     
     // Force close (admins only)
     if (['root', 'org_admin', 'maintenance_admin'].includes(user.role) ||
