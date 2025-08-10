@@ -153,7 +153,16 @@ export default function CreateTicketScreen() {
         } as any);
       });
 
+      console.log('Submitting ticket with formData...', {
+        title,
+        description,
+        priority,
+        locationId,
+        imageCount: images.length
+      });
+      
       const response = await ticketsApi.create(formData);
+      console.log('Ticket creation response:', response.status, response.statusText);
 
       if (response.ok) {
         Alert.alert('Success', 'Ticket created successfully!', [
@@ -166,12 +175,13 @@ export default function CreateTicketScreen() {
           }
         ]);
       } else {
-        const errorData = await response.json();
-        Alert.alert('Error', errorData.message || 'Failed to create ticket');
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        console.error('Ticket creation failed:', response.status, errorData);
+        Alert.alert('Error', errorData.message || `Failed to create ticket (${response.status})`);
       }
     } catch (error) {
       console.error('Error creating ticket:', error);
-      Alert.alert('Error', 'Failed to create ticket. Please try again.');
+      Alert.alert('Error', `Failed to create ticket: ${error.message || 'Please try again.'}`);
     } finally {
       setIsSubmitting(false);
     }
