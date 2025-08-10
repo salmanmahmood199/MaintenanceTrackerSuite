@@ -156,6 +156,7 @@ export default function CreateTicketScreen() {
       const response = await ticketsApi.create(formData);
 
       if (response.ok) {
+        const responseData = await response.json();
         Alert.alert('Success', 'Ticket created successfully!', [
           {
             text: 'OK',

@@ -112,7 +112,7 @@ export const ticketsApi = {
   },
   create: async (data: any) => {
     const response = await apiRequest("POST", "/api/tickets", data);
-    return response.json();
+    return response; // Return the Response object, not the parsed JSON
   },
   update: async (id: number, data: any) => {
     const response = await apiRequest("PATCH", `/api/tickets/${id}`, data);
