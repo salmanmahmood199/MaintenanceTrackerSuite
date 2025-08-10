@@ -1322,12 +1322,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (user.role === "org_admin" && ticket.organizationId === user.organizationId) {
         hasAccess = true;
       } else if (user.role === "org_subadmin" && ticket.organizationId === user.organizationId) {
-        // Check if user has access to the ticket's location
+        // Check if user has access to the ticket's location or if it's a marketplace user
         const userLocations = await storage.getUserLocationAssignments(user.id);
         const locationIds = userLocations.map((loc) => loc.id);
         hasAccess = !ticket.locationId || locationIds.includes(ticket.locationId);
-      } else if (user.role === "maintenance_admin" && ticket.maintenanceVendorId === user.maintenanceVendorId) {
-        hasAccess = true;
+        
+        // Special case: marketplace users (org_subadmin) can access tickets from their org for bidding
+        if (!hasAccess && user.email && user.email.includes('marketplace')) {
+          hasAccess = true;
+        }
+      } else if (user.role === "maintenance_admin") {
+        // Maintenance admins can view tickets assigned to their vendor OR tickets available for bidding
+        if (ticket.maintenanceVendorId === user.maintenanceVendorId) {
+          hasAccess = true;
+        } else if (ticket.status === 'pending' || ticket.status === 'marketplace') {
+          // Allow maintenance vendors to view pending/marketplace tickets for bidding
+          hasAccess = true;
+        }
       } else if (user.role === "technician" && ticket.assigneeId === user.id) {
         hasAccess = true;
       } else if (user.role === "residential" && ticket.reporterId === user.id) {
@@ -3068,6 +3079,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const locationIds = userLocations.map((loc) => loc.id);
           hasAccess =
             !ticket.locationId || locationIds.includes(ticket.locationId);
+          
+          // Special case: marketplace users (org_subadmin) can access tickets from their org for bidding
+          if (!hasAccess && user.email && user.email.includes('marketplace')) {
+            hasAccess = true;
+          }
         } else if (
           user.role === "maintenance_admin" &&
           ticket.maintenanceVendorId === user.maintenanceVendorId
@@ -3137,6 +3153,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const locationIds = userLocations.map((loc) => loc.id);
           hasAccess =
             !ticket.locationId || locationIds.includes(ticket.locationId);
+          
+          // Special case: marketplace users (org_subadmin) can access tickets from their org for bidding
+          if (!hasAccess && user.email && user.email.includes('marketplace')) {
+            hasAccess = true;
+          }
         } else if (
           user.role === "maintenance_admin" &&
           ticket.maintenanceVendorId === user.maintenanceVendorId
