@@ -1127,12 +1127,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const locationIds = userLocations.map((loc) => loc.id);
           tickets = await storage.getTickets(user.organizationId!, locationIds);
         } else if (user.role === "maintenance_admin") {
+          // SECURITY FIX: Vendors should ONLY see tickets specifically assigned to them
           tickets = await storage.getTickets();
           tickets = tickets.filter(
-            (ticket) => ticket.maintenanceVendorId === user.maintenanceVendorId,
+            (ticket) => ticket.maintenanceVendorId === user.maintenanceVendorId && ticket.maintenanceVendorId !== null,
           );
           console.log(
-            `Vendor ${user.maintenanceVendorId} filtering tickets. Found ${tickets.length} tickets:`,
+            `Vendor ${user.maintenanceVendorId} filtering tickets. Found ${tickets.length} tickets assigned to them:`,
             tickets.map((t) => ({
               id: t.id,
               number: t.ticketNumber,
@@ -1142,8 +1143,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             })),
           );
         } else if (user.role === "technician") {
+          // SECURITY FIX: Technicians should ONLY see tickets specifically assigned to them
           tickets = await storage.getTickets();
-          tickets = tickets.filter((ticket) => ticket.assigneeId === user.id);
+          tickets = tickets.filter((ticket) => ticket.assigneeId === user.id && ticket.assigneeId !== null);
         } else if (user.role === "residential") {
           // Residential users can only see their own tickets
           tickets = await storage.getTickets();
