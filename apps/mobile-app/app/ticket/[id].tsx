@@ -13,45 +13,34 @@ const { width: screenWidth } = Dimensions.get('window');
 type Location = { name?: string; address?: string; city?: string; state?: string; zip?: string };
 
 function normalizeTicket(raw: any) {
-  if (!raw) {
-    console.warn('normalizeTicket: received null/undefined data');
-    return null;
-  }
+  if (!raw) return null;
   
-  try {
-    // Handle location data - tickets from the API have locationId, locationName, and locationAddress
-    const location: Location | null = raw.locationId ? {
-      name: raw.locationName || raw.location?.name || 'Unknown Location',
-      address: raw.locationAddress || raw.location?.address || raw.location?.streetAddress || '',
-      city: raw.locationCity || raw.location?.city || '',
-      state: raw.locationState || raw.location?.state || '',
-      zip: raw.locationZip || raw.location?.zip || raw.location?.zipCode || '',
-    } : null;
+  // Handle location data - tickets from the API have locationId, locationName, and locationAddress
+  const location: Location | null = raw.locationId ? {
+    name: raw.locationName || raw.location?.name,
+    address: raw.locationAddress || raw.location?.address || raw.location?.streetAddress,
+    city: raw.locationCity || raw.location?.city,
+    state: raw.locationState || raw.location?.state,
+    zip: raw.locationZip || raw.location?.zip || raw.location?.zipCode,
+  } : null;
 
-    const normalized = {
-      id: raw.id || 0,
-      ticketNumber: raw.ticketNumber || 'Unknown',
-      title: raw.title || 'Untitled',
-      description: raw.description || 'No description',
-      status: raw.status || 'unknown',
-      priority: raw.priority || 'medium',
-      createdAt: raw.createdAt || new Date().toISOString(),
-      updatedAt: raw.updatedAt || new Date().toISOString(),
-      location,
-      locationId: raw.locationId || null,
-      reporter: raw.reporter || raw.createdBy || null,
-      createdBy: raw.createdBy || null,
-      images: Array.isArray(raw.images) ? raw.images : [],
-      organizationId: raw.organizationId || null,
-      reporterId: raw.reporterId || null,
-    };
-
-    console.log('normalizeTicket: successfully normalized', { id: normalized.id, title: normalized.title });
-    return normalized;
-  } catch (error) {
-    console.error('normalizeTicket: error normalizing ticket data', error, raw);
-    return null;
-  }
+  return {
+    id: raw.id,
+    ticketNumber: raw.ticketNumber,
+    title: raw.title,
+    description: raw.description,
+    status: raw.status,
+    priority: raw.priority,
+    createdAt: raw.createdAt,
+    updatedAt: raw.updatedAt,
+    location,
+    locationId: raw.locationId,
+    reporter: raw.reporter || raw.createdBy,
+    createdBy: raw.createdBy,
+    images: raw.images || [],
+    organizationId: raw.organizationId,
+    reporterId: raw.reporterId,
+  };
 }
 
 // Helper functions for permissions and actions
@@ -106,19 +95,10 @@ export default function TicketDetailsScreen() {
       try {
         console.log('Fetching ticket details for ID:', id);
         const response = await apiRequest('GET', `/api/tickets/${id}`);
-        
-        if (!response.ok) {
-          const errorText = await response.text().catch(() => 'Unknown error');
-          console.error('Ticket API error:', response.status, response.statusText, errorText);
-          throw new Error(`HTTP ${response.status}: ${errorText || response.statusText}`);
-        }
-        
         const data = await response.json();
         console.log('Ticket API response:', data);
         const raw = data?.ticket ?? data;
-        const normalized = normalizeTicket(raw);
-        console.log('Normalized ticket:', normalized);
-        return normalized;
+        return normalizeTicket(raw);
       } catch (error) {
         console.error('Error fetching ticket:', error);
         throw error;
@@ -129,48 +109,26 @@ export default function TicketDetailsScreen() {
   // Fetch comments
   const { data: comments = [], isLoading: commentsLoading, refetch: refetchComments } = useQuery({
     queryKey: ["comments", id],
-    enabled: !!id && !!ticket,
+    enabled: !!id,
     queryFn: async () => {
-      try {
-        console.log('Fetching comments for ticket:', id);
-        const response = await apiRequest('GET', `/api/tickets/${id}/comments`);
-        
-        if (!response.ok) {
-          console.warn('Comments fetch failed:', response.status, response.statusText);
-          return [];
-        }
-        
-        const data = await response.json();
-        console.log('Comments API response:', data);
-        return data ?? [];
-      } catch (error) {
-        console.error('Error fetching comments:', error);
-        return [];
-      }
+      console.log('Fetching comments for ticket:', id);
+      const response = await apiRequest('GET', `/api/tickets/${id}/comments`);
+      const data = await response.json();
+      console.log('Comments API response:', data);
+      return data ?? [];
     },
   });
 
   // Fetch work orders
   const { data: workOrders = [], isLoading: workOrdersLoading, refetch: refetchWorkOrders } = useQuery({
     queryKey: ["workorders", id],
-    enabled: !!id && !!ticket,
+    enabled: !!id,
     queryFn: async () => {
-      try {
-        console.log('Fetching work orders for ticket:', id);
-        const response = await apiRequest('GET', `/api/tickets/${id}/work-orders`);
-        
-        if (!response.ok) {
-          console.warn('Work orders fetch failed:', response.status, response.statusText);
-          return [];
-        }
-        
-        const data = await response.json();
-        console.log('Work Orders API response:', data);
-        return data ?? [];
-      } catch (error) {
-        console.error('Error fetching work orders:', error);
-        return [];
-      }
+      console.log('Fetching work orders for ticket:', id);
+      const response = await apiRequest('GET', `/api/tickets/${id}/work-orders`);
+      const data = await response.json();
+      console.log('Work Orders API response:', data);
+      return data ?? [];
     },
   });
 
@@ -646,67 +604,32 @@ export default function TicketDetailsScreen() {
     );
   };
 
-  // Basic states with better error handling
-  if (!id) {
-    console.error('TicketDetailsScreen: No ID provided');
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Invalid route: no ticket ID provided.</Text>
-      </View>
-    );
-  }
-  
-  if (ticketLoading) {
-    console.log('TicketDetailsScreen: Loading ticket data...');
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3b82f6" />
-        <Text style={styles.loadingText}>Loading ticket details...</Text>
-      </View>
-    );
-  }
-  
+  // Basic states
+  if (!id) return <View style={styles.errorContainer}><Text style={styles.errorText}>Invalid route: no id.</Text></View>;
+  if (ticketLoading) return <View style={styles.loadingContainer}><ActivityIndicator size="large" color="#3b82f6" /></View>;
   if (ticketError) {
     const errorMessage = (ticketErrorMsg as any)?.message ?? "Unknown error";
-    const isNetworkError = errorMessage.includes('Network Error') || errorMessage.includes('Failed to fetch') || (ticketErrorMsg as any)?.code === 'NETWORK_ERROR';
-    
-    console.error('TicketDetailsScreen: Error loading ticket', { errorMessage, ticketErrorMsg });
+    const isNetworkError = errorMessage.includes('Network Error') || (ticketErrorMsg as any)?.code === 'NETWORK_ERROR';
     
     return (
       <View style={styles.errorContainer}>
         <Ionicons name="warning-outline" size={48} color="#ef4444" />
         <Text style={styles.errorTitle}>
-          {isNetworkError ? "Connection Error" : "Failed to Load Ticket"}
+          {isNetworkError ? "Connection Error" : "Failed to Load"}
         </Text>
         <Text style={styles.errorText}>
           {isNetworkError 
-            ? "Cannot connect to server. Please check your connection and try again."
-            : `Error: ${errorMessage}`
+            ? "Cannot connect to server. Make sure the backend is running"
+            : errorMessage
           }
         </Text>
-        <TouchableOpacity style={styles.retryButton} onPress={() => {
-          console.log('Retrying ticket fetch...');
-          refetchTicket();
-        }}>
-          <Text style={styles.retryButtonText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-  
-  if (!ticket) {
-    console.error('TicketDetailsScreen: Ticket data is null after successful fetch');
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Ticket not found or could not be loaded.</Text>
         <TouchableOpacity style={styles.retryButton} onPress={() => refetchTicket()}>
           <Text style={styles.retryButtonText}>Retry</Text>
         </TouchableOpacity>
       </View>
     );
   }
-
-  console.log('TicketDetailsScreen: Successfully loaded ticket', { id: ticket.id, title: ticket.title });
+  if (!ticket) return <View style={styles.errorContainer}><Text style={styles.errorText}>Ticket not found.</Text></View>;
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {

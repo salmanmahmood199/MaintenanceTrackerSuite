@@ -111,7 +111,8 @@ export const ticketsApi = {
     return response.json();
   },
   create: async (data: any) => {
-    return await apiRequest("POST", "/api/tickets", data);
+    const response = await apiRequest("POST", "/api/tickets", data);
+    return response.json();
   },
   update: async (id: number, data: any) => {
     const response = await apiRequest("PATCH", `/api/tickets/${id}`, data);
