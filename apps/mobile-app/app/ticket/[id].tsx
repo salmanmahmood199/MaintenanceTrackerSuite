@@ -56,8 +56,12 @@ function hasActionsPermission(user: any, ticket: any): boolean {
   // Maintenance admin can perform actions on assigned tickets
   if (user.role === 'maintenance_admin' && ticket.maintenanceVendorId === user.maintenanceVendorId) return true;
   
-  // Sub admin with accept permissions
-  if (user.role === 'org_subadmin' && user.permissions?.includes('accept_ticket') && ticket.organizationId === user.organizationId) return true;
+  // Sub admin with accept permissions or marketplace users
+  if (user.role === 'org_subadmin' && ticket.organizationId === user.organizationId) {
+    // Check for accept_ticket permission or marketplace user
+    if (user.permissions?.includes('accept_ticket')) return true;
+    if (user.email && user.email.includes('marketplace')) return true;
+  }
   
   // Technician can perform actions on their assigned tickets
   if (user.role === 'technician' && ticket.assigneeId === user.id) return true;
@@ -399,15 +403,39 @@ export default function TicketDetailsScreen() {
     );
   };
 
+  const assignToMarketplace = async () => {
+    Alert.alert(
+      'Assign to Marketplace',
+      'This will make the ticket available for vendor bidding in the marketplace.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Assign',
+          onPress: async () => {
+            try {
+              const response = await api.post(`/api/tickets/${id}/assign-marketplace`, {});
+              if (response.status === 200) {
+                queryClient.invalidateQueries({ queryKey: ["ticket", id] });
+                Alert.alert('Success', 'Ticket assigned to marketplace successfully');
+              }
+            } catch (error: any) {
+              Alert.alert('Error', error.response?.data?.message || 'Failed to assign to marketplace');
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const getAvailableActions = (user: any, ticket: any) => {
     const actions: any[] = [];
     
     if (!user || !ticket) return actions;
     
-    // Accept ticket actions (org_admin, maintenance_admin, org_subadmin with permissions)
+    // Accept ticket actions (org_admin, maintenance_admin, org_subadmin with permissions, marketplace users)
     if (ticket.status === 'pending' && 
         (['org_admin', 'maintenance_admin'].includes(user.role) || 
-         (user.role === 'org_subadmin' && user.permissions?.includes('accept_ticket')))) {
+         (user.role === 'org_subadmin' && (user.permissions?.includes('accept_ticket') || (user.email && user.email.includes('marketplace')))))) {
       actions.push({
         id: 'accept',
         label: 'Accept Ticket',
@@ -481,9 +509,22 @@ export default function TicketDetailsScreen() {
       });
     }
     
+    // Marketplace actions for org_subadmin marketplace users
+    if (user.role === 'org_subadmin' && user.email && user.email.includes('marketplace') && ticket.organizationId === user.organizationId) {
+      if (ticket.status === 'pending') {
+        actions.push({
+          id: 'assign_to_marketplace',
+          label: 'Assign to Marketplace',
+          icon: 'storefront',
+          style: { backgroundColor: '#8b5cf6' },
+          action: () => assignToMarketplace()
+        });
+      }
+    }
+    
     // Force close (admins only)
     if (['root', 'org_admin', 'maintenance_admin'].includes(user.role) ||
-        (user.role === 'org_subadmin' && user.permissions?.includes('accept_ticket'))) {
+        (user.role === 'org_subadmin' && (user.permissions?.includes('accept_ticket') || (user.email && user.email.includes('marketplace'))))) {
       actions.push({
         id: 'force_close',
         label: 'Force Close',
@@ -1223,7 +1264,7 @@ export default function TicketDetailsScreen() {
       {/* Header - Web Style */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#1e293b" />
+          <Ionicons name="arrow-back" size={24} color="#f3f4f6" />
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>
@@ -1384,12 +1425,12 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1e293b',
+    color: '#f3f4f6',
     marginBottom: 2,
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#64748b',
+    color: '#9ca3af',
   },
   tabContainer: {
     flexDirection: 'row',
@@ -1444,7 +1485,7 @@ const styles = StyleSheet.create({
   ticketTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#1e293b',
+    color: '#f3f4f6',
     marginBottom: 12,
     lineHeight: 32,
   },
@@ -1497,7 +1538,7 @@ const styles = StyleSheet.create({
   },
   detailValue: {
     fontSize: 16,
-    color: '#1e293b',
+    color: '#f3f4f6',
     fontWeight: '500',
   },
   
@@ -1517,7 +1558,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1e293b',
+    color: '#f3f4f6',
     marginBottom: 12,
   },
   descriptionContent: {
