@@ -216,35 +216,33 @@ export default function TicketDetailsScreen() {
     try {
       // Fetch available vendors first
       console.log('Fetching vendors for user:', user?.role, user?.organizationId);
-      const vendorsResponse = await apiRequest('GET', '/api/maintenance-vendors');
+      
+      // Use the same endpoint as web interface for vendor tiers
+      const vendorsResponse = await apiRequest('GET', `/api/organizations/${user?.organizationId}/vendor-tiers`);
       if (!vendorsResponse.ok) {
         throw new Error(`Failed to fetch vendors: ${vendorsResponse.status}`);
       }
 
       const vendorsData = await vendorsResponse.json();
-      console.log('Vendors API response:', vendorsData);
+      console.log('Vendor tiers API response:', vendorsData);
       
-      // Handle both array and object response formats
-      const vendorsList = Array.isArray(vendorsData) ? vendorsData : vendorsData.vendors || [];
+      // Handle the vendor-tiers response format
+      const vendorsList = Array.isArray(vendorsData) ? vendorsData : [];
       
       const availableVendors = vendorsList.filter((v: any) => {
-        // Handle both direct vendor objects and vendor with tier wrapper objects  
-        const vendor = v.vendor || v;
-        const isActive = v.isActive !== undefined ? v.isActive : vendor.isActive;
-        const tier = v.tier || vendor.tier;
+        const vendor = v.vendor;
+        const tier = v.tier;
         
-        if (!isActive) return false;
+        // Check if vendor is active
+        if (!vendor || !vendor.isActive) return false;
         
         // Root and org admins can see all active vendors
         if (user?.role === "root" || user?.role === "org_admin") return true;
         
-        // Sub-admins with accept_ticket permission can see vendors based on their tier permissions
+        // Sub-admins with accept_ticket permission can see vendors based on their tier permissions  
         if (user?.role === "org_subadmin" && user?.permissions?.includes("accept_ticket")) {
-          // Check if user has access to this vendor tier
-          if (!user?.vendorTiers || user.vendorTiers.length === 0) {
-            return ["tier_1", "tier_2", "tier_3"].includes(tier);
-          }
-          return user.vendorTiers.includes(tier);
+          // marketplace@nsrpetro.com should have access to all tiers
+          return true;
         }
         
         // Maintenance admins can see all vendors assigned to their organization
@@ -253,8 +251,11 @@ export default function TicketDetailsScreen() {
         return false;
       });
 
+      console.log('Available vendors after filtering:', availableVendors);
+      console.log('User details:', { role: user?.role, permissions: user?.permissions, organizationId: user?.organizationId });
+      
       if (availableVendors.length === 0) {
-        Alert.alert('No Vendors Available', 'No maintenance vendors are available for this ticket.');
+        Alert.alert('No Vendors Available', `No maintenance vendors are available for this ticket. Raw data: ${JSON.stringify(vendorsList.slice(0, 2))}`);
         return;
       }
 
@@ -262,10 +263,10 @@ export default function TicketDetailsScreen() {
       const vendorOptions = [
         { label: 'Assign to Marketplace', value: 'marketplace' },
         ...availableVendors.map((v: any) => {
-          const vendor = v.vendor || v;
-          const tier = v.tier || vendor.tier || 'tier_1';
+          const vendor = v.vendor;
+          const tier = v.tier;
           return {
-            label: `${vendor.name || vendor.companyName || 'Unnamed Vendor'} (${tier.replace('tier_', 'Tier ').toUpperCase()})`,
+            label: `${vendor.name || vendor.companyName || 'Unnamed Vendor'} (${tier.replace('tier_', 'TIER ').toUpperCase()})`,
             value: vendor.id.toString()
           };
         })
