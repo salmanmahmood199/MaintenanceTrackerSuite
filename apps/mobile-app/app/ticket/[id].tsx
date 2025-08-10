@@ -290,8 +290,10 @@ export default function TicketDetailsScreen() {
                 }
 
                 const response = await apiRequest('POST', `/api/tickets/${id}/accept`, acceptData);
-                if (response.status === 200) {
+                if (response.ok) {
+                  const data = await response.json();
                   queryClient.invalidateQueries({ queryKey: ["ticket", id] });
+                  queryClient.invalidateQueries({ queryKey: ["tickets"] });
                   Alert.alert('Success', `Ticket accepted and assigned to ${option.label}`);
                 }
               } catch (error: any) {
@@ -325,8 +327,10 @@ export default function TicketDetailsScreen() {
               const response = await apiRequest('POST', `/api/tickets/${id}/reject`, {
                 rejectionReason: reason.trim()
               });
-              if (response.status === 200) {
+              if (response.ok) {
+                const data = await response.json();
                 queryClient.invalidateQueries({ queryKey: ["ticket", id] });
+                queryClient.invalidateQueries({ queryKey: ["tickets"] });
                 Alert.alert('Success', 'Ticket rejected successfully');
               }
             } catch (error: any) {
@@ -487,7 +491,7 @@ export default function TicketDetailsScreen() {
         label: 'Accept & Assign Ticket',
         icon: 'checkmark-circle',
         style: { backgroundColor: '#10b981' },
-        action: () => acceptAndAssignTicket()
+        action: () => acceptTicket()
       });
       
       actions.push({
@@ -506,7 +510,7 @@ export default function TicketDetailsScreen() {
         label: 'Accept & Assign',
         icon: 'checkmark-circle',
         style: { backgroundColor: '#10b981' },
-        action: () => acceptAndAssignTicket()
+        action: () => acceptTicket()
       });
     }
     
