@@ -1129,12 +1129,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else if (user.role === "maintenance_admin") {
           // SECURITY FIX: Vendors should ONLY see tickets specifically assigned to them
           tickets = await storage.getTickets();
-          tickets = tickets.filter(
-            (ticket) => ticket.maintenanceVendorId === user.maintenanceVendorId && ticket.maintenanceVendorId !== null,
-          );
+          console.log(`Before filtering: Total tickets: ${tickets.length}`);
+          console.log(`Filtering for vendor ID: ${user.maintenanceVendorId}`);
+          
+          tickets = tickets.filter((ticket) => {
+            const isAssignedToVendor = ticket.maintenanceVendorId === user.maintenanceVendorId;
+            const hasVendorAssigned = ticket.maintenanceVendorId !== null && ticket.maintenanceVendorId !== undefined;
+            const shouldInclude = isAssignedToVendor && hasVendorAssigned;
+            
+            // Debug problematic tickets
+            if (!shouldInclude && ticket.ticketNumber === 'NSRP-853238-J0K') {
+              console.log(`DEBUG ticket NSRP-853238-J0K: vendorId=${ticket.maintenanceVendorId}, userVendorId=${user.maintenanceVendorId}, isAssigned=${isAssignedToVendor}, hasVendor=${hasVendorAssigned}`);
+            }
+            
+            return shouldInclude;
+          });
+          
           console.log(
-            `Vendor ${user.maintenanceVendorId} filtering tickets. Found ${tickets.length} tickets assigned to them:`,
-            tickets.map((t) => ({
+            `Vendor ${user.maintenanceVendorId} filtering complete. Found ${tickets.length} tickets assigned to them:`,
+            tickets.slice(0, 5).map((t) => ({
               id: t.id,
               number: t.ticketNumber,
               status: t.status,
@@ -1338,8 +1351,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } else if (user.role === "maintenance_admin") {
         // SECURITY FIX: Maintenance admins can ONLY view tickets specifically assigned to their vendor
-        if (ticket.maintenanceVendorId === user.maintenanceVendorId && ticket.maintenanceVendorId !== null) {
+        const isAssignedToVendor = ticket.maintenanceVendorId === user.maintenanceVendorId;
+        const hasVendorAssigned = ticket.maintenanceVendorId !== null && ticket.maintenanceVendorId !== undefined;
+        
+        if (isAssignedToVendor && hasVendorAssigned) {
           hasAccess = true;
+        } else {
+          // Debug access denied cases
+          console.log(`Access denied for vendor ${user.maintenanceVendorId} on ticket ${ticket.ticketNumber}: vendorId=${ticket.maintenanceVendorId}, isAssigned=${isAssignedToVendor}, hasVendor=${hasVendorAssigned}`);
         }
         // No access to unassigned pending/marketplace tickets - they should only see assigned tickets
       } else if (user.role === "technician" && ticket.assigneeId === user.id && ticket.assigneeId !== null) {
