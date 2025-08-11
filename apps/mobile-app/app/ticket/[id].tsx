@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { WorkOrderModal } from '../components/WorkOrderModal';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -97,6 +98,9 @@ export default function TicketDetailsScreen() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedImages, setSelectedImages] = useState<any[]>([]);
   const [imagePreviewModalVisible, setImagePreviewModalVisible] = useState(false);
+  const [workOrderModalVisible, setWorkOrderModalVisible] = useState(false);
+  const [assignTechnicianModalVisible, setAssignTechnicianModalVisible] = useState(false);
+  const [technicians, setTechnicians] = useState<any[]>([]);
 
   // Fetch ticket details
   const { data: ticket, isLoading: ticketLoading, refetch: refetchTicket, isError: ticketError, error: ticketErrorMsg } = useQuery({
@@ -718,7 +722,7 @@ export default function TicketDetailsScreen() {
           label: 'Create Work Order',
           icon: 'document-text',
           style: { backgroundColor: '#8b5cf6' },
-          action: () => createWorkOrder()
+          action: () => setWorkOrderModalVisible(true)
         });
         
         actions.push({
@@ -1576,6 +1580,14 @@ export default function TicketDetailsScreen() {
       >
         {renderTabContent()}
       </ScrollView>
+
+      {/* Work Order Modal */}
+      <WorkOrderModal
+        visible={workOrderModalVisible}
+        onClose={() => setWorkOrderModalVisible(false)}
+        ticket={ticket}
+        user={user}
+      />
 
       {/* Image Modal */}
       <Modal

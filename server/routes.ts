@@ -2862,14 +2862,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(403).json({ message: "You can only create work orders for your vendor's tickets" });
         }
 
+        // Get technician info for work order
+        let technicianId = user.id;
+        let technicianName = user.name || user.email || 'Unknown Technician';
+        
+        // If user is maintenance_admin, use the assigned technician
+        if (user.role === "maintenance_admin" && ticket.assigneeId) {
+          const assignedTechnician = await storage.getUserById(ticket.assigneeId);
+          if (assignedTechnician) {
+            technicianId = assignedTechnician.id;
+            technicianName = assignedTechnician.name || assignedTechnician.email || 'Unknown Technician';
+          }
+        }
+        
         // Create the work order
         const workOrder = await storage.createWorkOrder({
           ticketId,
-          assigneeId: user.id,
+          technicianId,
+          technicianName,
           workDescription,
-          workStatus: workStatus || 'pending',
-          startTime: startTime ? new Date(startTime) : new Date(),
-          ...workOrderData
+          completionStatus: workOrderData.completionStatus || null,
+          completionNotes: workOrderData.completionNotes || '',
+          parts: workOrderData.parts || [],
+          otherCharges: workOrderData.otherCharges || [],
+          totalCost: workOrderData.totalCost || 0,
+          images: workOrderData.images || [],
+          workDate: workOrderData.workDate || new Date().toISOString().split('T')[0],
+          timeIn: workOrderData.timeIn || null,
+          timeOut: workOrderData.timeOut || null,
+          totalHours: workOrderData.totalHours || null,
+          managerName: workOrderData.managerName || '',
+          managerSignature: workOrderData.managerSignature || ''
         });
 
         // If startWork is true, also update the ticket status to in-progress
@@ -2878,6 +2901,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
             status: "in-progress",
             assigneeId: user.id
           });
+        }
+
+        // Handle completion status for work order workflow
+        if (workOrderData.completionStatus) {
+          if (workOrderData.completionStatus === 'job_completed') {
+            // Mark ticket as completed and ready for verification
+            await storage.updateTicket(ticketId, { 
+              status: "pending_confirmation"
+            });
+          } else if (workOrderData.completionStatus === 'return_needed') {
+            // Keep ticket in progress for additional work
+            await storage.updateTicket(ticketId, { 
+              status: "in-progress"
+            });
+          }
         }
 
         res.json({
