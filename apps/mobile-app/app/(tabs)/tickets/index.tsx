@@ -9,18 +9,30 @@ export default function TicketsScreen() {
   const router = useRouter();
 
   const { data: tickets = [], isLoading, isRefetching, refetch, isError, error } = useQuery({
-    queryKey: ["tickets"],
+    queryKey: ["tickets"], // Simple key to avoid over-caching
     staleTime: 0, // Always refetch when navigating back to this screen
-    refetchOnMount: true,
+    cacheTime: 0, // Don't cache at all to prevent stale data
+    refetchOnMount: "always",
+    refetchOnFocus: true,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       try {
+        console.log('Fetching tickets - Cache busted with fresh query');
         const response = await apiRequest('GET', "/api/tickets");
         const data = await response.json();
-        console.log('Tickets API response:', data);
+        console.log('Tickets API response count:', data?.length || 0);
+        console.log('First few tickets:', data?.slice(0, 3)?.map((t: any) => ({
+          id: t.id,
+          number: t.ticketNumber,
+          vendorId: t.maintenanceVendorId
+        })));
+        
         // Handle different response formats from the API
         const ticketsData = data?.tickets ?? data ?? [];
         // Ensure we always return an array
-        return Array.isArray(ticketsData) ? ticketsData : [];
+        const finalTickets = Array.isArray(ticketsData) ? ticketsData : [];
+        console.log('Final tickets being returned to UI:', finalTickets.length);
+        return finalTickets;
       } catch (err) {
         console.error('Error fetching tickets:', err);
         throw err;
@@ -28,9 +40,10 @@ export default function TicketsScreen() {
     },
   });
 
-  // Refresh tickets when screen comes into focus
+  // Refresh tickets when screen comes into focus with cache busting
   useFocusEffect(
     React.useCallback(() => {
+      console.log('Screen focused - forcing fresh ticket fetch');
       refetch();
     }, [refetch])
   );

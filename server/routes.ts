@@ -1146,15 +1146,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
           
           console.log(
-            `Vendor ${user.maintenanceVendorId} filtering complete. Found ${tickets.length} tickets assigned to them:`,
-            tickets.slice(0, 5).map((t) => ({
+            `Vendor ${user.maintenanceVendorId} filtering complete. Found ${tickets.length} tickets assigned to them.`
+          );
+          
+          // Check if any problematic tickets slipped through
+          const problematicTickets = tickets.filter(t => t.maintenanceVendorId === null || t.maintenanceVendorId !== user.maintenanceVendorId);
+          if (problematicTickets.length > 0) {
+            console.error('SECURITY WARNING: Problematic tickets found in vendor results:', problematicTickets.map(t => ({
               id: t.id,
               number: t.ticketNumber,
-              status: t.status,
               vendorId: t.maintenanceVendorId,
-              assigneeId: t.assigneeId,
-            })),
-          );
+              userVendorId: user.maintenanceVendorId
+            })));
+          }
         } else if (user.role === "technician") {
           // SECURITY FIX: Technicians should ONLY see tickets specifically assigned to them
           tickets = await storage.getTickets();
@@ -1170,6 +1174,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (status) {
           tickets = tickets.filter((ticket) => ticket.status === status);
         }
+        
+        // Final security check before sending response
+        if (user.role === "maintenance_admin") {
+          const finalSecurityCheck = tickets.some(t => t.maintenanceVendorId !== user.maintenanceVendorId || t.maintenanceVendorId === null);
+          if (finalSecurityCheck) {
+            console.error('CRITICAL SECURITY ERROR: Unauthorized tickets in final response for vendor', user.maintenanceVendorId);
+            tickets = tickets.filter(t => t.maintenanceVendorId === user.maintenanceVendorId && t.maintenanceVendorId !== null);
+          }
+        }
+        
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
         res.json(tickets);
       } catch (error) {
         console.error("Error fetching tickets:", error);
