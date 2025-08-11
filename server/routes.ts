@@ -1733,6 +1733,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Assign technician to ticket
+  app.post(
+    "/api/tickets/:id/assign-technician",
+    authenticateUser,
+    async (req: AuthenticatedRequest, res) => {
+      try {
+        const id = parseInt(req.params.id);
+        const { assigneeId } = req.body;
+        const user = req.user!;
+
+        // Verify user has permission to assign technicians (maintenance_admin)
+        if (user.role !== "maintenance_admin") {
+          return res.status(403).json({ message: "Only maintenance vendors can assign technicians" });
+        }
+
+        // Get the ticket first to verify vendor ownership
+        const tickets = await storage.getTickets();
+        const ticket = tickets.find(t => t.id === id);
+        
+        if (!ticket) {
+          return res.status(404).json({ message: "Ticket not found" });
+        }
+
+        if (ticket.maintenanceVendorId !== user.maintenanceVendorId) {
+          return res.status(403).json({ message: "You can only assign technicians to your own tickets" });
+        }
+
+        // Verify the technician belongs to this vendor
+        const technicians = await storage.getTechnicians(user.maintenanceVendorId!);
+        const technician = technicians.find(t => t.id === assigneeId);
+        
+        if (!technician) {
+          return res.status(400).json({ message: "Technician not found or not part of your vendor organization" });
+        }
+
+        // Assign the technician using updateTicket
+        const updatedTicket = await storage.updateTicket(id, { assigneeId });
+        if (!updatedTicket) {
+          return res.status(404).json({ message: "Failed to assign technician" });
+        }
+
+        res.json({
+          message: "Technician assigned successfully",
+          ticket: updatedTicket,
+          technician: {
+            id: technician.id,
+            name: `${technician.firstName} ${technician.lastName}`,
+            email: technician.email
+          }
+        });
+      } catch (error) {
+        console.error("Error assigning technician:", error);
+        res.status(500).json({ message: "Failed to assign technician" });
+      }
+    }
+  );
+
   // Start work on ticket (for technicians)
   app.post(
     "/api/tickets/:id/start",
@@ -2773,6 +2830,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(500).json({ message: "Failed to fetch work orders" });
       }
     },
+  );
+
+  // Create work order for a ticket
+  app.post(
+    "/api/tickets/:id/work-orders",
+    authenticateUser,
+    async (req: AuthenticatedRequest, res) => {
+      try {
+        const ticketId = parseInt(req.params.id);
+        const { workDescription, startWork, workStatus, startTime, ...workOrderData } = req.body;
+        const user = req.user!;
+
+        // Verify user has permission to create work orders (technician or maintenance_admin)
+        if (!["technician", "maintenance_admin"].includes(user.role)) {
+          return res.status(403).json({ message: "Only technicians and vendors can create work orders" });
+        }
+
+        // Get the ticket to verify access
+        const ticket = await storage.getTicket(ticketId);
+        if (!ticket) {
+          return res.status(404).json({ message: "Ticket not found" });
+        }
+
+        // Verify access based on role
+        if (user.role === "technician" && ticket.assigneeId !== user.id) {
+          return res.status(403).json({ message: "You can only create work orders for tickets assigned to you" });
+        }
+
+        if (user.role === "maintenance_admin" && ticket.maintenanceVendorId !== user.maintenanceVendorId) {
+          return res.status(403).json({ message: "You can only create work orders for your vendor's tickets" });
+        }
+
+        // Create the work order
+        const workOrder = await storage.createWorkOrder({
+          ticketId,
+          assigneeId: user.id,
+          workDescription,
+          workStatus: workStatus || 'pending',
+          startTime: startTime ? new Date(startTime) : new Date(),
+          ...workOrderData
+        });
+
+        // If startWork is true, also update the ticket status to in-progress
+        if (startWork) {
+          await storage.updateTicket(ticketId, { 
+            status: "in-progress",
+            assigneeId: user.id
+          });
+        }
+
+        res.json({
+          message: "Work order created successfully",
+          workOrder,
+          ticketUpdated: startWork
+        });
+      } catch (error) {
+        console.error("Error creating work order:", error);
+        res.status(500).json({ message: "Failed to create work order" });
+      }
+    }
   );
 
   // Get technicians for maintenance vendor

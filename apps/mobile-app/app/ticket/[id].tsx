@@ -396,16 +396,118 @@ export default function TicketDetailsScreen() {
 
 
 
-  const startWork = async () => {
+  const assignTechnician = async () => {
     try {
-      const response = await apiRequest('POST', `/api/tickets/${id}/start`, {});
-      if (response.status === 200) {
-        queryClient.invalidateQueries({ queryKey: ["ticket", id] });
-        Alert.alert('Success', 'Work started successfully');
+      // Fetch available technicians for this vendor
+      const response = await apiRequest('GET', `/api/maintenance-vendors/${user?.maintenanceVendorId}/technicians`);
+      if (!response.ok) {
+        Alert.alert('Error', 'Failed to fetch technicians');
+        return;
       }
+      
+      const technicians = await response.json();
+      if (!technicians || technicians.length === 0) {
+        Alert.alert('No Technicians', 'No technicians available for assignment');
+        return;
+      }
+
+      // Create technician selection options
+      const technicianOptions = technicians.map((tech: any) => ({
+        text: `${tech.firstName} ${tech.lastName} (${tech.email})`,
+        onPress: async () => {
+          try {
+            const assignResponse = await apiRequest('POST', `/api/tickets/${id}/assign-technician`, {
+              assigneeId: tech.id
+            });
+            if (assignResponse.ok) {
+              queryClient.invalidateQueries({ queryKey: ["ticket", id] });
+              queryClient.invalidateQueries({ queryKey: ["tickets"] });
+              Alert.alert('Success', `Ticket assigned to ${tech.firstName} ${tech.lastName}`);
+            }
+          } catch (error: any) {
+            Alert.alert('Error', error.response?.data?.message || 'Failed to assign technician');
+          }
+        }
+      }));
+
+      Alert.alert(
+        'Assign Technician',
+        'Select a technician for this ticket:',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          ...technicianOptions
+        ]
+      );
+
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to start work');
+      Alert.alert('Error', 'Failed to load technicians');
     }
+  };
+
+  const startWork = async () => {
+    Alert.alert(
+      'Start Work',
+      'Would you like to create a work order with details or just start working?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Just Start',
+          onPress: async () => {
+            try {
+              const response = await apiRequest('POST', `/api/tickets/${id}/start`, {});
+              if (response.status === 200) {
+                queryClient.invalidateQueries({ queryKey: ["ticket", id] });
+                Alert.alert('Success', 'Work started successfully');
+              }
+            } catch (error: any) {
+              Alert.alert('Error', error.response?.data?.message || 'Failed to start work');
+            }
+          }
+        },
+        {
+          text: 'Create Work Order',
+          onPress: () => createWorkOrder()
+        }
+      ]
+    );
+  };
+
+  const createWorkOrder = async () => {
+    Alert.prompt(
+      'Create Work Order',
+      'Describe the work you will be performing:',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Create & Start',
+          onPress: async (workDescription) => {
+            if (!workDescription?.trim()) {
+              Alert.alert('Error', 'Work description is required');
+              return;
+            }
+            
+            try {
+              // Create work order and start work in one API call
+              const response = await apiRequest('POST', `/api/tickets/${id}/work-orders`, {
+                workDescription: workDescription.trim(),
+                startWork: true,
+                workStatus: 'in_progress',
+                startTime: new Date().toISOString()
+              });
+              
+              if (response.ok) {
+                queryClient.invalidateQueries({ queryKey: ["ticket", id] });
+                queryClient.invalidateQueries({ queryKey: ["tickets"] });
+                Alert.alert('Success', 'Work order created and work started');
+              }
+            } catch (error: any) {
+              Alert.alert('Error', error.response?.data?.message || 'Failed to create work order');
+            }
+          }
+        }
+      ],
+      'plain-text'
+    );
   };
 
   const completeWork = async () => {
@@ -554,20 +656,31 @@ export default function TicketDetailsScreen() {
       });
     }
     
-    // Vendor can accept assigned tickets
+    // Vendor can assign technicians to accepted tickets
     if (ticket.status === 'accepted' && user.role === 'maintenance_admin' && ticket.maintenanceVendorId === user.maintenanceVendorId) {
-      actions.push({
-        id: 'accept_vendor',
-        label: 'Accept & Assign',
-        icon: 'checkmark-circle',
-        style: { backgroundColor: '#10b981' },
-        action: () => acceptTicket()
-      });
+      if (!ticket.assigneeId) {
+        actions.push({
+          id: 'assign_technician',
+          label: 'Assign Technician',
+          icon: 'person-add',
+          style: { backgroundColor: '#3b82f6' },
+          action: () => assignTechnician()
+        });
+      } else {
+        // Show which technician is assigned
+        actions.push({
+          id: 'reassign_technician',
+          label: 'Reassign Technician',
+          icon: 'person',
+          style: { backgroundColor: '#f59e0b' },
+          action: () => assignTechnician()
+        });
+      }
     }
     
     // Technician actions
     if (user.role === 'technician' && ticket.assigneeId === user.id) {
-      if (ticket.status === 'accepted' || ticket.status === 'in-progress') {
+      if (ticket.status === 'accepted') {
         actions.push({
           id: 'start_work',
           label: 'Start Work',
@@ -578,6 +691,14 @@ export default function TicketDetailsScreen() {
       }
       
       if (ticket.status === 'in-progress') {
+        actions.push({
+          id: 'create_work_order',
+          label: 'Create Work Order',
+          icon: 'document-text',
+          style: { backgroundColor: '#8b5cf6' },
+          action: () => createWorkOrder()
+        });
+        
         actions.push({
           id: 'complete_work',
           label: 'Complete Work',
