@@ -657,7 +657,16 @@ export default function TicketDetailsScreen() {
     }
     
     // Vendor can assign technicians to accepted tickets
+    console.log('Checking vendor assign logic:', {
+      ticketStatus: ticket.status,
+      userRole: user.role,
+      ticketVendorId: ticket.maintenanceVendorId,
+      userVendorId: user.maintenanceVendorId,
+      assigneeId: ticket.assigneeId
+    });
+    
     if (ticket.status === 'accepted' && user.role === 'maintenance_admin' && ticket.maintenanceVendorId === user.maintenanceVendorId) {
+      console.log('Vendor assignment condition met - adding action');
       if (!ticket.assigneeId) {
         actions.push({
           id: 'assign_technician',
@@ -676,6 +685,8 @@ export default function TicketDetailsScreen() {
           action: () => assignTechnician()
         });
       }
+    } else {
+      console.log('Vendor assignment condition NOT met');
     }
     
     // Technician actions
@@ -1459,6 +1470,21 @@ export default function TicketDetailsScreen() {
         return (
           <View style={styles.tabContent}>
             <View style={styles.actionsCard}>
+              {/* Debug info */}
+              <View style={{ backgroundColor: '#1f2937', padding: 10, marginBottom: 10, borderRadius: 8 }}>
+                <Text style={{ color: '#e5e7eb', fontSize: 12 }}>
+                  Debug: User Role: {user?.role}, Ticket Status: {ticket?.status}
+                </Text>
+                <Text style={{ color: '#e5e7eb', fontSize: 12 }}>
+                  User Vendor ID: {user?.maintenanceVendorId}, Ticket Vendor ID: {ticket?.maintenanceVendorId}
+                </Text>
+                <Text style={{ color: '#e5e7eb', fontSize: 12 }}>
+                  Assignee ID: {ticket?.assigneeId || 'None'}
+                </Text>
+                <Text style={{ color: '#e5e7eb', fontSize: 12 }}>
+                  Actions Count: {getAvailableActions(user, ticket)?.length || 0}
+                </Text>
+              </View>
               <Text style={styles.sectionTitle}>Available Actions</Text>
               {renderActions(user, ticket)}
             </View>
