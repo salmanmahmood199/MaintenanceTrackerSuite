@@ -1337,14 +1337,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           hasAccess = true;
         }
       } else if (user.role === "maintenance_admin") {
-        // Maintenance admins can view tickets assigned to their vendor OR tickets available for bidding
-        if (ticket.maintenanceVendorId === user.maintenanceVendorId) {
-          hasAccess = true;
-        } else if (ticket.status === 'pending' || ticket.status === 'marketplace') {
-          // Allow maintenance vendors to view pending/marketplace tickets for bidding
+        // SECURITY FIX: Maintenance admins can ONLY view tickets specifically assigned to their vendor
+        if (ticket.maintenanceVendorId === user.maintenanceVendorId && ticket.maintenanceVendorId !== null) {
           hasAccess = true;
         }
-      } else if (user.role === "technician" && ticket.assigneeId === user.id) {
+        // No access to unassigned pending/marketplace tickets - they should only see assigned tickets
+      } else if (user.role === "technician" && ticket.assigneeId === user.id && ticket.assigneeId !== null) {
         hasAccess = true;
       } else if (user.role === "residential" && ticket.reporterId === user.id) {
         hasAccess = true;
