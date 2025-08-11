@@ -40,11 +40,18 @@ function normalizeTicket(raw: any) {
     images: raw.images || [],
     organizationId: raw.organizationId,
     reporterId: raw.reporterId,
+    maintenanceVendorId: raw.maintenanceVendorId,
+    assigneeId: raw.assigneeId,
   };
 }
 
 // Helper functions for permissions and actions
 function hasActionsPermission(user: any, ticket: any): boolean {
+  console.log('hasActionsPermission check:', {
+    user: user ? { role: user.role, vendorId: user.maintenanceVendorId, id: user.id } : null,
+    ticket: ticket ? { id: ticket.id, vendorId: ticket.maintenanceVendorId, status: ticket.status, assigneeId: ticket.assigneeId } : null
+  });
+  
   if (!user || !ticket) return false;
   
   // Root admin can perform all actions
@@ -54,7 +61,10 @@ function hasActionsPermission(user: any, ticket: any): boolean {
   if (user.role === 'org_admin' && ticket.organizationId === user.organizationId) return true;
   
   // Maintenance admin can perform actions on assigned tickets
-  if (user.role === 'maintenance_admin' && ticket.maintenanceVendorId === user.maintenanceVendorId) return true;
+  if (user.role === 'maintenance_admin' && ticket.maintenanceVendorId === user.maintenanceVendorId) {
+    console.log('Maintenance admin permission granted');
+    return true;
+  }
   
   // Sub admin with accept permissions or marketplace users
   if (user.role === 'org_subadmin' && ticket.organizationId === user.organizationId) {
@@ -69,6 +79,7 @@ function hasActionsPermission(user: any, ticket: any): boolean {
   // Original ticket requester can confirm completion
   if (ticket.reporterId === user.id && ticket.status === 'pending_confirmation') return true;
   
+  console.log('No permission granted');
   return false;
 }
 
