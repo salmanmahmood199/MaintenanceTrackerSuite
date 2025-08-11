@@ -41,7 +41,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
   user
 }) => {
   const [workDescription, setWorkDescription] = useState('');
-  const [completionStatus, setCompletionStatus] = useState<'job_completed' | 'return_needed' | null>(null);
+  const [completionStatus, setCompletionStatus] = useState<'completed' | 'return_needed' | null>(null);
   const [completionNotes, setCompletionNotes] = useState('');
   const [parts, setParts] = useState<Part[]>([{ name: '', quantity: 1, cost: 0 }]);
   const [otherCharges, setOtherCharges] = useState<OtherCharge[]>([{ description: '', cost: 0 }]);
@@ -77,13 +77,26 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
 
   const createWorkOrderMutation = useMutation({
     mutationFn: async (workOrderData: any) => {
+      console.log('Creating work order with data:', workOrderData);
+      
+      // Validate required fields
+      if (!workOrderData.workDescription?.trim()) {
+        throw new Error('Work description is required');
+      }
+      
+      if (!workOrderData.completionStatus) {
+        throw new Error('Completion status is required');
+      }
+
       const formData = new FormData();
       
-      // Add work order data
+      // Add work order data with proper field mapping
       Object.keys(workOrderData).forEach(key => {
         if (key !== 'images') {
           const value = workOrderData[key];
-          formData.append(key, typeof value === 'object' ? JSON.stringify(value) : value);
+          if (value !== null && value !== undefined) {
+            formData.append(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
+          }
         }
       });
       
@@ -96,9 +109,17 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
         } as any);
       });
 
+      console.log('Sending FormData to API...');
       const response = await apiRequest('POST', `/api/tickets/${ticket.id}/work-orders`, formData);
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { message: errorText || 'Unknown error' };
+        }
         throw new Error(errorData.message || `HTTP ${response.status}`);
       }
       return response.json();
@@ -251,18 +272,18 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
               <TouchableOpacity
                 style={[
                   styles.statusButton,
-                  completionStatus === 'job_completed' && styles.statusButtonActive
+                  completionStatus === 'completed' && styles.statusButtonActive
                 ]}
-                onPress={() => setCompletionStatus('job_completed')}
+                onPress={() => setCompletionStatus('completed')}
               >
                 <Ionicons 
                   name="checkmark-circle" 
                   size={20} 
-                  color={completionStatus === 'job_completed' ? '#ffffff' : '#10b981'} 
+                  color={completionStatus === 'completed' ? '#ffffff' : '#10b981'} 
                 />
                 <Text style={[
                   styles.statusButtonText,
-                  completionStatus === 'job_completed' && styles.statusButtonTextActive
+                  completionStatus === 'completed' && styles.statusButtonTextActive
                 ]}>Job Completed</Text>
               </TouchableOpacity>
               

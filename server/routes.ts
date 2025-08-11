@@ -2839,8 +2839,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req: AuthenticatedRequest, res) => {
       try {
         const ticketId = parseInt(req.params.id);
-        const { workDescription, startWork, workStatus, startTime, ...workOrderData } = req.body;
+        const { workDescription, work_description, startWork, workStatus, startTime, ...workOrderData } = req.body;
+        const finalWorkDescription = workDescription || work_description;
         const user = req.user!;
+
+        console.log('Work order creation request:', {
+          ticketId,
+          finalWorkDescription,
+          workOrderData,
+          userRole: user.role,
+          userId: user.id
+        });
+
+        // Validate required fields
+        if (!finalWorkDescription || finalWorkDescription.trim() === '') {
+          return res.status(400).json({ message: "Work description is required" });
+        }
 
         // Verify user has permission to create work orders (technician or maintenance_admin)
         if (!["technician", "maintenance_admin"].includes(user.role)) {
@@ -2880,7 +2894,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ticketId,
           technicianId,
           technicianName,
-          workDescription,
+          workDescription: finalWorkDescription,
           completionStatus: workOrderData.completionStatus || null,
           completionNotes: workOrderData.completionNotes || '',
           parts: workOrderData.parts || [],
@@ -2905,7 +2919,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Handle completion status for work order workflow
         if (workOrderData.completionStatus) {
-          if (workOrderData.completionStatus === 'job_completed') {
+          if (workOrderData.completionStatus === 'completed') {
             // Mark ticket as completed and ready for verification
             await storage.updateTicket(ticketId, { 
               status: "pending_confirmation"
