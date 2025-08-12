@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { useAuth } from '../../src/contexts/AuthContext';
-import { WorkOrderModal } from '../components/WorkOrderModal';
+import WorkOrderModal from '../components/WorkOrderModal';
 import WorkOrderDetailsModal from '../components/WorkOrderDetailsModal';
 import InvoiceModal from '../components/InvoiceModal';
 
