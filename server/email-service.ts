@@ -182,6 +182,92 @@ export async function sendResidentialWelcomeEmail(
 }
 
 // Send password reset confirmation email
+// Send invoice notification email
+export async function sendInvoiceNotificationEmail(
+  email: string, 
+  invoiceData: {
+    invoiceNumber: string;
+    ticketNumber: string;
+    total: string;
+    organizationName?: string;
+    recipientName?: string;
+  }
+): Promise<void> {
+  const transporter = createTransporter();
+  
+  const mailOptions = {
+    from: process.env.GMAIL_USER,
+    to: email,
+    subject: `TaskScout - New Invoice ${invoiceData.invoiceNumber}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #3B82F6; margin: 0;">TaskScout</h1>
+          <p style="color: #6B7280; margin: 5px 0;">Maintenance Management Platform</p>
+        </div>
+        
+        <div style="background: #F0F9FF; padding: 30px; border-radius: 10px; border: 1px solid #BAE6FD;">
+          <h2 style="color: #0369A1; margin-top: 0;">New Invoice Received</h2>
+          
+          ${invoiceData.recipientName ? `<p style="color: #374151;">Hello ${invoiceData.recipientName},</p>` : '<p style="color: #374151;">Hello,</p>'}
+          
+          <p style="color: #374151; line-height: 1.5;">
+            You have received a new invoice for maintenance services completed on ticket ${invoiceData.ticketNumber}.
+          </p>
+          
+          <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #E5E7EB;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #6B7280; font-weight: 600;">Invoice Number:</td>
+                <td style="padding: 8px 0; color: #374151; text-align: right;">${invoiceData.invoiceNumber}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6B7280; font-weight: 600;">Ticket:</td>
+                <td style="padding: 8px 0; color: #374151; text-align: right;">${invoiceData.ticketNumber}</td>
+              </tr>
+              ${invoiceData.organizationName ? `
+              <tr>
+                <td style="padding: 8px 0; color: #6B7280; font-weight: 600;">Organization:</td>
+                <td style="padding: 8px 0; color: #374151; text-align: right;">${invoiceData.organizationName}</td>
+              </tr>
+              ` : ''}
+              <tr style="border-top: 2px solid #E5E7EB;">
+                <td style="padding: 12px 0 8px 0; color: #374151; font-weight: 700; font-size: 16px;">Total Amount:</td>
+                <td style="padding: 12px 0 8px 0; color: #059669; font-weight: 700; font-size: 16px; text-align: right;">$${parseFloat(invoiceData.total).toFixed(2)}</td>
+              </tr>
+            </table>
+          </div>
+          
+          <p style="color: #374151; line-height: 1.5;">
+            Please log in to your TaskScout account to view the full invoice details and process payment.
+          </p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${process.env.BASE_URL || 'http://localhost:5000'}/login" 
+               style="background: #0369A1; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">
+              View Invoice
+            </a>
+          </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 20px;">
+          <p style="color: #9CA3AF; font-size: 12px;">
+            © ${new Date().getFullYear()} TaskScout. All rights reserved.
+          </p>
+        </div>
+      </div>
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Invoice notification email sent to ${email} for invoice ${invoiceData.invoiceNumber}`);
+  } catch (error) {
+    console.error('Error sending invoice notification email:', error);
+    throw new Error('Failed to send invoice notification email');
+  }
+}
+
 export async function sendPasswordResetConfirmationEmail(
   email: string, 
   firstName: string = ''

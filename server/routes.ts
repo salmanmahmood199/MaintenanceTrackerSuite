@@ -4004,6 +4004,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Send invoice route
+  app.post(
+    "/api/invoices/:id/send",
+    authenticateUser,
+    requireRole(["maintenance_admin", "root"]),
+    async (req: AuthenticatedRequest, res) => {
+      try {
+        const invoiceId = parseInt(req.params.id);
+        const user = req.user!;
+
+        // Get the invoice first to verify access and get details
+        const invoice = await storage.getInvoiceById(invoiceId);
+        if (!invoice) {
+          return res.status(404).json({ message: "Invoice not found" });
+        }
+
+        // Verify vendor ownership (unless root)
+        if (user.role === "maintenance_admin" && invoice.maintenanceVendorId !== user.maintenanceVendorId) {
+          return res.status(403).json({ message: "Not authorized for this invoice" });
+        }
+
+        // Update invoice status to sent
+        const updatedInvoice = await storage.updateInvoice(invoiceId, {
+          status: "sent",
+          sentAt: new Date()
+        });
+
+        if (!updatedInvoice) {
+          return res.status(404).json({ message: "Failed to update invoice" });
+        }
+
+        // Get additional data for email notification
+        const ticket = await storage.getTicket(invoice.ticketId);
+        const organization = ticket ? await storage.getOrganization(ticket.organizationId) : null;
+        
+        // Get organization admin emails for notification
+        if (organization) {
+          try {
+            // Import email service
+            const { sendInvoiceNotificationEmail } = await import("./email-service");
+            
+            // Get organization admins who should receive invoice notifications
+            const orgAdmins = await storage.getUsers();
+            const adminEmails = orgAdmins
+              .filter(u => 
+                u.organizationId === organization.id && 
+                ['org_admin', 'org_subadmin'].includes(u.role) &&
+                u.permissions?.includes('view_invoices')
+              )
+              .map(u => ({ email: u.email, name: u.firstName }));
+
+            // Send email to each admin
+            const emailPromises = adminEmails.map(admin =>
+              sendInvoiceNotificationEmail(admin.email, {
+                invoiceNumber: invoice.invoiceNumber,
+                ticketNumber: ticket?.ticketNumber || `#${invoice.ticketId}`,
+                total: invoice.total,
+                organizationName: organization.name,
+                recipientName: admin.name
+              })
+            );
+
+            await Promise.allSettled(emailPromises);
+            console.log(`Invoice ${invoice.invoiceNumber} sent with email notifications to ${adminEmails.length} recipients`);
+          } catch (emailError) {
+            console.error('Failed to send invoice notification emails:', emailError);
+            // Don't fail the invoice send if email fails
+          }
+        }
+
+        res.json(updatedInvoice);
+      } catch (error) {
+        console.error("Error sending invoice:", error);
+        res.status(500).json({ message: "Failed to send invoice" });
+      }
+    }
+  );
+
   const httpServer = createServer(app);
   // Google Calendar Integration Routes
 
