@@ -746,7 +746,6 @@ export default function TicketDetailsScreen() {
         style: { backgroundColor: '#10b981' },
         action: () => setInvoiceModalVisible(true)
       });
-      }
     }
     
     // Confirmation actions (original requester or admins)
