@@ -60,7 +60,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
     setTotalCost(partsTotal + chargesTotal);
   }, [parts, otherCharges]);
 
-  // Reset form when modal opens
+  // Initialize with default times when modal opens
   useEffect(() => {
     if (visible) {
       setWorkDescription('');
@@ -68,8 +68,15 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
       setCompletionNotes('');
       setParts([{ name: '', quantity: 1, cost: 0 }]);
       setOtherCharges([{ description: '', cost: 0 }]);
-      setTimeIn('');
-      setTimeOut('');
+      
+      // Set default times - current time for start, 8 hours later for end
+      const now = new Date();
+      const startTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+      const endDate = new Date(now.getTime() + 8 * 60 * 60 * 1000); // 8 hours later
+      const endTime = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
+      
+      setTimeIn(startTime);
+      setTimeOut(endTime);
       setManagerName('');
       setWorkImages([]);
     }
@@ -304,28 +311,54 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
           {/* Time Tracking */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Time Tracking</Text>
+            <Text style={styles.sectionSubtitle}>Adjust your clock in/out times as needed</Text>
             <View style={styles.timeRow}>
               <View style={styles.timeField}>
                 <Text style={styles.label}>Time In</Text>
                 <TextInput
                   style={styles.timeInput}
                   value={timeIn}
-                  onChangeText={setTimeIn}
+                  onChangeText={(text) => {
+                    // Allow only time format (HH:MM)
+                    const cleanedText = text.replace(/[^0-9:]/g, '');
+                    if (cleanedText.length <= 5) {
+                      setTimeIn(cleanedText);
+                    }
+                  }}
                   placeholder="09:00"
                   placeholderTextColor="#9ca3af"
+                  keyboardType="numeric"
+                  maxLength={5}
                 />
+                <Text style={styles.helperText}>Format: HH:MM (24-hour)</Text>
               </View>
               <View style={styles.timeField}>
                 <Text style={styles.label}>Time Out</Text>
                 <TextInput
                   style={styles.timeInput}
                   value={timeOut}
-                  onChangeText={setTimeOut}
+                  onChangeText={(text) => {
+                    // Allow only time format (HH:MM)
+                    const cleanedText = text.replace(/[^0-9:]/g, '');
+                    if (cleanedText.length <= 5) {
+                      setTimeOut(cleanedText);
+                    }
+                  }}
                   placeholder="17:00"
                   placeholderTextColor="#9ca3af"
+                  keyboardType="numeric"
+                  maxLength={5}
                 />
+                <Text style={styles.helperText}>Format: HH:MM (24-hour)</Text>
               </View>
             </View>
+            {timeIn && timeOut && (
+              <View style={styles.timeCalculation}>
+                <Text style={styles.calculatedHours}>
+                  Total Hours: {calculateHours(timeIn, timeOut) || 0} hours
+                </Text>
+              </View>
+            )}
           </View>
 
           {/* Parts Used */}
@@ -651,5 +684,28 @@ const styles = StyleSheet.create({
     right: -8,
     backgroundColor: '#ffffff',
     borderRadius: 10,
+  },
+  sectionSubtitle: {
+    fontSize: 13,
+    color: '#9ca3af',
+    marginBottom: 12,
+    lineHeight: 18,
+  },
+  helperText: {
+    fontSize: 11,
+    color: '#9ca3af',
+    marginTop: 4,
+  },
+  timeCalculation: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#374151',
+  },
+  calculatedHours: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#10b981',
+    textAlign: 'center',
   },
 });

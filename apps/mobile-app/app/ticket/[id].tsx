@@ -8,6 +8,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { WorkOrderModal } from '../components/WorkOrderModal';
+import WorkOrderDetailsModal from '../components/WorkOrderDetailsModal';
 import InvoiceModal from '../components/InvoiceModal';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -103,6 +104,8 @@ export default function TicketDetailsScreen() {
   const [invoiceModalVisible, setInvoiceModalVisible] = useState(false);
   const [assignTechnicianModalVisible, setAssignTechnicianModalVisible] = useState(false);
   const [technicians, setTechnicians] = useState<any[]>([]);
+  const [selectedWorkOrder, setSelectedWorkOrder] = useState<any>(null);
+  const [showWorkOrderDetailsModal, setShowWorkOrderDetailsModal] = useState(false);
 
   // Fetch ticket details
   const { data: ticket, isLoading: ticketLoading, refetch: refetchTicket, isError: ticketError, error: ticketErrorMsg } = useQuery({
@@ -643,6 +646,11 @@ export default function TicketDetailsScreen() {
       ],
       'plain-text'
     );
+  };
+
+  const handleViewWorkOrder = (workOrder: any) => {
+    setSelectedWorkOrder(workOrder);
+    setShowWorkOrderDetailsModal(true);
   };
 
 
@@ -1468,7 +1476,12 @@ export default function TicketDetailsScreen() {
               ) : (
                 <View style={styles.workOrdersList}>
                   {workOrders.map((workOrder: any, index: number) => (
-                    <View key={workOrder.id || index} style={styles.workOrderItem}>
+                    <TouchableOpacity 
+                      key={workOrder.id || index} 
+                      style={styles.workOrderItem}
+                      onPress={() => handleViewWorkOrder(workOrder)}
+                      activeOpacity={0.7}
+                    >
                       <View style={styles.workOrderHeader}>
                         <Text style={styles.workOrderTitle}>Work Order #{workOrder.id}</Text>
                         <View style={[styles.workOrderStatus, { backgroundColor: getStatusColor(workOrder.status) }]}>
@@ -1486,7 +1499,13 @@ export default function TicketDetailsScreen() {
                           minute: '2-digit'
                         })}
                       </Text>
-                    </View>
+                      
+                      {/* View indicator */}
+                      <View style={styles.viewIndicator}>
+                        <Ionicons name="chevron-forward" size={16} color="#94a3b8" />
+                        <Text style={styles.viewText}>Tap to view details</Text>
+                      </View>
+                    </TouchableOpacity>
                   ))}
                 </View>
               )}
@@ -1600,6 +1619,13 @@ export default function TicketDetailsScreen() {
         onClose={() => setWorkOrderModalVisible(false)}
         ticket={ticket}
         user={user}
+      />
+
+      {/* Work Order Details Modal */}
+      <WorkOrderDetailsModal
+        visible={showWorkOrderDetailsModal}
+        onClose={() => setShowWorkOrderDetailsModal(false)}
+        workOrder={selectedWorkOrder}
       />
 
       {/* Invoice Modal */}
@@ -2180,6 +2206,19 @@ const styles = StyleSheet.create({
   workOrderDate: {
     fontSize: 12,
     color: '#94a3b8',
+  },
+  viewIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+  },
+  viewText: {
+    fontSize: 12,
+    color: '#94a3b8',
+    marginLeft: 4,
   },
   
   // Comment Image Styles
