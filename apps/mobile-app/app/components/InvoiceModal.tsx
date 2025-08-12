@@ -40,6 +40,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
   const [notes, setNotes] = useState('');
   const [subtotal, setSubtotal] = useState(0);
   const [total, setTotal] = useState(0);
+  const [activeTab, setActiveTab] = useState<'create' | 'preview'>('create');
   const queryClient = useQueryClient();
 
   // Calculate totals from work orders and additional items
@@ -59,6 +60,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
       setAdditionalItems([]);
       setTax('0');
       setNotes('');
+      setActiveTab('create');
     }
   }, [visible]);
 

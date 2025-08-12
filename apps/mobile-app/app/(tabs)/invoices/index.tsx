@@ -8,12 +8,14 @@ import {
   RefreshControl,
   Alert,
   ActivityIndicator,
+  TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../../../src/services/api';
 import { useAuth } from '../../../src/contexts/AuthContext';
 import PaymentModal from '../../components/PaymentModal';
+import InvoicePDFModal from '../../components/InvoicePDFModal';
 
 interface Invoice {
   id: number;
@@ -37,6 +39,12 @@ const InvoicesScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<Invoice | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedInvoiceForPDF, setSelectedInvoiceForPDF] = useState<Invoice | null>(null);
+  const [showPDFModal, setShowPDFModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [organizationFilter, setOrganizationFilter] = useState('all');
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+  const [showFilters, setShowFilters] = useState(false);
   const queryClient = useQueryClient();
 
   // Fetch invoices
@@ -102,6 +110,57 @@ const InvoicesScreen = () => {
     setShowPaymentModal(false);
     setSelectedInvoiceForPayment(null);
   };
+
+  const handleViewPDF = (invoice: Invoice) => {
+    setSelectedInvoiceForPDF(invoice);
+    setShowPDFModal(true);
+  };
+
+  const closePDFModal = () => {
+    setShowPDFModal(false);
+    setSelectedInvoiceForPDF(null);
+  };
+
+  // Filter and sort invoices
+  const filterAndSortInvoices = (invoices: Invoice[]) => {
+    let filteredInvoices = [...invoices];
+
+    // Apply search filter
+    if (searchTerm.trim()) {
+      filteredInvoices = filteredInvoices.filter(invoice => 
+        invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (invoice.ticketNumber && invoice.ticketNumber.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (invoice.organizationName && invoice.organizationName.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+
+    // Apply organization filter
+    if (organizationFilter !== "all") {
+      filteredInvoices = filteredInvoices.filter(invoice => 
+        invoice.organizationId.toString() === organizationFilter
+      );
+    }
+
+    // Apply date sorting
+    filteredInvoices.sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
+    });
+
+    return filteredInvoices;
+  };
+
+  // Get unique organizations from invoices
+  const getUniqueOrganizations = () => {
+    const uniqueOrgIds = Array.from(new Set(invoices.map(inv => inv.organizationId)));
+    return uniqueOrgIds.map(id => ({
+      id: id.toString(),
+      name: invoices.find(inv => inv.organizationId === id)?.organizationName || `Organization ${id}`
+    }));
+  };
+
+  const filteredInvoices = filterAndSortInvoices(invoices);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -199,6 +258,15 @@ const InvoicesScreen = () => {
               <Text style={[styles.actionButtonText, styles.payButtonText]}>Pay</Text>
             </TouchableOpacity>
           )}
+          
+          <TouchableOpacity
+            style={[styles.actionButton, styles.pdfButton]}
+            onPress={() => handleViewPDF(invoice)}
+          >
+            <Ionicons name="document-text" size={16} color="#7c3aed" />
+            <Text style={[styles.actionButtonText, styles.pdfButtonText]}>View PDF</Text>
+          </TouchableOpacity>
+          )}
         </View>
         
         {invoice.sentAt && (
@@ -250,23 +318,94 @@ const InvoicesScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Invoices</Text>
-        <Text style={styles.subtitle}>
-          {invoices.length} invoice{invoices.length !== 1 ? 's' : ''}
-        </Text>
+        <View style={styles.headerTop}>
+          <View>
+            <Text style={styles.title}>Invoices</Text>
+            <Text style={styles.subtitle}>
+              {filteredInvoices.length} of {invoices.length} invoice{invoices.length !== 1 ? 's' : ''}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.filterButton}
+            onPress={() => setShowFilters(!showFilters)}
+          >
+            <Ionicons name="filter" size={20} color="#f3f4f6" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Filters Section */}
+        {showFilters && (
+          <View style={styles.filtersContainer}>
+            {/* Search Input */}
+            <View style={styles.searchContainer}>
+              <Ionicons name="search" size={16} color="#9ca3af" style={styles.searchIcon} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search invoices..."
+                placeholderTextColor="#6b7280"
+                value={searchTerm}
+                onChangeText={setSearchTerm}
+              />
+              {searchTerm.length > 0 && (
+                <TouchableOpacity onPress={() => setSearchTerm('')}>
+                  <Ionicons name="close-circle" size={16} color="#9ca3af" />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Organization Filter */}
+            <View style={styles.filterRow}>
+              <Text style={styles.filterLabel}>Organization:</Text>
+              <TouchableOpacity 
+                style={styles.filterDropdown}
+                onPress={() => {
+                  // Simple cycle through options for now
+                  const orgs = ['all', ...getUniqueOrganizations().map(o => o.id)];
+                  const currentIndex = orgs.indexOf(organizationFilter);
+                  const nextIndex = (currentIndex + 1) % orgs.length;
+                  setOrganizationFilter(orgs[nextIndex]);
+                }}
+              >
+                <Text style={styles.filterDropdownText}>
+                  {organizationFilter === 'all' ? 'All Organizations' : 
+                   getUniqueOrganizations().find(o => o.id === organizationFilter)?.name || 'Unknown'}
+                </Text>
+                <Ionicons name="chevron-down" size={16} color="#9ca3af" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Sort Order */}
+            <View style={styles.filterRow}>
+              <Text style={styles.filterLabel}>Sort:</Text>
+              <TouchableOpacity 
+                style={styles.filterDropdown}
+                onPress={() => setSortOrder(sortOrder === 'newest' ? 'oldest' : 'newest')}
+              >
+                <Text style={styles.filterDropdownText}>
+                  {sortOrder === 'newest' ? 'Newest First' : 'Oldest First'}
+                </Text>
+                <Ionicons name="swap-vertical" size={16} color="#9ca3af" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
       </View>
 
-      {invoices.length === 0 ? (
+      {filteredInvoices.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="receipt-outline" size={64} color="#9ca3af" />
-          <Text style={styles.emptyTitle}>No Invoices</Text>
+          <Text style={styles.emptyTitle}>
+            {invoices.length === 0 ? 'No Invoices' : 'No Matching Invoices'}
+          </Text>
           <Text style={styles.emptyText}>
-            Invoices will appear here once work orders are completed and ready for billing.
+            {invoices.length === 0 
+              ? 'Invoices will appear here once work orders are completed and ready for billing.'
+              : 'Try adjusting your filters to see more invoices.'}
           </Text>
         </View>
       ) : (
         <FlatList
-          data={invoices}
+          data={filteredInvoices}
           renderItem={renderInvoiceItem}
           keyExtractor={(item) => item.id.toString()}
           refreshControl={
@@ -285,6 +424,15 @@ const InvoicesScreen = () => {
           invoice={selectedInvoiceForPayment}
         />
       )}
+      
+      {/* PDF Modal */}
+      {selectedInvoiceForPDF && (
+        <InvoicePDFModal
+          visible={showPDFModal}
+          onClose={closePDFModal}
+          invoice={selectedInvoiceForPDF}
+        />
+      )}
     </View>
   );
 };
@@ -301,6 +449,68 @@ const styles = StyleSheet.create({
     backgroundColor: '#1f2937',
     borderBottomWidth: 1,
     borderBottomColor: '#374151',
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  filterButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#374151',
+  },
+  filtersContainer: {
+    marginTop: 16,
+    padding: 16,
+    backgroundColor: '#374151',
+    borderRadius: 8,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1f2937',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#f3f4f6',
+  },
+  filterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  filterLabel: {
+    fontSize: 14,
+    color: '#9ca3af',
+    fontWeight: '500',
+    width: 80,
+  },
+  filterDropdown: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#1f2937',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 6,
+    marginLeft: 12,
+  },
+  filterDropdownText: {
+    fontSize: 14,
+    color: '#f3f4f6',
+    flex: 1,
   },
   title: {
     fontSize: 28,
@@ -497,6 +707,13 @@ const styles = StyleSheet.create({
   },
   payButtonText: {
     color: '#10b981',
+  },
+  pdfButton: {
+    backgroundColor: 'rgba(124, 58, 237, 0.1)',
+    borderColor: '#7c3aed',
+  },
+  pdfButtonText: {
+    color: '#7c3aed',
   },
   notesContainer: {
     marginTop: 12,
