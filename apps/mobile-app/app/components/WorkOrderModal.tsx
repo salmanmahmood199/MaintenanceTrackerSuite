@@ -88,29 +88,9 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
         throw new Error('Completion status is required');
       }
 
-      const formData = new FormData();
-      
-      // Add work order data with proper field mapping
-      Object.keys(workOrderData).forEach(key => {
-        if (key !== 'images') {
-          const value = workOrderData[key];
-          if (value !== null && value !== undefined) {
-            formData.append(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
-          }
-        }
-      });
-      
-      // Add images
-      workImages.forEach((image, index) => {
-        formData.append('images', {
-          uri: image.uri,
-          type: image.type || 'image/jpeg',
-          name: image.name || `work_image_${index}.jpg`,
-        } as any);
-      });
+      // Use JSON instead of FormData since we're not uploading files yet
+      const response = await apiRequest('POST', `/api/tickets/${ticket.id}/work-orders`, workOrderData);
 
-      console.log('Sending FormData to API...');
-      const response = await apiRequest('POST', `/api/tickets/${ticket.id}/work-orders`, formData);
       if (!response.ok) {
         const errorText = await response.text();
         console.error('API Error Response:', errorText);
