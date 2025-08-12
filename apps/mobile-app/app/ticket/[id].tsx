@@ -8,6 +8,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { WorkOrderModal } from '../components/WorkOrderModal';
+import InvoiceModal from '../components/InvoiceModal';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -99,6 +100,7 @@ export default function TicketDetailsScreen() {
   const [selectedImages, setSelectedImages] = useState<any[]>([]);
   const [imagePreviewModalVisible, setImagePreviewModalVisible] = useState(false);
   const [workOrderModalVisible, setWorkOrderModalVisible] = useState(false);
+  const [invoiceModalVisible, setInvoiceModalVisible] = useState(false);
   const [assignTechnicianModalVisible, setAssignTechnicianModalVisible] = useState(false);
   const [technicians, setTechnicians] = useState<any[]>([]);
 
@@ -732,6 +734,18 @@ export default function TicketDetailsScreen() {
           style: { backgroundColor: '#10b981' },
           action: () => completeWork()
         });
+      }
+    }
+    
+    // Create invoice action for ready_for_billing status
+    if (ticket.status === 'ready_for_billing' && user.role === 'maintenance_admin') {
+      actions.push({
+        id: 'create_invoice',
+        label: 'Create Invoice',
+        icon: 'receipt',
+        style: { backgroundColor: '#10b981' },
+        action: () => setInvoiceModalVisible(true)
+      });
       }
     }
     
@@ -1586,6 +1600,15 @@ export default function TicketDetailsScreen() {
         visible={workOrderModalVisible}
         onClose={() => setWorkOrderModalVisible(false)}
         ticket={ticket}
+        user={user}
+      />
+
+      {/* Invoice Modal */}
+      <InvoiceModal
+        visible={invoiceModalVisible}
+        onClose={() => setInvoiceModalVisible(false)}
+        ticket={ticket}
+        workOrders={workOrders}
         user={user}
       />
 
