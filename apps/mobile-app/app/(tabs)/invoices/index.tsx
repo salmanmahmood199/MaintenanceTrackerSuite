@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../../../src/services/api';
 import { useAuth } from '../../../src/contexts/AuthContext';
+import PaymentModal from '../../components/PaymentModal';
 
 interface Invoice {
   id: number;
@@ -34,6 +35,8 @@ interface Invoice {
 const InvoicesScreen = () => {
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<Invoice | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const queryClient = useQueryClient();
 
   // Fetch invoices
@@ -88,6 +91,16 @@ const InvoicesScreen = () => {
         }
       ]
     );
+  };
+
+  const handlePayInvoice = (invoice: Invoice) => {
+    setSelectedInvoiceForPayment(invoice);
+    setShowPaymentModal(true);
+  };
+
+  const closePaymentModal = () => {
+    setShowPaymentModal(false);
+    setSelectedInvoiceForPayment(null);
   };
 
   const getStatusColor = (status: string) => {
@@ -165,16 +178,28 @@ const InvoicesScreen = () => {
           Created: {formatDate(invoice.createdAt)}
         </Text>
         
-        {invoice.status === 'draft' && user?.role === 'maintenance_admin' && (
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => handleSendInvoice(invoice)}
-            disabled={sendInvoiceMutation.isPending}
-          >
-            <Ionicons name="send" size={16} color="#3b82f6" />
-            <Text style={styles.actionButtonText}>Send</Text>
-          </TouchableOpacity>
-        )}
+        <View style={styles.actionButtonsContainer}>
+          {invoice.status === 'draft' && user?.role === 'maintenance_admin' && (
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => handleSendInvoice(invoice)}
+              disabled={sendInvoiceMutation.isPending}
+            >
+              <Ionicons name="send" size={16} color="#3b82f6" />
+              <Text style={styles.actionButtonText}>Send</Text>
+            </TouchableOpacity>
+          )}
+          
+          {invoice.status === 'sent' && ['org_admin', 'org_subadmin'].includes(user?.role || '') && (
+            <TouchableOpacity
+              style={[styles.actionButton, styles.payButton]}
+              onPress={() => handlePayInvoice(invoice)}
+            >
+              <Ionicons name="card" size={16} color="#059669" />
+              <Text style={[styles.actionButtonText, styles.payButtonText]}>Pay</Text>
+            </TouchableOpacity>
+          )}
+        </View>
         
         {invoice.sentAt && (
           <Text style={styles.dateText}>
@@ -249,6 +274,15 @@ const InvoicesScreen = () => {
           }
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
+        />
+      )}
+      
+      {/* Payment Modal */}
+      {selectedInvoiceForPayment && (
+        <PaymentModal
+          visible={showPaymentModal}
+          onClose={closePaymentModal}
+          invoice={selectedInvoiceForPayment}
         />
       )}
     </View>
@@ -428,11 +462,14 @@ const styles = StyleSheet.create({
     color: '#10b981',
   },
   invoiceFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    flexWrap: 'wrap',
+    flexDirection: 'column',
     gap: 8,
+  },
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+    alignItems: 'center',
   },
   dateText: {
     fontSize: 12,
@@ -453,6 +490,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#3b82f6',
+  },
+  payButton: {
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    borderColor: '#10b981',
+  },
+  payButtonText: {
+    color: '#10b981',
   },
   notesContainer: {
     marginTop: 12,
