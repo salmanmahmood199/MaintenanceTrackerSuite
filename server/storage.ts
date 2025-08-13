@@ -1748,11 +1748,32 @@ export class DatabaseStorage implements IStorage {
 
   // Parts management implementation
   async getPartsByVendorId(vendorId: number): Promise<Part[]> {
-    return await db
+    const rawParts = await db
       .select()
       .from(parts)
       .where(eq(parts.vendorId, vendorId))
       .orderBy(desc(parts.updatedAt));
+
+    // Calculate final price for each part
+    return rawParts.map(part => {
+      const currentCost = parseFloat(part.currentCost.toString());
+      const markupPercentage = parseFloat(part.markupPercentage.toString());
+      
+      // Calculate price with markup
+      let finalPrice = currentCost * (1 + markupPercentage / 100);
+      
+      // Apply rounding to .99 if enabled
+      if (part.roundToNinteyNine) {
+        finalPrice = Math.floor(finalPrice) + 0.99;
+      } else {
+        finalPrice = Math.round(finalPrice * 100) / 100; // Round to 2 decimal places
+      }
+      
+      return {
+        ...part,
+        price: finalPrice // Add calculated price field
+      };
+    });
   }
 
   async createPart(partData: InsertPart): Promise<Part> {

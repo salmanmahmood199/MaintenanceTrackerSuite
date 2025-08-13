@@ -86,6 +86,15 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
+  // Debug logging
+  useEffect(() => {
+    if (visible) {
+      console.log('WorkOrderModal - User maintenanceVendorId:', user?.maintenanceVendorId);
+      console.log('WorkOrderModal - Vendor parts data:', vendorParts);
+      console.log('WorkOrderModal - Parts loading:', partsLoading);
+    }
+  }, [visible, user?.maintenanceVendorId, vendorParts, partsLoading]);
+
   // Helper functions
   const formatTime = (hour: number, minute: number, ampm: string) => {
     const displayHour = hour === 0 ? 12 : hour;
