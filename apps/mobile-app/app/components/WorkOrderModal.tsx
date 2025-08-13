@@ -56,8 +56,10 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
   const [laborRate, setLaborRate] = useState(75);
 
   useEffect(() => {
-    fetchVendorParts();
-  }, []);
+    if (visible) {
+      fetchVendorParts();
+    }
+  }, [visible]);
 
   const fetchVendorParts = async () => {
     try {
@@ -93,14 +95,75 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
       if (response.ok) {
         const vendorParts = await response.json();
         console.log('Raw vendor parts:', vendorParts);
-        const partNames = vendorParts.map((part: any) => part.name);
-        setPARTS_LIST(['Select Part...', ...partNames]);
-        console.log('Loaded parts list:', partNames);
+        if (vendorParts && vendorParts.length > 0) {
+          const partNames = vendorParts.map((part: any) => part.name);
+          setPARTS_LIST(['Select Part...', ...partNames]);
+          console.log('Loaded parts list:', partNames);
+        } else {
+          console.log('No parts found for vendor');
+          // Set default parts if vendor has no parts
+          setPARTS_LIST([
+            'Select Part...',
+            'Air Filter',
+            'Oil Filter',
+            'Spark Plug',
+            'Belt',
+            'Gasket',
+            'Valve',
+            'Bearing',
+            'Seal',
+            'O-Ring',
+            'Pipe Fitting',
+            'Electrical Wire',
+            'Circuit Breaker',
+            'Motor',
+            'Pump',
+            'Other'
+          ]);
+        }
       } else {
         console.error('Failed to fetch vendor parts:', response.status, await response.text());
+        // Set default parts on error
+        setPARTS_LIST([
+          'Select Part...',
+          'Air Filter',
+          'Oil Filter',
+          'Spark Plug',
+          'Belt',
+          'Gasket',
+          'Valve',
+          'Bearing',
+          'Seal',
+          'O-Ring',
+          'Pipe Fitting',
+          'Electrical Wire',
+          'Circuit Breaker',
+          'Motor',
+          'Pump',
+          'Other'
+        ]);
       }
     } catch (error) {
       console.error('Error fetching vendor parts:', error);
+      // Set default parts on error
+      setPARTS_LIST([
+        'Select Part...',
+        'Air Filter',
+        'Oil Filter',
+        'Spark Plug',
+        'Belt',
+        'Gasket',
+        'Valve',
+        'Bearing',
+        'Seal',
+        'O-Ring',
+        'Pipe Fitting',
+        'Electrical Wire',
+        'Circuit Breaker',
+        'Motor',
+        'Pump',
+        'Other'
+      ]);
     }
   };
 
@@ -120,11 +183,10 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
   };
 
   const calculateTotalCost = () => {
-    const totalHours = calculateHours();
-    const laborCost = totalHours * laborRate;
     const partsCost = parts.reduce((sum, part) => sum + (part.quantity * part.cost), 0);
     const chargesCost = otherCharges.reduce((sum, charge) => sum + charge.amount, 0);
-    return laborCost + partsCost + chargesCost;
+    // Labor cost hidden from technicians - only parts and other charges
+    return partsCost + chargesCost;
   };
 
   const addPart = () => {
@@ -526,9 +588,6 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
           <View style={styles.timeCalculation}>
             <Text style={styles.calculatedHours}>
               Total Hours: {calculateHours().toFixed(1)} hours
-            </Text>
-            <Text style={styles.calculatedCost}>
-              Labor Cost: ${(calculateHours() * laborRate).toFixed(2)}
             </Text>
           </View>
         </View>
