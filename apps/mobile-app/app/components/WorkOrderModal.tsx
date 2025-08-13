@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '../../src/services/api';
 import SignatureModal from './SignatureModal';
 
@@ -30,6 +30,14 @@ interface Part {
   name: string;
   quantity: number;
   cost: number;
+  id?: number; // For tracking real parts from API
+}
+
+interface VendorPart {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
 }
 
 interface OtherCharge {
@@ -37,28 +45,7 @@ interface OtherCharge {
   cost: number;
 }
 
-// Common parts for dropdown
-const COMMON_PARTS = [
-  'Select Part...',
-  'Air Filter',
-  'Oil Filter',
-  'Spark Plugs',
-  'Brake Pads',
-  'Brake Fluid',
-  'Transmission Fluid',
-  'Coolant',
-  'Belts',
-  'Hoses',
-  'Gaskets',
-  'Seals',
-  'Fuses',
-  'Light Bulbs',
-  'Wiper Blades',
-  'Battery',
-  'Alternator',
-  'Starter',
-  'Custom Part...'
-];
+// This will be replaced by dynamic API data
 
 export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
   visible,
@@ -91,6 +78,13 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
   const [showPartPickerIndex, setShowPartPickerIndex] = useState<number | null>(null);
 
   const queryClient = useQueryClient();
+
+  // Fetch real parts from maintenance vendor
+  const { data: vendorParts = [], isLoading: partsLoading } = useQuery({
+    queryKey: [`/api/maintenance-vendors/${user?.maintenanceVendorId}/parts`],
+    enabled: visible && !!user?.maintenanceVendorId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
   // Helper functions
   const formatTime = (hour: number, minute: number, ampm: string) => {
@@ -250,26 +244,38 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
     ));
   };
 
-  const selectPart = (index: number, partName: string) => {
-    if (partName === 'Custom Part...') {
-      Alert.prompt(
-        'Custom Part',
-        'Enter the part name:',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Add',
-            onPress: (customName) => {
-              if (customName?.trim()) {
-                updatePart(index, 'name', customName.trim());
+  const selectPart = (index: number, partData: VendorPart | string) => {
+    if (typeof partData === 'string') {
+      if (partData === 'Custom Part...') {
+        Alert.prompt(
+          'Custom Part',
+          'Enter the part name:',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Add',
+              onPress: (customName) => {
+                if (customName?.trim()) {
+                  updatePart(index, 'name', customName.trim());
+                  updatePart(index, 'cost', 0);
+                  updatePart(index, 'id', undefined); // Clear ID for custom parts
+                }
               }
             }
-          }
-        ],
-        'plain-text'
-      );
-    } else if (partName !== 'Select Part...') {
-      updatePart(index, 'name', partName);
+          ],
+          'plain-text'
+        );
+      } else if (partData === 'Select Part...') {
+        // Clear the part selection
+        updatePart(index, 'name', '');
+        updatePart(index, 'cost', 0);
+        updatePart(index, 'id', undefined);
+      }
+    } else {
+      // Real part selected - auto-populate price
+      updatePart(index, 'name', partData.name);
+      updatePart(index, 'cost', partData.price);
+      updatePart(index, 'id', partData.id);
     }
     setShowPartPickerIndex(null);
   };
@@ -680,24 +686,63 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                   {showPartPickerIndex === index && (
                     <View style={styles.partPickerModal}>
                       <ScrollView style={styles.partPickerList} showsVerticalScrollIndicator={false}>
-                        {COMMON_PARTS.map((partName, i) => (
-                          <TouchableOpacity
-                            key={i}
-                            style={[
-                              styles.partPickerItem,
-                              partName === part.name && styles.selectedPartPickerItem
-                            ]}
-                            onPress={() => selectPart(index, partName)}
-                          >
-                            <Text style={[
-                              styles.partPickerText,
-                              partName === part.name && styles.selectedPartPickerText,
-                              partName === 'Select Part...' && styles.placeholderText
-                            ]}>
-                              {partName}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
+                        <TouchableOpacity
+                          style={[styles.partPickerItem, styles.placeholderItem]}
+                          onPress={() => selectPart(index, 'Select Part...')}
+                        >
+                          <Text style={[styles.partPickerText, styles.placeholderText]}>
+                            Select Part...
+                          </Text>
+                        </TouchableOpacity>
+                        
+                        {partsLoading ? (
+                          <View style={styles.loadingContainer}>
+                            <ActivityIndicator size="small" color="#3b82f6" />
+                            <Text style={styles.loadingText}>Loading parts...</Text>
+                          </View>
+                        ) : (
+                          <>
+                            {vendorParts.map((vendorPart: VendorPart) => (
+                              <TouchableOpacity
+                                key={vendorPart.id}
+                                style={[
+                                  styles.partPickerItem,
+                                  vendorPart.name === part.name && styles.selectedPartPickerItem
+                                ]}
+                                onPress={() => selectPart(index, vendorPart)}
+                              >
+                                <View style={styles.partItemContent}>
+                                  <Text style={[
+                                    styles.partPickerText,
+                                    vendorPart.name === part.name && styles.selectedPartPickerText
+                                  ]}>
+                                    {vendorPart.name}
+                                  </Text>
+                                  <Text style={[
+                                    styles.partPrice,
+                                    vendorPart.name === part.name && styles.selectedPartPrice
+                                  ]}>
+                                    ${vendorPart.price.toFixed(2)}
+                                  </Text>
+                                </View>
+                                {vendorPart.description && (
+                                  <Text style={styles.partDescription}>
+                                    {vendorPart.description}
+                                  </Text>
+                                )}
+                              </TouchableOpacity>
+                            ))}
+                            
+                            <TouchableOpacity
+                              style={[styles.partPickerItem, styles.customPartItem]}
+                              onPress={() => selectPart(index, 'Custom Part...')}
+                            >
+                              <Text style={[styles.partPickerText, styles.customPartText]}>
+                                + Custom Part...
+                              </Text>
+                            </TouchableOpacity>
+                          </>
+                        )}
                       </ScrollView>
                       <TouchableOpacity
                         style={styles.closePartPickerButton}
@@ -719,12 +764,21 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                 />
                 
                 <TextInput
-                  style={[styles.input, styles.costInput]}
+                  style={[
+                    styles.input, 
+                    styles.costInput,
+                    part.id && styles.disabledInput // Disable if real part selected
+                  ]}
                   value={part.cost.toString()}
-                  onChangeText={(value) => updatePart(index, 'cost', parseFloat(value) || 0)}
+                  onChangeText={(value) => {
+                    if (!part.id) { // Only allow editing for custom parts
+                      updatePart(index, 'cost', parseFloat(value) || 0);
+                    }
+                  }}
                   placeholder="Cost"
                   keyboardType="numeric"
                   placeholderTextColor="#9ca3af"
+                  editable={!part.id} // Disable editing for real parts
                 />
                 
                 {parts.length > 1 && (
@@ -1279,6 +1333,56 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     padding: 16,
   },
+  // Parts dropdown enhancements
+  partItemContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+  },
+  partPrice: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#10b981',
+  },
+  selectedPartPrice: {
+    color: '#ffffff',
+  },
+  partDescription: {
+    fontSize: 11,
+    color: '#9ca3af',
+    marginTop: 2,
+    fontStyle: 'italic',
+  },
+  placeholderItem: {
+    borderBottomColor: '#4b5563',
+  },
+  customPartItem: {
+    borderTopWidth: 1,
+    borderTopColor: '#4b5563',
+    backgroundColor: '#374151',
+  },
+  customPartText: {
+    color: '#3b82f6',
+    fontWeight: '500',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    gap: 8,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: '#9ca3af',
+  },
+  disabledInput: {
+    backgroundColor: '#1f2937',
+    opacity: 0.7,
+  },
 });
+
+export default WorkOrderModal;
 
 export default WorkOrderModal;
