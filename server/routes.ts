@@ -2899,7 +2899,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           completionStatus: workOrderData.completionStatus || null,
           completionNotes: workOrderData.completionNotes || '',
           parts: workOrderData.parts || [],
-          otherCharges: workOrderData.otherCharges || "[]",
+          otherCharges: workOrderData.otherCharges || [],
           totalCost: workOrderData.totalCost || 0,
           images: workOrderData.images || [],
           workDate: workOrderData.workDate || new Date().toISOString().split('T')[0],

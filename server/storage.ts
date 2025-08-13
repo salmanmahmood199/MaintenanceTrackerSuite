@@ -1062,7 +1062,7 @@ export class DatabaseStorage implements IStorage {
       completionStatus: workOrderData.completionStatus,
       completionNotes: workOrderData.completionNotes,
       parts: typeof workOrderData.parts === 'string' ? workOrderData.parts : JSON.stringify(workOrderData.parts),
-      otherCharges: typeof workOrderData.otherCharges === 'string' ? workOrderData.otherCharges : JSON.stringify(workOrderData.otherCharges || []),
+      otherCharges: typeof workOrderData.otherCharges === 'string' ? workOrderData.otherCharges : JSON.stringify(workOrderData.otherCharges),
       totalCost: workOrderData.totalCost,
       images: workOrderData.images,
       // Time tracking fields
