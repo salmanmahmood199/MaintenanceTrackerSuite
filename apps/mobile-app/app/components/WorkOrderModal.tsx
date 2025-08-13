@@ -43,10 +43,7 @@ interface VendorPart {
   price: number;
 }
 
-interface OtherCharge {
-  description: string;
-  cost: number;
-}
+
 
 // This will be replaced by dynamic API data
 
@@ -65,9 +62,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
   const [parts, setParts] = useState<Part[]>([
     { name: "", quantity: 1, cost: 0 },
   ]);
-  const [otherCharges, setOtherCharges] = useState<OtherCharge[]>([
-    { description: "", cost: 0 },
-  ]);
+
 
   // Time picker states
   const [timeInHour, setTimeInHour] = useState(new Date().getHours());
@@ -156,18 +151,14 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
     return Math.max(0, diffMs / (1000 * 60 * 60)); // Convert to hours, minimum 0
   };
 
-  // Calculate total cost whenever parts or other charges change
+  // Calculate total cost whenever parts change
   useEffect(() => {
     const partsTotal = parts.reduce(
       (sum, part) => sum + part.quantity * part.cost,
       0,
     );
-    const chargesTotal = otherCharges.reduce(
-      (sum, charge) => sum + charge.cost,
-      0,
-    );
-    setTotalCost(partsTotal + chargesTotal);
-  }, [parts, otherCharges]);
+    setTotalCost(partsTotal);
+  }, [parts]);
 
   // Reset form when modal opens
   useEffect(() => {
@@ -177,7 +168,6 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
       setCompletionNotes("");
       setReturnReason("");
       setParts([{ name: "", quantity: 1, cost: 0 }]);
-      setOtherCharges([{ description: "", cost: 0 }]);
 
       // Initialize time values
       const now = new Date();
@@ -269,7 +259,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
       completionNotes:
         completionStatus === "return_needed" ? returnReason : completionNotes,
       parts: parts.filter((p) => p.name.trim() !== ""),
-      otherCharges: otherCharges.filter((c) => c.description.trim() !== ""),
+
       timeIn: convertTo24Hour(timeInHour, timeInMinute, timeInAmPm),
       timeOut: convertTo24Hour(timeOutHour, timeOutMinute, timeOutAmPm),
       totalHours: calculateHours(),
@@ -298,25 +288,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
     );
   };
 
-  const addOtherCharge = () => {
-    setOtherCharges((prev) => [...prev, { description: "", cost: 0 }]);
-  };
 
-  const removeOtherCharge = (index: number) => {
-    setOtherCharges((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const updateOtherCharge = (
-    index: number,
-    field: keyof OtherCharge,
-    value: any,
-  ) => {
-    setOtherCharges((prev) =>
-      prev.map((charge, i) =>
-        i === index ? { ...charge, [field]: value } : charge,
-      ),
-    );
-  };
 
   const selectPart = (index: number, partData: VendorPart | string) => {
     if (typeof partData === "string") {
@@ -325,7 +297,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
           "Custom Part",
           "Enter the part name:",
           [
-            { text: "Cancel", style: "cancel" },
+            { text: "Cancel", style: "cancel" as const },
             {
               text: "Add",
               onPress: (customName) => {
@@ -359,7 +331,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
       { text: "Camera", onPress: () => takePhoto() },
       { text: "Photo Library", onPress: () => selectFromLibrary() },
       { text: "Record Video", onPress: () => recordVideo() },
-      { text: "Cancel", style: "cancel" },
+      { text: "Cancel", style: "cancel" as const },
     ];
 
     if (Platform.OS === "ios") {
@@ -978,7 +950,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                   style={[
                     styles.input,
                     styles.costInput,
-                    part.id && styles.disabledInput, // Disable if real part selected
+                    part.id ? styles.disabledInput : undefined, // Disable if real part selected
                   ]}
                   value={part.cost.toString()}
                   onChangeText={(value) => {
@@ -1005,50 +977,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
             ))}
           </View>
 
-          {/* Other Charges */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Other Charges</Text>
-              <TouchableOpacity
-                onPress={addOtherCharge}
-                style={styles.addButton}
-              >
-                <Ionicons name="add" size={20} color="#3b82f6" />
-                <Text style={styles.addButtonText}>Add Charge</Text>
-              </TouchableOpacity>
-            </View>
-            {otherCharges.map((charge, index) => (
-              <View key={index} style={styles.chargeRow}>
-                <TextInput
-                  style={[styles.input, { flex: 2 }]}
-                  value={charge.description}
-                  onChangeText={(value) =>
-                    updateOtherCharge(index, "description", value)
-                  }
-                  placeholder="Description"
-                  placeholderTextColor="#9ca3af"
-                />
-                <TextInput
-                  style={[styles.input, { flex: 1 }]}
-                  value={charge.cost.toString()}
-                  onChangeText={(value) =>
-                    updateOtherCharge(index, "cost", parseFloat(value) || 0)
-                  }
-                  placeholder="Cost"
-                  keyboardType="numeric"
-                  placeholderTextColor="#9ca3af"
-                />
-                {otherCharges.length > 1 && (
-                  <TouchableOpacity
-                    onPress={() => removeOtherCharge(index)}
-                    style={styles.removeButton}
-                  >
-                    <Ionicons name="trash" size={16} color="#ef4444" />
-                  </TouchableOpacity>
-                )}
-              </View>
-            ))}
-          </View>
+
 
           {/* Total Cost */}
           <View style={styles.section}>
@@ -1286,12 +1215,7 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 8,
   },
-  chargeRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 8,
-  },
+
   removeButton: {
     padding: 8,
   },
