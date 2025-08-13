@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import SignatureCanvas from "react-native-signature-canvas";
@@ -91,7 +92,7 @@ const SignatureModal: React.FC<SignatureModalProps> = ({
     <Modal
       visible={visible}
       animationType="slide"
-      presentationStyle="formSheet"
+      presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
       <View style={styles.container}>
