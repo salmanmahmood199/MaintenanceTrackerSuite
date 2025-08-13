@@ -61,28 +61,43 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
 
   const fetchVendorParts = async () => {
     try {
-      // Get current user's vendor ID first
-      const userResponse = await fetch('/api/auth/user');
+      // Get current user's vendor ID first - use relative URL for mobile
+      const userResponse = await fetch('/api/auth/user', {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
       if (!userResponse.ok) {
-        console.error('Failed to get user info');
+        console.error('Failed to get user info:', userResponse.status);
         return;
       }
       
       const user = await userResponse.json();
+      console.log('User data:', user);
+      
       if (!user.maintenanceVendorId) {
         console.error('User has no vendor ID');
         return;
       }
 
-      // Fetch parts for the vendor
-      const response = await fetch(`/api/maintenance-vendors/${user.maintenanceVendorId}/parts`);
+      // Fetch parts for the vendor - use relative URL for mobile
+      const response = await fetch(`/api/maintenance-vendors/${user.maintenanceVendorId}/parts`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
       if (response.ok) {
         const vendorParts = await response.json();
+        console.log('Raw vendor parts:', vendorParts);
         const partNames = vendorParts.map((part: any) => part.name);
         setPARTS_LIST(['Select Part...', ...partNames]);
-        console.log('Loaded parts:', partNames);
+        console.log('Loaded parts list:', partNames);
       } else {
-        console.error('Failed to fetch vendor parts:', response.status);
+        console.error('Failed to fetch vendor parts:', response.status, await response.text());
       }
     } catch (error) {
       console.error('Error fetching vendor parts:', error);

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -8,11 +8,12 @@ import {
   PanResponder,
   Dimensions,
   Alert,
+  StatusBar,
 } from 'react-native';
-// Using React Native views for signature drawing
 import { Ionicons } from '@expo/vector-icons';
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const screenData = Dimensions.get('screen');
+const isLandscape = screenData.width > screenData.height;
 
 interface DrawingSignatureModalProps {
   visible: boolean;
@@ -30,6 +31,14 @@ const DrawingSignatureModal: React.FC<DrawingSignatureModalProps> = ({
   const [paths, setPaths] = useState<string[]>([]);
   const [currentPath, setCurrentPath] = useState<string>('');
   const pathRef = useRef<string>('');
+  const [dimensions, setDimensions] = useState(Dimensions.get('screen'));
+
+  useEffect(() => {
+    const subscription = Dimensions.addEventListener('change', ({ screen }) => {
+      setDimensions(screen);
+    });
+    return () => subscription?.remove();
+  }, []);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -85,8 +94,20 @@ const DrawingSignatureModal: React.FC<DrawingSignatureModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" supportedOrientations={['landscape']}>
-      <View style={styles.container}>
+    <Modal 
+      visible={visible} 
+      animationType="slide" 
+      presentationStyle="fullScreen"
+      supportedOrientations={['portrait', 'landscape', 'landscape-left', 'landscape-right']}
+      onOrientationChange={({ nativeEvent }) => {
+        console.log('Orientation changed:', nativeEvent);
+      }}
+    >
+      <StatusBar hidden={true} />
+      <View style={[styles.container, {
+        width: dimensions.width,
+        height: dimensions.height,
+      }]}>
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Ionicons name="close" size={24} color="#6b7280" />
@@ -101,7 +122,9 @@ const DrawingSignatureModal: React.FC<DrawingSignatureModalProps> = ({
 
         <View style={styles.instructionContainer}>
           <Text style={styles.instructionText}>
-            Please hold your device horizontally and sign below with your finger.
+            {dimensions.width > dimensions.height 
+              ? "Perfect! Now sign below with your finger." 
+              : "Please rotate your device to landscape mode (sideways) for better signing experience."}
           </Text>
         </View>
 
@@ -208,7 +231,6 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     overflow: 'hidden',
     position: 'relative',
-    minHeight: 200,
   },
   drawingArea: {
     flex: 1,
