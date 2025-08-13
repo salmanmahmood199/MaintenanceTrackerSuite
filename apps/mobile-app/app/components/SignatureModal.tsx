@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from "react";
 import {
   Modal,
   View,
@@ -6,14 +6,16 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
-  TextInput,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import SignatureCanvas from "react-native-signature-canvas";
+import * as FileSystem from "expo-file-system";
+import axios from "axios";
 
 interface SignatureModalProps {
   visible: boolean;
   onClose: () => void;
-  onSave: (signature: string) => void;
+  onSave: (signatureUrl: string) => void;
   title?: string;
 }
 
@@ -21,29 +23,64 @@ const SignatureModal: React.FC<SignatureModalProps> = ({
   visible,
   onClose,
   onSave,
-  title = "Manager Signature"
+  title = "Manager Signature",
 }) => {
-  const [signatureName, setSignatureName] = useState('');
+  const signatureRef = useRef<any>(null);
   const [hasSignature, setHasSignature] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleClearSignature = () => {
-    setSignatureName('');
+    signatureRef.current?.clearSignature();
     setHasSignature(false);
   };
 
-  const handleSaveSignature = () => {
-    if (!signatureName.trim()) {
-      Alert.alert('Error', 'Please enter your name');
-      return;
-    }
-    // Create a text signature as base64 data URL
-    const textSignature = `data:text/plain;base64,${btoa(`Signed by: ${signatureName.trim()}\nDate: ${new Date().toLocaleDateString()}`)}`;
-    onSave(textSignature);
-    handleClearSignature();
-    onClose();
+  const handleBegin = () => {
+    setHasSignature(true);
   };
 
-  // Reset when modal closes
+  const handleSignatureOK = async (sig: string) => {
+    if (!sig) return;
+    try {
+      setIsLoading(true);
+
+      // Strip the prefix for backend
+      const base64Code = sig.replace(/^data:image\/\w+;base64,/, "");
+      const fileName = `signature_${Date.now()}.png`;
+      const filePath = `${FileSystem.cacheDirectory}${fileName}`;
+
+      await FileSystem.writeAsStringAsync(filePath, base64Code, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      const formData = new FormData();
+      formData.append("file", {
+        uri: filePath,
+        name: fileName,
+        type: "image/png",
+      } as any);
+
+      const response = await axios.post(
+        "https://byzpal.com/api/application/uploadfile",
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } },
+      );
+
+      if (response.data?.url) {
+        console.log(response.data.url);
+        onSave(response.data.url);
+        handleClearSignature();
+        onClose();
+      } else {
+        throw new Error("No URL returned from upload");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to save signature. Please try again.");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!visible) {
       handleClearSignature();
@@ -58,165 +95,148 @@ const SignatureModal: React.FC<SignatureModalProps> = ({
       onRequestClose={onClose}
     >
       <View style={styles.container}>
+        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.cancelButton}>
             <Ionicons name="close" size={24} color="#666" />
           </TouchableOpacity>
           <Text style={styles.title}>{title}</Text>
-          <TouchableOpacity onPress={handleSaveSignature} style={styles.saveButton}>
-            <Text style={styles.saveButtonText}>Save</Text>
+          <TouchableOpacity
+            onPress={() => signatureRef.current?.readSignature()}
+            style={[
+              styles.saveButton,
+              (!hasSignature || isLoading) && styles.disabledButton,
+            ]}
+            disabled={!hasSignature || isLoading}
+          >
+            <Text style={styles.saveButtonText}>
+              {isLoading ? "Saving..." : "Save"}
+            </Text>
           </TouchableOpacity>
         </View>
 
+        {/* Instructions */}
         <View style={styles.instructions}>
           <Text style={styles.instructionText}>
             Please sign below to confirm the work order completion
           </Text>
         </View>
 
+        {/* Signature area */}
         <View style={styles.signatureContainer}>
-          <Text style={styles.signaturePrompt}>Enter your name to create a digital signature:</Text>
-          <TextInput
-            style={styles.signatureInput}
-            value={signatureName}
-            onChangeText={(text) => {
-              setSignatureName(text);
-              setHasSignature(text.trim().length > 0);
-            }}
-            placeholder="Enter your full name"
-            placeholderTextColor="#94a3b8"
-            autoFocus={true}
-          />
-          
-          <View style={styles.signaturePreviewContainer}>
-            <View style={styles.signatureLine}>
-              <View style={styles.line} />
-              <Text style={styles.signatureLabel}>Digital Signature</Text>
-            </View>
-            {signatureName.trim() && (
-              <View style={styles.previewSignature}>
-                <Text style={styles.previewText}>Signed by: {signatureName}</Text>
-                <Text style={styles.previewDate}>{new Date().toLocaleDateString()}</Text>
-              </View>
-            )}
+          <Text style={styles.signaturePrompt}>
+            Sign below to create your digital signature:
+          </Text>
+
+          <View style={styles.signatureCanvasContainer}>
+            <SignatureCanvas
+              ref={signatureRef}
+              onBegin={handleBegin}
+              onOK={handleSignatureOK}
+              webStyle={webStyle}
+              autoClear={false}
+              imageType="image/png"
+            />
           </View>
+
+          {/* Clear Button */}
+          <TouchableOpacity
+            style={[styles.actionButton, styles.clearButton]}
+            onPress={handleClearSignature}
+            disabled={isLoading}
+          >
+            <Text style={styles.clearButtonText}>Clear</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </Modal>
   );
 };
 
+const webStyle = `.m-signature-pad {
+  box-shadow: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: #f9fafb;
+}
+.m-signature-pad--body { border: none; }
+.m-signature-pad--footer { display: none; }`;
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-  },
+  container: { flex: 1, backgroundColor: "#f8fafc" },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-    paddingTop: 50, // Account for status bar
+    borderBottomColor: "#e2e8f0",
+    paddingTop: 50,
   },
-  cancelButton: {
-    padding: 8,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1e293b',
-  },
+  cancelButton: { padding: 8 },
+  title: { fontSize: 18, fontWeight: "600", color: "#1e293b" },
   saveButton: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: "#3b82f6",
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
   },
-  saveButtonText: {
-    color: 'white',
-    fontWeight: '600',
-    fontSize: 16,
-  },
+  disabledButton: { opacity: 0.6 },
+  saveButtonText: { color: "white", fontWeight: "600", fontSize: 16 },
   instructions: {
     padding: 16,
-    backgroundColor: '#e0f2fe',
+    backgroundColor: "#e0f2fe",
     borderBottomWidth: 1,
-    borderBottomColor: '#bae6fd',
+    borderBottomColor: "#bae6fd",
   },
   instructionText: {
     fontSize: 14,
-    color: '#0369a1',
-    textAlign: 'center',
+    color: "#0369a1",
+    textAlign: "center",
     lineHeight: 20,
   },
   signatureContainer: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: "white",
     margin: 16,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#e2e8f0',
-    borderStyle: 'dashed',
-    padding: 24,
+    borderColor: "#e2e8f0",
+    borderStyle: "dashed",
+    padding: 16,
   },
   signaturePrompt: {
     fontSize: 16,
-    color: '#374151',
+    color: "#374151",
     marginBottom: 16,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 22,
   },
-  signatureInput: {
-    backgroundColor: '#f9fafb',
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: '#374151',
-    marginBottom: 24,
-  },
-  signaturePreviewContainer: {
+  signatureCanvasContainer: {
     flex: 1,
-    justifyContent: 'center',
-  },
-  previewSignature: {
-    backgroundColor: '#f0f9ff',
-    padding: 16,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
     borderRadius: 8,
-    marginTop: 16,
-    alignItems: 'center',
+    backgroundColor: "#f9fafb",
+    overflow: "hidden",
+    marginBottom: 16,
   },
-  previewText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0369a1',
-    fontStyle: 'italic',
+  actionButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 140,
   },
-  previewDate: {
-    fontSize: 14,
-    color: '#64748b',
-    marginTop: 4,
+  clearButton: {
+    backgroundColor: "#f1f5f9",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
-  signatureLine: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  line: {
-    height: 1,
-    backgroundColor: '#94a3b8',
-    width: '80%',
-  },
-  signatureLabel: {
-    fontSize: 12,
-    color: '#94a3b8',
-    fontWeight: '500',
-  },
+  clearButtonText: { color: "#475569", fontWeight: "600", fontSize: 16 },
 });
 
 export default SignatureModal;

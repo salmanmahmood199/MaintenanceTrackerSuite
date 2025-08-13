@@ -1,23 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  Modal, 
-  TouchableOpacity, 
-  TextInput, 
-  ScrollView, 
-  StyleSheet, 
+import React, { useState, useRef, useEffect } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Modal,
+  StyleSheet,
+  ScrollView,
   Alert,
-  Image,
   ActivityIndicator,
-  ActionSheetIOS,
-  Platform
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { apiRequest } from '../../src/services/api';
-import SignatureModal from './SignatureModal';
+  Switch,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
+  Image,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import { ActionSheetIOS } from "react-native";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { apiRequest } from "../../src/services/api";
+import SignatureModal from "./SignatureModal";
 
 interface WorkOrderModalProps {
   visible: boolean;
@@ -51,67 +54,102 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
   visible,
   onClose,
   ticket,
-  user
+  user,
 }) => {
-  const [workDescription, setWorkDescription] = useState('');
-  const [completionStatus, setCompletionStatus] = useState<'completed' | 'return_needed' | null>(null);
-  const [completionNotes, setCompletionNotes] = useState('');
-  const [returnReason, setReturnReason] = useState('');
-  const [parts, setParts] = useState<Part[]>([{ name: '', quantity: 1, cost: 0 }]);
-  const [otherCharges, setOtherCharges] = useState<OtherCharge[]>([{ description: '', cost: 0 }]);
-  
+  const [workDescription, setWorkDescription] = useState("");
+  const [completionStatus, setCompletionStatus] = useState<
+    "completed" | "return_needed" | null
+  >(null);
+  const [completionNotes, setCompletionNotes] = useState("");
+  const [returnReason, setReturnReason] = useState("");
+  const [parts, setParts] = useState<Part[]>([
+    { name: "", quantity: 1, cost: 0 },
+  ]);
+  const [otherCharges, setOtherCharges] = useState<OtherCharge[]>([
+    { description: "", cost: 0 },
+  ]);
+
   // Time picker states
   const [timeInHour, setTimeInHour] = useState(new Date().getHours());
   const [timeInMinute, setTimeInMinute] = useState(new Date().getMinutes());
-  const [timeInAmPm, setTimeInAmPm] = useState(new Date().getHours() >= 12 ? 'PM' : 'AM');
-  const [timeOutHour, setTimeOutHour] = useState((new Date().getHours() + 8) % 24);
+  const [timeInAmPm, setTimeInAmPm] = useState(
+    new Date().getHours() >= 12 ? "PM" : "AM",
+  );
+  const [timeOutHour, setTimeOutHour] = useState(
+    (new Date().getHours() + 8) % 24,
+  );
   const [timeOutMinute, setTimeOutMinute] = useState(new Date().getMinutes());
-  const [timeOutAmPm, setTimeOutAmPm] = useState(((new Date().getHours() + 8) % 24) >= 12 ? 'PM' : 'AM');
+  const [timeOutAmPm, setTimeOutAmPm] = useState(
+    (new Date().getHours() + 8) % 24 >= 12 ? "PM" : "AM",
+  );
   const [showTimeInPicker, setShowTimeInPicker] = useState(false);
   const [showTimeOutPicker, setShowTimeOutPicker] = useState(false);
-  
-  const [managerName, setManagerName] = useState('');
+
+  const [managerName, setManagerName] = useState("");
   const [workImages, setWorkImages] = useState<any[]>([]);
   const [totalCost, setTotalCost] = useState(0);
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [managerSignature, setManagerSignature] = useState<string | null>(null);
-  const [showPartPickerIndex, setShowPartPickerIndex] = useState<number | null>(null);
+  const [showPartPickerIndex, setShowPartPickerIndex] = useState<number | null>(
+    null,
+  );
 
   const queryClient = useQueryClient();
 
   // Fetch real parts from maintenance vendor
-  const { data: vendorParts = [], isLoading: partsLoading } = useQuery({
-    queryKey: [`/api/maintenance-vendors/${user?.maintenanceVendorId}/parts`],
+  const { data: vendorParts = [], isLoading: partsLoading } = useQuery<
+    VendorPart[]
+  >({
+    queryKey: ["vendor-parts", user?.maintenanceVendorId],
+    queryFn: async (): Promise<VendorPart[]> => {
+      if (!user?.maintenanceVendorId) return [];
+      try {
+        const response = await apiRequest(
+          "GET",
+          `/api/maintenance-vendors/${user.maintenanceVendorId}/parts`,
+        );
+        const data = await response.json();
+
+        // Parse the response data as JSON if needed
+        return Array.isArray(data) ? data : [];
+      } catch (error) {
+        console.error("Error fetching vendor parts:", error);
+        return [];
+      }
+    },
     enabled: visible && !!user?.maintenanceVendorId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
-
+  console.log(vendorParts);
   // Debug logging
   useEffect(() => {
     if (visible) {
-      console.log('WorkOrderModal - User maintenanceVendorId:', user?.maintenanceVendorId);
-      console.log('WorkOrderModal - Vendor parts data:', vendorParts);
-      console.log('WorkOrderModal - Parts loading:', partsLoading);
+      console.log(
+        "WorkOrderModal - User maintenanceVendorId:",
+        user?.maintenanceVendorId,
+      );
+      console.log("WorkOrderModal - Vendor parts data:", vendorParts);
+      console.log("WorkOrderModal - Parts loading:", partsLoading);
     }
   }, [visible, user?.maintenanceVendorId, vendorParts, partsLoading]);
 
   // Helper functions
   const formatTime = (hour: number, minute: number, ampm: string) => {
     const displayHour = hour === 0 ? 12 : hour;
-    return `${displayHour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} ${ampm}`;
+    return `${displayHour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")} ${ampm}`;
   };
 
   const convertTo24Hour = (hour: number, minute: number, ampm: string) => {
     let hour24 = hour;
-    if (ampm === 'AM' && hour === 12) hour24 = 0;
-    if (ampm === 'PM' && hour !== 12) hour24 = hour + 12;
-    return `${hour24.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+    if (ampm === "AM" && hour === 12) hour24 = 0;
+    if (ampm === "PM" && hour !== 12) hour24 = hour + 12;
+    return `${hour24.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
   };
 
   const calculateHours = () => {
     const timeIn = convertTo24Hour(timeInHour, timeInMinute, timeInAmPm);
     const timeOut = convertTo24Hour(timeOutHour, timeOutMinute, timeOutAmPm);
-    
+
     const inTime = new Date(`1970-01-01T${timeIn}:00`);
     const outTime = new Date(`1970-01-01T${timeOut}:00`);
     const diffMs = outTime.getTime() - inTime.getTime();
@@ -120,34 +158,46 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
 
   // Calculate total cost whenever parts or other charges change
   useEffect(() => {
-    const partsTotal = parts.reduce((sum, part) => sum + (part.quantity * part.cost), 0);
-    const chargesTotal = otherCharges.reduce((sum, charge) => sum + charge.cost, 0);
+    const partsTotal = parts.reduce(
+      (sum, part) => sum + part.quantity * part.cost,
+      0,
+    );
+    const chargesTotal = otherCharges.reduce(
+      (sum, charge) => sum + charge.cost,
+      0,
+    );
     setTotalCost(partsTotal + chargesTotal);
   }, [parts, otherCharges]);
 
   // Reset form when modal opens
   useEffect(() => {
     if (visible) {
-      setWorkDescription('');
+      setWorkDescription("");
       setCompletionStatus(null);
-      setCompletionNotes('');
-      setReturnReason('');
-      setParts([{ name: '', quantity: 1, cost: 0 }]);
-      setOtherCharges([{ description: '', cost: 0 }]);
-      
+      setCompletionNotes("");
+      setReturnReason("");
+      setParts([{ name: "", quantity: 1, cost: 0 }]);
+      setOtherCharges([{ description: "", cost: 0 }]);
+
       // Initialize time values
       const now = new Date();
       const endTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-      
-      setTimeInHour(now.getHours() > 12 ? now.getHours() - 12 : now.getHours() || 12);
+
+      setTimeInHour(
+        now.getHours() > 12 ? now.getHours() - 12 : now.getHours() || 12,
+      );
       setTimeInMinute(now.getMinutes());
-      setTimeInAmPm(now.getHours() >= 12 ? 'PM' : 'AM');
-      
-      setTimeOutHour(endTime.getHours() > 12 ? endTime.getHours() - 12 : endTime.getHours() || 12);
+      setTimeInAmPm(now.getHours() >= 12 ? "PM" : "AM");
+
+      setTimeOutHour(
+        endTime.getHours() > 12
+          ? endTime.getHours() - 12
+          : endTime.getHours() || 12,
+      );
       setTimeOutMinute(endTime.getMinutes());
-      setTimeOutAmPm(endTime.getHours() >= 12 ? 'PM' : 'AM');
-      
-      setManagerName('');
+      setTimeOutAmPm(endTime.getHours() >= 12 ? "PM" : "AM");
+
+      setManagerName("");
       setWorkImages([]);
       setManagerSignature(null);
     }
@@ -155,69 +205,78 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
 
   const createWorkOrderMutation = useMutation({
     mutationFn: async (workOrderData: any) => {
-      console.log('Creating work order with data:', workOrderData);
-      
+      console.log("Creating work order with data:", workOrderData);
+
       // Validate required fields
       if (!workOrderData.workDescription?.trim()) {
-        throw new Error('Work description is required');
+        throw new Error("Work description is required");
       }
-      
+
       if (!workOrderData.completionStatus) {
-        throw new Error('Completion status is required');
+        throw new Error("Completion status is required");
       }
 
       // Use JSON instead of FormData since we're not uploading files yet
-      const response = await apiRequest('POST', `/api/tickets/${ticket.id}/work-orders`, workOrderData);
+      const response = await apiRequest(
+        "POST",
+        `/api/tickets/${ticket.id}/work-orders`,
+        workOrderData,
+      );
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('API Error Response:', errorText);
+        console.error("API Error Response:", errorText);
         let errorData;
         try {
           errorData = JSON.parse(errorText);
         } catch {
-          errorData = { message: errorText || 'Unknown error' };
+          errorData = { message: errorText || "Unknown error" };
         }
         throw new Error(errorData.message || `HTTP ${response.status}`);
       }
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workorders', ticket.id.toString()] });
-      queryClient.invalidateQueries({ queryKey: ['ticket', ticket.id.toString()] });
-      Alert.alert('Success', 'Work order created successfully');
+      queryClient.invalidateQueries({
+        queryKey: ["workorders", ticket.id.toString()],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["ticket", ticket.id.toString()],
+      });
+      Alert.alert("Success", "Work order created successfully");
       onClose();
     },
     onError: (error: any) => {
-      console.error('Work order creation error:', error);
-      Alert.alert('Error', error.message || 'Failed to create work order');
+      console.error("Work order creation error:", error);
+      Alert.alert("Error", error.message || "Failed to create work order");
     },
   });
 
   const handleSubmit = () => {
     if (!workDescription.trim()) {
-      Alert.alert('Error', 'Please provide a work description');
+      Alert.alert("Error", "Please provide a work description");
       return;
     }
 
     if (!completionStatus) {
-      Alert.alert('Error', 'Please select completion status');
+      Alert.alert("Error", "Please select completion status");
       return;
     }
 
     const workOrderData = {
       workDescription,
       completionStatus,
-      completionNotes: completionStatus === 'return_needed' ? returnReason : completionNotes,
-      parts: parts.filter(p => p.name.trim() !== ''),
-      otherCharges: otherCharges.filter(c => c.description.trim() !== ''),
+      completionNotes:
+        completionStatus === "return_needed" ? returnReason : completionNotes,
+      parts: parts.filter((p) => p.name.trim() !== ""),
+      otherCharges: otherCharges.filter((c) => c.description.trim() !== ""),
       timeIn: convertTo24Hour(timeInHour, timeInMinute, timeInAmPm),
       timeOut: convertTo24Hour(timeOutHour, timeOutMinute, timeOutAmPm),
       totalHours: calculateHours(),
       managerName,
       managerSignature,
       totalCost,
-      workDate: new Date().toISOString().split('T')[0]
+      workDate: new Date().toISOString().split("T")[0],
     };
 
     createWorkOrderMutation.mutate(workOrderData);
@@ -226,99 +285,108 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
   // Remove duplicate calculateHours function - using the one defined earlier
 
   const addPart = () => {
-    setParts(prev => [...prev, { name: '', quantity: 1, cost: 0 }]);
+    setParts((prev) => [...prev, { name: "", quantity: 1, cost: 0 }]);
   };
 
   const removePart = (index: number) => {
-    setParts(prev => prev.filter((_, i) => i !== index));
+    setParts((prev) => prev.filter((_, i) => i !== index));
   };
 
   const updatePart = (index: number, field: keyof Part, value: any) => {
-    setParts(prev => prev.map((part, i) => 
-      i === index ? { ...part, [field]: value } : part
-    ));
+    setParts((prev) =>
+      prev.map((part, i) => (i === index ? { ...part, [field]: value } : part)),
+    );
   };
 
   const addOtherCharge = () => {
-    setOtherCharges(prev => [...prev, { description: '', cost: 0 }]);
+    setOtherCharges((prev) => [...prev, { description: "", cost: 0 }]);
   };
 
   const removeOtherCharge = (index: number) => {
-    setOtherCharges(prev => prev.filter((_, i) => i !== index));
+    setOtherCharges((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const updateOtherCharge = (index: number, field: keyof OtherCharge, value: any) => {
-    setOtherCharges(prev => prev.map((charge, i) => 
-      i === index ? { ...charge, [field]: value } : charge
-    ));
+  const updateOtherCharge = (
+    index: number,
+    field: keyof OtherCharge,
+    value: any,
+  ) => {
+    setOtherCharges((prev) =>
+      prev.map((charge, i) =>
+        i === index ? { ...charge, [field]: value } : charge,
+      ),
+    );
   };
 
   const selectPart = (index: number, partData: VendorPart | string) => {
-    if (typeof partData === 'string') {
-      if (partData === 'Custom Part...') {
+    if (typeof partData === "string") {
+      if (partData === "Custom Part...") {
         Alert.prompt(
-          'Custom Part',
-          'Enter the part name:',
+          "Custom Part",
+          "Enter the part name:",
           [
-            { text: 'Cancel', style: 'cancel' },
+            { text: "Cancel", style: "cancel" },
             {
-              text: 'Add',
+              text: "Add",
               onPress: (customName) => {
                 if (customName?.trim()) {
-                  updatePart(index, 'name', customName.trim());
-                  updatePart(index, 'cost', 0);
-                  updatePart(index, 'id', undefined); // Clear ID for custom parts
+                  updatePart(index, "name", customName.trim());
+                  updatePart(index, "cost", 0);
+                  updatePart(index, "id", undefined); // Clear ID for custom parts
                 }
-              }
-            }
+              },
+            },
           ],
-          'plain-text'
+          "plain-text",
         );
-      } else if (partData === 'Select Part...') {
+      } else if (partData === "Select Part...") {
         // Clear the part selection
-        updatePart(index, 'name', '');
-        updatePart(index, 'cost', 0);
-        updatePart(index, 'id', undefined);
+        updatePart(index, "name", "");
+        updatePart(index, "cost", 0);
+        updatePart(index, "id", undefined);
       }
     } else {
       // Real part selected - auto-populate price
-      updatePart(index, 'name', partData.name);
-      updatePart(index, 'cost', partData.price);
-      updatePart(index, 'id', partData.id);
+      updatePart(index, "name", partData.name);
+      updatePart(index, "cost", partData.price);
+      updatePart(index, "id", partData.id);
     }
     setShowPartPickerIndex(null);
   };
 
   const pickImage = async () => {
     const options = [
-      { text: 'Camera', onPress: () => takePhoto() },
-      { text: 'Photo Library', onPress: () => selectFromLibrary() },
-      { text: 'Record Video', onPress: () => recordVideo() },
-      { text: 'Cancel', style: 'cancel' }
+      { text: "Camera", onPress: () => takePhoto() },
+      { text: "Photo Library", onPress: () => selectFromLibrary() },
+      { text: "Record Video", onPress: () => recordVideo() },
+      { text: "Cancel", style: "cancel" },
     ];
 
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === "ios") {
       ActionSheetIOS.showActionSheetWithOptions(
         {
-          options: options.map(o => o.text),
+          options: options.map((o) => o.text),
           cancelButtonIndex: options.length - 1,
         },
         (buttonIndex) => {
           if (buttonIndex < options.length - 1) {
             options[buttonIndex].onPress?.();
           }
-        }
+        },
       );
     } else {
-      Alert.alert('Add Media', 'Choose an option:', options);
+      Alert.alert("Add Media", "Choose an option:", options);
     }
   };
 
   const takePhoto = async () => {
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission needed', 'Camera permission is required to take photos');
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission needed",
+          "Camera permission is required to take photos",
+        );
         return;
       }
 
@@ -330,11 +398,11 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
       });
 
       if (!result.canceled && result.assets?.[0]) {
-        setWorkImages(prev => [...prev, result.assets[0]]);
+        setWorkImages((prev) => [...prev, result.assets[0]]);
       }
     } catch (error) {
-      console.error('Error taking photo:', error);
-      Alert.alert('Error', 'Failed to take photo');
+      console.error("Error taking photo:", error);
+      Alert.alert("Error", "Failed to take photo");
     }
   };
 
@@ -348,19 +416,22 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
       });
 
       if (!result.canceled && result.assets?.[0]) {
-        setWorkImages(prev => [...prev, result.assets[0]]);
+        setWorkImages((prev) => [...prev, result.assets[0]]);
       }
     } catch (error) {
-      console.error('Error selecting image:', error);
-      Alert.alert('Error', 'Failed to select image');
+      console.error("Error selecting image:", error);
+      Alert.alert("Error", "Failed to select image");
     }
   };
 
   const recordVideo = async () => {
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission needed', 'Camera permission is required to record videos');
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission needed",
+          "Camera permission is required to record videos",
+        );
         return;
       }
 
@@ -372,16 +443,16 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
       });
 
       if (!result.canceled && result.assets?.[0]) {
-        setWorkImages(prev => [...prev, result.assets[0]]);
+        setWorkImages((prev) => [...prev, result.assets[0]]);
       }
     } catch (error) {
-      console.error('Error recording video:', error);
-      Alert.alert('Error', 'Failed to record video');
+      console.error("Error recording video:", error);
+      Alert.alert("Error", "Failed to record video");
     }
   };
 
   const removeImage = (index: number) => {
-    setWorkImages(prev => prev.filter((_, i) => i !== index));
+    setWorkImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -398,9 +469,12 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
             <Ionicons name="close" size={24} color="#f3f4f6" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Create Work Order</Text>
-          <TouchableOpacity 
-            onPress={handleSubmit} 
-            style={[styles.submitButton, { opacity: createWorkOrderMutation.isPending ? 0.6 : 1 }]}
+          <TouchableOpacity
+            onPress={handleSubmit}
+            style={[
+              styles.submitButton,
+              { opacity: createWorkOrderMutation.isPending ? 0.6 : 1 },
+            ]}
             disabled={createWorkOrderMutation.isPending}
           >
             {createWorkOrderMutation.isPending ? (
@@ -415,7 +489,9 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
           {/* Ticket Info */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Ticket Information</Text>
-            <Text style={styles.ticketInfo}>#{ticket.ticketNumber} - {ticket.title}</Text>
+            <Text style={styles.ticketInfo}>
+              #{ticket.ticketNumber} - {ticket.title}
+            </Text>
           </View>
 
           {/* Work Description */}
@@ -439,43 +515,58 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
               <TouchableOpacity
                 style={[
                   styles.statusButton,
-                  completionStatus === 'completed' && styles.statusButtonActive
+                  completionStatus === "completed" && styles.statusButtonActive,
                 ]}
-                onPress={() => setCompletionStatus('completed')}
+                onPress={() => setCompletionStatus("completed")}
               >
-                <Ionicons 
-                  name="checkmark-circle" 
-                  size={20} 
-                  color={completionStatus === 'completed' ? '#ffffff' : '#10b981'} 
+                <Ionicons
+                  name="checkmark-circle"
+                  size={20}
+                  color={
+                    completionStatus === "completed" ? "#ffffff" : "#10b981"
+                  }
                 />
-                <Text style={[
-                  styles.statusButtonText,
-                  completionStatus === 'completed' && styles.statusButtonTextActive
-                ]}>Job Completed</Text>
+                <Text
+                  style={[
+                    styles.statusButtonText,
+                    completionStatus === "completed" &&
+                      styles.statusButtonTextActive,
+                  ]}
+                >
+                  Job Completed
+                </Text>
               </TouchableOpacity>
-              
+
               <TouchableOpacity
                 style={[
                   styles.statusButton,
-                  completionStatus === 'return_needed' && styles.statusButtonActive
+                  completionStatus === "return_needed" &&
+                    styles.statusButtonActive,
                 ]}
-                onPress={() => setCompletionStatus('return_needed')}
+                onPress={() => setCompletionStatus("return_needed")}
               >
-                <Ionicons 
-                  name="refresh-circle" 
-                  size={20} 
-                  color={completionStatus === 'return_needed' ? '#ffffff' : '#f59e0b'} 
+                <Ionicons
+                  name="refresh-circle"
+                  size={20}
+                  color={
+                    completionStatus === "return_needed" ? "#ffffff" : "#f59e0b"
+                  }
                 />
-                <Text style={[
-                  styles.statusButtonText,
-                  completionStatus === 'return_needed' && styles.statusButtonTextActive
-                ]}>Return Needed</Text>
+                <Text
+                  style={[
+                    styles.statusButtonText,
+                    completionStatus === "return_needed" &&
+                      styles.statusButtonTextActive,
+                  ]}
+                >
+                  Return Needed
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Dynamic Notes Section */}
-          {completionStatus === 'return_needed' ? (
+          {completionStatus === "return_needed" ? (
             <View style={styles.section}>
               <Text style={styles.label}>Reason for Return *</Text>
               <TextInput
@@ -506,12 +597,14 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
           {/* Time Tracking with Scroll Wheels */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Time Tracking</Text>
-            <Text style={styles.sectionSubtitle}>Adjust your clock in/out times</Text>
-            
+            <Text style={styles.sectionSubtitle}>
+              Adjust your clock in/out times
+            </Text>
+
             {/* Time In */}
             <View style={styles.timeSection}>
               <Text style={styles.timeLabel}>Time In</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.timeDisplayButton}
                 onPress={() => setShowTimeInPicker(!showTimeInPicker)}
               >
@@ -520,60 +613,96 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                 </Text>
                 <Ionicons name="chevron-down" size={16} color="#94a3b8" />
               </TouchableOpacity>
-              
+
               {showTimeInPicker && (
                 <View style={styles.timePickerContainer}>
                   <View style={styles.timePickerRow}>
                     <View style={styles.pickerColumn}>
                       <Text style={styles.pickerLabel}>Hour</Text>
-                      <ScrollView style={styles.picker} showsVerticalScrollIndicator={false}>
+                      <ScrollView
+                        style={styles.picker}
+                        showsVerticalScrollIndicator={false}
+                      >
                         {[...Array(12)].map((_, i) => {
                           const hour = i + 1;
                           return (
                             <TouchableOpacity
                               key={hour}
-                              style={[styles.pickerItem, timeInHour === hour && styles.selectedPickerItem]}
+                              style={[
+                                styles.pickerItem,
+                                timeInHour === hour &&
+                                  styles.selectedPickerItem,
+                              ]}
                               onPress={() => setTimeInHour(hour)}
                             >
-                              <Text style={[styles.pickerText, timeInHour === hour && styles.selectedPickerText]}>
-                                {hour.toString().padStart(2, '0')}
+                              <Text
+                                style={[
+                                  styles.pickerText,
+                                  timeInHour === hour &&
+                                    styles.selectedPickerText,
+                                ]}
+                              >
+                                {hour.toString().padStart(2, "0")}
                               </Text>
                             </TouchableOpacity>
                           );
                         })}
                       </ScrollView>
                     </View>
-                    
+
                     <View style={styles.pickerColumn}>
                       <Text style={styles.pickerLabel}>Minute</Text>
-                      <ScrollView style={styles.picker} showsVerticalScrollIndicator={false}>
+                      <ScrollView
+                        style={styles.picker}
+                        showsVerticalScrollIndicator={false}
+                      >
                         {[...Array(12)].map((_, i) => {
                           const minute = i * 5;
                           return (
                             <TouchableOpacity
                               key={minute}
-                              style={[styles.pickerItem, timeInMinute === minute && styles.selectedPickerItem]}
+                              style={[
+                                styles.pickerItem,
+                                timeInMinute === minute &&
+                                  styles.selectedPickerItem,
+                              ]}
                               onPress={() => setTimeInMinute(minute)}
                             >
-                              <Text style={[styles.pickerText, timeInMinute === minute && styles.selectedPickerText]}>
-                                {minute.toString().padStart(2, '0')}
+                              <Text
+                                style={[
+                                  styles.pickerText,
+                                  timeInMinute === minute &&
+                                    styles.selectedPickerText,
+                                ]}
+                              >
+                                {minute.toString().padStart(2, "0")}
                               </Text>
                             </TouchableOpacity>
                           );
                         })}
                       </ScrollView>
                     </View>
-                    
+
                     <View style={styles.pickerColumn}>
                       <Text style={styles.pickerLabel}>AM/PM</Text>
                       <View style={styles.picker}>
-                        {['AM', 'PM'].map((period) => (
+                        {["AM", "PM"].map((period) => (
                           <TouchableOpacity
                             key={period}
-                            style={[styles.pickerItem, timeInAmPm === period && styles.selectedPickerItem]}
+                            style={[
+                              styles.pickerItem,
+                              timeInAmPm === period &&
+                                styles.selectedPickerItem,
+                            ]}
                             onPress={() => setTimeInAmPm(period)}
                           >
-                            <Text style={[styles.pickerText, timeInAmPm === period && styles.selectedPickerText]}>
+                            <Text
+                              style={[
+                                styles.pickerText,
+                                timeInAmPm === period &&
+                                  styles.selectedPickerText,
+                              ]}
+                            >
                               {period}
                             </Text>
                           </TouchableOpacity>
@@ -588,7 +717,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
             {/* Time Out */}
             <View style={styles.timeSection}>
               <Text style={styles.timeLabel}>Time Out</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.timeDisplayButton}
                 onPress={() => setShowTimeOutPicker(!showTimeOutPicker)}
               >
@@ -597,60 +726,96 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                 </Text>
                 <Ionicons name="chevron-down" size={16} color="#94a3b8" />
               </TouchableOpacity>
-              
+
               {showTimeOutPicker && (
                 <View style={styles.timePickerContainer}>
                   <View style={styles.timePickerRow}>
                     <View style={styles.pickerColumn}>
                       <Text style={styles.pickerLabel}>Hour</Text>
-                      <ScrollView style={styles.picker} showsVerticalScrollIndicator={false}>
+                      <ScrollView
+                        style={styles.picker}
+                        showsVerticalScrollIndicator={false}
+                      >
                         {[...Array(12)].map((_, i) => {
                           const hour = i + 1;
                           return (
                             <TouchableOpacity
                               key={hour}
-                              style={[styles.pickerItem, timeOutHour === hour && styles.selectedPickerItem]}
+                              style={[
+                                styles.pickerItem,
+                                timeOutHour === hour &&
+                                  styles.selectedPickerItem,
+                              ]}
                               onPress={() => setTimeOutHour(hour)}
                             >
-                              <Text style={[styles.pickerText, timeOutHour === hour && styles.selectedPickerText]}>
-                                {hour.toString().padStart(2, '0')}
+                              <Text
+                                style={[
+                                  styles.pickerText,
+                                  timeOutHour === hour &&
+                                    styles.selectedPickerText,
+                                ]}
+                              >
+                                {hour.toString().padStart(2, "0")}
                               </Text>
                             </TouchableOpacity>
                           );
                         })}
                       </ScrollView>
                     </View>
-                    
+
                     <View style={styles.pickerColumn}>
                       <Text style={styles.pickerLabel}>Minute</Text>
-                      <ScrollView style={styles.picker} showsVerticalScrollIndicator={false}>
+                      <ScrollView
+                        style={styles.picker}
+                        showsVerticalScrollIndicator={false}
+                      >
                         {[...Array(12)].map((_, i) => {
                           const minute = i * 5;
                           return (
                             <TouchableOpacity
                               key={minute}
-                              style={[styles.pickerItem, timeOutMinute === minute && styles.selectedPickerItem]}
+                              style={[
+                                styles.pickerItem,
+                                timeOutMinute === minute &&
+                                  styles.selectedPickerItem,
+                              ]}
                               onPress={() => setTimeOutMinute(minute)}
                             >
-                              <Text style={[styles.pickerText, timeOutMinute === minute && styles.selectedPickerText]}>
-                                {minute.toString().padStart(2, '0')}
+                              <Text
+                                style={[
+                                  styles.pickerText,
+                                  timeOutMinute === minute &&
+                                    styles.selectedPickerText,
+                                ]}
+                              >
+                                {minute.toString().padStart(2, "0")}
                               </Text>
                             </TouchableOpacity>
                           );
                         })}
                       </ScrollView>
                     </View>
-                    
+
                     <View style={styles.pickerColumn}>
                       <Text style={styles.pickerLabel}>AM/PM</Text>
                       <View style={styles.picker}>
-                        {['AM', 'PM'].map((period) => (
+                        {["AM", "PM"].map((period) => (
                           <TouchableOpacity
                             key={period}
-                            style={[styles.pickerItem, timeOutAmPm === period && styles.selectedPickerItem]}
+                            style={[
+                              styles.pickerItem,
+                              timeOutAmPm === period &&
+                                styles.selectedPickerItem,
+                            ]}
                             onPress={() => setTimeOutAmPm(period)}
                           >
-                            <Text style={[styles.pickerText, timeOutAmPm === period && styles.selectedPickerText]}>
+                            <Text
+                              style={[
+                                styles.pickerText,
+                                timeOutAmPm === period &&
+                                  styles.selectedPickerText,
+                              ]}
+                            >
                               {period}
                             </Text>
                           </TouchableOpacity>
@@ -686,28 +851,46 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                     style={styles.partDropdown}
                     onPress={() => setShowPartPickerIndex(index)}
                   >
-                    <Text style={[styles.partDropdownText, !part.name && styles.placeholderText]}>
-                      {part.name || 'Select Part...'}
+                    <Text
+                      style={[
+                        styles.partDropdownText,
+                        !part.name && styles.placeholderText,
+                      ]}
+                    >
+                      {part.name || "Select Part..."}
                     </Text>
                     <Ionicons name="chevron-down" size={16} color="#94a3b8" />
                   </TouchableOpacity>
-                  
+
                   {showPartPickerIndex === index && (
                     <View style={styles.partPickerModal}>
-                      <ScrollView style={styles.partPickerList} showsVerticalScrollIndicator={false}>
+                      <ScrollView
+                        style={styles.partPickerList}
+                        showsVerticalScrollIndicator={false}
+                      >
                         <TouchableOpacity
-                          style={[styles.partPickerItem, styles.placeholderItem]}
-                          onPress={() => selectPart(index, 'Select Part...')}
+                          style={[
+                            styles.partPickerItem,
+                            styles.placeholderItem,
+                          ]}
+                          onPress={() => selectPart(index, "Select Part...")}
                         >
-                          <Text style={[styles.partPickerText, styles.placeholderText]}>
+                          <Text
+                            style={[
+                              styles.partPickerText,
+                              styles.placeholderText,
+                            ]}
+                          >
                             Select Part...
                           </Text>
                         </TouchableOpacity>
-                        
+
                         {partsLoading ? (
                           <View style={styles.loadingContainer}>
                             <ActivityIndicator size="small" color="#3b82f6" />
-                            <Text style={styles.loadingText}>Loading parts...</Text>
+                            <Text style={styles.loadingText}>
+                              Loading parts...
+                            </Text>
                           </View>
                         ) : (
                           <>
@@ -716,21 +899,28 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                                 key={vendorPart.id}
                                 style={[
                                   styles.partPickerItem,
-                                  vendorPart.name === part.name && styles.selectedPartPickerItem
+                                  vendorPart.name === part.name &&
+                                    styles.selectedPartPickerItem,
                                 ]}
                                 onPress={() => selectPart(index, vendorPart)}
                               >
                                 <View style={styles.partItemContent}>
-                                  <Text style={[
-                                    styles.partPickerText,
-                                    vendorPart.name === part.name && styles.selectedPartPickerText
-                                  ]}>
+                                  <Text
+                                    style={[
+                                      styles.partPickerText,
+                                      vendorPart.name === part.name &&
+                                        styles.selectedPartPickerText,
+                                    ]}
+                                  >
                                     {vendorPart.name}
                                   </Text>
-                                  <Text style={[
-                                    styles.partPrice,
-                                    vendorPart.name === part.name && styles.selectedPartPrice
-                                  ]}>
+                                  <Text
+                                    style={[
+                                      styles.partPrice,
+                                      vendorPart.name === part.name &&
+                                        styles.selectedPartPrice,
+                                    ]}
+                                  >
                                     ${vendorPart.price.toFixed(2)}
                                   </Text>
                                 </View>
@@ -741,12 +931,22 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                                 )}
                               </TouchableOpacity>
                             ))}
-                            
+
                             <TouchableOpacity
-                              style={[styles.partPickerItem, styles.customPartItem]}
-                              onPress={() => selectPart(index, 'Custom Part...')}
+                              style={[
+                                styles.partPickerItem,
+                                styles.customPartItem,
+                              ]}
+                              onPress={() =>
+                                selectPart(index, "Custom Part...")
+                              }
                             >
-                              <Text style={[styles.partPickerText, styles.customPartText]}>
+                              <Text
+                                style={[
+                                  styles.partPickerText,
+                                  styles.customPartText,
+                                ]}
+                              >
                                 + Custom Part...
                               </Text>
                             </TouchableOpacity>
@@ -762,26 +962,29 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                     </View>
                   )}
                 </View>
-                
+
                 <TextInput
                   style={[styles.input, styles.quantityInput]}
                   value={part.quantity.toString()}
-                  onChangeText={(value) => updatePart(index, 'quantity', parseInt(value) || 1)}
+                  onChangeText={(value) =>
+                    updatePart(index, "quantity", parseInt(value) || 1)
+                  }
                   placeholder="Qty"
                   keyboardType="numeric"
                   placeholderTextColor="#9ca3af"
                 />
-                
+
                 <TextInput
                   style={[
-                    styles.input, 
+                    styles.input,
                     styles.costInput,
-                    part.id && styles.disabledInput // Disable if real part selected
+                    part.id && styles.disabledInput, // Disable if real part selected
                   ]}
                   value={part.cost.toString()}
                   onChangeText={(value) => {
-                    if (!part.id) { // Only allow editing for custom parts
-                      updatePart(index, 'cost', parseFloat(value) || 0);
+                    if (!part.id) {
+                      // Only allow editing for custom parts
+                      updatePart(index, "cost", parseFloat(value) || 0);
                     }
                   }}
                   placeholder="Cost"
@@ -789,9 +992,12 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                   placeholderTextColor="#9ca3af"
                   editable={!part.id} // Disable editing for real parts
                 />
-                
+
                 {parts.length > 1 && (
-                  <TouchableOpacity onPress={() => removePart(index)} style={styles.removeButton}>
+                  <TouchableOpacity
+                    onPress={() => removePart(index)}
+                    style={styles.removeButton}
+                  >
                     <Ionicons name="trash" size={16} color="#ef4444" />
                   </TouchableOpacity>
                 )}
@@ -803,7 +1009,10 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Other Charges</Text>
-              <TouchableOpacity onPress={addOtherCharge} style={styles.addButton}>
+              <TouchableOpacity
+                onPress={addOtherCharge}
+                style={styles.addButton}
+              >
                 <Ionicons name="add" size={20} color="#3b82f6" />
                 <Text style={styles.addButtonText}>Add Charge</Text>
               </TouchableOpacity>
@@ -813,20 +1022,27 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                 <TextInput
                   style={[styles.input, { flex: 2 }]}
                   value={charge.description}
-                  onChangeText={(value) => updateOtherCharge(index, 'description', value)}
+                  onChangeText={(value) =>
+                    updateOtherCharge(index, "description", value)
+                  }
                   placeholder="Description"
                   placeholderTextColor="#9ca3af"
                 />
                 <TextInput
                   style={[styles.input, { flex: 1 }]}
                   value={charge.cost.toString()}
-                  onChangeText={(value) => updateOtherCharge(index, 'cost', parseFloat(value) || 0)}
+                  onChangeText={(value) =>
+                    updateOtherCharge(index, "cost", parseFloat(value) || 0)
+                  }
                   placeholder="Cost"
                   keyboardType="numeric"
                   placeholderTextColor="#9ca3af"
                 />
                 {otherCharges.length > 1 && (
-                  <TouchableOpacity onPress={() => removeOtherCharge(index)} style={styles.removeButton}>
+                  <TouchableOpacity
+                    onPress={() => removeOtherCharge(index)}
+                    style={styles.removeButton}
+                  >
                     <Ionicons name="trash" size={16} color="#ef4444" />
                   </TouchableOpacity>
                 )}
@@ -855,9 +1071,12 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
               <View style={styles.imagesGrid}>
                 {workImages.map((image, index) => (
                   <View key={index} style={styles.imageContainer}>
-                    <Image source={{ uri: image.uri }} style={styles.workImage} />
-                    <TouchableOpacity 
-                      onPress={() => removeImage(index)} 
+                    <Image
+                      source={{ uri: image.uri }}
+                      style={styles.workImage}
+                    />
+                    <TouchableOpacity
+                      onPress={() => removeImage(index)}
                       style={styles.removeImageButton}
                     >
                       <Ionicons name="close-circle" size={20} color="#ef4444" />
@@ -878,24 +1097,29 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
               placeholder="Manager/Supervisor name"
               placeholderTextColor="#9ca3af"
             />
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.signatureButton}
               onPress={() => setShowSignatureModal(true)}
             >
               <Ionicons name="create-outline" size={20} color="#3b82f6" />
               <Text style={styles.signatureButtonText}>
-                {managerSignature ? 'Update Signature' : 'Add Manager Signature'}
+                {managerSignature
+                  ? "Update Signature"
+                  : "Add Manager Signature"}
               </Text>
             </TouchableOpacity>
-            
             {managerSignature && (
               <View style={styles.signaturePreview}>
-                <Text style={styles.signaturePreviewLabel}>Signature Added</Text>
-                <View style={styles.signatureImage}>
-                  <Text style={styles.signatureText}>
-                    {atob(managerSignature.replace('data:text/plain;base64,', ''))}
-                  </Text>
+                <Text style={styles.signaturePreviewLabel}>
+                  Signature Added
+                </Text>
+                <View style={styles.signatureImageContainer}>
+                  <Image
+                    source={{ uri: managerSignature }}
+                    style={styles.signatureImage}
+                    resizeMode="contain"
+                  />
                 </View>
               </View>
             )}
@@ -919,35 +1143,35 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#111827',
+    backgroundColor: "#111827",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#374151',
-    backgroundColor: '#1f2937',
+    borderBottomColor: "#374151",
+    backgroundColor: "#1f2937",
   },
   closeButton: {
     padding: 8,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#f3f4f6',
+    fontWeight: "600",
+    color: "#f3f4f6",
   },
   submitButton: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: "#3b82f6",
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 6,
   },
   submitButtonText: {
-    color: '#ffffff',
-    fontWeight: '600',
+    color: "#ffffff",
+    fontWeight: "600",
   },
   content: {
     flex: 1,
@@ -958,113 +1182,113 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#f3f4f6',
+    fontWeight: "600",
+    color: "#f3f4f6",
     marginBottom: 8,
   },
   sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 8,
   },
   ticketInfo: {
-    color: '#d1d5db',
+    color: "#d1d5db",
     fontSize: 14,
   },
   label: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#f3f4f6',
+    fontWeight: "500",
+    color: "#f3f4f6",
     marginBottom: 6,
   },
   input: {
-    backgroundColor: '#374151',
+    backgroundColor: "#374151",
     borderRadius: 6,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    color: '#f3f4f6',
+    color: "#f3f4f6",
     fontSize: 14,
     borderWidth: 1,
-    borderColor: '#4b5563',
+    borderColor: "#4b5563",
   },
   textArea: {
-    backgroundColor: '#374151',
+    backgroundColor: "#374151",
     borderRadius: 6,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    color: '#f3f4f6',
+    color: "#f3f4f6",
     fontSize: 14,
     borderWidth: 1,
-    borderColor: '#4b5563',
+    borderColor: "#4b5563",
     minHeight: 80,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
   },
   statusButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
   },
   statusButton: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#4b5563',
-    backgroundColor: '#374151',
+    borderColor: "#4b5563",
+    backgroundColor: "#374151",
     gap: 8,
   },
   statusButtonActive: {
-    backgroundColor: '#3b82f6',
-    borderColor: '#3b82f6',
+    backgroundColor: "#3b82f6",
+    borderColor: "#3b82f6",
   },
   statusButtonText: {
-    color: '#d1d5db',
-    fontWeight: '500',
+    color: "#d1d5db",
+    fontWeight: "500",
   },
   statusButtonTextActive: {
-    color: '#ffffff',
+    color: "#ffffff",
   },
   timeRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
   },
   timeField: {
     flex: 1,
   },
   timeInput: {
-    backgroundColor: '#374151',
+    backgroundColor: "#374151",
     borderRadius: 6,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    color: '#f3f4f6',
+    color: "#f3f4f6",
     fontSize: 14,
     borderWidth: 1,
-    borderColor: '#4b5563',
-    textAlign: 'center',
+    borderColor: "#4b5563",
+    textAlign: "center",
   },
   addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
   addButtonText: {
-    color: '#3b82f6',
+    color: "#3b82f6",
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   partRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     marginBottom: 8,
   },
   chargeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     marginBottom: 8,
   },
@@ -1072,30 +1296,30 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: '#4b5563',
+    borderTopColor: "#4b5563",
   },
   totalLabel: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#f3f4f6',
+    fontWeight: "600",
+    color: "#f3f4f6",
   },
   totalValue: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#10b981',
+    fontWeight: "700",
+    color: "#10b981",
   },
   imagesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
   },
   imageContainer: {
-    position: 'relative',
+    position: "relative",
   },
   workImage: {
     width: 80,
@@ -1103,34 +1327,34 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   removeImageButton: {
-    position: 'absolute',
+    position: "absolute",
     top: -8,
     right: -8,
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderRadius: 10,
   },
   sectionSubtitle: {
     fontSize: 13,
-    color: '#9ca3af',
+    color: "#9ca3af",
     marginBottom: 12,
     lineHeight: 18,
   },
   helperText: {
     fontSize: 11,
-    color: '#9ca3af',
+    color: "#9ca3af",
     marginTop: 4,
   },
   timeCalculation: {
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#374151',
+    borderTopColor: "#374151",
   },
   calculatedHours: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#10b981',
-    textAlign: 'center',
+    fontWeight: "600",
+    color: "#10b981",
+    textAlign: "center",
   },
   // Time picker styles
   timeSection: {
@@ -1138,114 +1362,114 @@ const styles = StyleSheet.create({
   },
   timeLabel: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#f3f4f6',
+    fontWeight: "500",
+    color: "#f3f4f6",
     marginBottom: 6,
   },
   timeDisplayButton: {
-    backgroundColor: '#374151',
+    backgroundColor: "#374151",
     borderRadius: 6,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: '#4b5563',
+    borderColor: "#4b5563",
   },
   timeDisplayText: {
-    color: '#f3f4f6',
+    color: "#f3f4f6",
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   timePickerContainer: {
-    backgroundColor: '#1f2937',
+    backgroundColor: "#1f2937",
     borderRadius: 8,
     marginTop: 8,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#374151',
+    borderColor: "#374151",
     elevation: 4,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
   },
   timePickerRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 16,
   },
   pickerColumn: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
   },
   pickerLabel: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#9ca3af',
+    fontWeight: "600",
+    color: "#9ca3af",
     marginBottom: 8,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
   picker: {
     height: 120,
-    width: '100%',
+    width: "100%",
   },
   pickerItem: {
     paddingVertical: 12,
     paddingHorizontal: 16,
-    alignItems: 'center',
+    alignItems: "center",
     borderRadius: 6,
     marginVertical: 2,
   },
   selectedPickerItem: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: "#3b82f6",
   },
   pickerText: {
     fontSize: 16,
-    color: '#f3f4f6',
-    fontWeight: '500',
+    color: "#f3f4f6",
+    fontWeight: "500",
   },
   selectedPickerText: {
-    color: '#ffffff',
-    fontWeight: '600',
+    color: "#ffffff",
+    fontWeight: "600",
   },
   // Parts dropdown styles
   partNameContainer: {
     flex: 2,
-    position: 'relative',
+    position: "relative",
   },
   partDropdown: {
-    backgroundColor: '#374151',
+    backgroundColor: "#374151",
     borderRadius: 6,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: '#4b5563',
+    borderColor: "#4b5563",
   },
   partDropdownText: {
-    color: '#f3f4f6',
+    color: "#f3f4f6",
     fontSize: 14,
     flex: 1,
   },
   placeholderText: {
-    color: '#9ca3af',
+    color: "#9ca3af",
   },
   partPickerModal: {
-    position: 'absolute',
-    top: '100%',
+    position: "absolute",
+    top: "100%",
     left: 0,
     right: 0,
     zIndex: 1000,
-    backgroundColor: '#1f2937',
+    backgroundColor: "#1f2937",
     borderRadius: 8,
     marginTop: 4,
     borderWidth: 1,
-    borderColor: '#374151',
+    borderColor: "#374151",
     elevation: 8,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
@@ -1257,49 +1481,49 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#374151',
+    borderBottomColor: "#374151",
   },
   selectedPartPickerItem: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: "#3b82f6",
   },
   partPickerText: {
     fontSize: 14,
-    color: '#f3f4f6',
+    color: "#f3f4f6",
   },
   selectedPartPickerText: {
-    color: '#ffffff',
-    fontWeight: '600',
+    color: "#ffffff",
+    fontWeight: "600",
   },
   closePartPickerButton: {
-    backgroundColor: '#374151',
+    backgroundColor: "#374151",
     padding: 12,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 8,
     borderRadius: 6,
     marginHorizontal: 8,
     marginBottom: 8,
   },
   closePartPickerText: {
-    color: '#f3f4f6',
+    color: "#f3f4f6",
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   quantityInput: {
     flex: 0.7,
-    textAlign: 'center',
+    textAlign: "center",
   },
   costInput: {
     flex: 1,
-    textAlign: 'right',
+    textAlign: "right",
   },
   // Signature styles
   signatureButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1f2937',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1f2937",
     borderWidth: 2,
-    borderColor: '#3b82f6',
-    borderStyle: 'dashed',
+    borderColor: "#3b82f6",
+    borderStyle: "dashed",
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 8,
@@ -1307,91 +1531,92 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   signatureButtonText: {
-    color: '#3b82f6',
-    fontSize: 14,
-    fontWeight: '500',
+    color: "#3b82f6",
+    marginLeft: 8,
+    fontSize: 16,
   },
   signaturePreview: {
     marginTop: 12,
-    backgroundColor: '#1f2937',
+    backgroundColor: "#f8fafc",
     borderRadius: 8,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#374151',
+    borderColor: "#e2e8f0",
   },
   signaturePreviewLabel: {
     fontSize: 12,
-    color: '#9ca3af',
+    color: "#64748b",
     marginBottom: 8,
-    textAlign: 'center',
+    textAlign: "center",
+  },
+  signatureImageContainer: {
+    width: "100%",
+    height: 80,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "white",
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
   signatureImage: {
-    width: '100%',
-    height: 80,
-    borderRadius: 6,
-    backgroundColor: '#f8fafc',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
+    width: 200,
+    height: 60,
   },
   signatureText: {
     fontSize: 14,
-    color: '#374151',
-    fontStyle: 'italic',
-    textAlign: 'center',
+    color: "#374151",
+    fontStyle: "italic",
     padding: 16,
   },
   // Parts dropdown enhancements
   partItemContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
   },
   partPrice: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#10b981',
+    fontWeight: "600",
+    color: "#10b981",
   },
   selectedPartPrice: {
-    color: '#ffffff',
+    color: "#ffffff",
   },
   partDescription: {
     fontSize: 11,
-    color: '#9ca3af',
+    color: "#9ca3af",
     marginTop: 2,
-    fontStyle: 'italic',
+    fontStyle: "italic",
   },
   placeholderItem: {
-    borderBottomColor: '#4b5563',
+    borderBottomColor: "#4b5563",
   },
   customPartItem: {
     borderTopWidth: 1,
-    borderTopColor: '#4b5563',
-    backgroundColor: '#374151',
+    borderTopColor: "#4b5563",
+    backgroundColor: "#374151",
   },
   customPartText: {
-    color: '#3b82f6',
-    fontWeight: '500',
+    color: "#3b82f6",
+    fontWeight: "500",
   },
   loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 16,
     gap: 8,
   },
   loadingText: {
     fontSize: 14,
-    color: '#9ca3af',
+    color: "#9ca3af",
   },
   disabledInput: {
-    backgroundColor: '#1f2937',
+    backgroundColor: "#1f2937",
     opacity: 0.7,
   },
 });
-
-export default WorkOrderModal;
 
 export default WorkOrderModal;
