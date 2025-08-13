@@ -276,7 +276,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
       { text: 'Camera', onPress: () => takePhoto() },
       { text: 'Photo Library', onPress: () => selectFromLibrary() },
       { text: 'Record Video', onPress: () => recordVideo() },
-      { text: 'Cancel', style: 'cancel' }
+      { text: 'Cancel', style: 'cancel' as const }
     ];
 
     if (Platform.OS === 'ios') {
@@ -572,7 +572,8 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                       </View>
                     </View>
                   </View>
-                </View>
+                </TouchableOpacity>
+                </TouchableOpacity>
               )}
             </View>
 
