@@ -1,0 +1,196 @@
+Here’s a simple, rock-solid way to add a horizontal (landscape) signature screen in an Expo app that:
+
+Auto-rotates & locks to landscape while signing
+
+Gives a big full-screen canvas that feels “ink-like”
+
+Has Clear and Confirm buttons
+
+Returns a real PNG (base64 or file URI)
+
+The easiest route in Expo is react-native-signature-canvas (a WebView wrapper around the excellent signature_pad) plus expo-screen-orientation. It works in the managed workflow and even inside Expo Go.
+
+1) Install
+bash
+Copy
+Edit
+expo install react-native-webview expo-screen-orientation expo-file-system expo-image-manipulator
+npm i react-native-signature-canvas
+2) Drop-in screen component
+Create something like SignatureCaptureScreen.tsx and use it as a modal/screen.
+
+tsx
+Copy
+Edit
+import React, { useEffect, useRef, useState } from "react";
+import { View, StyleSheet, Text, TouchableOpacity, Image, Platform } from "react-native";
+import Signature, { SignatureViewRef } from "react-native-signature-canvas";
+import * as ScreenOrientation from "expo-screen-orientation";
+import * as FileSystem from "expo-file-system";
+import * as ImageManipulator from "expo-image-manipulator";
+import { StatusBar } from "expo-status-bar";
+
+type Props = {
+  onConfirmed?: (result: { base64DataUrl: string; fileUri: string }) => void;
+  onCancel?: () => void;
+};
+
+export default function SignatureCaptureScreen({ onConfirmed, onCancel }: Props) {
+  const sigRef = useRef<SignatureViewRef>(null);
+  const [previewUri, setPreviewUri] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // Lock to landscape while this screen is mounted
+  useEffect(() => {
+    (async () => {
+      try {
+        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+      } catch {}
+    })();
+    return () => {
+      ScreenOrientation.unlockAsync().catch(() => {});
+    };
+  }, []);
+
+  // Minimal CSS to make the canvas fill the screen and hide the built-in footer
+  const webStyle = `
+    .m-signature-pad { box-shadow: none; border: 0; }
+    .m-signature-pad--body { border: 1px solid #e5e7eb; }
+    .m-signature-pad--footer { display: none; margin: 0; }
+    body,html,canvas { width: 100%; height: 100%; }
+  `;
+
+  // Called when user taps our "Confirm" (we trigger readSignature() to fire onOK)
+  const handleOK = async (dataUrl: string) => {
+    setSaving(true);
+    try {
+      const base64 = dataUrl.replace(/^data:image\/\w+;base64,/, "");
+      const path = `${FileSystem.cacheDirectory}signature-${Date.now()}.png`;
+      await FileSystem.writeAsStringAsync(path, base64, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      // Optional: compress/clean the PNG a bit to reduce size
+      const { uri } = await ImageManipulator.manipulateAsync(
+        path,
+        [],
+        { compress: 0.9, format: ImageManipulator.SaveFormat.PNG }
+      );
+
+      setPreviewUri(uri);
+      onConfirmed?.({ base64DataUrl: dataUrl, fileUri: uri });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const triggerSave = () => sigRef.current?.readSignature();
+  const triggerClear = () => {
+    setPreviewUri(null);
+    sigRef.current?.clearSignature();
+  };
+
+  return (
+    <View style={styles.root}>
+      <StatusBar hidden />
+      <View style={styles.canvasWrap}>
+        <Signature
+          ref={sigRef}
+          onOK={handleOK}
+          onEmpty={() => {}}
+          onClear={() => setPreviewUri(null)}
+          webStyle={webStyle}
+          autoClear={false}                 // keep drawing until user clears
+          penColor="#111"                   // ink color
+          backgroundColor="#fff"            // canvas color (can be "transparent")
+          imageType="image/png"             // output format
+        />
+        <View style={styles.hint}>
+          <Text style={styles.hintText}>
+            Turn your phone horizontally and sign inside the box
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.toolbar}>
+        <TouchableOpacity style={[styles.btn, styles.secondary]} onPress={triggerClear}>
+          <Text style={[styles.btnText, styles.secondaryText]}>Clear</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.btn, styles.primary, saving && styles.btnDisabled]}
+          onPress={triggerSave}
+          disabled={saving}
+        >
+          <Text style={[styles.btnText, styles.primaryText]}>
+            {saving ? "Saving…" : "Confirm"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {previewUri && (
+        <View style={styles.preview}>
+          <Text style={styles.previewTitle}>Preview</Text>
+          <Image source={{ uri: previewUri }} style={styles.previewImage} resizeMode="contain" />
+        </View>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: "#fff" },
+  canvasWrap: { flex: 1, position: "relative" },
+  hint: { position: "absolute", top: 12, left: 12, paddingHorizontal: 10, paddingVertical: 6, backgroundColor: "#00000055", borderRadius: 8 },
+  hintText: { color: "#fff", fontSize: 14 },
+  toolbar: {
+    flexDirection: "row",
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#e5e7eb",
+    backgroundColor: "#fff",
+  },
+  btn: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  primary: { backgroundColor: "#111827" },
+  primaryText: { color: "#fff", fontWeight: "600" },
+  secondary: { backgroundColor: "#f3f4f6", borderWidth: 1, borderColor: "#e5e7eb" },
+  secondaryText: { color: "#111827", fontWeight: "600" },
+  btnText: { fontSize: 16 },
+  btnDisabled: { opacity: 0.6 },
+  preview: { paddingHorizontal: 16, paddingBottom: 12, backgroundColor: "#fff" },
+  previewTitle: { fontSize: 14, color: "#374151", marginBottom: 8 },
+  previewImage: { width: "100%", height: 140, backgroundColor: "#fafafa", borderRadius: 8 },
+});
+How it works
+
+The screen locks to landscape on mount for a comfortable signing surface, then unlocks on unmount.
+
+The signature pad covers the entire screen. We hide the built-in footer and provide our own Clear and Confirm buttons.
+
+Pressing Confirm calls readSignature(), which fires onOK with a base64 data URL (PNG). We save it to a file with expo-file-system and optionally compress it with expo-image-manipulator. You can upload either the base64 or the file URI.
+
+The small “Preview” confirms to the user what was captured.
+
+3) Optional refinements (recommended)
+Stroke feel (“real signature”)
+react-native-signature-canvas supports the underlying Signature Pad settings (pressure/velocity-based width). If you need thicker/thinner ink, you can pass minWidth/maxWidth props to the component (e.g., minWidth={0.7} / maxWidth={2.5}).
+
+Transparent background
+Set backgroundColor="transparent" and keep imageType="image/png" for a transparent PNG you can overlay on PDFs.
+
+Trim whitespace
+If you need tight cropping around the ink, do it on the server or post-process on device. (There isn’t a perfect on-device “auto-trim to ink” in Expo, but you can crop heuristically with expo-image-manipulator if you know your bounds.)
+
+Modal flow
+Use this screen as a modal. On confirm, call onConfirmed (or in Expo Router, stash fileUri in a global store/context or return via router.dismiss() + events).
+
+Accessibility & UX
+Add a visible border to the canvas (.m-signature-pad--body), show an instruction label (“Sign inside the box”), and keep buttons large with high contrast (already done).
+
