@@ -15,9 +15,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '../../src/services/api';
-import SignatureModal from './SignatureModal';
+import DrawingSignatureModal from './DrawingSignatureModal';
 
 interface WorkOrderModalProps {
   visible: boolean;
@@ -38,27 +38,7 @@ interface OtherCharge {
 }
 
 // Common parts for dropdown
-const COMMON_PARTS = [
-  'Select Part...',
-  'Air Filter',
-  'Oil Filter',
-  'Spark Plugs',
-  'Brake Pads',
-  'Brake Fluid',
-  'Transmission Fluid',
-  'Coolant',
-  'Belts',
-  'Hoses',
-  'Gaskets',
-  'Seals',
-  'Fuses',
-  'Light Bulbs',
-  'Wiper Blades',
-  'Battery',
-  'Alternator',
-  'Starter',
-  'Custom Part...'
-];
+// Vendor parts will be loaded from API
 
 export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
   visible,
@@ -91,6 +71,23 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
   const [showPartPickerIndex, setShowPartPickerIndex] = useState<number | null>(null);
 
   const queryClient = useQueryClient();
+
+  // Fetch vendor parts
+  const { data: vendorParts = [] } = useQuery({
+    queryKey: ['vendor-parts', user?.maintenanceVendorId],
+    queryFn: async () => {
+      if (!user?.maintenanceVendorId) return [];
+      const response = await apiRequest('GET', `/api/maintenance-vendors/${user.maintenanceVendorId}/parts`);
+      return response.ok ? await response.json() : [];
+    },
+    enabled: !!user?.maintenanceVendorId
+  });
+
+  const PARTS_LIST = [
+    'Select Part...',
+    ...vendorParts.map((part: any) => part.name),
+    'Custom Part...'
+  ];
 
   // Helper functions
   const formatTime = (hour: number, minute: number, ampm: string) => {
@@ -507,8 +504,17 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
               </TouchableOpacity>
               
               {showTimeInPicker && (
-                <View style={styles.timePickerContainer}>
-                  <View style={styles.timePickerRow}>
+                <TouchableOpacity 
+                  style={styles.timePickerOverlay}
+                  activeOpacity={1}
+                  onPress={() => setShowTimeInPicker(false)}
+                >
+                  <TouchableOpacity 
+                    style={styles.timePickerContainer}
+                    activeOpacity={1}
+                    onPress={(e) => e.stopPropagation()}
+                  >
+                    <View style={styles.timePickerRow}>
                     <View style={styles.pickerColumn}>
                       <Text style={styles.pickerLabel}>Hour</Text>
                       <ScrollView style={styles.picker} showsVerticalScrollIndicator={false}>
@@ -584,8 +590,17 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
               </TouchableOpacity>
               
               {showTimeOutPicker && (
-                <View style={styles.timePickerContainer}>
-                  <View style={styles.timePickerRow}>
+                <TouchableOpacity 
+                  style={styles.timePickerOverlay}
+                  activeOpacity={1}
+                  onPress={() => setShowTimeOutPicker(false)}
+                >
+                  <TouchableOpacity 
+                    style={styles.timePickerContainer}
+                    activeOpacity={1}
+                    onPress={(e) => e.stopPropagation()}
+                  >
+                    <View style={styles.timePickerRow}>
                     <View style={styles.pickerColumn}>
                       <Text style={styles.pickerLabel}>Hour</Text>
                       <ScrollView style={styles.picker} showsVerticalScrollIndicator={false}>
@@ -643,7 +658,8 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                       </View>
                     </View>
                   </View>
-                </View>
+                </TouchableOpacity>
+                </TouchableOpacity>
               )}
             </View>
 
@@ -680,7 +696,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                   {showPartPickerIndex === index && (
                     <View style={styles.partPickerModal}>
                       <ScrollView style={styles.partPickerList} showsVerticalScrollIndicator={false}>
-                        {COMMON_PARTS.map((partName, i) => (
+                        {PARTS_LIST.map((partName, i) => (
                           <TouchableOpacity
                             key={i}
                             style={[
@@ -831,7 +847,9 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                 <Text style={styles.signaturePreviewLabel}>Signature Added</Text>
                 <View style={styles.signatureImage}>
                   <Text style={styles.signatureText}>
-                    {atob(managerSignature.replace('data:text/plain;base64,', ''))}
+                    {managerSignature.includes('data:application/json;base64,') 
+                      ? 'Digital Signature Captured' 
+                      : atob(managerSignature.replace('data:text/plain;base64,', ''))}
                   </Text>
                 </View>
               </View>
@@ -839,7 +857,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
           </View>
 
           {/* Signature Modal */}
-          <SignatureModal
+          <DrawingSignatureModal
             visible={showSignatureModal}
             onClose={() => setShowSignatureModal(false)}
             onSave={(signature) => setManagerSignature(signature)}
@@ -1094,6 +1112,17 @@ const styles = StyleSheet.create({
     color: '#f3f4f6',
     fontSize: 14,
     fontWeight: '500',
+  },
+  timePickerOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
   },
   timePickerContainer: {
     backgroundColor: '#1f2937',
