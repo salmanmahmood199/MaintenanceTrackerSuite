@@ -751,7 +751,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
       <DrawingSignatureModal
         visible={showSignatureModal}
         onClose={() => setShowSignatureModal(false)}
-        onSignatureCapture={handleSignatureCapture}
+        onSave={handleSignatureCapture}
       />
       </SafeAreaView>
     </Modal>
