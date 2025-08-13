@@ -85,7 +85,7 @@ const DrawingSignatureModal: React.FC<DrawingSignatureModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" supportedOrientations={['landscape', 'portrait']}>
+    <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" supportedOrientations={['landscape']}>
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -101,7 +101,7 @@ const DrawingSignatureModal: React.FC<DrawingSignatureModalProps> = ({
 
         <View style={styles.instructionContainer}>
           <Text style={styles.instructionText}>
-            Rotate device to landscape for better signing experience. Use your finger to sign below.
+            Please hold your device horizontally and sign below with your finger.
           </Text>
         </View>
 

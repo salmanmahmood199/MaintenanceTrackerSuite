@@ -61,53 +61,31 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
 
   const fetchVendorParts = async () => {
     try {
-      const response = await fetch('/api/maintenance-vendors/parts');
+      // Get current user's vendor ID first
+      const userResponse = await fetch('/api/auth/user');
+      if (!userResponse.ok) {
+        console.error('Failed to get user info');
+        return;
+      }
+      
+      const user = await userResponse.json();
+      if (!user.maintenanceVendorId) {
+        console.error('User has no vendor ID');
+        return;
+      }
+
+      // Fetch parts for the vendor
+      const response = await fetch(`/api/maintenance-vendors/${user.maintenanceVendorId}/parts`);
       if (response.ok) {
         const vendorParts = await response.json();
         const partNames = vendorParts.map((part: any) => part.name);
         setPARTS_LIST(['Select Part...', ...partNames]);
+        console.log('Loaded parts:', partNames);
       } else {
-        // Use default parts list if API fails
-        setPARTS_LIST([
-          'Select Part...',
-          'Air Filter',
-          'Oil Filter',
-          'Spark Plug',
-          'Belt',
-          'Gasket',
-          'Valve',
-          'Bearing',
-          'Seal',
-          'O-Ring',
-          'Pipe Fitting',
-          'Electrical Wire',
-          'Circuit Breaker',
-          'Motor',
-          'Pump',
-          'Other'
-        ]);
+        console.error('Failed to fetch vendor parts:', response.status);
       }
     } catch (error) {
       console.error('Error fetching vendor parts:', error);
-      // Use default parts list
-      setPARTS_LIST([
-        'Select Part...',
-        'Air Filter',
-        'Oil Filter', 
-        'Spark Plug',
-        'Belt',
-        'Gasket',
-        'Valve',
-        'Bearing',
-        'Seal',
-        'O-Ring',
-        'Pipe Fitting',
-        'Electrical Wire',
-        'Circuit Breaker',
-        'Motor',
-        'Pump',
-        'Other'
-      ]);
     }
   };
 
@@ -369,14 +347,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Time Tracking</Text>
           
-          {/* Labor Rate - Display only for technicians */}
-          <View style={styles.timeSection}>
-            <Text style={styles.timeLabel}>Labor Rate ($/hour)</Text>
-            <View style={styles.laborRateDisplay}>
-              <Text style={styles.laborRateText}>${laborRate.toFixed(2)}</Text>
-              <Text style={styles.laborRateNote}>Set by management</Text>
-            </View>
-          </View>
+
 
           {/* Time In */}
           <View style={styles.timeSection}>
