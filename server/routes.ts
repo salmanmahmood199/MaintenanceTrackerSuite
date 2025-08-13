@@ -1089,25 +1089,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  // Get individual user by ID
-  app.get("/api/users/:id", authenticateUser, async (req, res) => {
-    try {
-      const userId = parseInt(req.params.id);
-      const user = await storage.getUserById(userId);
-      
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      // Return safe user data (no password)
-      const { password, ...safeUser } = user;
-      res.json(safeUser);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
-
   // Get all tickets
   app.get(
     "/api/tickets",

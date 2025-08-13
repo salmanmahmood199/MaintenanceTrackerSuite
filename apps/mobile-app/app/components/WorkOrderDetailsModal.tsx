@@ -8,8 +8,6 @@ import {
   StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery } from '@tanstack/react-query';
-import { apiRequest } from '../../src/services/api';
 
 interface WorkOrderDetailsModalProps {
   visible: boolean;
@@ -23,17 +21,6 @@ const WorkOrderDetailsModal: React.FC<WorkOrderDetailsModalProps> = ({
   workOrder,
 }) => {
   if (!workOrder) return null;
-
-  // Fetch technician details
-  const { data: technician } = useQuery({
-    queryKey: ['user', workOrder.technicianId],
-    queryFn: async () => {
-      if (!workOrder.technicianId) return null;
-      const response = await apiRequest('GET', `/api/users/${workOrder.technicianId}`);
-      return response.ok ? await response.json() : null;
-    },
-    enabled: !!workOrder.technicianId
-  });
 
   const formatCurrency = (amount: string | number) => {
     return `$${parseFloat(amount.toString()).toFixed(2)}`;
@@ -217,9 +204,7 @@ const WorkOrderDetailsModal: React.FC<WorkOrderDetailsModalProps> = ({
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Technician</Text>
               <Text style={styles.description}>
-                {technician 
-                  ? `${technician.firstName} ${technician.lastName}`
-                  : `Technician ID: ${workOrder.technicianId}`}
+                Technician ID: {workOrder.technicianId}
               </Text>
             </View>
           )}

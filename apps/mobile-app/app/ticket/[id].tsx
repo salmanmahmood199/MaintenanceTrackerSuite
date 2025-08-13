@@ -530,25 +530,6 @@ export default function TicketDetailsScreen() {
     );
   };
 
-  const handleWorkOrderSubmit = async (workOrder: any) => {
-    try {
-      console.log('Submitting work order:', workOrder);
-      const response = await apiRequest('POST', `/api/tickets/${id}/work-orders`, workOrder);
-      if (response.ok) {
-        setWorkOrderModalVisible(false);
-        queryClient.invalidateQueries({ queryKey: ["ticket", id] });
-        queryClient.invalidateQueries({ queryKey: ["work-orders", id] });
-        Alert.alert('Success', 'Work order created successfully');
-      } else {
-        const errorData = await response.json();
-        Alert.alert('Error', errorData.message || 'Failed to create work order');
-      }
-    } catch (error: any) {
-      console.error('Error creating work order:', error);
-      Alert.alert('Error', error.message || 'Failed to create work order');
-    }
-  };
-
   const completeWork = async () => {
     Alert.alert(
       'Complete Work',
@@ -1637,7 +1618,7 @@ export default function TicketDetailsScreen() {
         visible={workOrderModalVisible}
         onClose={() => setWorkOrderModalVisible(false)}
         ticket={ticket}
-        onSubmit={handleWorkOrderSubmit}
+        user={user}
       />
 
       {/* Work Order Details Modal */}
