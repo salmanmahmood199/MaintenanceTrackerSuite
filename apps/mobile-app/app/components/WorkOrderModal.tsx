@@ -9,6 +9,9 @@ import {
   Platform,
   Alert,
   ActionSheetIOS,
+  Modal,
+  SafeAreaView,
+  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -257,10 +260,14 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
     onSubmit(workOrder);
   };
 
-  if (!visible) return null;
-
   return (
-    <View style={styles.container}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
+      <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={onClose} style={styles.closeButton}>
           <Ionicons name="close" size={24} color="#f3f4f6" />
@@ -664,9 +671,12 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
         onClose={() => setShowSignatureModal(false)}
         onSignatureCapture={handleSignatureCapture}
       />
-    </View>
+      </SafeAreaView>
+    </Modal>
   );
 };
+
+const { height: screenHeight } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   container: {
