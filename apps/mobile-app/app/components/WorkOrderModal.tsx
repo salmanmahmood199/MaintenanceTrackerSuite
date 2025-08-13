@@ -341,7 +341,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
     const workOrder = {
       ticketId: ticket.id,
       status,
-      description,
+      workDescription: description, // Use workDescription instead of description
       timeIn: formatTime(timeInHour, timeInMinute, timeInAmPm),
       timeOut: formatTime(timeOutHour, timeOutMinute, timeOutAmPm),
       totalHours: calculateHours(),
