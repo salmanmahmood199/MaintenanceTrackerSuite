@@ -2138,7 +2138,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         console.error("Respond to counter offer error:", error);
         res.status(500).json({
-          message: error.message || "Failed to respond to counter offer",
+          message: error instanceof Error ? error.message : "Failed to respond to counter offer",
         });
       }
     },
@@ -2211,7 +2211,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Create marketplace bid error:", error);
         res.status(500).json({
           message: "Failed to create marketplace bid",
-          error: error.message,
+          error: error instanceof Error ? error.message : "Unknown error",
         });
       }
     },
@@ -2282,7 +2282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Update marketplace bid error:", error);
         res.status(500).json({
           message: "Failed to update marketplace bid",
-          error: error.message,
+          error: error instanceof Error ? error.message : "Unknown error",
         });
       }
     },
@@ -4027,8 +4027,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Update invoice status to sent
         const updatedInvoice = await storage.updateInvoice(invoiceId, {
-          status: "sent",
-          sentAt: new Date()
+          status: "sent"
         });
 
         if (!updatedInvoice) {
@@ -4689,7 +4688,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }[priority] || priority;
 
       // Create transporter for this specific request
-      const transporter = nodemailer.createTransporter({
+      const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
           user: process.env.GMAIL_USER,
