@@ -61,12 +61,53 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
 
   const fetchVendorParts = async () => {
     try {
-      const response = await fetch('/api/maintenance-vendors/1/parts');
-      const vendorParts = await response.json();
-      const partNames = vendorParts.map((part: any) => part.name);
-      setPARTS_LIST(['Select Part...', ...partNames]);
+      const response = await fetch('/api/maintenance-vendors/parts');
+      if (response.ok) {
+        const vendorParts = await response.json();
+        const partNames = vendorParts.map((part: any) => part.name);
+        setPARTS_LIST(['Select Part...', ...partNames]);
+      } else {
+        // Use default parts list if API fails
+        setPARTS_LIST([
+          'Select Part...',
+          'Air Filter',
+          'Oil Filter',
+          'Spark Plug',
+          'Belt',
+          'Gasket',
+          'Valve',
+          'Bearing',
+          'Seal',
+          'O-Ring',
+          'Pipe Fitting',
+          'Electrical Wire',
+          'Circuit Breaker',
+          'Motor',
+          'Pump',
+          'Other'
+        ]);
+      }
     } catch (error) {
       console.error('Error fetching vendor parts:', error);
+      // Use default parts list
+      setPARTS_LIST([
+        'Select Part...',
+        'Air Filter',
+        'Oil Filter', 
+        'Spark Plug',
+        'Belt',
+        'Gasket',
+        'Valve',
+        'Bearing',
+        'Seal',
+        'O-Ring',
+        'Pipe Fitting',
+        'Electrical Wire',
+        'Circuit Breaker',
+        'Motor',
+        'Pump',
+        'Other'
+      ]);
     }
   };
 
@@ -328,17 +369,13 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Time Tracking</Text>
           
-          {/* Labor Rate */}
+          {/* Labor Rate - Display only for technicians */}
           <View style={styles.timeSection}>
             <Text style={styles.timeLabel}>Labor Rate ($/hour)</Text>
-            <TextInput
-              style={styles.input}
-              value={laborRate.toString()}
-              onChangeText={(value) => setLaborRate(parseFloat(value) || 0)}
-              placeholder="75"
-              keyboardType="numeric"
-              placeholderTextColor="#9ca3af"
-            />
+            <View style={styles.laborRateDisplay}>
+              <Text style={styles.laborRateText}>${laborRate.toFixed(2)}</Text>
+              <Text style={styles.laborRateNote}>Set by management</Text>
+            </View>
           </View>
 
           {/* Time In */}
@@ -1045,6 +1082,24 @@ const styles = StyleSheet.create({
   closePartPickerText: {
     color: '#3b82f6',
     fontWeight: '600',
+  },
+  laborRateDisplay: {
+    backgroundColor: '#374151',
+    padding: 12,
+    borderRadius: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  laborRateText: {
+    color: '#f3f4f6',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  laborRateNote: {
+    color: '#9ca3af',
+    fontSize: 12,
+    fontStyle: 'italic',
   },
 });
 
