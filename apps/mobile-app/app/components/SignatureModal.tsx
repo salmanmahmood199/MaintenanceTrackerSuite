@@ -8,8 +8,7 @@ import {
   Alert,
   TextInput,
 } from 'react-native';
-
-const { width, height } = Dimensions.get('window');
+import { Ionicons } from '@expo/vector-icons';
 
 interface SignatureModalProps {
   visible: boolean;
