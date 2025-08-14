@@ -18,6 +18,13 @@ export class GoogleCalendarService {
           ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co/api/auth/google/callback`
           : "http://localhost:5000/api/auth/google/callback");
 
+    // Validate Google Calendar environment variables
+    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+      console.warn('⚠️  Google Calendar environment variables not configured. Google Calendar integration will be disabled.');
+      console.warn('   Required: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET');
+      console.warn('   Optional: GOOGLE_REDIRECT_URI (will use auto-detected URL if not provided)');
+    }
+
     this.oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
@@ -25,6 +32,14 @@ export class GoogleCalendarService {
     );
 
     this.calendar = google.calendar({ version: "v3", auth: this.oauth2Client });
+    
+    // Log configuration for debugging (without exposing secrets)
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('🔧 Google Calendar Configuration:');
+      console.log('   Client ID:', process.env.GOOGLE_CLIENT_ID ? '***configured***' : 'missing');
+      console.log('   Client Secret:', process.env.GOOGLE_CLIENT_SECRET ? '***configured***' : 'missing');
+      console.log('   Redirect URI:', redirectUri);
+    }
   }
   // Generate OAuth2 URL for user authentication
   generateAuthUrl(userId: number): string {
