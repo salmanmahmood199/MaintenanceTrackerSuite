@@ -65,12 +65,14 @@ export default function Login() {
       <div className="relative z-10 w-full max-w-md space-y-8">
         <div className="text-center">
           <div className="flex justify-center items-center space-x-3 mb-4">
-            <img 
-              src="/assets/taskscout-logo.png" 
-              alt="TaskScout Logo" 
+            <img
+              src="/assets/taskscout-logo.png"
+              alt="TaskScout Logo"
               className="w-20 h-20 object-contain"
             />
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-teal-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">TaskScout</h1>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-teal-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
+              TaskScout
+            </h1>
           </div>
           <p className="text-gray-400">Sign in to your account</p>
         </div>
@@ -80,7 +82,10 @@ export default function Login() {
             <CardTitle className="text-center text-white">Login</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <form
+              onSubmit={form.handleSubmit(handleSubmit)}
+              className="space-y-4"
+            >
               {error && (
                 <Alert variant="destructive">
                   <AlertDescription>{error}</AlertDescription>
@@ -88,12 +93,14 @@ export default function Login() {
               )}
 
               <div>
-                <Label htmlFor="email" className="text-white">Email</Label>
+                <Label htmlFor="email" className="text-white">
+                  Email
+                </Label>
                 <Input
                   id="email"
                   type="email"
                   {...form.register("email")}
-                  placeholder="root@mail.com"
+                  placeholder="e.g test@gmail.com"
                   className="mt-1 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
                 />
                 {form.formState.errors.email && (
@@ -104,7 +111,9 @@ export default function Login() {
               </div>
 
               <div>
-                <Label htmlFor="password" className="text-white">Password</Label>
+                <Label htmlFor="password" className="text-white">
+                  Password
+                </Label>
                 <Input
                   id="password"
                   type="password"
@@ -135,8 +144,8 @@ export default function Login() {
               </Button>
 
               <div className="text-center">
-                <a 
-                  href="/forgot-password" 
+                <a
+                  href="/forgot-password"
                   className="text-sm text-teal-400 hover:text-teal-300 transition-colors"
                 >
                   Forgot your password?
@@ -144,16 +153,19 @@ export default function Login() {
               </div>
             </form>
 
-            <div className="mt-6 p-4 bg-white/5 rounded-lg border border-white/10 backdrop-blur-sm">
+            {/* <div className="mt-6 p-4 bg-white/5 rounded-lg border border-white/10 backdrop-blur-sm">
               <h3 className="text-sm font-medium text-white mb-2">Root Admin Login:</h3>
               <p className="text-xs text-gray-400">Email: root@mail.com</p>
               <p className="text-xs text-gray-400">Password: admin</p>
-            </div>
+            </div> */}
 
             <div className="mt-4 text-center">
               <p className="text-sm text-gray-400">
                 New residential user?{" "}
-                <a href="/register/residential" className="text-teal-400 hover:text-teal-300 transition-colors">
+                <a
+                  href="/register/residential"
+                  className="text-teal-400 hover:text-teal-300 transition-colors"
+                >
                   Register here
                 </a>
               </p>

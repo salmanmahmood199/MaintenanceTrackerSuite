@@ -60,7 +60,9 @@ export default function Login() {
             <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
               <Bolt className="h-6 w-6 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-slate-900">MaintenanceHub</h1>
+            <h1 className="text-2xl font-bold text-slate-900">
+              MaintenanceHub
+            </h1>
           </div>
           <p className="text-slate-600">Sign in to your account</p>
         </div>
@@ -70,7 +72,10 @@ export default function Login() {
             <CardTitle className="text-center">Login</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <form
+              onSubmit={form.handleSubmit(handleSubmit)}
+              className="space-y-4"
+            >
               {error && (
                 <Alert variant="destructive">
                   <AlertDescription>{error}</AlertDescription>
@@ -83,7 +88,7 @@ export default function Login() {
                   id="email"
                   type="email"
                   {...form.register("email")}
-                  placeholder="root@mail.com"
+                  placeholder="e.g test@gmail.com"
                   className="mt-1"
                 />
                 {form.formState.errors.email && (
@@ -124,12 +129,12 @@ export default function Login() {
                 )}
               </Button>
             </form>
-
+            {/* 
             <div className="mt-6 p-4 bg-slate-50 rounded-lg">
               <h3 className="text-sm font-medium text-slate-700 mb-2">Root Admin Login:</h3>
               <p className="text-xs text-slate-600">Email: root@mail.com</p>
               <p className="text-xs text-slate-600">Password: admin</p>
-            </div>
+            </div> */}
           </CardContent>
         </Card>
       </div>
