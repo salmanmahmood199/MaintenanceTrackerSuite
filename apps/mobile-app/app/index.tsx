@@ -18,10 +18,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../src/contexts/AuthContext";
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState("root@mail.com");
-  const [password, setPassword] = useState("admin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login, user, checkAuthStatus } = useAuth();
+  const { login, user, checkAuthStatus, loaded } = useAuth();
 
   useEffect(() => {
     checkAuthStatus();
@@ -50,6 +50,13 @@ export default function LoginScreen() {
     }
   };
 
+  if (!loaded) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient

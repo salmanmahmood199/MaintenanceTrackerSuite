@@ -16,6 +16,7 @@ import {
   Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as ScreenOrientation from "expo-screen-orientation";
 import * as ImagePicker from "expo-image-picker";
 import { ActionSheetIOS } from "react-native";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -43,8 +44,6 @@ interface VendorPart {
   price: number;
 }
 
-
-
 // This will be replaced by dynamic API data
 
 export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
@@ -62,7 +61,6 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
   const [parts, setParts] = useState<Part[]>([
     { name: "", quantity: 1, cost: 0 },
   ]);
-
 
   // Time picker states
   const [timeInHour, setTimeInHour] = useState(new Date().getHours());
@@ -90,6 +88,26 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
   );
 
   const queryClient = useQueryClient();
+
+  const lockLandscape = async () => {
+    try {
+      await ScreenOrientation.lockAsync(
+        ScreenOrientation.OrientationLock.LANDSCAPE,
+      );
+    } catch (error) {
+      console.warn("Failed to lock landscape:", error);
+    }
+  };
+
+  const lockPortrait = async () => {
+    try {
+      await ScreenOrientation.lockAsync(
+        ScreenOrientation.OrientationLock.PORTRAIT_UP,
+      );
+    } catch (error) {
+      console.warn("Failed to lock portrait:", error);
+    }
+  };
 
   // Fetch real parts from maintenance vendor
   const { data: vendorParts = [], isLoading: partsLoading } = useQuery<
@@ -287,8 +305,6 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
       prev.map((part, i) => (i === index ? { ...part, [field]: value } : part)),
     );
   };
-
-
 
   const selectPart = (index: number, partData: VendorPart | string) => {
     if (typeof partData === "string") {
@@ -977,8 +993,6 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
             ))}
           </View>
 
-
-
           {/* Total Cost */}
           <View style={styles.section}>
             <View style={styles.totalRow}>
@@ -1029,7 +1043,10 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
 
             <TouchableOpacity
               style={styles.signatureButton}
-              onPress={() => setShowSignatureModal(true)}
+              onPress={() => {
+                lockLandscape();
+                setShowSignatureModal(true);
+              }}
             >
               <Ionicons name="create-outline" size={20} color="#3b82f6" />
               <Text style={styles.signatureButtonText}>
@@ -1057,7 +1074,10 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
           {/* Signature Modal */}
           <SignatureModal
             visible={showSignatureModal}
-            onClose={() => setShowSignatureModal(false)}
+            onClose={() => {
+              setShowSignatureModal(false);
+              lockPortrait();
+            }}
             onSave={(signature) => setManagerSignature(signature)}
             title="Manager Signature"
           />

@@ -92,7 +92,7 @@ const SignatureModal: React.FC<SignatureModalProps> = ({
     <Modal
       visible={visible}
       animationType="slide"
-      presentationStyle="fullScreen"
+      presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
       <View style={styles.container}>
@@ -125,10 +125,6 @@ const SignatureModal: React.FC<SignatureModalProps> = ({
 
         {/* Signature area */}
         <View style={styles.signatureContainer}>
-          <Text style={styles.signaturePrompt}>
-            Sign below to create your digital signature:
-          </Text>
-
           <View style={styles.signatureCanvasContainer}>
             <SignatureCanvas
               ref={signatureRef}
@@ -169,12 +165,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 40,
+    // paddingVertical: 12,
     backgroundColor: "white",
     borderBottomWidth: 1,
     borderBottomColor: "#e2e8f0",
-    paddingTop: 50,
+    paddingTop: 25,
   },
   cancelButton: { padding: 8 },
   title: { fontSize: 18, fontWeight: "600", color: "#1e293b" },
@@ -201,12 +197,7 @@ const styles = StyleSheet.create({
   signatureContainer: {
     flex: 1,
     backgroundColor: "white",
-    margin: 16,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "#e2e8f0",
-    borderStyle: "dashed",
-    padding: 16,
+    margin: 0,
   },
   signaturePrompt: {
     fontSize: 16,
@@ -222,7 +213,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: "#f9fafb",
     overflow: "hidden",
-    marginBottom: 16,
+    // marginBottom: 16,
   },
   actionButton: {
     paddingVertical: 12,

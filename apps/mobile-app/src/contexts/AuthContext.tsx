@@ -1,6 +1,12 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { apiRequest } from '../services/api';
-import { router } from 'expo-router';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+import { apiRequest } from "../services/api";
+import { router } from "expo-router";
 
 interface User {
   id: number;
@@ -34,14 +40,15 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>();
   const [isLoading, setIsLoading] = useState(true);
+  const [loaded, setLoaded] = useState(false);
 
   const checkAuthStatus = async () => {
     try {
       setIsLoading(true);
-      
-      const response = await apiRequest('GET', '/api/auth/user');
+
+      const response = await apiRequest("GET", "/api/auth/user");
       if (response.ok) {
         const userData = await response.json();
         setUser(userData);
@@ -49,34 +56,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setUser(null);
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
+      console.error("Auth check failed:", error);
       setUser(null);
     } finally {
       setIsLoading(false);
+      setLoaded(true);
     }
   };
 
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      const response = await apiRequest('POST', '/api/auth/login', {
+      const response = await apiRequest("POST", "/api/auth/login", {
         email,
         password,
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Login failed');
+        throw new Error(errorData.message || "Login failed");
       }
 
       const responseData = await response.json();
-      
+
       // Handle different response formats
       const userData = responseData.user || responseData;
-      
+
       setUser(userData);
     } catch (error) {
-      console.error('Login error:', error);
+      console.error("Login error:", error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -85,12 +93,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const logout = async () => {
     try {
-      await apiRequest('POST', '/api/auth/logout');
+      await apiRequest("POST", "/api/auth/logout");
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
     } finally {
       setUser(null);
-      router.replace('/');
+      router.replace("/");
     }
   };
 
@@ -104,19 +112,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     logout,
     checkAuthStatus,
     isLoading,
+    loaded,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }
