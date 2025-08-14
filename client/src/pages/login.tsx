@@ -118,7 +118,7 @@ export default function Login() {
                   id="password"
                   type="password"
                   {...form.register("password")}
-                  placeholder="admin"
+                  placeholder="e.g test"
                   className="mt-1 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
                 />
                 {form.formState.errors.password && (
