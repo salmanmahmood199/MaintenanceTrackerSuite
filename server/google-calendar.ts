@@ -18,11 +18,16 @@ export class GoogleCalendarService {
           ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co/api/auth/google/callback`
           : "http://localhost:5000/api/auth/google/callback");
 
-    // Validate Google Calendar environment variables
-    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-      console.warn('⚠️  Google Calendar environment variables not configured. Google Calendar integration will be disabled.');
-      console.warn('   Required: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET');
-      console.warn('   Optional: GOOGLE_REDIRECT_URI (will use auto-detected URL if not provided)');
+    // Validate Google Calendar environment variables with enhanced error handling
+    try {
+      if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+        console.warn('⚠️  Google Calendar environment variables not configured. Google Calendar integration will be disabled.');
+        console.warn('   Required: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET');
+        console.warn('   Optional: GOOGLE_REDIRECT_URI (will use auto-detected URL if not provided)');
+        console.warn('   💡 To enable Google Calendar, add these environment variables in your deployment settings');
+      }
+    } catch (error) {
+      console.error('❌ Error checking Google Calendar environment variables:', error);
     }
 
     this.oauth2Client = new google.auth.OAuth2(

@@ -104,6 +104,20 @@ function validateEnvironmentVariables() {
     warnings.forEach(warning => console.warn(`  - ${warning}`));
   }
 
+  // Additional Google Calendar validation
+  try {
+    if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+      console.log('✅ Google Calendar integration credentials found');
+      if (!process.env.GOOGLE_REDIRECT_URI) {
+        console.log('ℹ️  Using auto-detected redirect URI for Google Calendar');
+      }
+    } else {
+      console.log('ℹ️  Google Calendar integration disabled (missing credentials)');
+    }
+  } catch (error) {
+    console.warn('⚠️  Error validating Google Calendar configuration:', error);
+  }
+
   console.log('✅ Environment variables validated');
 }
 
@@ -145,8 +159,16 @@ function setupErrorHandlers(app: express.Express) {
     // Validate environment variables first
     validateEnvironmentVariables();
 
-    const server = await registerRoutes(app);
-    console.log('✅ Routes registered successfully');
+    // Register routes with additional error handling
+    let server;
+    try {
+      server = await registerRoutes(app);
+      console.log('✅ Routes registered successfully');
+    } catch (routeError) {
+      console.error('❌ Failed to register routes:', routeError);
+      const errorMessage = routeError instanceof Error ? routeError.message : String(routeError);
+      throw new Error(`Route registration failed: ${errorMessage}`);
+    }
     
     // Serve mobile demo
     app.get('/mobile-demo.html', (req, res) => {
@@ -192,7 +214,7 @@ function setupErrorHandlers(app: express.Express) {
     console.error('❌ Failed to start server:', error);
     console.error('Stack trace:', (error as Error).stack);
     
-    // More specific error messages
+    // More specific error messages for deployment debugging
     if (error instanceof Error) {
       if (error.message.includes('EADDRINUSE')) {
         console.error('💡 Port 5000 is already in use. Please close other applications using this port.');
@@ -200,7 +222,23 @@ function setupErrorHandlers(app: express.Express) {
         console.error('💡 Permission denied. You may need to run with elevated privileges.');
       } else if (error.message.includes('environment variables')) {
         console.error('💡 Please check your environment configuration and ensure all required variables are set.');
+      } else if (error.message.includes('Route registration')) {
+        console.error('💡 Route registration failed. Check for syntax errors or missing dependencies.');
+      } else if (error.message.includes('Google Calendar')) {
+        console.error('💡 Google Calendar integration error. Check GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.');
+      } else if (error.message.includes('database') || error.message.includes('DATABASE_URL')) {
+        console.error('💡 Database connection failed. Check DATABASE_URL environment variable.');
       }
+    }
+    
+    // Log environment for debugging in non-production
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('🔍 Environment debug info:');
+      console.error('  NODE_ENV:', process.env.NODE_ENV);
+      console.error('  DATABASE_URL:', process.env.DATABASE_URL ? '***configured***' : 'missing');
+      console.error('  SESSION_SECRET:', process.env.SESSION_SECRET ? '***configured***' : 'missing');
+      console.error('  GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID ? '***configured***' : 'missing');
+      console.error('  GOOGLE_CLIENT_SECRET:', process.env.GOOGLE_CLIENT_SECRET ? '***configured***' : 'missing');
     }
     
     process.exit(1);
