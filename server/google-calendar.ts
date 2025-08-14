@@ -270,7 +270,7 @@ export class GoogleCalendarService {
       console.log(`Found ${events.length} Google Calendar events to sync`);
 
       // Log each event for debugging
-      events.forEach((event) => {
+      events.forEach((event: any) => {
         const startTime = event.start?.date || event.start?.dateTime;
         console.log(
           `Google Event: "${event.summary}" on ${startTime} (Status: ${event.status})`,
@@ -284,19 +284,6 @@ export class GoogleCalendarService {
     }
   }
 
-  // Get user's email from Google
-  async getUserInfo(integration: GoogleCalendarIntegration) {
-    this.setCredentials(integration);
-
-    try {
-      const oauth2 = google.oauth2({ version: "v2", auth: this.oauth2Client });
-      const response = await oauth2.userinfo.get();
-      return response.data;
-    } catch (error) {
-      console.error("Failed to get user info:", error);
-      throw new Error("Failed to get user information");
-    }
-  }
 
   // Helper function to convert hex color to Google Calendar color ID
   private getColorIdFromHex(hexColor: string): string {
