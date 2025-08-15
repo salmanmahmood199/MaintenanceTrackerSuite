@@ -314,7 +314,7 @@ export default function TicketDetailsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#1e293b" />
+          <Ionicons name="arrow-back" size={24} color="#ffffff" />
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>{ticket.title ?? `Ticket #${ticket.id}`}</Text>
@@ -369,20 +369,20 @@ export default function TicketDetailsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#0f172a',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#0f172a',
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#0f172a',
   },
   errorText: {
     fontSize: 16,
@@ -390,14 +390,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   header: {
-    backgroundColor: 'white',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 16,
     paddingTop: 50,
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   backButton: {
     padding: 8,
@@ -409,18 +409,18 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1e293b',
+    color: '#ffffff',
     marginBottom: 2,
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#64748b',
+    color: '#94a3b8',
   },
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: 'white',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   tab: {
     flex: 1,
@@ -436,7 +436,7 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#64748b',
+    color: '#94a3b8',
     textAlign: 'center',
   },
   activeTabText: {
@@ -449,20 +449,22 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   infoSection: {
-    backgroundColor: 'white',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1e293b',
+    color: '#ffffff',
     marginBottom: 16,
   },
   infoRow: {
@@ -474,19 +476,19 @@ const styles = StyleSheet.create({
   infoLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#64748b',
+    color: '#94a3b8',
     flex: 1,
     marginRight: 12,
   },
   infoValue: {
     fontSize: 14,
-    color: '#1e293b',
+    color: '#ffffff',
     flex: 2,
     textAlign: 'right',
   },
   infoDescription: {
     fontSize: 14,
-    color: '#1e293b',
+    color: '#cbd5e1',
     flex: 2,
     textAlign: 'right',
     lineHeight: 20,
@@ -522,7 +524,7 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#64748b',
+    color: '#ffffff',
     marginTop: 12,
     marginBottom: 4,
   },
@@ -531,15 +533,17 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
   },
   commentCard: {
-    backgroundColor: 'white',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   commentHeader: {
     flexDirection: 'row',
@@ -550,26 +554,28 @@ const styles = StyleSheet.create({
   commentAuthor: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1e293b',
+    color: '#ffffff',
   },
   commentDate: {
     fontSize: 12,
-    color: '#64748b',
+    color: '#94a3b8',
   },
   commentText: {
     fontSize: 14,
-    color: '#374151',
+    color: '#cbd5e1',
     lineHeight: 20,
   },
   progressSection: {
-    backgroundColor: 'white',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
     padding: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   progressStep: {
     flexDirection: 'row',
@@ -588,23 +594,25 @@ const styles = StyleSheet.create({
   progressTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1e293b',
+    color: '#ffffff',
     marginBottom: 2,
   },
   progressDate: {
     fontSize: 12,
-    color: '#64748b',
+    color: '#94a3b8',
   },
   workOrderCard: {
-    backgroundColor: 'white',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   workOrderHeader: {
     flexDirection: 'row',
@@ -615,22 +623,22 @@ const styles = StyleSheet.create({
   workOrderTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1e293b',
+    color: '#ffffff',
   },
   workOrderStatus: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#64748b',
+    color: '#94a3b8',
     textTransform: 'capitalize',
   },
   workOrderDescription: {
     fontSize: 14,
-    color: '#374151',
+    color: '#cbd5e1',
     lineHeight: 20,
     marginBottom: 8,
   },
   workOrderDate: {
     fontSize: 12,
-    color: '#64748b',
+    color: '#94a3b8',
   },
 });
