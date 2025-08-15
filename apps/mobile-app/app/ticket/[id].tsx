@@ -1,31 +1,55 @@
 import React, { useState } from "react";
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, RefreshControl, Image, TextInput, Modal, Dimensions, Alert } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+  RefreshControl,
+  Image,
+  TextInput,
+  Modal,
+  Dimensions,
+  Alert,
+} from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "../../src/services/api";
-import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
-import * as DocumentPicker from 'expo-document-picker';
-import { useAuth } from '../../src/contexts/AuthContext';
-import WorkOrderModal from '../components/WorkOrderModal';
-import WorkOrderDetailsModal from '../components/WorkOrderDetailsModal';
-import InvoiceModal from '../components/InvoiceModal';
+import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import * as DocumentPicker from "expo-document-picker";
+import { useAuth } from "../../src/contexts/AuthContext";
+import WorkOrderModal from "../components/WorkOrderModal";
+import WorkOrderDetailsModal from "../components/WorkOrderDetailsModal";
+import InvoiceModal from "../components/InvoiceModal";
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get("window");
 
-type Location = { name?: string; address?: string; city?: string; state?: string; zip?: string };
+type Location = {
+  name?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+};
 
 function normalizeTicket(raw: any) {
   if (!raw) return null;
-  
+
   // Handle location data - tickets from the API have locationId, locationName, and locationAddress
-  const location: Location | null = raw.locationId ? {
-    name: raw.locationName || raw.location?.name,
-    address: raw.locationAddress || raw.location?.address || raw.location?.streetAddress,
-    city: raw.locationCity || raw.location?.city,
-    state: raw.locationState || raw.location?.state,
-    zip: raw.locationZip || raw.location?.zip || raw.location?.zipCode,
-  } : null;
+  const location: Location | null = raw.locationId
+    ? {
+        name: raw.locationName || raw.location?.name,
+        address:
+          raw.locationAddress ||
+          raw.location?.address ||
+          raw.location?.streetAddress,
+        city: raw.locationCity || raw.location?.city,
+        state: raw.locationState || raw.location?.state,
+        zip: raw.locationZip || raw.location?.zip || raw.location?.zipCode,
+      }
+    : null;
 
   return {
     id: raw.id,
@@ -50,39 +74,59 @@ function normalizeTicket(raw: any) {
 
 // Helper functions for permissions and actions
 function hasActionsPermission(user: any, ticket: any): boolean {
-  console.log('hasActionsPermission check:', {
-    user: user ? { role: user.role, vendorId: user.maintenanceVendorId, id: user.id } : null,
-    ticket: ticket ? { id: ticket.id, vendorId: ticket.maintenanceVendorId, status: ticket.status, assigneeId: ticket.assigneeId } : null
+  console.log("hasActionsPermission check:", {
+    user: user
+      ? { role: user.role, vendorId: user.maintenanceVendorId, id: user.id }
+      : null,
+    ticket: ticket
+      ? {
+          id: ticket.id,
+          vendorId: ticket.maintenanceVendorId,
+          status: ticket.status,
+          assigneeId: ticket.assigneeId,
+        }
+      : null,
   });
-  
+
   if (!user || !ticket) return false;
-  
+
   // Root admin can perform all actions
-  if (user.role === 'root') return true;
-  
+  if (user.role === "root") return true;
+
   // Org admin can perform actions on their organization tickets
-  if (user.role === 'org_admin' && ticket.organizationId === user.organizationId) return true;
-  
+  if (
+    user.role === "org_admin" &&
+    ticket.organizationId === user.organizationId
+  )
+    return true;
+
   // Maintenance admin can perform actions on assigned tickets
-  if (user.role === 'maintenance_admin' && ticket.maintenanceVendorId === user.maintenanceVendorId) {
-    console.log('Maintenance admin permission granted');
+  if (
+    user.role === "maintenance_admin" &&
+    ticket.maintenanceVendorId === user.maintenanceVendorId
+  ) {
+    console.log("Maintenance admin permission granted");
     return true;
   }
-  
+
   // Sub admin with accept permissions or marketplace users
-  if (user.role === 'org_subadmin' && ticket.organizationId === user.organizationId) {
+  if (
+    user.role === "org_subadmin" &&
+    ticket.organizationId === user.organizationId
+  ) {
     // Check for accept_ticket permission or marketplace user
-    if (user.permissions?.includes('accept_ticket')) return true;
-    if (user.email && user.email.includes('marketplace')) return true;
+    if (user.permissions?.includes("accept_ticket")) return true;
+    if (user.email && user.email.includes("marketplace")) return true;
   }
-  
+
   // Technician can perform actions on their assigned tickets
-  if (user.role === 'technician' && ticket.assigneeId === user.id) return true;
-  
+  if (user.role === "technician" && ticket.assigneeId === user.id) return true;
+
   // Original ticket requester can confirm completion
-  if (ticket.reporterId === user.id && ticket.status === 'pending_confirmation') return true;
-  
-  console.log('No permission granted');
+  if (ticket.reporterId === user.id && ticket.status === "pending_confirmation")
+    return true;
+
+  console.log("No permission granted");
   return false;
 }
 
@@ -94,60 +138,82 @@ export default function TicketDetailsScreen() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'details' | 'comments' | 'progress' | 'workorders' | 'actions'>('details');
-  const [newComment, setNewComment] = useState('');
+  const [activeTab, setActiveTab] = useState<
+    "details" | "comments" | "progress" | "workorders" | "actions"
+  >("details");
+  const [newComment, setNewComment] = useState("");
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedImages, setSelectedImages] = useState<any[]>([]);
-  const [imagePreviewModalVisible, setImagePreviewModalVisible] = useState(false);
+  const [imagePreviewModalVisible, setImagePreviewModalVisible] =
+    useState(false);
   const [workOrderModalVisible, setWorkOrderModalVisible] = useState(false);
   const [invoiceModalVisible, setInvoiceModalVisible] = useState(false);
-  const [assignTechnicianModalVisible, setAssignTechnicianModalVisible] = useState(false);
+  const [assignTechnicianModalVisible, setAssignTechnicianModalVisible] =
+    useState(false);
   const [technicians, setTechnicians] = useState<any[]>([]);
   const [selectedWorkOrder, setSelectedWorkOrder] = useState<any>(null);
-  const [showWorkOrderDetailsModal, setShowWorkOrderDetailsModal] = useState(false);
+  const [showWorkOrderDetailsModal, setShowWorkOrderDetailsModal] =
+    useState(false);
 
   // Fetch ticket details
-  const { data: ticket, isLoading: ticketLoading, refetch: refetchTicket, isError: ticketError, error: ticketErrorMsg } = useQuery({
+  const {
+    data: ticket,
+    isLoading: ticketLoading,
+    refetch: refetchTicket,
+    isError: ticketError,
+    error: ticketErrorMsg,
+  } = useQuery({
     queryKey: ["ticket", id],
     enabled: !!id,
     queryFn: async () => {
       try {
-        console.log('Fetching ticket details for ID:', id);
-        const response = await apiRequest('GET', `/api/tickets/${id}`);
+        console.log("Fetching ticket details for ID:", id);
+        const response = await apiRequest("GET", `/api/tickets/${id}`);
         const data = await response.json();
-        console.log('Ticket API response:', data);
+        console.log("Ticket API response:", data);
         const raw = data?.ticket ?? data;
         return normalizeTicket(raw);
       } catch (error) {
-        console.error('Error fetching ticket:', error);
+        console.error("Error fetching ticket:", error);
         throw error;
       }
     },
   });
 
   // Fetch comments
-  const { data: comments = [], isLoading: commentsLoading, refetch: refetchComments } = useQuery({
+  const {
+    data: comments = [],
+    isLoading: commentsLoading,
+    refetch: refetchComments,
+  } = useQuery({
     queryKey: ["comments", id],
     enabled: !!id,
     queryFn: async () => {
-      console.log('Fetching comments for ticket:', id);
-      const response = await apiRequest('GET', `/api/tickets/${id}/comments`);
+      console.log("Fetching comments for ticket:", id);
+      const response = await apiRequest("GET", `/api/tickets/${id}/comments`);
       const data = await response.json();
-      console.log('Comments API response:', data);
+      console.log("Comments API response:", data);
       return data ?? [];
     },
   });
 
   // Fetch work orders
-  const { data: workOrders = [], isLoading: workOrdersLoading, refetch: refetchWorkOrders } = useQuery({
+  const {
+    data: workOrders = [],
+    isLoading: workOrdersLoading,
+    refetch: refetchWorkOrders,
+  } = useQuery({
     queryKey: ["workorders", id],
     enabled: !!id,
     queryFn: async () => {
-      console.log('Fetching work orders for ticket:', id);
-      const response = await apiRequest('GET', `/api/tickets/${id}/work-orders`);
+      console.log("Fetching work orders for ticket:", id);
+      const response = await apiRequest(
+        "GET",
+        `/api/tickets/${id}/work-orders`,
+      );
       const data = await response.json();
-      console.log('Work Orders API response:', data);
+      console.log("Work Orders API response:", data);
       return data ?? [];
     },
   });
@@ -156,48 +222,54 @@ export default function TicketDetailsScreen() {
   const addCommentMutation = useMutation({
     mutationFn: async (data: { content: string; images?: any[] }) => {
       const formData = new FormData();
-      formData.append('content', data.content);
-      
+      formData.append("content", data.content);
+
       // Add images if present
       if (data.images && data.images.length > 0) {
         data.images.forEach((image) => {
-          formData.append('images', {
+          formData.append("images", {
             uri: image.uri,
-            type: image.type || 'image/jpeg',
-            name: image.name || 'image.jpg',
+            type: image.type || "image/jpeg",
+            name: image.name || "image.jpg",
           } as any);
         });
       }
-      
-      const response = await apiRequest('POST', `/api/tickets/${id}/comments`, formData);
-      
+
+      const response = await apiRequest(
+        "POST",
+        `/api/tickets/${id}/comments`,
+        formData,
+      );
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        const errorData = await response
+          .json()
+          .catch(() => ({ message: "Unknown error" }));
         throw new Error(errorData.message || `HTTP ${response.status}`);
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["comments", id] });
-      setNewComment('');
+      setNewComment("");
       setSelectedImages([]);
-      Alert.alert('Success', 'Comment added successfully');
+      Alert.alert("Success", "Comment added successfully");
     },
     onError: (error: any) => {
-      console.error('Comment error:', error);
-      Alert.alert('Error', error.message || 'Failed to add comment');
+      console.error("Comment error:", error);
+      Alert.alert("Error", error.message || "Failed to add comment");
     },
   });
 
   const handleAddComment = () => {
     if (!newComment.trim() && selectedImages.length === 0) {
-      Alert.alert('Error', 'Please enter a comment or select an image');
+      Alert.alert("Error", "Please enter a comment or select an image");
       return;
     }
-    addCommentMutation.mutate({ 
-      content: newComment.trim() || 'Image attachment', 
-      images: selectedImages 
+    addCommentMutation.mutate({
+      content: newComment.trim() || "Image attachment",
+      images: selectedImages,
     });
   };
 
@@ -214,8 +286,8 @@ export default function TicketDetailsScreen() {
         setSelectedImages([...selectedImages, ...result.assets]);
       }
     } catch (error) {
-      console.error('Error picking images:', error);
-      Alert.alert('Error', 'Failed to pick images');
+      console.error("Error picking images:", error);
+      Alert.alert("Error", "Failed to pick images");
     }
   };
 
@@ -227,7 +299,11 @@ export default function TicketDetailsScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([refetchTicket(), refetchComments(), refetchWorkOrders()]);
+    await Promise.all([
+      refetchTicket(),
+      refetchComments(),
+      refetchWorkOrders(),
+    ]);
     setRefreshing(false);
   };
 
@@ -235,48 +311,60 @@ export default function TicketDetailsScreen() {
   const acceptTicket = async () => {
     try {
       // Fetch available vendors first
-      console.log('Fetching vendors for user:', user?.role, user?.organizationId);
-      
+      console.log(
+        "Fetching vendors for user:",
+        user?.role,
+        user?.organizationId,
+      );
+
       // Use the same endpoint as web interface for vendor tiers
-      const vendorsResponse = await apiRequest('GET', `/api/organizations/${user?.organizationId}/vendor-tiers`);
+      const vendorsResponse = await apiRequest(
+        "GET",
+        `/api/organizations/${user?.organizationId}/vendor-tiers`,
+      );
       if (!vendorsResponse.ok) {
         throw new Error(`Failed to fetch vendors: ${vendorsResponse.status}`);
       }
 
       const vendorsData = await vendorsResponse.json();
-      console.log('Vendor tiers API response:', vendorsData);
-      
+      console.log("Vendor tiers API response:", vendorsData);
+
       // Handle the vendor-tiers response format
       const vendorsList = Array.isArray(vendorsData) ? vendorsData : [];
-      
+
       const availableVendors = vendorsList.filter((v: any) => {
         const vendor = v.vendor;
         const tier = v.tier;
-        
+
         // Check if vendor is active (note: API uses isActive but DB uses is_active)
-        if (!vendor || (vendor.isActive === false || vendor.is_active === false)) return false;
-        
+        if (!vendor || vendor.isActive === false || vendor.is_active === false)
+          return false;
+
         // Root and org admins can see all active vendors
         if (user?.role === "root" || user?.role === "org_admin") return true;
-        
-        // Sub-admins with accept_ticket permission can see vendors based on their tier permissions  
+
+        // Sub-admins with accept_ticket permission can see vendors based on their tier permissions
         if (user?.role === "org_subadmin") {
           // For now, allow all org_subadmins until permissions parsing is fixed
           return true;
         }
-        
+
         // Maintenance admins can see all vendors assigned to their organization
         if (user?.role === "maintenance_admin") return true;
-        
+
         return false;
       });
 
-      console.log('Available vendors after filtering:', availableVendors);
-      console.log('User details:', { role: user?.role, permissions: user?.permissions, organizationId: user?.organizationId });
-      console.log('Raw vendors list:', vendorsList);
-      
+      console.log("Available vendors after filtering:", availableVendors);
+      console.log("User details:", {
+        role: user?.role,
+        permissions: user?.permissions,
+        organizationId: user?.organizationId,
+      });
+      console.log("Raw vendors list:", vendorsList);
+
       // Debug logging
-      console.log('Detailed vendor analysis:');
+      console.log("Detailed vendor analysis:");
       vendorsList.forEach((v, index) => {
         const vendor = v.vendor;
         const tier = v.tier;
@@ -288,146 +376,196 @@ export default function TicketDetailsScreen() {
           hasVendor: !!vendor,
           userRole: user?.role,
           userPermissions: user?.permissions,
-          passesActiveCheck: !(!vendor || (vendor.isActive === false || vendor.is_active === false)),
-          passesRoleCheck: user?.role === "org_subadmin" && user?.permissions?.includes("accept_ticket")
+          passesActiveCheck: !(
+            !vendor ||
+            vendor.isActive === false ||
+            vendor.is_active === false
+          ),
+          passesRoleCheck:
+            user?.role === "org_subadmin" &&
+            user?.permissions?.includes("accept_ticket"),
         });
       });
-      
+
       if (availableVendors.length === 0) {
-        console.log(`Found ${vendorsList.length} vendors but 0 after filtering. User: ${user?.role}, Permissions: ${user?.permissions?.join(',') || 'none'}`);
+        console.log(
+          `Found ${vendorsList.length} vendors but 0 after filtering. User: ${user?.role}, Permissions: ${user?.permissions?.join(",") || "none"}`,
+        );
         // Still show marketplace option even if no direct vendors
-        const vendorOptions = [{ label: 'Assign to Marketplace', value: 'marketplace' }];
-        
+        const vendorOptions = [
+          { label: "Assign to Marketplace", value: "marketplace" },
+        ];
+
         Alert.alert(
-          'Select Vendor Assignment',
-          'Only marketplace assignment is available:',
+          "Select Vendor Assignment",
+          "Only marketplace assignment is available:",
           [
-            { text: 'Cancel', style: 'cancel' },
+            { text: "Cancel", style: "cancel" },
             {
-              text: 'Assign to Marketplace',
+              text: "Assign to Marketplace",
               onPress: async () => {
                 try {
                   const acceptData = { marketplace: true };
-                  console.log('Accepting ticket with marketplace assignment:', acceptData);
-                  
-                  const response = await apiRequest('PATCH', `/api/tickets/${ticket.id}/accept`, acceptData);
+                  console.log(
+                    "Accepting ticket with marketplace assignment:",
+                    acceptData,
+                  );
+
+                  const response = await apiRequest(
+                    "PATCH",
+                    `/api/tickets/${ticket.id}/accept`,
+                    acceptData,
+                  );
                   if (!response.ok) {
-                    throw new Error(`Failed to accept ticket: ${response.status}`);
+                    throw new Error(
+                      `Failed to accept ticket: ${response.status}`,
+                    );
                   }
-                  
-                  Alert.alert('Success', 'Ticket assigned to marketplace successfully');
-                  queryClient.invalidateQueries({ queryKey: ['ticket', ticket.id] });
-                  queryClient.invalidateQueries({ queryKey: ['tickets'] }); // Also refresh ticket list
+
+                  Alert.alert(
+                    "Success",
+                    "Ticket assigned to marketplace successfully",
+                  );
+                  queryClient.invalidateQueries({
+                    queryKey: ["ticket", ticket.id],
+                  });
+                  queryClient.invalidateQueries({ queryKey: ["tickets"] }); // Also refresh ticket list
                 } catch (error) {
-                  console.error('Error accepting ticket:', error);
-                  Alert.alert('Error', 'Failed to accept ticket. Please try again.');
+                  console.error("Error accepting ticket:", error);
+                  Alert.alert(
+                    "Error",
+                    "Failed to accept ticket. Please try again.",
+                  );
                 }
-              }
-            }
-          ]
+              },
+            },
+          ],
         );
         return;
       }
 
       // Create vendor selection options
       const vendorOptions = [
-        { label: 'Assign to Marketplace', value: 'marketplace' },
+        { label: "Assign to Marketplace", value: "marketplace" },
         ...availableVendors.map((v: any) => {
           const vendor = v.vendor;
           const tier = v.tier;
           return {
-            label: `${vendor.name || vendor.companyName || 'Unnamed Vendor'} (${tier.replace('tier_', 'TIER ').toUpperCase()})`,
-            value: vendor.id.toString()
+            label: `${vendor.name || vendor.companyName || "Unnamed Vendor"} (${tier.replace("tier_", "TIER ").toUpperCase()})`,
+            value: vendor.id.toString(),
           };
-        })
+        }),
       ];
 
       // Show vendor selection picker
       Alert.alert(
-        'Select Vendor Assignment',
-        'Choose how to assign this ticket:',
+        "Select Vendor Assignment",
+        "Choose how to assign this ticket:",
         [
-          { text: 'Cancel', style: 'cancel' },
-          ...vendorOptions.map(option => ({
+          { text: "Cancel", style: "cancel" },
+          ...vendorOptions.map((option) => ({
             text: option.label,
             onPress: async () => {
               try {
                 const acceptData: any = {};
-                
-                if (option.value === 'marketplace') {
+
+                if (option.value === "marketplace") {
                   acceptData.marketplace = true;
                 } else {
                   acceptData.maintenanceVendorId = parseInt(option.value);
                 }
 
-                const response = await apiRequest('POST', `/api/tickets/${id}/accept`, acceptData);
+                const response = await apiRequest(
+                  "POST",
+                  `/api/tickets/${id}/accept`,
+                  acceptData,
+                );
                 if (response.ok) {
                   const data = await response.json();
                   queryClient.invalidateQueries({ queryKey: ["ticket", id] });
                   queryClient.invalidateQueries({ queryKey: ["tickets"] });
-                  Alert.alert('Success', `Ticket accepted and assigned to ${option.label}`);
+                  Alert.alert(
+                    "Success",
+                    `Ticket accepted and assigned to ${option.label}`,
+                  );
                 }
               } catch (error: any) {
-                Alert.alert('Error', error.response?.data?.message || 'Failed to accept ticket');
+                Alert.alert(
+                  "Error",
+                  error.response?.data?.message || "Failed to accept ticket",
+                );
               }
-            }
-          }))
-        ]
+            },
+          })),
+        ],
       );
-
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to fetch vendors');
+      Alert.alert(
+        "Error",
+        error.response?.data?.message || "Failed to fetch vendors",
+      );
     }
   };
 
   const rejectTicket = async () => {
     Alert.prompt(
-      'Reject Ticket',
-      'Please provide a reason for rejecting this ticket:',
+      "Reject Ticket",
+      "Please provide a reason for rejecting this ticket:",
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Reject',
-          style: 'destructive',
+          text: "Reject",
+          style: "destructive",
           onPress: async (reason) => {
             if (!reason?.trim()) {
-              Alert.alert('Error', 'Rejection reason is required');
+              Alert.alert("Error", "Rejection reason is required");
               return;
             }
             try {
-              const response = await apiRequest('POST', `/api/tickets/${id}/reject`, {
-                rejectionReason: reason.trim()
-              });
+              const response = await apiRequest(
+                "POST",
+                `/api/tickets/${id}/reject`,
+                {
+                  rejectionReason: reason.trim(),
+                },
+              );
               if (response.ok) {
                 const data = await response.json();
                 queryClient.invalidateQueries({ queryKey: ["ticket", id] });
                 queryClient.invalidateQueries({ queryKey: ["tickets"] });
-                Alert.alert('Success', 'Ticket rejected successfully');
+                Alert.alert("Success", "Ticket rejected successfully");
               }
             } catch (error: any) {
-              Alert.alert('Error', error.response?.data?.message || 'Failed to reject ticket');
+              Alert.alert(
+                "Error",
+                error.response?.data?.message || "Failed to reject ticket",
+              );
             }
-          }
-        }
+          },
+        },
       ],
-      'plain-text'
+      "plain-text",
     );
   };
-
-
 
   const assignTechnician = async () => {
     try {
       // Fetch available technicians for this vendor
-      const response = await apiRequest('GET', `/api/maintenance-vendors/${user?.maintenanceVendorId}/technicians`);
+      const response = await apiRequest(
+        "GET",
+        `/api/maintenance-vendors/${user?.maintenanceVendorId}/technicians`,
+      );
       if (!response.ok) {
-        Alert.alert('Error', 'Failed to fetch technicians');
+        Alert.alert("Error", "Failed to fetch technicians");
         return;
       }
-      
+
       const technicians = await response.json();
       if (!technicians || technicians.length === 0) {
-        Alert.alert('No Technicians', 'No technicians available for assignment');
+        Alert.alert(
+          "No Technicians",
+          "No technicians available for assignment",
+        );
         return;
       }
 
@@ -436,215 +574,265 @@ export default function TicketDetailsScreen() {
         text: `${tech.firstName} ${tech.lastName} (${tech.email})`,
         onPress: async () => {
           try {
-            const assignResponse = await apiRequest('POST', `/api/tickets/${id}/assign-technician`, {
-              assigneeId: tech.id
-            });
+            const assignResponse = await apiRequest(
+              "POST",
+              `/api/tickets/${id}/assign-technician`,
+              {
+                assigneeId: tech.id,
+              },
+            );
             if (assignResponse.ok) {
               queryClient.invalidateQueries({ queryKey: ["ticket", id] });
               queryClient.invalidateQueries({ queryKey: ["tickets"] });
-              Alert.alert('Success', `Ticket assigned to ${tech.firstName} ${tech.lastName}`);
+              Alert.alert(
+                "Success",
+                `Ticket assigned to ${tech.firstName} ${tech.lastName}`,
+              );
             }
           } catch (error: any) {
-            Alert.alert('Error', error.response?.data?.message || 'Failed to assign technician');
+            Alert.alert(
+              "Error",
+              error.response?.data?.message || "Failed to assign technician",
+            );
           }
-        }
+        },
       }));
 
-      Alert.alert(
-        'Assign Technician',
-        'Select a technician for this ticket:',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          ...technicianOptions
-        ]
-      );
-
+      Alert.alert("Assign Technician", "Select a technician for this ticket:", [
+        { text: "Cancel", style: "cancel" },
+        ...technicianOptions,
+      ]);
     } catch (error: any) {
-      Alert.alert('Error', 'Failed to load technicians');
+      Alert.alert("Error", "Failed to load technicians");
     }
   };
 
   const startWork = async () => {
     Alert.alert(
-      'Start Work',
-      'Would you like to create a work order with details or just start working?',
+      "Start Work",
+      "Would you like to create a work order with details or just start working?",
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Just Start',
+          text: "Just Start",
           onPress: async () => {
             try {
-              const response = await apiRequest('POST', `/api/tickets/${id}/start`, {});
+              const response = await apiRequest(
+                "POST",
+                `/api/tickets/${id}/start`,
+                {},
+              );
               if (response.status === 200) {
                 queryClient.invalidateQueries({ queryKey: ["ticket", id] });
-                Alert.alert('Success', 'Work started successfully');
+                Alert.alert("Success", "Work started successfully");
               }
             } catch (error: any) {
-              Alert.alert('Error', error.response?.data?.message || 'Failed to start work');
+              Alert.alert(
+                "Error",
+                error.response?.data?.message || "Failed to start work",
+              );
             }
-          }
+          },
         },
         {
-          text: 'Create Work Order',
-          onPress: () => createWorkOrder()
-        }
-      ]
+          text: "Create Work Order",
+          onPress: () => createWorkOrder(),
+        },
+      ],
     );
   };
 
   const createWorkOrder = async () => {
     Alert.prompt(
-      'Create Work Order',
-      'Describe the work you will be performing:',
+      "Create Work Order",
+      "Describe the work you will be performing:",
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Create & Start',
+          text: "Create & Start",
           onPress: async (workDescription) => {
             if (!workDescription?.trim()) {
-              Alert.alert('Error', 'Work description is required');
+              Alert.alert("Error", "Work description is required");
               return;
             }
-            
+
             try {
               // Create work order and start work in one API call
-              const response = await apiRequest('POST', `/api/tickets/${id}/work-orders`, {
-                workDescription: workDescription.trim(),
-                startWork: true,
-                workStatus: 'in_progress',
-                startTime: new Date().toISOString()
-              });
-              
+              const response = await apiRequest(
+                "POST",
+                `/api/tickets/${id}/work-orders`,
+                {
+                  workDescription: workDescription.trim(),
+                  startWork: true,
+                  workStatus: "in_progress",
+                  startTime: new Date().toISOString(),
+                },
+              );
+
               if (response.ok) {
                 queryClient.invalidateQueries({ queryKey: ["ticket", id] });
                 queryClient.invalidateQueries({ queryKey: ["tickets"] });
-                Alert.alert('Success', 'Work order created and work started');
+                Alert.alert("Success", "Work order created and work started");
               }
             } catch (error: any) {
-              Alert.alert('Error', error.response?.data?.message || 'Failed to create work order');
+              Alert.alert(
+                "Error",
+                error.response?.data?.message || "Failed to create work order",
+              );
             }
-          }
-        }
+          },
+        },
       ],
-      'plain-text'
+      "plain-text",
     );
   };
 
   const completeWork = async () => {
     Alert.alert(
-      'Complete Work',
-      'Are you sure you want to mark this work as completed?',
+      "Complete Work",
+      "Are you sure you want to mark this work as completed?",
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Complete',
+          text: "Complete",
           onPress: async () => {
             try {
-              const response = await apiRequest('POST', `/api/tickets/${id}/complete`, {
-                workOrder: {
-                  workDescription: 'Mobile app completion',
-                  completionStatus: 'complete',
-                  completionNotes: 'Work completed via mobile app'
-                }
-              });
+              const response = await apiRequest(
+                "POST",
+                `/api/tickets/${id}/complete`,
+                {
+                  workOrder: {
+                    workDescription: "Mobile app completion",
+                    completionStatus: "complete",
+                    completionNotes: "Work completed via mobile app",
+                  },
+                },
+              );
               if (response.status === 200) {
                 queryClient.invalidateQueries({ queryKey: ["ticket", id] });
-                Alert.alert('Success', 'Work completed successfully');
+                Alert.alert("Success", "Work completed successfully");
               }
             } catch (error: any) {
-              Alert.alert('Error', error.response?.data?.message || 'Failed to complete work');
+              Alert.alert(
+                "Error",
+                error.response?.data?.message || "Failed to complete work",
+              );
             }
-          }
-        }
-      ]
+          },
+        },
+      ],
     );
   };
 
   const confirmCompletion = async () => {
     Alert.alert(
-      'Confirm Completion',
-      'Are you satisfied with the completed work?',
+      "Confirm Completion",
+      "Are you satisfied with the completed work?",
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Confirm',
+          text: "Confirm",
           onPress: async () => {
             try {
-              const response = await apiRequest('POST', `/api/tickets/${id}/confirm`, {
-                confirmed: true,
-                feedback: 'Confirmed via mobile app'
-              });
+              const response = await apiRequest(
+                "POST",
+                `/api/tickets/${id}/confirm`,
+                {
+                  confirmed: true,
+                  feedback: "Confirmed via mobile app",
+                },
+              );
               if (response.status === 200) {
                 queryClient.invalidateQueries({ queryKey: ["ticket", id] });
-                Alert.alert('Success', 'Work completion confirmed');
+                Alert.alert("Success", "Work completion confirmed");
               }
             } catch (error: any) {
-              Alert.alert('Error', error.response?.data?.message || 'Failed to confirm completion');
+              Alert.alert(
+                "Error",
+                error.response?.data?.message || "Failed to confirm completion",
+              );
             }
-          }
-        }
-      ]
+          },
+        },
+      ],
     );
   };
 
   const rejectCompletion = async () => {
     Alert.prompt(
-      'Reject Completion',
-      'Please provide feedback on what needs to be fixed:',
+      "Reject Completion",
+      "Please provide feedback on what needs to be fixed:",
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Reject',
-          style: 'destructive',
+          text: "Reject",
+          style: "destructive",
           onPress: async (feedback) => {
             try {
-              const response = await apiRequest('POST', `/api/tickets/${id}/confirm`, {
-                confirmed: false,
-                feedback: feedback || 'Work needs to be redone'
-              });
+              const response = await apiRequest(
+                "POST",
+                `/api/tickets/${id}/confirm`,
+                {
+                  confirmed: false,
+                  feedback: feedback || "Work needs to be redone",
+                },
+              );
               if (response.status === 200) {
                 queryClient.invalidateQueries({ queryKey: ["ticket", id] });
-                Alert.alert('Success', 'Completion rejected - work returned to technician');
+                Alert.alert(
+                  "Success",
+                  "Completion rejected - work returned to technician",
+                );
               }
             } catch (error: any) {
-              Alert.alert('Error', error.response?.data?.message || 'Failed to reject completion');
+              Alert.alert(
+                "Error",
+                error.response?.data?.message || "Failed to reject completion",
+              );
             }
-          }
-        }
+          },
+        },
       ],
-      'plain-text'
+      "plain-text",
     );
   };
 
   const forceCloseTicket = async () => {
     Alert.prompt(
-      'Force Close Ticket',
-      'Please provide a reason for force closing this ticket:',
+      "Force Close Ticket",
+      "Please provide a reason for force closing this ticket:",
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Force Close',
-          style: 'destructive',
+          text: "Force Close",
+          style: "destructive",
           onPress: async (reason) => {
             if (!reason?.trim()) {
-              Alert.alert('Error', 'Reason is required for force closing');
+              Alert.alert("Error", "Reason is required for force closing");
               return;
             }
             try {
-              const response = await apiRequest('POST', `/api/tickets/${id}/force-close`, {
-                reason: reason.trim()
-              });
+              const response = await apiRequest(
+                "POST",
+                `/api/tickets/${id}/force-close`,
+                {
+                  reason: reason.trim(),
+                },
+              );
               if (response.status === 200) {
                 queryClient.invalidateQueries({ queryKey: ["ticket", id] });
-                Alert.alert('Success', 'Ticket force closed successfully');
+                Alert.alert("Success", "Ticket force closed successfully");
               }
             } catch (error: any) {
-              Alert.alert('Error', error.response?.data?.message || 'Failed to force close ticket');
+              Alert.alert(
+                "Error",
+                error.response?.data?.message || "Failed to force close ticket",
+              );
             }
-          }
-        }
+          },
+        },
       ],
-      'plain-text'
+      "plain-text",
     );
   };
 
@@ -653,163 +841,182 @@ export default function TicketDetailsScreen() {
     setShowWorkOrderDetailsModal(true);
   };
 
-
-
   const getAvailableActions = (user: any, ticket: any) => {
     const actions: any[] = [];
-    
+
     if (!user || !ticket) return actions;
-    
+
     // Accept ticket actions (org_admin, maintenance_admin, org_subadmin with permissions, marketplace users)
-    if (ticket.status === 'pending' && 
-        (['org_admin', 'maintenance_admin'].includes(user.role) || 
-         (user.role === 'org_subadmin' && (user.permissions?.includes('accept_ticket') || (user.email && user.email.includes('marketplace')))))) {
+    if (
+      ticket.status === "pending" &&
+      (["org_admin", "maintenance_admin"].includes(user.role) ||
+        (user.role === "org_subadmin" &&
+          (user.permissions?.includes("accept_ticket") ||
+            (user.email && user.email.includes("marketplace")))))
+    ) {
       actions.push({
-        id: 'accept',
-        label: 'Accept & Assign Ticket',
-        icon: 'checkmark-circle',
-        style: { backgroundColor: '#10b981' },
-        action: () => acceptTicket()
+        id: "accept",
+        label: "Accept & Assign Ticket",
+        icon: "checkmark-circle",
+        style: { backgroundColor: "#10b981" },
+        action: () => acceptTicket(),
       });
-      
+
       actions.push({
-        id: 'reject',
-        label: 'Reject Ticket',
-        icon: 'close-circle',
-        style: { backgroundColor: '#ef4444' },
-        action: () => rejectTicket()
+        id: "reject",
+        label: "Reject Ticket",
+        icon: "close-circle",
+        style: { backgroundColor: "#ef4444" },
+        action: () => rejectTicket(),
       });
     }
-    
+
     // Vendor can assign technicians to accepted tickets
-    console.log('Checking vendor assign logic:', {
+    console.log("Checking vendor assign logic:", {
       ticketStatus: ticket.status,
       userRole: user.role,
       ticketVendorId: ticket.maintenanceVendorId,
       userVendorId: user.maintenanceVendorId,
-      assigneeId: ticket.assigneeId
+      assigneeId: ticket.assigneeId,
     });
-    
-    if (ticket.status === 'accepted' && user.role === 'maintenance_admin' && ticket.maintenanceVendorId === user.maintenanceVendorId) {
-      console.log('Vendor assignment condition met - adding action');
+
+    if (
+      ticket.status === "accepted" &&
+      user.role === "maintenance_admin" &&
+      ticket.maintenanceVendorId === user.maintenanceVendorId
+    ) {
+      console.log("Vendor assignment condition met - adding action");
       if (!ticket.assigneeId) {
         actions.push({
-          id: 'assign_technician',
-          label: 'Assign Technician',
-          icon: 'person-add',
-          style: { backgroundColor: '#3b82f6' },
-          action: () => assignTechnician()
+          id: "assign_technician",
+          label: "Assign Technician",
+          icon: "person-add",
+          style: { backgroundColor: "#3b82f6" },
+          action: () => assignTechnician(),
         });
       } else {
         // Show which technician is assigned
         actions.push({
-          id: 'reassign_technician',
-          label: 'Reassign Technician',
-          icon: 'person',
-          style: { backgroundColor: '#f59e0b' },
-          action: () => assignTechnician()
+          id: "reassign_technician",
+          label: "Reassign Technician",
+          icon: "person",
+          style: { backgroundColor: "#f59e0b" },
+          action: () => assignTechnician(),
         });
       }
     } else {
-      console.log('Vendor assignment condition NOT met');
+      console.log("Vendor assignment condition NOT met");
     }
-    
-    // Technician actions
-    if (user.role === 'technician' && ticket.assigneeId === user.id) {
-      if (ticket.status === 'accepted') {
-        actions.push({
-          id: 'start_work',
-          label: 'Start Work',
-          icon: 'play-circle',
-          style: { backgroundColor: '#3b82f6' },
-          action: () => startWork()
-        });
-      }
-      
-      if (ticket.status === 'in-progress') {
-        actions.push({
-          id: 'create_work_order',
-          label: 'Create Work Order',
-          icon: 'document-text',
-          style: { backgroundColor: '#8b5cf6' },
-          action: () => setWorkOrderModalVisible(true)
-        });
-        
-        actions.push({
-          id: 'complete_work',
-          label: 'Complete Work',
-          icon: 'checkmark-done-circle',
-          style: { backgroundColor: '#10b981' },
-          action: () => completeWork()
-        });
-      }
-    }
-    
-    // Create invoice action for ready_for_billing status
-    if (ticket.status === 'ready_for_billing' && user.role === 'maintenance_admin') {
-      actions.push({
-        id: 'create_invoice',
-        label: 'Create Invoice',
-        icon: 'receipt',
-        style: { backgroundColor: '#10b981' },
-        action: () => setInvoiceModalVisible(true)
-      });
-    }
-    
-    // Confirmation actions (original requester or admins)
-    if (ticket.status === 'pending_confirmation' && 
-        (ticket.reporterId === user.id || 
-         ['root', 'org_admin'].includes(user.role) ||
-         (user.role === 'org_subadmin' && user.permissions?.includes('accept_ticket')))) {
-      actions.push({
-        id: 'confirm_completion',
-        label: 'Confirm Completion',
-        icon: 'thumbs-up',
-        style: { backgroundColor: '#3b82f6' },
-        action: () => confirmCompletion()
-      });
-      
-      actions.push({
-        id: 'reject_completion',
-        label: 'Reject Completion',
-        icon: 'thumbs-down',
-        style: { backgroundColor: '#f59e0b' },
-        action: () => rejectCompletion()
-      });
-    }
-    
 
-    
-    // Force close (admins only)
-    if (['root', 'org_admin', 'maintenance_admin'].includes(user.role) ||
-        (user.role === 'org_subadmin' && (user.permissions?.includes('accept_ticket') || (user.email && user.email.includes('marketplace'))))) {
+    // Technician actions
+    if (user.role === "technician" && ticket.assigneeId === user.id) {
+      if (ticket.status === "accepted") {
+        actions.push({
+          id: "start_work",
+          label: "Start Work",
+          icon: "play-circle",
+          style: { backgroundColor: "#3b82f6" },
+          action: () => startWork(),
+        });
+      }
+
+      if (ticket.status === "in-progress") {
+        actions.push({
+          id: "create_work_order",
+          label: "Create Work Order",
+          icon: "document-text",
+          style: { backgroundColor: "#8b5cf6" },
+          action: () => setWorkOrderModalVisible(true),
+        });
+
+        actions.push({
+          id: "complete_work",
+          label: "Complete Work",
+          icon: "checkmark-done-circle",
+          style: { backgroundColor: "#10b981" },
+          action: () => completeWork(),
+        });
+      }
+    }
+
+    // Create invoice action for ready_for_billing status
+    if (
+      ticket.status === "ready_for_billing" &&
+      user.role === "maintenance_admin"
+    ) {
       actions.push({
-        id: 'force_close',
-        label: 'Force Close',
-        icon: 'close-circle',
-        style: { backgroundColor: '#ef4444' },
-        action: () => forceCloseTicket()
+        id: "create_invoice",
+        label: "Create Invoice",
+        icon: "receipt",
+        style: { backgroundColor: "#10b981" },
+        action: () => setInvoiceModalVisible(true),
       });
     }
-    
+
+    // Confirmation actions (original requester or admins)
+    if (
+      ticket.status === "pending_confirmation" &&
+      (ticket.reporterId === user.id ||
+        ["root", "org_admin"].includes(user.role) ||
+        (user.role === "org_subadmin" &&
+          user.permissions?.includes("accept_ticket")))
+    ) {
+      actions.push({
+        id: "confirm_completion",
+        label: "Confirm Completion",
+        icon: "thumbs-up",
+        style: { backgroundColor: "#3b82f6" },
+        action: () => confirmCompletion(),
+      });
+
+      actions.push({
+        id: "reject_completion",
+        label: "Reject Completion",
+        icon: "thumbs-down",
+        style: { backgroundColor: "#f59e0b" },
+        action: () => rejectCompletion(),
+      });
+    }
+
+    // Force close (admins only)
+    if (
+      ["root", "org_admin"].includes(user.role) ||
+      (user.role === "org_subadmin" &&
+        (user.permissions?.includes("accept_ticket") ||
+          (user.email && user.email.includes("marketplace"))))
+    ) {
+      actions.push({
+        id: "force_close",
+        label: "Force Close",
+        icon: "close-circle",
+        style: { backgroundColor: "#ef4444" },
+        action: () => forceCloseTicket(),
+      });
+    }
+
     return actions;
   };
 
   const renderActions = (user: any, ticket: any) => {
     const availableActions = getAvailableActions(user, ticket);
-    
+
     if (availableActions.length === 0) {
       return (
         <View style={styles.emptyState}>
-          <Ionicons name="information-circle-outline" size={48} color="#9ca3af" />
+          <Ionicons
+            name="information-circle-outline"
+            size={48}
+            color="#9ca3af"
+          />
           <Text style={styles.emptyStateTitle}>No Actions Available</Text>
           <Text style={styles.emptyStateText}>
-            You don't have any actions available for this ticket based on your role and the ticket's current status.
+            You don't have any actions available for this ticket based on your
+            role and the ticket's current status.
           </Text>
         </View>
       );
     }
-    
+
     return (
       <View style={styles.actionsList}>
         {availableActions.map((action) => (
@@ -828,12 +1035,24 @@ export default function TicketDetailsScreen() {
   };
 
   // Basic states
-  if (!id) return <View style={styles.errorContainer}><Text style={styles.errorText}>Invalid route: no id.</Text></View>;
-  if (ticketLoading) return <View style={styles.loadingContainer}><ActivityIndicator size="large" color="#3b82f6" /></View>;
+  if (!id)
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Invalid route: no id.</Text>
+      </View>
+    );
+  if (ticketLoading)
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#3b82f6" />
+      </View>
+    );
   if (ticketError) {
     const errorMessage = (ticketErrorMsg as any)?.message ?? "Unknown error";
-    const isNetworkError = errorMessage.includes('Network Error') || (ticketErrorMsg as any)?.code === 'NETWORK_ERROR';
-    
+    const isNetworkError =
+      errorMessage.includes("Network Error") ||
+      (ticketErrorMsg as any)?.code === "NETWORK_ERROR";
+
     return (
       <View style={styles.errorContainer}>
         <Ionicons name="warning-outline" size={48} color="#ef4444" />
@@ -841,66 +1060,111 @@ export default function TicketDetailsScreen() {
           {isNetworkError ? "Connection Error" : "Failed to Load"}
         </Text>
         <Text style={styles.errorText}>
-          {isNetworkError 
+          {isNetworkError
             ? "Cannot connect to server. Make sure the backend is running"
-            : errorMessage
-          }
+            : errorMessage}
         </Text>
-        <TouchableOpacity style={styles.retryButton} onPress={() => refetchTicket()}>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={() => refetchTicket()}
+        >
           <Text style={styles.retryButtonText}>Retry</Text>
         </TouchableOpacity>
       </View>
     );
   }
-  if (!ticket) return <View style={styles.errorContainer}><Text style={styles.errorText}>Ticket not found.</Text></View>;
+  if (!ticket)
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Ticket not found.</Text>
+      </View>
+    );
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
-      case 'pending': return '#f59e0b';
-      case 'accepted': return '#3b82f6';
-      case 'in_progress': case 'in-progress': return '#8b5cf6';
-      case 'completed': return '#10b981';
-      case 'confirmed': return '#059669';
-      default: return '#6b7280';
+      case "pending":
+        return "#f59e0b";
+      case "accepted":
+        return "#3b82f6";
+      case "in_progress":
+      case "in-progress":
+        return "#8b5cf6";
+      case "completed":
+        return "#10b981";
+      case "confirmed":
+        return "#059669";
+      default:
+        return "#6b7280";
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority?.toLowerCase()) {
-      case 'low': return '#10b981';
-      case 'medium': return '#f59e0b';
-      case 'high': return '#ef4444';
-      case 'urgent': return '#dc2626';
-      default: return '#6b7280';
+      case "low":
+        return "#10b981";
+      case "medium":
+        return "#f59e0b";
+      case "high":
+        return "#ef4444";
+      case "urgent":
+        return "#dc2626";
+      default:
+        return "#6b7280";
     }
   };
 
   const getProgressPercentage = () => {
     switch (ticket?.status?.toLowerCase()) {
-      case 'pending': return 10;
-      case 'accepted': return 25;
-      case 'in_progress': case 'in-progress': return 60;
-      case 'completed': return 85;
-      case 'confirmed': return 100;
-      default: return 0;
+      case "pending":
+        return 10;
+      case "accepted":
+        return 25;
+      case "in_progress":
+      case "in-progress":
+        return 60;
+      case "completed":
+        return 85;
+      case "confirmed":
+        return 100;
+      default:
+        return 0;
     }
   };
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'details':
+      case "details":
         return (
           <View style={styles.tabContent}>
             {/* Header Section with Status & Priority - Web Style */}
             <View style={styles.headerSection}>
               <View style={styles.titleSection}>
-                <Text style={styles.ticketTitle}>{ticket.title || "Untitled Ticket"}</Text>
+                <Text style={styles.ticketTitle}>
+                  {ticket.title || "Untitled Ticket"}
+                </Text>
                 <View style={styles.badgeContainer}>
-                  <View style={[styles.badge, { backgroundColor: getPriorityColor(ticket.priority) }]}>
-                    <Text style={styles.badgeText}>{ticket.priority?.toUpperCase() || "NORMAL"} PRIORITY</Text>
+                  <View
+                    style={[
+                      styles.badge,
+                      { backgroundColor: getPriorityColor(ticket.priority) },
+                    ]}
+                  >
+                    <Text style={styles.badgeText}>
+                      {ticket.priority?.toUpperCase() || "NORMAL"} PRIORITY
+                    </Text>
                   </View>
-                  <View style={[styles.badge, { backgroundColor: getStatusColor(ticket.status) }]}>
-                    <Text style={styles.badgeText}>{ticket.status?.replace('_', ' ').replace('-', ' ').toUpperCase() || "UNKNOWN"}</Text>
+                  <View
+                    style={[
+                      styles.badge,
+                      { backgroundColor: getStatusColor(ticket.status) },
+                    ]}
+                  >
+                    <Text style={styles.badgeText}>
+                      {ticket.status
+                        ?.replace("_", " ")
+                        .replace("-", " ")
+                        .toUpperCase() || "UNKNOWN"}
+                    </Text>
                   </View>
                 </View>
               </View>
@@ -911,25 +1175,37 @@ export default function TicketDetailsScreen() {
               <View style={styles.detailRow}>
                 <View style={styles.detailItem}>
                   <View style={styles.detailHeader}>
-                    <Ionicons name="bookmark-outline" size={18} color="#64748b" />
+                    <Ionicons
+                      name="bookmark-outline"
+                      size={18}
+                      color="#64748b"
+                    />
                     <Text style={styles.detailLabel}>Ticket Number</Text>
                   </View>
-                  <Text style={styles.detailValue}>{ticket.ticketNumber || `#${ticket.id}`}</Text>
+                  <Text style={styles.detailValue}>
+                    {ticket.ticketNumber || `#${ticket.id}`}
+                  </Text>
                 </View>
-                
+
                 <View style={styles.detailItem}>
                   <View style={styles.detailHeader}>
-                    <Ionicons name="calendar-outline" size={18} color="#64748b" />
+                    <Ionicons
+                      name="calendar-outline"
+                      size={18}
+                      color="#64748b"
+                    />
                     <Text style={styles.detailLabel}>Created</Text>
                   </View>
                   <Text style={styles.detailValue}>
-                    {ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    }) : 'Unknown'}
+                    {ticket.createdAt
+                      ? new Date(ticket.createdAt).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "Unknown"}
                   </Text>
                 </View>
               </View>
@@ -940,7 +1216,9 @@ export default function TicketDetailsScreen() {
               <View style={styles.descriptionSection}>
                 <Text style={styles.sectionTitle}>Description</Text>
                 <View style={styles.descriptionContent}>
-                  <Text style={styles.descriptionText}>{ticket.description}</Text>
+                  <Text style={styles.descriptionText}>
+                    {ticket.description}
+                  </Text>
                 </View>
               </View>
             )}
@@ -948,14 +1226,16 @@ export default function TicketDetailsScreen() {
             {/* Images Section - Web Style */}
             {ticket.images && ticket.images.length > 0 && (
               <View style={styles.imageSection}>
-                <Text style={styles.sectionTitle}>Attached Images ({ticket.images.length})</Text>
+                <Text style={styles.sectionTitle}>
+                  Attached Images ({ticket.images.length})
+                </Text>
                 <View style={styles.imageGrid}>
                   {ticket.images.map((imageUrl: string, index: number) => {
                     // Handle both relative and absolute URLs for ticket images
-                    const fullImageUrl = imageUrl.startsWith('http') 
-                      ? imageUrl 
+                    const fullImageUrl = imageUrl.startsWith("http")
+                      ? imageUrl
                       : `https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev${imageUrl}`;
-                    
+
                     return (
                       <TouchableOpacity
                         key={index}
@@ -982,12 +1262,16 @@ export default function TicketDetailsScreen() {
               <View style={styles.locationSection}>
                 <Text style={styles.sectionTitle}>Location</Text>
                 <View style={styles.locationContent}>
-                  <Text style={styles.locationName}>{ticket.location.name || "—"}</Text>
+                  <Text style={styles.locationName}>
+                    {ticket.location.name || "—"}
+                  </Text>
                   {ticket.location.address && (
                     <Text style={styles.locationAddress}>
                       {ticket.location.address}
                       {ticket.location.city ? `, ${ticket.location.city}` : ""}
-                      {ticket.location.state ? `, ${ticket.location.state}` : ""}
+                      {ticket.location.state
+                        ? `, ${ticket.location.state}`
+                        : ""}
                       {ticket.location.zip ? ` ${ticket.location.zip}` : ""}
                     </Text>
                   )}
@@ -996,8 +1280,8 @@ export default function TicketDetailsScreen() {
             )}
           </View>
         );
-        
-      case 'comments':
+
+      case "comments":
         return (
           <View style={styles.tabContent}>
             {/* Add Comment Section - Web Style */}
@@ -1013,26 +1297,36 @@ export default function TicketDetailsScreen() {
                   onChangeText={setNewComment}
                   textAlignVertical="top"
                 />
-                
+
                 {/* Image Preview */}
                 {selectedImages.length > 0 && (
                   <View style={styles.imagePreviewContainer}>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                    >
                       {selectedImages.map((image, index) => (
                         <View key={index} style={styles.imagePreviewWrapper}>
-                          <Image source={{ uri: image.uri }} style={styles.imagePreview} />
+                          <Image
+                            source={{ uri: image.uri }}
+                            style={styles.imagePreview}
+                          />
                           <TouchableOpacity
                             style={styles.removeImageButton}
                             onPress={() => removeImage(index)}
                           >
-                            <Ionicons name="close-circle" size={20} color="#ef4444" />
+                            <Ionicons
+                              name="close-circle"
+                              size={20}
+                              color="#ef4444"
+                            />
                           </TouchableOpacity>
                         </View>
                       ))}
                     </ScrollView>
                   </View>
                 )}
-                
+
                 {/* Buttons Row */}
                 <View style={styles.buttonRow}>
                   <TouchableOpacity
@@ -1042,14 +1336,23 @@ export default function TicketDetailsScreen() {
                     <Ionicons name="camera" size={16} color="#3b82f6" />
                     <Text style={styles.imagePickerText}>Add Images</Text>
                   </TouchableOpacity>
-                  
+
                   <TouchableOpacity
                     style={[
                       styles.submitButton,
-                      { opacity: addCommentMutation.isPending || (!newComment.trim() && selectedImages.length === 0) ? 0.5 : 1 }
+                      {
+                        opacity:
+                          addCommentMutation.isPending ||
+                          (!newComment.trim() && selectedImages.length === 0)
+                            ? 0.5
+                            : 1,
+                      },
                     ]}
                     onPress={handleAddComment}
-                    disabled={addCommentMutation.isPending || (!newComment.trim() && selectedImages.length === 0)}
+                    disabled={
+                      addCommentMutation.isPending ||
+                      (!newComment.trim() && selectedImages.length === 0)
+                    }
                   >
                     {addCommentMutation.isPending ? (
                       <ActivityIndicator size="small" color="white" />
@@ -1070,12 +1373,22 @@ export default function TicketDetailsScreen() {
                 Comments {comments.length > 0 && `(${comments.length})`}
               </Text>
               {commentsLoading ? (
-                <ActivityIndicator size="small" color="#3b82f6" style={styles.loader} />
+                <ActivityIndicator
+                  size="small"
+                  color="#3b82f6"
+                  style={styles.loader}
+                />
               ) : comments.length === 0 ? (
                 <View style={styles.emptyState}>
-                  <Ionicons name="chatbubble-outline" size={48} color="#94a3b8" />
+                  <Ionicons
+                    name="chatbubble-outline"
+                    size={48}
+                    color="#94a3b8"
+                  />
                   <Text style={styles.emptyText}>No comments yet</Text>
-                  <Text style={styles.emptySubtext}>Be the first to add a comment</Text>
+                  <Text style={styles.emptySubtext}>
+                    Be the first to add a comment
+                  </Text>
                 </View>
               ) : (
                 <View style={styles.commentsList}>
@@ -1084,50 +1397,63 @@ export default function TicketDetailsScreen() {
                       <View style={styles.commentHeader}>
                         <View style={styles.commentAuthorSection}>
                           <Text style={styles.commentAuthor}>
-                            {comment.user?.firstName} {comment.user?.lastName} {comment.user?.name}
+                            {comment.user?.firstName} {comment.user?.lastName}{" "}
+                            {comment.user?.name}
                           </Text>
                           {comment.user?.role && (
-                            <Text style={styles.commentRole}>{comment.user.role.replace('_', ' ')}</Text>
+                            <Text style={styles.commentRole}>
+                              {comment.user.role.replace("_", " ")}
+                            </Text>
                           )}
                         </View>
                         <Text style={styles.commentDate}>
-                          {new Date(comment.createdAt).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
+                          {new Date(comment.createdAt).toLocaleDateString(
+                            "en-US",
+                            {
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            },
+                          )}
                         </Text>
                       </View>
-                      <Text style={styles.commentContent}>{comment.content || comment.text}</Text>
-                      
+                      <Text style={styles.commentContent}>
+                        {comment.content || comment.text}
+                      </Text>
+
                       {/* Comment Images */}
                       {comment.images && comment.images.length > 0 && (
                         <View style={styles.commentImagesContainer}>
-                          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                            {comment.images.map((imageUrl: string, imageIndex: number) => {
-                              // Handle both relative and absolute URLs
-                              const fullImageUrl = imageUrl.startsWith('http') 
-                                ? imageUrl 
-                                : `https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev${imageUrl}`;
-                              
-                              return (
-                                <TouchableOpacity
-                                  key={imageIndex}
-                                  onPress={() => {
-                                    setSelectedImage(fullImageUrl);
-                                    setImageModalVisible(true);
-                                  }}
-                                  style={styles.commentImageWrapper}
-                                >
-                                  <Image
-                                    source={{ uri: fullImageUrl }}
-                                    style={styles.commentImage}
-                                    resizeMode="cover"
-                                  />
-                                </TouchableOpacity>
-                              );
-                            })}
+                          <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                          >
+                            {comment.images.map(
+                              (imageUrl: string, imageIndex: number) => {
+                                // Handle both relative and absolute URLs
+                                const fullImageUrl = imageUrl.startsWith("http")
+                                  ? imageUrl
+                                  : `https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev${imageUrl}`;
+
+                                return (
+                                  <TouchableOpacity
+                                    key={imageIndex}
+                                    onPress={() => {
+                                      setSelectedImage(fullImageUrl);
+                                      setImageModalVisible(true);
+                                    }}
+                                    style={styles.commentImageWrapper}
+                                  >
+                                    <Image
+                                      source={{ uri: fullImageUrl }}
+                                      style={styles.commentImage}
+                                      resizeMode="cover"
+                                    />
+                                  </TouchableOpacity>
+                                );
+                              },
+                            )}
                           </ScrollView>
                         </View>
                       )}
@@ -1138,318 +1464,1123 @@ export default function TicketDetailsScreen() {
             </View>
           </View>
         );
-        
-      case 'progress':
+
+      case "progress":
         return (
           <View style={styles.tabContent}>
             <View style={styles.progressCard}>
               <Text style={styles.sectionTitle}>Progress Tracker</Text>
-              
+
               {/* Progress Bar - Web Style */}
               <View style={styles.progressBarContainer}>
                 <View style={styles.progressBar}>
-                  <View style={[styles.progressFill, { 
-                    width: `${getProgressPercentage()}%` 
-                  }]} />
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: `${getProgressPercentage()}%`,
+                      },
+                    ]}
+                  />
                 </View>
-                <Text style={styles.progressText}>{getProgressPercentage()}% Complete</Text>
+                <Text style={styles.progressText}>
+                  {getProgressPercentage()}% Complete
+                </Text>
               </View>
-              
+
               {/* Detailed Progress Timeline - Matching Web Version */}
               <View style={styles.detailedTimeline}>
                 {/* Step 1: Ticket Submitted */}
                 <View style={styles.stepContainer}>
-                  <View style={[styles.stepIcon, { backgroundColor: '#10b981' }]}>
+                  <View
+                    style={[styles.stepIcon, { backgroundColor: "#10b981" }]}
+                  >
                     <Ionicons name="document-text" size={16} color="white" />
                   </View>
                   <View style={styles.stepContent}>
                     <Text style={styles.stepTitle}>Ticket Submitted</Text>
-                    <Text style={styles.stepDescription}>Initial ticket creation and submission</Text>
+                    <Text style={styles.stepDescription}>
+                      Initial ticket creation and submission
+                    </Text>
                     <Text style={styles.stepDate}>
-                      {ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString('en-US', {
-                        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                      }) : 'Unknown'}
+                      {ticket.createdAt
+                        ? new Date(ticket.createdAt).toLocaleDateString(
+                            "en-US",
+                            {
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            },
+                          )
+                        : "Unknown"}
                     </Text>
                   </View>
-                  <View style={[styles.stepStatus, { backgroundColor: '#10b981' }]}>
+                  <View
+                    style={[styles.stepStatus, { backgroundColor: "#10b981" }]}
+                  >
                     <Ionicons name="checkmark" size={12} color="white" />
                   </View>
                 </View>
-                
-                <View style={[styles.connectionLine, { backgroundColor: '#10b981' }]} />
-                
+
+                <View
+                  style={[
+                    styles.connectionLine,
+                    { backgroundColor: "#10b981" },
+                  ]}
+                />
+
                 {/* Step 2: Under Review */}
                 <View style={styles.stepContainer}>
-                  <View style={[styles.stepIcon, { 
-                    backgroundColor: ['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#f59e0b' : '#6b7280'
-                  }]}>
+                  <View
+                    style={[
+                      styles.stepIcon,
+                      {
+                        backgroundColor: [
+                          "accepted",
+                          "in-progress",
+                          "in_progress",
+                          "completed",
+                          "pending_confirmation",
+                          "confirmed",
+                          "billed",
+                        ].includes(ticket.status)
+                          ? "#f59e0b"
+                          : "#6b7280",
+                      },
+                    ]}
+                  >
                     <Ionicons name="time" size={16} color="white" />
                   </View>
                   <View style={styles.stepContent}>
-                    <Text style={[styles.stepTitle, { 
-                      color: ['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#f3f4f6' : '#9ca3af'
-                    }]}>Under Review</Text>
-                    <Text style={[styles.stepDescription, { 
-                      color: ['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#d1d5db' : '#6b7280'
-                    }]}>Organization reviewing ticket details</Text>
-                    <Text style={[styles.stepDate, { 
-                      color: ['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#9ca3af' : '#6b7280'
-                    }]}>
-                      {['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? 'Completed' : 'Current'}
+                    <Text
+                      style={[
+                        styles.stepTitle,
+                        {
+                          color: [
+                            "accepted",
+                            "in-progress",
+                            "in_progress",
+                            "completed",
+                            "pending_confirmation",
+                            "confirmed",
+                            "billed",
+                          ].includes(ticket.status)
+                            ? "#f3f4f6"
+                            : "#9ca3af",
+                        },
+                      ]}
+                    >
+                      Under Review
+                    </Text>
+                    <Text
+                      style={[
+                        styles.stepDescription,
+                        {
+                          color: [
+                            "accepted",
+                            "in-progress",
+                            "in_progress",
+                            "completed",
+                            "pending_confirmation",
+                            "confirmed",
+                            "billed",
+                          ].includes(ticket.status)
+                            ? "#d1d5db"
+                            : "#6b7280",
+                        },
+                      ]}
+                    >
+                      Organization reviewing ticket details
+                    </Text>
+                    <Text
+                      style={[
+                        styles.stepDate,
+                        {
+                          color: [
+                            "accepted",
+                            "in-progress",
+                            "in_progress",
+                            "completed",
+                            "pending_confirmation",
+                            "confirmed",
+                            "billed",
+                          ].includes(ticket.status)
+                            ? "#9ca3af"
+                            : "#6b7280",
+                        },
+                      ]}
+                    >
+                      {[
+                        "accepted",
+                        "in-progress",
+                        "in_progress",
+                        "completed",
+                        "pending_confirmation",
+                        "confirmed",
+                        "billed",
+                      ].includes(ticket.status)
+                        ? "Completed"
+                        : "Current"}
                     </Text>
                   </View>
-                  <View style={[styles.stepStatus, { 
-                    backgroundColor: ['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#10b981' : '#374151'
-                  }]}>
-                    {['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? (
+                  <View
+                    style={[
+                      styles.stepStatus,
+                      {
+                        backgroundColor: [
+                          "accepted",
+                          "in-progress",
+                          "in_progress",
+                          "completed",
+                          "pending_confirmation",
+                          "confirmed",
+                          "billed",
+                        ].includes(ticket.status)
+                          ? "#10b981"
+                          : "#374151",
+                      },
+                    ]}
+                  >
+                    {[
+                      "accepted",
+                      "in-progress",
+                      "in_progress",
+                      "completed",
+                      "pending_confirmation",
+                      "confirmed",
+                      "billed",
+                    ].includes(ticket.status) ? (
                       <Ionicons name="checkmark" size={12} color="white" />
                     ) : (
-                      <View style={[styles.pendingDot, { backgroundColor: '#6b7280' }]} />
+                      <View
+                        style={[
+                          styles.pendingDot,
+                          { backgroundColor: "#6b7280" },
+                        ]}
+                      />
                     )}
                   </View>
                 </View>
-                
-                <View style={[styles.connectionLine, { 
-                  backgroundColor: ['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#10b981' : '#374151'
-                }]} />
-                
+
+                <View
+                  style={[
+                    styles.connectionLine,
+                    {
+                      backgroundColor: [
+                        "accepted",
+                        "in-progress",
+                        "in_progress",
+                        "completed",
+                        "pending_confirmation",
+                        "confirmed",
+                        "billed",
+                      ].includes(ticket.status)
+                        ? "#10b981"
+                        : "#374151",
+                    },
+                  ]}
+                />
+
                 {/* Step 3: Accepted by Office */}
                 <View style={styles.stepContainer}>
-                  <View style={[styles.stepIcon, { 
-                    backgroundColor: ['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#10b981' : '#6b7280'
-                  }]}>
+                  <View
+                    style={[
+                      styles.stepIcon,
+                      {
+                        backgroundColor: [
+                          "accepted",
+                          "in-progress",
+                          "in_progress",
+                          "completed",
+                          "pending_confirmation",
+                          "confirmed",
+                          "billed",
+                        ].includes(ticket.status)
+                          ? "#10b981"
+                          : "#6b7280",
+                      },
+                    ]}
+                  >
                     <Ionicons name="checkmark-circle" size={16} color="white" />
                   </View>
                   <View style={styles.stepContent}>
-                    <Text style={[styles.stepTitle, { 
-                      color: ['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#f3f4f6' : '#9ca3af'
-                    }]}>Accepted by Office</Text>
-                    <Text style={[styles.stepDescription, { 
-                      color: ['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#d1d5db' : '#6b7280'
-                    }]}>Ticket approved and ready for vendor assignment</Text>
-                    <Text style={[styles.stepDate, { 
-                      color: ['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#9ca3af' : '#6b7280'
-                    }]}>
-                      {['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? 'Completed' : 'Pending'}
+                    <Text
+                      style={[
+                        styles.stepTitle,
+                        {
+                          color: [
+                            "accepted",
+                            "in-progress",
+                            "in_progress",
+                            "completed",
+                            "pending_confirmation",
+                            "confirmed",
+                            "billed",
+                          ].includes(ticket.status)
+                            ? "#f3f4f6"
+                            : "#9ca3af",
+                        },
+                      ]}
+                    >
+                      Accepted by Office
+                    </Text>
+                    <Text
+                      style={[
+                        styles.stepDescription,
+                        {
+                          color: [
+                            "accepted",
+                            "in-progress",
+                            "in_progress",
+                            "completed",
+                            "pending_confirmation",
+                            "confirmed",
+                            "billed",
+                          ].includes(ticket.status)
+                            ? "#d1d5db"
+                            : "#6b7280",
+                        },
+                      ]}
+                    >
+                      Ticket approved and ready for vendor assignment
+                    </Text>
+                    <Text
+                      style={[
+                        styles.stepDate,
+                        {
+                          color: [
+                            "accepted",
+                            "in-progress",
+                            "in_progress",
+                            "completed",
+                            "pending_confirmation",
+                            "confirmed",
+                            "billed",
+                          ].includes(ticket.status)
+                            ? "#9ca3af"
+                            : "#6b7280",
+                        },
+                      ]}
+                    >
+                      {[
+                        "accepted",
+                        "in-progress",
+                        "in_progress",
+                        "completed",
+                        "pending_confirmation",
+                        "confirmed",
+                        "billed",
+                      ].includes(ticket.status)
+                        ? "Completed"
+                        : "Pending"}
                     </Text>
                   </View>
-                  <View style={[styles.stepStatus, { 
-                    backgroundColor: ['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#10b981' : '#374151'
-                  }]}>
-                    {['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? (
+                  <View
+                    style={[
+                      styles.stepStatus,
+                      {
+                        backgroundColor: [
+                          "accepted",
+                          "in-progress",
+                          "in_progress",
+                          "completed",
+                          "pending_confirmation",
+                          "confirmed",
+                          "billed",
+                        ].includes(ticket.status)
+                          ? "#10b981"
+                          : "#374151",
+                      },
+                    ]}
+                  >
+                    {[
+                      "accepted",
+                      "in-progress",
+                      "in_progress",
+                      "completed",
+                      "pending_confirmation",
+                      "confirmed",
+                      "billed",
+                    ].includes(ticket.status) ? (
                       <Ionicons name="checkmark" size={12} color="white" />
                     ) : (
-                      <View style={[styles.pendingDot, { backgroundColor: '#6b7280' }]} />
+                      <View
+                        style={[
+                          styles.pendingDot,
+                          { backgroundColor: "#6b7280" },
+                        ]}
+                      />
                     )}
                   </View>
                 </View>
-                
-                <View style={[styles.connectionLine, { 
-                  backgroundColor: ticket.maintenanceVendorId && ['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#10b981' : '#374151'
-                }]} />
-                
+
+                <View
+                  style={[
+                    styles.connectionLine,
+                    {
+                      backgroundColor:
+                        ticket.maintenanceVendorId &&
+                        [
+                          "accepted",
+                          "in-progress",
+                          "in_progress",
+                          "completed",
+                          "pending_confirmation",
+                          "confirmed",
+                          "billed",
+                        ].includes(ticket.status)
+                          ? "#10b981"
+                          : "#374151",
+                    },
+                  ]}
+                />
+
                 {/* Step 4: Vendor Assigned */}
                 <View style={styles.stepContainer}>
-                  <View style={[styles.stepIcon, { 
-                    backgroundColor: ticket.maintenanceVendorId && ['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#8b5cf6' : '#6b7280'
-                  }]}>
+                  <View
+                    style={[
+                      styles.stepIcon,
+                      {
+                        backgroundColor:
+                          ticket.maintenanceVendorId &&
+                          [
+                            "accepted",
+                            "in-progress",
+                            "in_progress",
+                            "completed",
+                            "pending_confirmation",
+                            "confirmed",
+                            "billed",
+                          ].includes(ticket.status)
+                            ? "#8b5cf6"
+                            : "#6b7280",
+                      },
+                    ]}
+                  >
                     <Ionicons name="business" size={16} color="white" />
                   </View>
                   <View style={styles.stepContent}>
-                    <Text style={[styles.stepTitle, { 
-                      color: ticket.maintenanceVendorId && ['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#f3f4f6' : '#9ca3af'
-                    }]}>Vendor Assigned</Text>
-                    <Text style={[styles.stepDescription, { 
-                      color: ticket.maintenanceVendorId && ['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#d1d5db' : '#6b7280'
-                    }]}>Maintenance vendor selected and assigned</Text>
-                    <Text style={[styles.stepDate, { 
-                      color: ticket.maintenanceVendorId && ['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#9ca3af' : '#6b7280'
-                    }]}>
-                      {ticket.maintenanceVendorId && ['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? 'Assigned' : 'Pending'}
+                    <Text
+                      style={[
+                        styles.stepTitle,
+                        {
+                          color:
+                            ticket.maintenanceVendorId &&
+                            [
+                              "accepted",
+                              "in-progress",
+                              "in_progress",
+                              "completed",
+                              "pending_confirmation",
+                              "confirmed",
+                              "billed",
+                            ].includes(ticket.status)
+                              ? "#f3f4f6"
+                              : "#9ca3af",
+                        },
+                      ]}
+                    >
+                      Vendor Assigned
+                    </Text>
+                    <Text
+                      style={[
+                        styles.stepDescription,
+                        {
+                          color:
+                            ticket.maintenanceVendorId &&
+                            [
+                              "accepted",
+                              "in-progress",
+                              "in_progress",
+                              "completed",
+                              "pending_confirmation",
+                              "confirmed",
+                              "billed",
+                            ].includes(ticket.status)
+                              ? "#d1d5db"
+                              : "#6b7280",
+                        },
+                      ]}
+                    >
+                      Maintenance vendor selected and assigned
+                    </Text>
+                    <Text
+                      style={[
+                        styles.stepDate,
+                        {
+                          color:
+                            ticket.maintenanceVendorId &&
+                            [
+                              "accepted",
+                              "in-progress",
+                              "in_progress",
+                              "completed",
+                              "pending_confirmation",
+                              "confirmed",
+                              "billed",
+                            ].includes(ticket.status)
+                              ? "#9ca3af"
+                              : "#6b7280",
+                        },
+                      ]}
+                    >
+                      {ticket.maintenanceVendorId &&
+                      [
+                        "accepted",
+                        "in-progress",
+                        "in_progress",
+                        "completed",
+                        "pending_confirmation",
+                        "confirmed",
+                        "billed",
+                      ].includes(ticket.status)
+                        ? "Assigned"
+                        : "Pending"}
                     </Text>
                   </View>
-                  <View style={[styles.stepStatus, { 
-                    backgroundColor: ticket.maintenanceVendorId && ['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#10b981' : '#374151'
-                  }]}>
-                    {ticket.maintenanceVendorId && ['accepted', 'in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? (
+                  <View
+                    style={[
+                      styles.stepStatus,
+                      {
+                        backgroundColor:
+                          ticket.maintenanceVendorId &&
+                          [
+                            "accepted",
+                            "in-progress",
+                            "in_progress",
+                            "completed",
+                            "pending_confirmation",
+                            "confirmed",
+                            "billed",
+                          ].includes(ticket.status)
+                            ? "#10b981"
+                            : "#374151",
+                      },
+                    ]}
+                  >
+                    {ticket.maintenanceVendorId &&
+                    [
+                      "accepted",
+                      "in-progress",
+                      "in_progress",
+                      "completed",
+                      "pending_confirmation",
+                      "confirmed",
+                      "billed",
+                    ].includes(ticket.status) ? (
                       <Ionicons name="checkmark" size={12} color="white" />
                     ) : (
-                      <View style={[styles.pendingDot, { backgroundColor: '#6b7280' }]} />
+                      <View
+                        style={[
+                          styles.pendingDot,
+                          { backgroundColor: "#6b7280" },
+                        ]}
+                      />
                     )}
                   </View>
                 </View>
-                
-                <View style={[styles.connectionLine, { 
-                  backgroundColor: ticket.assigneeId && ['in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#10b981' : '#374151'
-                }]} />
-                
+
+                <View
+                  style={[
+                    styles.connectionLine,
+                    {
+                      backgroundColor:
+                        ticket.assigneeId &&
+                        [
+                          "in-progress",
+                          "in_progress",
+                          "completed",
+                          "pending_confirmation",
+                          "confirmed",
+                          "billed",
+                        ].includes(ticket.status)
+                          ? "#10b981"
+                          : "#374151",
+                    },
+                  ]}
+                />
+
                 {/* Step 5: Technician Assigned */}
                 <View style={styles.stepContainer}>
-                  <View style={[styles.stepIcon, { 
-                    backgroundColor: ticket.assigneeId && ['in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#06b6d4' : '#6b7280'
-                  }]}>
+                  <View
+                    style={[
+                      styles.stepIcon,
+                      {
+                        backgroundColor:
+                          ticket.assigneeId &&
+                          [
+                            "in-progress",
+                            "in_progress",
+                            "completed",
+                            "pending_confirmation",
+                            "confirmed",
+                            "billed",
+                          ].includes(ticket.status)
+                            ? "#06b6d4"
+                            : "#6b7280",
+                      },
+                    ]}
+                  >
                     <Ionicons name="person" size={16} color="white" />
                   </View>
                   <View style={styles.stepContent}>
-                    <Text style={[styles.stepTitle, { 
-                      color: ticket.assigneeId && ['in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#f3f4f6' : '#9ca3af'
-                    }]}>Technician Assigned</Text>
-                    <Text style={[styles.stepDescription, { 
-                      color: ticket.assigneeId && ['in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#d1d5db' : '#6b7280'
-                    }]}>Specific technician assigned to the job</Text>
-                    <Text style={[styles.stepDate, { 
-                      color: ticket.assigneeId && ['in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#9ca3af' : '#6b7280'
-                    }]}>
-                      {ticket.assigneeId && ['in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? 'Assigned' : 'Pending'}
+                    <Text
+                      style={[
+                        styles.stepTitle,
+                        {
+                          color:
+                            ticket.assigneeId &&
+                            [
+                              "in-progress",
+                              "in_progress",
+                              "completed",
+                              "pending_confirmation",
+                              "confirmed",
+                              "billed",
+                            ].includes(ticket.status)
+                              ? "#f3f4f6"
+                              : "#9ca3af",
+                        },
+                      ]}
+                    >
+                      Technician Assigned
+                    </Text>
+                    <Text
+                      style={[
+                        styles.stepDescription,
+                        {
+                          color:
+                            ticket.assigneeId &&
+                            [
+                              "in-progress",
+                              "in_progress",
+                              "completed",
+                              "pending_confirmation",
+                              "confirmed",
+                              "billed",
+                            ].includes(ticket.status)
+                              ? "#d1d5db"
+                              : "#6b7280",
+                        },
+                      ]}
+                    >
+                      Specific technician assigned to the job
+                    </Text>
+                    <Text
+                      style={[
+                        styles.stepDate,
+                        {
+                          color:
+                            ticket.assigneeId &&
+                            [
+                              "in-progress",
+                              "in_progress",
+                              "completed",
+                              "pending_confirmation",
+                              "confirmed",
+                              "billed",
+                            ].includes(ticket.status)
+                              ? "#9ca3af"
+                              : "#6b7280",
+                        },
+                      ]}
+                    >
+                      {ticket.assigneeId &&
+                      [
+                        "in-progress",
+                        "in_progress",
+                        "completed",
+                        "pending_confirmation",
+                        "confirmed",
+                        "billed",
+                      ].includes(ticket.status)
+                        ? "Assigned"
+                        : "Pending"}
                     </Text>
                   </View>
-                  <View style={[styles.stepStatus, { 
-                    backgroundColor: ticket.assigneeId && ['in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#10b981' : '#374151'
-                  }]}>
-                    {ticket.assigneeId && ['in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? (
+                  <View
+                    style={[
+                      styles.stepStatus,
+                      {
+                        backgroundColor:
+                          ticket.assigneeId &&
+                          [
+                            "in-progress",
+                            "in_progress",
+                            "completed",
+                            "pending_confirmation",
+                            "confirmed",
+                            "billed",
+                          ].includes(ticket.status)
+                            ? "#10b981"
+                            : "#374151",
+                      },
+                    ]}
+                  >
+                    {ticket.assigneeId &&
+                    [
+                      "in-progress",
+                      "in_progress",
+                      "completed",
+                      "pending_confirmation",
+                      "confirmed",
+                      "billed",
+                    ].includes(ticket.status) ? (
                       <Ionicons name="checkmark" size={12} color="white" />
                     ) : (
-                      <View style={[styles.pendingDot, { backgroundColor: '#6b7280' }]} />
+                      <View
+                        style={[
+                          styles.pendingDot,
+                          { backgroundColor: "#6b7280" },
+                        ]}
+                      />
                     )}
                   </View>
                 </View>
-                
-                <View style={[styles.connectionLine, { 
-                  backgroundColor: ['in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#10b981' : '#374151'
-                }]} />
-                
+
+                <View
+                  style={[
+                    styles.connectionLine,
+                    {
+                      backgroundColor: [
+                        "in-progress",
+                        "in_progress",
+                        "completed",
+                        "pending_confirmation",
+                        "confirmed",
+                        "billed",
+                      ].includes(ticket.status)
+                        ? "#10b981"
+                        : "#374151",
+                    },
+                  ]}
+                />
+
                 {/* Step 6: Work In Progress */}
                 <View style={styles.stepContainer}>
-                  <View style={[styles.stepIcon, { 
-                    backgroundColor: ['in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#f59e0b' : '#6b7280'
-                  }]}>
+                  <View
+                    style={[
+                      styles.stepIcon,
+                      {
+                        backgroundColor: [
+                          "in-progress",
+                          "in_progress",
+                          "completed",
+                          "pending_confirmation",
+                          "confirmed",
+                          "billed",
+                        ].includes(ticket.status)
+                          ? "#f59e0b"
+                          : "#6b7280",
+                      },
+                    ]}
+                  >
                     <Ionicons name="construct" size={16} color="white" />
                   </View>
                   <View style={styles.stepContent}>
-                    <Text style={[styles.stepTitle, { 
-                      color: ['in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#f3f4f6' : '#9ca3af'
-                    }]}>Work In Progress</Text>
-                    <Text style={[styles.stepDescription, { 
-                      color: ['in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#d1d5db' : '#6b7280'
-                    }]}>Active repair/maintenance work ongoing</Text>
-                    <Text style={[styles.stepDate, { 
-                      color: ['in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#9ca3af' : '#6b7280'
-                    }]}>
-                      {['in-progress', 'in_progress'].includes(ticket.status) ? 'Active' : ['completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? 'Completed' : 'Pending'}
+                    <Text
+                      style={[
+                        styles.stepTitle,
+                        {
+                          color: [
+                            "in-progress",
+                            "in_progress",
+                            "completed",
+                            "pending_confirmation",
+                            "confirmed",
+                            "billed",
+                          ].includes(ticket.status)
+                            ? "#f3f4f6"
+                            : "#9ca3af",
+                        },
+                      ]}
+                    >
+                      Work In Progress
+                    </Text>
+                    <Text
+                      style={[
+                        styles.stepDescription,
+                        {
+                          color: [
+                            "in-progress",
+                            "in_progress",
+                            "completed",
+                            "pending_confirmation",
+                            "confirmed",
+                            "billed",
+                          ].includes(ticket.status)
+                            ? "#d1d5db"
+                            : "#6b7280",
+                        },
+                      ]}
+                    >
+                      Active repair/maintenance work ongoing
+                    </Text>
+                    <Text
+                      style={[
+                        styles.stepDate,
+                        {
+                          color: [
+                            "in-progress",
+                            "in_progress",
+                            "completed",
+                            "pending_confirmation",
+                            "confirmed",
+                            "billed",
+                          ].includes(ticket.status)
+                            ? "#9ca3af"
+                            : "#6b7280",
+                        },
+                      ]}
+                    >
+                      {["in-progress", "in_progress"].includes(ticket.status)
+                        ? "Active"
+                        : [
+                              "completed",
+                              "pending_confirmation",
+                              "confirmed",
+                              "billed",
+                            ].includes(ticket.status)
+                          ? "Completed"
+                          : "Pending"}
                     </Text>
                   </View>
-                  <View style={[styles.stepStatus, { 
-                    backgroundColor: ['in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#10b981' : '#374151'
-                  }]}>
-                    {['in-progress', 'in_progress', 'completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? (
+                  <View
+                    style={[
+                      styles.stepStatus,
+                      {
+                        backgroundColor: [
+                          "in-progress",
+                          "in_progress",
+                          "completed",
+                          "pending_confirmation",
+                          "confirmed",
+                          "billed",
+                        ].includes(ticket.status)
+                          ? "#10b981"
+                          : "#374151",
+                      },
+                    ]}
+                  >
+                    {[
+                      "in-progress",
+                      "in_progress",
+                      "completed",
+                      "pending_confirmation",
+                      "confirmed",
+                      "billed",
+                    ].includes(ticket.status) ? (
                       <Ionicons name="checkmark" size={12} color="white" />
                     ) : (
-                      <View style={[styles.pendingDot, { backgroundColor: '#6b7280' }]} />
+                      <View
+                        style={[
+                          styles.pendingDot,
+                          { backgroundColor: "#6b7280" },
+                        ]}
+                      />
                     )}
                   </View>
                 </View>
-                
-                <View style={[styles.connectionLine, { 
-                  backgroundColor: ['completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#10b981' : '#374151'
-                }]} />
-                
+
+                <View
+                  style={[
+                    styles.connectionLine,
+                    {
+                      backgroundColor: [
+                        "completed",
+                        "pending_confirmation",
+                        "confirmed",
+                        "billed",
+                      ].includes(ticket.status)
+                        ? "#10b981"
+                        : "#374151",
+                    },
+                  ]}
+                />
+
                 {/* Step 7: Work Completed */}
                 <View style={styles.stepContainer}>
-                  <View style={[styles.stepIcon, { 
-                    backgroundColor: ['completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#10b981' : '#6b7280'
-                  }]}>
+                  <View
+                    style={[
+                      styles.stepIcon,
+                      {
+                        backgroundColor: [
+                          "completed",
+                          "pending_confirmation",
+                          "confirmed",
+                          "billed",
+                        ].includes(ticket.status)
+                          ? "#10b981"
+                          : "#6b7280",
+                      },
+                    ]}
+                  >
                     <Ionicons name="checkmark-done" size={16} color="white" />
                   </View>
                   <View style={styles.stepContent}>
-                    <Text style={[styles.stepTitle, { 
-                      color: ['completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#f3f4f6' : '#9ca3af'
-                    }]}>Work Completed</Text>
-                    <Text style={[styles.stepDescription, { 
-                      color: ['completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#d1d5db' : '#6b7280'
-                    }]}>Technician completed the work</Text>
-                    <Text style={[styles.stepDate, { 
-                      color: ['completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#9ca3af' : '#6b7280'
-                    }]}>
-                      {['completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? 'Completed' : 'Pending'}
+                    <Text
+                      style={[
+                        styles.stepTitle,
+                        {
+                          color: [
+                            "completed",
+                            "pending_confirmation",
+                            "confirmed",
+                            "billed",
+                          ].includes(ticket.status)
+                            ? "#f3f4f6"
+                            : "#9ca3af",
+                        },
+                      ]}
+                    >
+                      Work Completed
+                    </Text>
+                    <Text
+                      style={[
+                        styles.stepDescription,
+                        {
+                          color: [
+                            "completed",
+                            "pending_confirmation",
+                            "confirmed",
+                            "billed",
+                          ].includes(ticket.status)
+                            ? "#d1d5db"
+                            : "#6b7280",
+                        },
+                      ]}
+                    >
+                      Technician completed the work
+                    </Text>
+                    <Text
+                      style={[
+                        styles.stepDate,
+                        {
+                          color: [
+                            "completed",
+                            "pending_confirmation",
+                            "confirmed",
+                            "billed",
+                          ].includes(ticket.status)
+                            ? "#9ca3af"
+                            : "#6b7280",
+                        },
+                      ]}
+                    >
+                      {[
+                        "completed",
+                        "pending_confirmation",
+                        "confirmed",
+                        "billed",
+                      ].includes(ticket.status)
+                        ? "Completed"
+                        : "Pending"}
                     </Text>
                   </View>
-                  <View style={[styles.stepStatus, { 
-                    backgroundColor: ['completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? '#10b981' : '#374151'
-                  }]}>
-                    {['completed', 'pending_confirmation', 'confirmed', 'billed'].includes(ticket.status) ? (
+                  <View
+                    style={[
+                      styles.stepStatus,
+                      {
+                        backgroundColor: [
+                          "completed",
+                          "pending_confirmation",
+                          "confirmed",
+                          "billed",
+                        ].includes(ticket.status)
+                          ? "#10b981"
+                          : "#374151",
+                      },
+                    ]}
+                  >
+                    {[
+                      "completed",
+                      "pending_confirmation",
+                      "confirmed",
+                      "billed",
+                    ].includes(ticket.status) ? (
                       <Ionicons name="checkmark" size={12} color="white" />
                     ) : (
-                      <View style={[styles.pendingDot, { backgroundColor: '#6b7280' }]} />
+                      <View
+                        style={[
+                          styles.pendingDot,
+                          { backgroundColor: "#6b7280" },
+                        ]}
+                      />
                     )}
                   </View>
                 </View>
-                
-                <View style={[styles.connectionLine, { 
-                  backgroundColor: ['confirmed', 'billed'].includes(ticket.status) ? '#10b981' : '#374151'
-                }]} />
-                
+
+                <View
+                  style={[
+                    styles.connectionLine,
+                    {
+                      backgroundColor: ["confirmed", "billed"].includes(
+                        ticket.status,
+                      )
+                        ? "#10b981"
+                        : "#374151",
+                    },
+                  ]}
+                />
+
                 {/* Step 8: Confirmed */}
                 <View style={styles.stepContainer}>
-                  <View style={[styles.stepIcon, { 
-                    backgroundColor: ['confirmed', 'billed'].includes(ticket.status) ? '#10b981' : '#6b7280'
-                  }]}>
+                  <View
+                    style={[
+                      styles.stepIcon,
+                      {
+                        backgroundColor: ["confirmed", "billed"].includes(
+                          ticket.status,
+                        )
+                          ? "#10b981"
+                          : "#6b7280",
+                      },
+                    ]}
+                  >
                     <Ionicons name="thumbs-up" size={16} color="white" />
                   </View>
                   <View style={styles.stepContent}>
-                    <Text style={[styles.stepTitle, { 
-                      color: ['confirmed', 'billed'].includes(ticket.status) ? '#f3f4f6' : '#9ca3af'
-                    }]}>Confirmed</Text>
-                    <Text style={[styles.stepDescription, { 
-                      color: ['confirmed', 'billed'].includes(ticket.status) ? '#d1d5db' : '#6b7280'
-                    }]}>Work confirmed and approved by requester</Text>
-                    <Text style={[styles.stepDate, { 
-                      color: ['confirmed', 'billed'].includes(ticket.status) ? '#9ca3af' : '#6b7280'
-                    }]}>
-                      {['confirmed', 'billed'].includes(ticket.status) ? 'Confirmed' : 'Pending'}
+                    <Text
+                      style={[
+                        styles.stepTitle,
+                        {
+                          color: ["confirmed", "billed"].includes(ticket.status)
+                            ? "#f3f4f6"
+                            : "#9ca3af",
+                        },
+                      ]}
+                    >
+                      Confirmed
+                    </Text>
+                    <Text
+                      style={[
+                        styles.stepDescription,
+                        {
+                          color: ["confirmed", "billed"].includes(ticket.status)
+                            ? "#d1d5db"
+                            : "#6b7280",
+                        },
+                      ]}
+                    >
+                      Work confirmed and approved by requester
+                    </Text>
+                    <Text
+                      style={[
+                        styles.stepDate,
+                        {
+                          color: ["confirmed", "billed"].includes(ticket.status)
+                            ? "#9ca3af"
+                            : "#6b7280",
+                        },
+                      ]}
+                    >
+                      {["confirmed", "billed"].includes(ticket.status)
+                        ? "Confirmed"
+                        : "Pending"}
                     </Text>
                   </View>
-                  <View style={[styles.stepStatus, { 
-                    backgroundColor: ['confirmed', 'billed'].includes(ticket.status) ? '#10b981' : '#374151'
-                  }]}>
-                    {['confirmed', 'billed'].includes(ticket.status) ? (
+                  <View
+                    style={[
+                      styles.stepStatus,
+                      {
+                        backgroundColor: ["confirmed", "billed"].includes(
+                          ticket.status,
+                        )
+                          ? "#10b981"
+                          : "#374151",
+                      },
+                    ]}
+                  >
+                    {["confirmed", "billed"].includes(ticket.status) ? (
                       <Ionicons name="checkmark" size={12} color="white" />
                     ) : (
-                      <View style={[styles.pendingDot, { backgroundColor: '#6b7280' }]} />
+                      <View
+                        style={[
+                          styles.pendingDot,
+                          { backgroundColor: "#6b7280" },
+                        ]}
+                      />
                     )}
                   </View>
                 </View>
-                
-                <View style={[styles.connectionLine, { 
-                  backgroundColor: ticket.status === 'billed' ? '#10b981' : '#374151'
-                }]} />
-                
+
+                <View
+                  style={[
+                    styles.connectionLine,
+                    {
+                      backgroundColor:
+                        ticket.status === "billed" ? "#10b981" : "#374151",
+                    },
+                  ]}
+                />
+
                 {/* Step 9: Billed */}
                 <View style={styles.stepContainer}>
-                  <View style={[styles.stepIcon, { 
-                    backgroundColor: ticket.status === 'billed' ? '#10b981' : '#6b7280'
-                  }]}>
+                  <View
+                    style={[
+                      styles.stepIcon,
+                      {
+                        backgroundColor:
+                          ticket.status === "billed" ? "#10b981" : "#6b7280",
+                      },
+                    ]}
+                  >
                     <Ionicons name="receipt" size={16} color="white" />
                   </View>
                   <View style={styles.stepContent}>
-                    <Text style={[styles.stepTitle, { 
-                      color: ticket.status === 'billed' ? '#f3f4f6' : '#9ca3af'
-                    }]}>Billed</Text>
-                    <Text style={[styles.stepDescription, { 
-                      color: ticket.status === 'billed' ? '#d1d5db' : '#6b7280'
-                    }]}>Invoice generated and sent</Text>
-                    <Text style={[styles.stepDate, { 
-                      color: ticket.status === 'billed' ? '#9ca3af' : '#6b7280'
-                    }]}>
-                      {ticket.status === 'billed' ? 'Complete' : 'Pending'}
+                    <Text
+                      style={[
+                        styles.stepTitle,
+                        {
+                          color:
+                            ticket.status === "billed" ? "#f3f4f6" : "#9ca3af",
+                        },
+                      ]}
+                    >
+                      Billed
+                    </Text>
+                    <Text
+                      style={[
+                        styles.stepDescription,
+                        {
+                          color:
+                            ticket.status === "billed" ? "#d1d5db" : "#6b7280",
+                        },
+                      ]}
+                    >
+                      Invoice generated and sent
+                    </Text>
+                    <Text
+                      style={[
+                        styles.stepDate,
+                        {
+                          color:
+                            ticket.status === "billed" ? "#9ca3af" : "#6b7280",
+                        },
+                      ]}
+                    >
+                      {ticket.status === "billed" ? "Complete" : "Pending"}
                     </Text>
                   </View>
-                  <View style={[styles.stepStatus, { 
-                    backgroundColor: ticket.status === 'billed' ? '#10b981' : '#374151'
-                  }]}>
-                    {ticket.status === 'billed' ? (
+                  <View
+                    style={[
+                      styles.stepStatus,
+                      {
+                        backgroundColor:
+                          ticket.status === "billed" ? "#10b981" : "#374151",
+                      },
+                    ]}
+                  >
+                    {ticket.status === "billed" ? (
                       <Ionicons name="checkmark" size={12} color="white" />
                     ) : (
-                      <View style={[styles.pendingDot, { backgroundColor: '#6b7280' }]} />
+                      <View
+                        style={[
+                          styles.pendingDot,
+                          { backgroundColor: "#6b7280" },
+                        ]}
+                      />
                     )}
                   </View>
                 </View>
@@ -1457,8 +2588,8 @@ export default function TicketDetailsScreen() {
             </View>
           </View>
         );
-        
-      case 'workorders':
+
+      case "workorders":
         return (
           <View style={styles.tabContent}>
             <View style={styles.workOrdersCard}>
@@ -1466,43 +2597,74 @@ export default function TicketDetailsScreen() {
                 Work Orders {workOrders.length > 0 && `(${workOrders.length})`}
               </Text>
               {workOrdersLoading ? (
-                <ActivityIndicator size="small" color="#3b82f6" style={styles.loader} />
+                <ActivityIndicator
+                  size="small"
+                  color="#3b82f6"
+                  style={styles.loader}
+                />
               ) : workOrders.length === 0 ? (
                 <View style={styles.emptyState}>
-                  <Ionicons name="construct-outline" size={48} color="#94a3b8" />
+                  <Ionicons
+                    name="construct-outline"
+                    size={48}
+                    color="#94a3b8"
+                  />
                   <Text style={styles.emptyText}>No work orders yet</Text>
-                  <Text style={styles.emptySubtext}>Work orders will appear here</Text>
+                  <Text style={styles.emptySubtext}>
+                    Work orders will appear here
+                  </Text>
                 </View>
               ) : (
                 <View style={styles.workOrdersList}>
                   {workOrders.map((workOrder: any, index: number) => (
-                    <TouchableOpacity 
-                      key={workOrder.id || index} 
+                    <TouchableOpacity
+                      key={workOrder.id || index}
                       style={styles.workOrderItem}
                       onPress={() => handleViewWorkOrder(workOrder)}
                       activeOpacity={0.7}
                     >
                       <View style={styles.workOrderHeader}>
-                        <Text style={styles.workOrderTitle}>Work Order #{workOrder.id}</Text>
-                        <View style={[styles.workOrderStatus, { backgroundColor: getStatusColor(workOrder.status) }]}>
-                          <Text style={styles.workOrderStatusText}>{workOrder.status}</Text>
+                        <Text style={styles.workOrderTitle}>
+                          Work Order #{workOrder.id}
+                        </Text>
+                        <View
+                          style={[
+                            styles.workOrderStatus,
+                            {
+                              backgroundColor: getStatusColor(workOrder.status),
+                            },
+                          ]}
+                        >
+                          <Text style={styles.workOrderStatusText}>
+                            {workOrder.status}
+                          </Text>
                         </View>
                       </View>
                       {workOrder.description && (
-                        <Text style={styles.workOrderDescription}>{workOrder.description}</Text>
+                        <Text style={styles.workOrderDescription}>
+                          {workOrder.description}
+                        </Text>
                       )}
                       <Text style={styles.workOrderDate}>
-                        Created: {new Date(workOrder.createdAt).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
+                        Created:{" "}
+                        {new Date(workOrder.createdAt).toLocaleDateString(
+                          "en-US",
+                          {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          },
+                        )}
                       </Text>
-                      
+
                       {/* View indicator */}
                       <View style={styles.viewIndicator}>
-                        <Ionicons name="chevron-forward" size={16} color="#94a3b8" />
+                        <Ionicons
+                          name="chevron-forward"
+                          size={16}
+                          color="#94a3b8"
+                        />
                         <Text style={styles.viewText}>Tap to view details</Text>
                       </View>
                     </TouchableOpacity>
@@ -1513,23 +2675,33 @@ export default function TicketDetailsScreen() {
           </View>
         );
 
-      case 'actions':
+      case "actions":
         return (
           <View style={styles.tabContent}>
             <View style={styles.actionsCard}>
               {/* Debug info */}
-              <View style={{ backgroundColor: '#1f2937', padding: 10, marginBottom: 10, borderRadius: 8 }}>
-                <Text style={{ color: '#e5e7eb', fontSize: 12 }}>
-                  Debug: User Role: {user?.role}, Ticket Status: {ticket?.status}
+              <View
+                style={{
+                  backgroundColor: "#1f2937",
+                  padding: 10,
+                  marginBottom: 10,
+                  borderRadius: 8,
+                }}
+              >
+                <Text style={{ color: "#e5e7eb", fontSize: 12 }}>
+                  Debug: User Role: {user?.role}, Ticket Status:{" "}
+                  {ticket?.status}
                 </Text>
-                <Text style={{ color: '#e5e7eb', fontSize: 12 }}>
-                  User Vendor ID: {user?.maintenanceVendorId}, Ticket Vendor ID: {ticket?.maintenanceVendorId}
+                <Text style={{ color: "#e5e7eb", fontSize: 12 }}>
+                  User Vendor ID: {user?.maintenanceVendorId}, Ticket Vendor ID:{" "}
+                  {ticket?.maintenanceVendorId}
                 </Text>
-                <Text style={{ color: '#e5e7eb', fontSize: 12 }}>
-                  Assignee ID: {ticket?.assigneeId || 'None'}
+                <Text style={{ color: "#e5e7eb", fontSize: 12 }}>
+                  Assignee ID: {ticket?.assigneeId || "None"}
                 </Text>
-                <Text style={{ color: '#e5e7eb', fontSize: 12 }}>
-                  Actions Count: {getAvailableActions(user, ticket)?.length || 0}
+                <Text style={{ color: "#e5e7eb", fontSize: 12 }}>
+                  Actions Count:{" "}
+                  {getAvailableActions(user, ticket)?.length || 0}
                 </Text>
               </View>
               <Text style={styles.sectionTitle}>Available Actions</Text>
@@ -1537,7 +2709,7 @@ export default function TicketDetailsScreen() {
             </View>
           </View>
         );
-        
+
       default:
         return null;
     }
@@ -1547,12 +2719,15 @@ export default function TicketDetailsScreen() {
     <View style={styles.container}>
       {/* Header - Web Style */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
           <Ionicons name="arrow-back" size={24} color="#f3f4f6" />
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>
-            {ticket.title || 'Ticket Details'}
+            {ticket.title || "Ticket Details"}
           </Text>
           <Text style={styles.headerSubtitle}>
             {ticket.ticketNumber || `#${ticket.id}`}
@@ -1563,41 +2738,70 @@ export default function TicketDetailsScreen() {
       {/* Tab Navigation - Web Style */}
       <View style={styles.tabContainer}>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'details' && styles.activeTab]}
-          onPress={() => setActiveTab('details')}
+          style={[styles.tab, activeTab === "details" && styles.activeTab]}
+          onPress={() => setActiveTab("details")}
         >
-          <Text style={[styles.tabText, activeTab === 'details' && styles.activeTabText]}>Details</Text>
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "details" && styles.activeTabText,
+            ]}
+          >
+            Details
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'comments' && styles.activeTab]}
-          onPress={() => setActiveTab('comments')}
+          style={[styles.tab, activeTab === "comments" && styles.activeTab]}
+          onPress={() => setActiveTab("comments")}
         >
-          <Text style={[styles.tabText, activeTab === 'comments' && styles.activeTabText]}>
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "comments" && styles.activeTabText,
+            ]}
+          >
             Comments {comments.length > 0 && `(${comments.length})`}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'progress' && styles.activeTab]}
-          onPress={() => setActiveTab('progress')}
+          style={[styles.tab, activeTab === "progress" && styles.activeTab]}
+          onPress={() => setActiveTab("progress")}
         >
-          <Text style={[styles.tabText, activeTab === 'progress' && styles.activeTabText]}>Progress</Text>
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "progress" && styles.activeTabText,
+            ]}
+          >
+            Progress
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'workorders' && styles.activeTab]}
-          onPress={() => setActiveTab('workorders')}
+          style={[styles.tab, activeTab === "workorders" && styles.activeTab]}
+          onPress={() => setActiveTab("workorders")}
         >
-          <Text style={[styles.tabText, activeTab === 'workorders' && styles.activeTabText]}>
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "workorders" && styles.activeTabText,
+            ]}
+          >
             Work Orders {workOrders.length > 0 && `(${workOrders.length})`}
           </Text>
         </TouchableOpacity>
-        
+
         {/* Actions Tab - Only show for users with permissions */}
         {user && hasActionsPermission(user, ticket) && (
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'actions' && styles.activeTab]}
-            onPress={() => setActiveTab('actions')}
+            style={[styles.tab, activeTab === "actions" && styles.activeTab]}
+            onPress={() => setActiveTab("actions")}
           >
-            <Text style={[styles.tabText, activeTab === 'actions' && styles.activeTabText]}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "actions" && styles.activeTabText,
+              ]}
+            >
               Actions
             </Text>
           </TouchableOpacity>
@@ -1607,7 +2811,9 @@ export default function TicketDetailsScreen() {
       {/* Content */}
       <ScrollView
         style={styles.scrollView}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
         showsVerticalScrollIndicator={false}
       >
         {renderTabContent()}
@@ -1667,57 +2873,57 @@ export default function TicketDetailsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#111827',
+    backgroundColor: "#111827",
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f8fafc',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f8fafc",
   },
   errorContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
-    backgroundColor: '#f8fafc',
+    backgroundColor: "#f8fafc",
   },
   errorTitle: {
     fontSize: 20,
-    fontWeight: '700',
-    color: '#ef4444',
-    textAlign: 'center',
+    fontWeight: "700",
+    color: "#ef4444",
+    textAlign: "center",
     marginTop: 16,
     marginBottom: 8,
   },
   errorText: {
     fontSize: 16,
-    color: '#ef4444',
-    textAlign: 'center',
+    color: "#ef4444",
+    textAlign: "center",
     marginBottom: 20,
     paddingHorizontal: 20,
   },
   retryButton: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: "#3b82f6",
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
   },
   retryButtonText: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   header: {
-    backgroundColor: '#1f2937',
-    flexDirection: 'row',
-    alignItems: 'center',
+    backgroundColor: "#1f2937",
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 16,
     paddingTop: 50,
     borderBottomWidth: 1,
-    borderBottomColor: '#374151',
-    shadowColor: '#000',
+    borderBottomColor: "#374151",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -1732,39 +2938,39 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#f3f4f6',
+    fontWeight: "700",
+    color: "#f3f4f6",
     marginBottom: 2,
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#9ca3af',
+    color: "#9ca3af",
   },
   tabContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#1f2937',
+    flexDirection: "row",
+    backgroundColor: "#1f2937",
     borderBottomWidth: 1,
-    borderBottomColor: '#374151',
+    borderBottomColor: "#374151",
   },
   tab: {
     flex: 1,
     paddingVertical: 14,
     paddingHorizontal: 8,
-    alignItems: 'center',
+    alignItems: "center",
     borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
+    borderBottomColor: "transparent",
   },
   activeTab: {
-    borderBottomColor: '#3b82f6',
+    borderBottomColor: "#3b82f6",
   },
   tabText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#64748b',
-    textAlign: 'center',
+    fontWeight: "600",
+    color: "#64748b",
+    textAlign: "center",
   },
   activeTabText: {
-    color: '#3b82f6',
+    color: "#3b82f6",
   },
   scrollView: {
     flex: 1,
@@ -1772,33 +2978,33 @@ const styles = StyleSheet.create({
   tabContent: {
     padding: 16,
   },
-  
+
   // Web-style Details Tab - Dark Theme
   headerSection: {
-    backgroundColor: '#1f2937',
+    backgroundColor: "#1f2937",
     borderRadius: 12,
     padding: 20,
     marginBottom: 16,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 3,
     borderWidth: 1,
-    borderColor: '#374151',
+    borderColor: "#374151",
   },
   titleSection: {
     marginBottom: 8,
   },
   ticketTitle: {
     fontSize: 24,
-    fontWeight: '700',
-    color: '#f3f4f6',
+    fontWeight: "700",
+    color: "#f3f4f6",
     marginBottom: 12,
     lineHeight: 32,
   },
   badgeContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
   },
   badge: {
@@ -1808,113 +3014,113 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 10,
-    fontWeight: '700',
-    color: 'white',
+    fontWeight: "700",
+    color: "white",
     letterSpacing: 0.5,
   },
-  
+
   detailsGrid: {
-    backgroundColor: '#1f2937',
+    backgroundColor: "#1f2937",
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.25,
     shadowRadius: 2,
     elevation: 2,
     borderWidth: 1,
-    borderColor: '#374151',
+    borderColor: "#374151",
   },
   detailRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 16,
   },
   detailItem: {
     flex: 1,
   },
   detailHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     marginBottom: 8,
   },
   detailLabel: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#64748b',
+    fontWeight: "600",
+    color: "#64748b",
   },
   detailValue: {
     fontSize: 16,
-    color: '#f3f4f6',
-    fontWeight: '500',
+    color: "#f3f4f6",
+    fontWeight: "500",
   },
-  
+
   descriptionSection: {
-    backgroundColor: '#1f2937',
+    backgroundColor: "#1f2937",
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.25,
     shadowRadius: 2,
     elevation: 2,
     borderWidth: 1,
-    borderColor: '#374151',
+    borderColor: "#374151",
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#f3f4f6',
+    fontWeight: "700",
+    color: "#f3f4f6",
     marginBottom: 12,
   },
   descriptionContent: {
-    backgroundColor: '#f1f5f9',
+    backgroundColor: "#f1f5f9",
     borderRadius: 8,
     padding: 16,
   },
   descriptionText: {
     fontSize: 16,
-    color: '#1e293b',
+    color: "#1e293b",
     lineHeight: 24,
   },
-  
+
   imageSection: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
   },
   imageGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 12,
   },
   imageCard: {
     width: (screenWidth - 80) / 2,
     aspectRatio: 1,
     borderRadius: 8,
-    overflow: 'hidden',
+    overflow: "hidden",
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: "#e2e8f0",
   },
   imagePreview: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
-  
+
   locationSection: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -1925,22 +3131,22 @@ const styles = StyleSheet.create({
   },
   locationName: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1e293b',
+    fontWeight: "600",
+    color: "#1e293b",
   },
   locationAddress: {
     fontSize: 14,
-    color: '#64748b',
+    color: "#64748b",
     lineHeight: 20,
   },
-  
+
   // Web-style Comments Tab
   addCommentCard: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -1951,39 +3157,39 @@ const styles = StyleSheet.create({
   },
   commentInput: {
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: "#e2e8f0",
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    color: '#1e293b',
-    backgroundColor: '#f8fafc',
+    color: "#1e293b",
+    backgroundColor: "#f8fafc",
     minHeight: 100,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
   },
   submitButton: {
     flex: 1,
-    backgroundColor: '#3b82f6',
+    backgroundColor: "#3b82f6",
     paddingVertical: 12,
     borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   buttonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   buttonText: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
-  
+
   commentsCard: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 12,
     padding: 16,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -1993,16 +3199,16 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   commentItem: {
-    backgroundColor: '#f8fafc',
+    backgroundColor: "#f8fafc",
     borderRadius: 8,
     padding: 12,
     borderLeftWidth: 4,
-    borderLeftColor: '#3b82f6',
+    borderLeftColor: "#3b82f6",
   },
   commentHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: 8,
   },
   commentAuthorSection: {
@@ -2010,109 +3216,109 @@ const styles = StyleSheet.create({
   },
   commentAuthor: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#1e293b',
+    fontWeight: "600",
+    color: "#1e293b",
   },
   commentRole: {
     fontSize: 12,
-    color: '#64748b',
-    textTransform: 'capitalize',
+    color: "#64748b",
+    textTransform: "capitalize",
     marginTop: 2,
   },
   commentDate: {
     fontSize: 12,
-    color: '#64748b',
+    color: "#64748b",
   },
   commentContent: {
     fontSize: 14,
-    color: '#374151',
+    color: "#374151",
     lineHeight: 20,
   },
-  
+
   // Web-style Progress Tab
   progressCard: {
-    backgroundColor: '#1f2937',
+    backgroundColor: "#1f2937",
     borderRadius: 12,
     padding: 20,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.25,
     shadowRadius: 2,
     elevation: 2,
     borderWidth: 1,
-    borderColor: '#374151',
+    borderColor: "#374151",
   },
   progressBarContainer: {
     marginBottom: 24,
-    alignItems: 'center',
+    alignItems: "center",
   },
   progressBar: {
-    width: '100%',
+    width: "100%",
     height: 8,
-    backgroundColor: '#e2e8f0',
+    backgroundColor: "#e2e8f0",
     borderRadius: 4,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginBottom: 8,
   },
   progressFill: {
-    height: '100%',
-    backgroundColor: '#3b82f6',
+    height: "100%",
+    backgroundColor: "#3b82f6",
     borderRadius: 4,
   },
   progressText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1e293b',
+    fontWeight: "600",
+    color: "#1e293b",
   },
   progressTimeline: {
     gap: 20,
   },
   timelineItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
     gap: 16,
   },
   timelineIcon: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   timelineContent: {
     flex: 1,
   },
   timelineTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1e293b',
+    fontWeight: "600",
+    color: "#1e293b",
     marginBottom: 4,
   },
   timelineDescription: {
     fontSize: 14,
-    color: '#64748b',
+    color: "#64748b",
     marginBottom: 2,
   },
   timelineDate: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: "#94a3b8",
   },
-  
+
   // Detailed Progress Timeline Styles
   detailedTimeline: {
     marginTop: 20,
   },
   stepContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 12,
   },
   stepIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 16,
   },
   stepContent: {
@@ -2121,26 +3327,26 @@ const styles = StyleSheet.create({
   },
   stepTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
+    fontWeight: "600",
+    color: "#1f2937",
     marginBottom: 4,
   },
   stepDescription: {
     fontSize: 13,
-    color: '#4b5563',
+    color: "#4b5563",
     marginBottom: 2,
   },
   stepDate: {
     fontSize: 11,
-    color: '#6b7280',
-    fontWeight: '500',
+    color: "#6b7280",
+    fontWeight: "500",
   },
   stepStatus: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   pendingDot: {
     width: 8,
@@ -2153,13 +3359,13 @@ const styles = StyleSheet.create({
     marginLeft: 19,
     marginVertical: -2,
   },
-  
+
   // Web-style Work Orders Tab
   workOrdersCard: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 12,
     padding: 16,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -2169,22 +3375,22 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   workOrderItem: {
-    backgroundColor: '#f8fafc',
+    backgroundColor: "#f8fafc",
     borderRadius: 8,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: "#e2e8f0",
   },
   workOrderHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 8,
   },
   workOrderTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1e293b',
+    fontWeight: "600",
+    color: "#1e293b",
   },
   workOrderStatus: {
     paddingHorizontal: 8,
@@ -2193,41 +3399,41 @@ const styles = StyleSheet.create({
   },
   workOrderStatusText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: 'white',
-    textTransform: 'capitalize',
+    fontWeight: "600",
+    color: "white",
+    textTransform: "capitalize",
   },
   workOrderDescription: {
     fontSize: 14,
-    color: '#64748b',
+    color: "#64748b",
     marginBottom: 8,
     lineHeight: 20,
   },
   workOrderDate: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: "#94a3b8",
   },
   viewIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 8,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
+    borderTopColor: "#e2e8f0",
   },
   viewText: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: "#94a3b8",
     marginLeft: 4,
   },
-  
+
   // Comment Image Styles
   imagePreviewContainer: {
     marginVertical: 8,
   },
   imagePreviewWrapper: {
     marginRight: 8,
-    position: 'relative',
+    position: "relative",
   },
   imagePreview: {
     width: 60,
@@ -2235,32 +3441,32 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   removeImageButton: {
-    position: 'absolute',
+    position: "absolute",
     top: -6,
     right: -6,
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 10,
   },
   buttonRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
   imagePickerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#3b82f6',
-    backgroundColor: 'white',
+    borderColor: "#3b82f6",
+    backgroundColor: "white",
   },
   imagePickerText: {
-    color: '#3b82f6',
+    color: "#3b82f6",
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   commentImagesContainer: {
     marginTop: 8,
@@ -2273,55 +3479,55 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 8,
   },
-  
+
   // Shared styles
   emptyState: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 40,
   },
   emptyText: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#64748b',
+    fontWeight: "600",
+    color: "#64748b",
     marginTop: 16,
     marginBottom: 4,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#94a3b8',
+    color: "#94a3b8",
   },
   loader: {
     marginVertical: 20,
   },
-  
+
   // Image Modal
   imageModalContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.9)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   imageModalClose: {
-    position: 'absolute',
+    position: "absolute",
     top: 50,
     right: 20,
     zIndex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     borderRadius: 20,
     padding: 8,
   },
   fullScreenImage: {
     width: screenWidth,
-    height: '80%',
+    height: "80%",
   },
 
   // Actions Tab Styles
   actionsCard: {
-    backgroundColor: '#1f2937',
+    backgroundColor: "#1f2937",
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#374151',
+    borderColor: "#374151",
   },
 
   actionsList: {
@@ -2329,14 +3535,14 @@ const styles = StyleSheet.create({
   },
 
   actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 12,
     paddingHorizontal: 16,
     marginBottom: 12,
     borderRadius: 8,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -2347,24 +3553,24 @@ const styles = StyleSheet.create({
   },
 
   actionButtonText: {
-    color: 'white',
-    fontWeight: '600',
+    color: "white",
+    fontWeight: "600",
     fontSize: 16,
     marginLeft: 8,
   },
 
   emptyStateTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#9ca3af',
+    fontWeight: "600",
+    color: "#9ca3af",
     marginTop: 16,
     marginBottom: 8,
   },
 
   emptyStateText: {
     fontSize: 14,
-    color: '#6b7280',
-    textAlign: 'center',
+    color: "#6b7280",
+    textAlign: "center",
     lineHeight: 20,
   },
 });

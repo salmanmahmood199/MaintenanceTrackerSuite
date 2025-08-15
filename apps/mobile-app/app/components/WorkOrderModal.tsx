@@ -954,9 +954,18 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                 <TextInput
                   style={[styles.input, styles.quantityInput]}
                   value={part.quantity.toString()}
-                  onChangeText={(value) =>
-                    updatePart(index, "quantity", parseInt(value) || 1)
-                  }
+                  onChangeText={(value) => {
+                    // Allow empty string to clear the input
+                    if (value === "") {
+                      updatePart(index, "quantity", "");
+                      return;
+                    }
+                    // Only update if it's a valid number
+                    const num = parseInt(value);
+                    if (!isNaN(num) && num > 0) {
+                      updatePart(index, "quantity", num);
+                    }
+                  }}
                   placeholder="Qty"
                   keyboardType="numeric"
                   placeholderTextColor="#9ca3af"
