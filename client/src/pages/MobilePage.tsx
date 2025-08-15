@@ -502,7 +502,7 @@ const MobilePage = () => {
     null,
   );
   const [currentView, setCurrentView] = useState<
-    "dashboard" | "organization" | "vendor" | "calendar" | "marketplace"
+    "dashboard" | "calendar" | "marketplace"
   >("dashboard");
   const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(
@@ -1842,125 +1842,7 @@ const MobilePage = () => {
     );
   };
 
-  const getOrganizationView = () => {
-    if (!selectedOrganization) return null;
 
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-3 mb-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setCurrentView("dashboard")}
-            className="p-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h2 className="text-xl font-bold text-foreground">
-              {selectedOrganization.name}
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Organization Dashboard
-            </p>
-          </div>
-        </div>
-
-        {/* Organization stats and content would go here */}
-        <div className="grid grid-cols-2 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    Active Tickets
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {
-                      tickets.filter(
-                        (t) => t.organizationId === selectedOrganization.id,
-                      ).length
-                    }
-                  </p>
-                </div>
-                <TicketIcon className="h-5 w-5 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">Users</p>
-                  <p className="text-2xl font-bold">5</p>
-                </div>
-                <Users className="h-5 w-5 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  };
-
-  const getVendorView = () => {
-    if (!selectedVendor) return null;
-
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-3 mb-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setCurrentView("dashboard")}
-            className="p-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h2 className="text-xl font-bold text-foreground">
-              {selectedVendor.name}
-            </h2>
-            <p className="text-sm text-muted-foreground">Vendor Dashboard</p>
-          </div>
-        </div>
-
-        {/* Vendor stats and content would go here */}
-        <div className="grid grid-cols-2 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    Assigned Tickets
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {
-                      tickets.filter(
-                        (t) => t.maintenanceVendorId === selectedVendor.id,
-                      ).length
-                    }
-                  </p>
-                </div>
-                <TicketIcon className="h-5 w-5 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">Technicians</p>
-                  <p className="text-2xl font-bold">3</p>
-                </div>
-                <Users className="h-5 w-5 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  };
 
   const getCalendarView = () => {
     const today = new Date();
@@ -3207,10 +3089,6 @@ const MobilePage = () => {
 
   const getCurrentView = () => {
     switch (currentView) {
-      case "organization":
-        return getOrganizationView();
-      case "vendor":
-        return getVendorView();
       case "calendar":
         return getCalendarView();
       case "marketplace":
@@ -3299,21 +3177,6 @@ const MobilePage = () => {
               <Home className="h-4 w-4 mr-1" />
               Home
             </TabsTrigger>
-            {user.role === "root" && (
-              <>
-                <TabsTrigger
-                  value="organization"
-                  className="text-xs flex-shrink-0"
-                >
-                  <Building2 className="h-4 w-4 mr-1" />
-                  Orgs
-                </TabsTrigger>
-                <TabsTrigger value="vendor" className="text-xs flex-shrink-0">
-                  <Wrench className="h-4 w-4 mr-1" />
-                  Vendors
-                </TabsTrigger>
-              </>
-            )}
             {(user.role === "maintenance_admin" ||
               user.role === "technician") && (
               <TabsTrigger
