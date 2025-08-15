@@ -1188,25 +1188,6 @@ const MobilePage = () => {
                   {loading ? "Signing In..." : "Sign In"}
                 </Button>
 
-                <div className="mt-6 p-4 bg-white/5 rounded-lg border border-white/10 backdrop-blur-sm">
-                  <h3 className="text-sm font-medium text-white mb-2">
-                    Quick Access:
-                  </h3>
-                  <div className="space-y-1 text-xs text-gray-400">
-                    <div>
-                      <strong className="text-white">Root Admin:</strong>{" "}
-                      root@mail.com / admin
-                    </div>
-                    <div>
-                      <strong className="text-white">Org Admin:</strong>{" "}
-                      admin@nsrpetroservices.org / password
-                    </div>
-                    <div>
-                      <strong className="text-white">Vendor Admin:</strong>{" "}
-                      admin@vendor.vendor / password
-                    </div>
-                  </div>
-                </div>
               </form>
             </CardContent>
           </Card>

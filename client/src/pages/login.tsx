@@ -153,11 +153,6 @@ export default function Login() {
               </div>
             </form>
 
-            {/* <div className="mt-6 p-4 bg-white/5 rounded-lg border border-white/10 backdrop-blur-sm">
-              <h3 className="text-sm font-medium text-white mb-2">Root Admin Login:</h3>
-              <p className="text-xs text-gray-400">Email: root@mail.com</p>
-              <p className="text-xs text-gray-400">Password: admin</p>
-            </div> */}
 
             <div className="mt-4 text-center">
               <p className="text-sm text-gray-400">
