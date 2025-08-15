@@ -50,16 +50,22 @@ export default function TicketsScreen() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator />
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: '#0f172a' }}>
+        <ActivityIndicator size="large" color="#3b82f6" />
+        <Text style={{ color: '#94a3b8', marginTop: 16, fontSize: 16 }}>Loading tickets...</Text>
       </View>
     );
   }
 
   if (isError) {
     return (
-      <View style={{ padding: 16 }}>
-        <Text>Failed to load tickets: {(error as any)?.message ?? "Unknown error"}</Text>
+      <View style={{ flex: 1, padding: 16, backgroundColor: '#0f172a', justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ color: '#ef4444', fontSize: 18, fontWeight: '600', marginBottom: 8, textAlign: 'center' }}>
+          Failed to load tickets
+        </Text>
+        <Text style={{ color: '#94a3b8', fontSize: 14, textAlign: 'center' }}>
+          {(error as any)?.message ?? "Unknown error"}
+        </Text>
       </View>
     );
   }
@@ -162,36 +168,38 @@ export default function TicketsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#0f172a',
   },
   header: {
-    backgroundColor: 'white',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     paddingHorizontal: 16,
     paddingVertical: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#1e293b',
+    color: '#ffffff',
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#64748b',
+    color: '#94a3b8',
   },
   ticketCard: {
-    backgroundColor: 'white',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     marginHorizontal: 16,
     marginVertical: 6,
     padding: 16,
     borderRadius: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   ticketHeader: {
     flexDirection: 'row',
@@ -202,7 +210,7 @@ const styles = StyleSheet.create({
   ticketNumber: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#64748b',
+    color: '#94a3b8',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -220,12 +228,12 @@ const styles = StyleSheet.create({
   ticketTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1e293b',
+    color: '#ffffff',
     marginBottom: 6,
   },
   ticketDescription: {
     fontSize: 14,
-    color: '#64748b',
+    color: '#cbd5e1',
     lineHeight: 20,
     marginBottom: 12,
   },
@@ -252,11 +260,11 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 12,
-    color: '#64748b',
+    color: '#94a3b8',
   },
   locationText: {
     fontSize: 12,
-    color: '#64748b',
+    color: '#94a3b8',
     fontStyle: 'italic',
     maxWidth: 120,
   },
@@ -272,7 +280,7 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#64748b',
+    color: '#ffffff',
     marginBottom: 8,
   },
   emptySubtext: {

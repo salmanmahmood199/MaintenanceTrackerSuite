@@ -2879,14 +2879,14 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f8fafc",
+    backgroundColor: "#111827",
   },
   errorContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
-    backgroundColor: "#f8fafc",
+    backgroundColor: "#111827",
   },
   errorTitle: {
     fontSize: 20,
