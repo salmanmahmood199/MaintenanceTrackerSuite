@@ -12,10 +12,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '../../../src/services/api';
-import { useAuth } from '../../../src/contexts/AuthContext';
-import PaymentModal from '../../components/PaymentModal';
-import InvoicePDFModal from '../../components/InvoicePDFModal';
+import { apiRequest } from '../../src/services/api';
+import { useAuth } from '../../src/contexts/AuthContext';
+import PaymentModal from '../components/PaymentModal';
+import InvoicePDFModal from '../components/InvoicePDFModal';
 
 interface Invoice {
   id: number;
