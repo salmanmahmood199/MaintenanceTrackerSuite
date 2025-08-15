@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Modal,
   View,
@@ -6,8 +6,12 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  Image,
+  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+
+const { width: screenWidth } = Dimensions.get('window');
 
 interface WorkOrderDetailsModalProps {
   visible: boolean;
@@ -15,11 +19,21 @@ interface WorkOrderDetailsModalProps {
   workOrder: any;
 }
 
+interface ImageModalState {
+  visible: boolean;
+  imageUri: string | null;
+}
+
 const WorkOrderDetailsModal: React.FC<WorkOrderDetailsModalProps> = ({
   visible,
   onClose,
   workOrder,
 }) => {
+  const [imageModal, setImageModal] = useState<ImageModalState>({
+    visible: false,
+    imageUri: null,
+  });
+
   if (!workOrder) return null;
 
   const formatCurrency = (amount: string | number) => {
@@ -94,26 +108,34 @@ const WorkOrderDetailsModal: React.FC<WorkOrderDetailsModalProps> = ({
                   {formatDate(workOrder.createdAt)}
                 </Text>
               </View>
-              {workOrder.startTime && (
+              {workOrder.workDate && (
                 <View style={styles.timeItem}>
-                  <Text style={styles.timeLabel}>Started</Text>
+                  <Text style={styles.timeLabel}>Work Date</Text>
                   <Text style={styles.timeValue}>
-                    {formatDate(workOrder.startTime)}
+                    {new Date(workOrder.workDate).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
                   </Text>
                 </View>
               )}
-              {workOrder.endTime && (
+              {workOrder.timeIn && (
                 <View style={styles.timeItem}>
-                  <Text style={styles.timeLabel}>Completed</Text>
-                  <Text style={styles.timeValue}>
-                    {formatDate(workOrder.endTime)}
-                  </Text>
+                  <Text style={styles.timeLabel}>Time In</Text>
+                  <Text style={styles.timeValue}>{workOrder.timeIn}</Text>
                 </View>
               )}
-              {workOrder.hours && (
+              {workOrder.timeOut && (
+                <View style={styles.timeItem}>
+                  <Text style={styles.timeLabel}>Time Out</Text>
+                  <Text style={styles.timeValue}>{workOrder.timeOut}</Text>
+                </View>
+              )}
+              {workOrder.totalHours && (
                 <View style={styles.timeItem}>
                   <Text style={styles.timeLabel}>Total Hours</Text>
-                  <Text style={styles.timeValue}>{workOrder.hours} hours</Text>
+                  <Text style={styles.timeValue}>{workOrder.totalHours} hours</Text>
                 </View>
               )}
             </View>
@@ -200,16 +222,63 @@ const WorkOrderDetailsModal: React.FC<WorkOrderDetailsModalProps> = ({
           )}
 
           {/* Technician Information */}
-          {workOrder.technicianId && (
+          {workOrder.technicianName && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Technician</Text>
               <Text style={styles.description}>
-                Technician ID: {workOrder.technicianId}
+                {workOrder.technicianName}
               </Text>
+            </View>
+          )}
+
+          {/* Photos */}
+          {workOrder.images && workOrder.images.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Photos</Text>
+              <View style={styles.photosGrid}>
+                {workOrder.images.map((imageUri: string, index: number) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.photoItem}
+                    onPress={() => setImageModal({ visible: true, imageUri })}
+                    activeOpacity={0.7}
+                  >
+                    <Image
+                      source={{ uri: imageUri }}
+                      style={styles.photoThumbnail}
+                      resizeMode="cover"
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
           )}
         </ScrollView>
       </View>
+
+      {/* Image Modal */}
+      <Modal
+        visible={imageModal.visible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setImageModal({ visible: false, imageUri: null })}
+      >
+        <View style={styles.imageModalContainer}>
+          <TouchableOpacity
+            style={styles.imageModalClose}
+            onPress={() => setImageModal({ visible: false, imageUri: null })}
+          >
+            <Ionicons name="close" size={24} color="white" />
+          </TouchableOpacity>
+          {imageModal.imageUri && (
+            <Image
+              source={{ uri: imageModal.imageUri }}
+              style={styles.fullScreenImage}
+              resizeMode="contain"
+            />
+          )}
+        </View>
+      </Modal>
     </Modal>
   );
 };
@@ -217,21 +286,21 @@ const WorkOrderDetailsModal: React.FC<WorkOrderDetailsModalProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#111827',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: 'white',
+    backgroundColor: '#1f2937',
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#374151',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: '#f3f4f6',
   },
   closeButton: {
     padding: 4,
@@ -241,7 +310,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   workOrderHeader: {
-    backgroundColor: 'white',
+    backgroundColor: '#1f2937',
     borderRadius: 8,
     padding: 16,
     marginBottom: 16,
@@ -250,6 +319,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+    borderWidth: 1,
+    borderColor: '#374151',
   },
   headerInfo: {
     flexDirection: 'row',
@@ -260,7 +331,7 @@ const styles = StyleSheet.create({
   workOrderNumber: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: '#f3f4f6',
   },
   statusBadge: {
     paddingHorizontal: 12,
@@ -274,7 +345,7 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   section: {
-    backgroundColor: 'white',
+    backgroundColor: '#1f2937',
     borderRadius: 8,
     padding: 16,
     marginBottom: 16,
@@ -283,16 +354,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+    borderWidth: 1,
+    borderColor: '#374151',
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: '#f3f4f6',
     marginBottom: 12,
   },
   description: {
     fontSize: 14,
-    color: '#666',
+    color: '#d1d5db',
     lineHeight: 20,
   },
   timeGrid: {
@@ -306,12 +379,12 @@ const styles = StyleSheet.create({
   },
   timeLabel: {
     fontSize: 14,
-    color: '#666',
+    color: '#9ca3af',
     fontWeight: '500',
   },
   timeValue: {
     fontSize: 14,
-    color: '#333',
+    color: '#f3f4f6',
   },
   costGrid: {
     gap: 12,
@@ -324,12 +397,12 @@ const styles = StyleSheet.create({
   },
   costLabel: {
     fontSize: 14,
-    color: '#666',
+    color: '#9ca3af',
     fontWeight: '500',
   },
   costValue: {
     fontSize: 14,
-    color: '#333',
+    color: '#f3f4f6',
     fontWeight: '500',
   },
   totalCost: {
@@ -343,7 +416,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#374151',
   },
   partInfo: {
     flex: 1,
@@ -351,17 +424,17 @@ const styles = StyleSheet.create({
   partName: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#333',
+    color: '#f3f4f6',
     marginBottom: 2,
   },
   partDetails: {
     fontSize: 12,
-    color: '#666',
+    color: '#9ca3af',
   },
   partTotal: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#333',
+    color: '#f3f4f6',
   },
   chargeItem: {
     flexDirection: 'row',
@@ -369,17 +442,56 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#374151',
+  },
+  // Photos styles
+  photosGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  photoItem: {
+    width: (screenWidth - 80) / 3,
+    aspectRatio: 1,
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#374151',
+    backgroundColor: '#111827',
+  },
+  photoThumbnail: {
+    width: '100%',
+    height: '100%',
+  },
+  // Image Modal styles
+  imageModalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageModalClose: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 20,
+    padding: 8,
+  },
+  fullScreenImage: {
+    width: screenWidth,
+    height: '80%',
   },
   chargeName: {
     fontSize: 14,
-    color: '#333',
+    color: '#f3f4f6',
     flex: 1,
   },
   chargeAmount: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#333',
+    color: '#f3f4f6',
   },
 });
 
