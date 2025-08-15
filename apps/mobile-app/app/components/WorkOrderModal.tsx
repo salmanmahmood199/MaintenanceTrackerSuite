@@ -231,46 +231,18 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
         throw new Error("Completion status is required");
       }
 
-      // Use FormData if there are images, otherwise use JSON
-      let requestData: any;
-      let isFormData = false;
+      if (!workOrderData.managerName?.trim()) {
+        throw new Error("Manager name is required");
+      }
 
-      if (workOrderData.images && workOrderData.images.length > 0) {
-        // Use FormData for image uploads
-        const formData = new FormData();
-        
-        // Add all non-image fields
-        Object.keys(workOrderData).forEach(key => {
-          if (key !== 'images') {
-            const value = workOrderData[key];
-            if (typeof value === 'object') {
-              formData.append(key, JSON.stringify(value));
-            } else {
-              formData.append(key, String(value));
-            }
-          }
-        });
-
-        // Add images from workImages state (which has the actual file objects)
-        workImages.forEach((image, index) => {
-          formData.append('images', {
-            uri: image.uri,
-            type: image.type || 'image/jpeg',
-            name: image.fileName || `work_image_${index}.jpg`,
-          } as any);
-        });
-
-        requestData = formData;
-        isFormData = true;
-      } else {
-        // Use JSON for requests without images
-        requestData = workOrderData;
+      if (!workOrderData.managerSignature) {
+        throw new Error("Manager signature is required");
       }
 
       const response = await apiRequest(
         "POST",
         `/api/tickets/${ticket.id}/work-orders`,
-        requestData,
+        workOrderData,
       );
 
       if (!response.ok) {
