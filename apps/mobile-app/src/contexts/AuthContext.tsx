@@ -40,9 +40,8 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>();
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [loaded, setLoaded] = useState(false);
 
   const checkAuthStatus = async () => {
     try {
@@ -60,7 +59,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(null);
     } finally {
       setIsLoading(false);
-      setLoaded(true);
     }
   };
 
@@ -112,7 +110,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     logout,
     checkAuthStatus,
     isLoading,
-    loaded,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
