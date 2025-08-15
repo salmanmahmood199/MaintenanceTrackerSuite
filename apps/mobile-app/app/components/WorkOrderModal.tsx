@@ -159,6 +159,13 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
     return `${hour24.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
   };
 
+  const convertTimeToMinutes = (hour: number, minute: number, ampm: string) => {
+    let hour24 = hour;
+    if (ampm === "AM" && hour === 12) hour24 = 0;
+    if (ampm === "PM" && hour !== 12) hour24 = hour + 12;
+    return hour24 * 60 + minute;
+  };
+
   const calculateHours = () => {
     const timeIn = convertTo24Hour(timeInHour, timeInMinute, timeInAmPm);
     const timeOut = convertTo24Hour(timeOutHour, timeOutMinute, timeOutAmPm);
@@ -224,11 +231,46 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
         throw new Error("Completion status is required");
       }
 
-      // Use JSON instead of FormData since we're not uploading files yet
+      // Use FormData if there are images, otherwise use JSON
+      let requestData: any;
+      let isFormData = false;
+
+      if (workOrderData.images && workOrderData.images.length > 0) {
+        // Use FormData for image uploads
+        const formData = new FormData();
+        
+        // Add all non-image fields
+        Object.keys(workOrderData).forEach(key => {
+          if (key !== 'images') {
+            const value = workOrderData[key];
+            if (typeof value === 'object') {
+              formData.append(key, JSON.stringify(value));
+            } else {
+              formData.append(key, String(value));
+            }
+          }
+        });
+
+        // Add images from workImages state (which has the actual file objects)
+        workImages.forEach((image, index) => {
+          formData.append('images', {
+            uri: image.uri,
+            type: image.type || 'image/jpeg',
+            name: image.fileName || `work_image_${index}.jpg`,
+          } as any);
+        });
+
+        requestData = formData;
+        isFormData = true;
+      } else {
+        // Use JSON for requests without images
+        requestData = workOrderData;
+      }
+
       const response = await apiRequest(
         "POST",
         `/api/tickets/${ticket.id}/work-orders`,
-        workOrderData,
+        requestData,
       );
 
       if (!response.ok) {
@@ -261,6 +303,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
   });
 
   const handleSubmit = () => {
+    // Validate required fields
     if (!workDescription.trim()) {
       Alert.alert("Error", "Please provide a work description");
       return;
@@ -271,13 +314,37 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
       return;
     }
 
+    if (!managerName.trim()) {
+      Alert.alert("Error", "Manager name is required");
+      return;
+    }
+
+    if (!managerSignature) {
+      Alert.alert("Error", "Manager signature is required");
+      return;
+    }
+
+    if (completionStatus === "return_needed" && !returnReason.trim()) {
+      Alert.alert("Error", "Please provide a reason for return");
+      return;
+    }
+
+    // Validate time out is not before time in
+    const timeInMinutes = convertTimeToMinutes(timeInHour, timeInMinute, timeInAmPm);
+    const timeOutMinutes = convertTimeToMinutes(timeOutHour, timeOutMinute, timeOutAmPm);
+    
+    if (timeOutMinutes <= timeInMinutes) {
+      Alert.alert("Error", "Time out must be after time in");
+      return;
+    }
+
     const workOrderData = {
       workDescription,
       completionStatus,
       completionNotes:
         completionStatus === "return_needed" ? returnReason : completionNotes,
       parts: parts.filter((p) => p.name.trim() !== ""),
-
+      images: workImages.map(img => img.uri), // Include images
       timeIn: convertTo24Hour(timeInHour, timeInMinute, timeInAmPm),
       timeOut: convertTo24Hour(timeOutHour, timeOutMinute, timeOutAmPm),
       totalHours: calculateHours(),
@@ -1042,6 +1109,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
           {/* Manager Information & Signature */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Manager Information</Text>
+            <Text style={styles.label}>Manager/Supervisor Name *</Text>
             <TextInput
               style={styles.input}
               value={managerName}
@@ -1050,6 +1118,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
               placeholderTextColor="#9ca3af"
             />
 
+            <Text style={styles.label}>Manager Signature *</Text>
             <TouchableOpacity
               style={styles.signatureButton}
               onPress={() => {
@@ -1061,7 +1130,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
               <Text style={styles.signatureButtonText}>
                 {managerSignature
                   ? "Update Signature"
-                  : "Add Manager Signature"}
+                  : "Add Manager Signature (Required)"}
               </Text>
             </TouchableOpacity>
             {managerSignature && (
