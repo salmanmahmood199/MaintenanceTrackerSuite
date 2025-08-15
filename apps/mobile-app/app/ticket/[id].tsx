@@ -3076,26 +3076,30 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   descriptionContent: {
-    backgroundColor: "#f1f5f9",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderRadius: 8,
     padding: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
   },
   descriptionText: {
     fontSize: 16,
-    color: "#1e293b",
+    color: "#cbd5e1",
     lineHeight: 24,
   },
 
   imageSection: {
-    backgroundColor: "white",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
   },
   imageGrid: {
     flexDirection: "row",
@@ -3108,7 +3112,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
   },
   imagePreview: {
     width: "100%",
@@ -3116,15 +3121,17 @@ const styles = StyleSheet.create({
   },
 
   locationSection: {
-    backgroundColor: "white",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
   },
   locationContent: {
     gap: 4,
@@ -3132,37 +3139,39 @@ const styles = StyleSheet.create({
   locationName: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#1e293b",
+    color: "#ffffff",
   },
   locationAddress: {
     fontSize: 14,
-    color: "#64748b",
+    color: "#94a3b8",
     lineHeight: 20,
   },
 
   // Web-style Comments Tab
   addCommentCard: {
-    backgroundColor: "white",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
   },
   commentForm: {
     gap: 12,
   },
   commentInput: {
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: "rgba(255, 255, 255, 0.2)",
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    color: "#1e293b",
-    backgroundColor: "#f8fafc",
+    color: "#ffffff",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     minHeight: 100,
     textAlignVertical: "top",
   },
@@ -3186,24 +3195,28 @@ const styles = StyleSheet.create({
   },
 
   commentsCard: {
-    backgroundColor: "white",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderRadius: 12,
     padding: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
   },
   commentsList: {
     gap: 16,
   },
   commentItem: {
-    backgroundColor: "#f8fafc",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 8,
     padding: 12,
     borderLeftWidth: 4,
     borderLeftColor: "#3b82f6",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
   },
   commentHeader: {
     flexDirection: "row",
@@ -3217,21 +3230,21 @@ const styles = StyleSheet.create({
   commentAuthor: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#1e293b",
+    color: "#ffffff",
   },
   commentRole: {
     fontSize: 12,
-    color: "#64748b",
+    color: "#94a3b8",
     textTransform: "capitalize",
     marginTop: 2,
   },
   commentDate: {
     fontSize: 12,
-    color: "#64748b",
+    color: "#94a3b8",
   },
   commentContent: {
     fontSize: 14,
-    color: "#374151",
+    color: "#cbd5e1",
     lineHeight: 20,
   },
 
@@ -3268,7 +3281,7 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#1e293b",
+    color: "#ffffff",
   },
   progressTimeline: {
     gap: 20,
@@ -3291,12 +3304,12 @@ const styles = StyleSheet.create({
   timelineTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#1e293b",
+    color: "#ffffff",
     marginBottom: 4,
   },
   timelineDescription: {
     fontSize: 14,
-    color: "#64748b",
+    color: "#94a3b8",
     marginBottom: 2,
   },
   timelineDate: {
@@ -3328,17 +3341,17 @@ const styles = StyleSheet.create({
   stepTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#1f2937",
+    color: "#ffffff",
     marginBottom: 4,
   },
   stepDescription: {
     fontSize: 13,
-    color: "#4b5563",
+    color: "#94a3b8",
     marginBottom: 2,
   },
   stepDate: {
     fontSize: 11,
-    color: "#6b7280",
+    color: "#94a3b8",
     fontWeight: "500",
   },
   stepStatus: {
@@ -3362,24 +3375,26 @@ const styles = StyleSheet.create({
 
   // Web-style Work Orders Tab
   workOrdersCard: {
-    backgroundColor: "white",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderRadius: 12,
     padding: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
   },
   workOrdersList: {
     gap: 12,
   },
   workOrderItem: {
-    backgroundColor: "#f8fafc",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 8,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: "rgba(255, 255, 255, 0.1)",
   },
   workOrderHeader: {
     flexDirection: "row",
@@ -3390,7 +3405,7 @@ const styles = StyleSheet.create({
   workOrderTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#1e293b",
+    color: "#ffffff",
   },
   workOrderStatus: {
     paddingHorizontal: 8,
@@ -3405,7 +3420,7 @@ const styles = StyleSheet.create({
   },
   workOrderDescription: {
     fontSize: 14,
-    color: "#64748b",
+    color: "#cbd5e1",
     marginBottom: 8,
     lineHeight: 20,
   },
@@ -3419,7 +3434,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: "#e2e8f0",
+    borderTopColor: "rgba(255, 255, 255, 0.1)",
   },
   viewText: {
     fontSize: 12,
@@ -3461,7 +3476,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "#3b82f6",
-    backgroundColor: "white",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
   },
   imagePickerText: {
     color: "#3b82f6",
@@ -3488,7 +3503,7 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#64748b",
+    color: "#ffffff",
     marginTop: 16,
     marginBottom: 4,
   },
