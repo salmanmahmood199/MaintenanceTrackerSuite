@@ -1144,42 +1144,6 @@ const MobilePage = () => {
                   />
                 </div>
 
-                <div className="flex space-x-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="flex-1 text-xs p-2 h-8 bg-white/5 border-white/20 text-white hover:bg-white/10"
-                    onClick={() => {
-                      setEmail("");
-                      setPassword("");
-                    }}
-                  >
-                    Root
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="flex-1 text-xs p-2 h-8 bg-white/5 border-white/20 text-white hover:bg-white/10"
-                    onClick={() => {
-                      setEmail("");
-                      setPassword("");
-                    }}
-                  >
-                    Vendor
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="flex-1 text-xs p-2 h-8 bg-white/5 border-white/20 text-white hover:bg-white/10"
-                    onClick={() => {
-                      setEmail("");
-                      setPassword("");
-                    }}
-                  >
-                    Org Admin
-                  </Button>
-                </div>
-
                 <Button
                   type="submit"
                   className="w-full text-base py-6 bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-500 hover:from-teal-600 hover:via-cyan-600 hover:to-blue-600 text-white"
