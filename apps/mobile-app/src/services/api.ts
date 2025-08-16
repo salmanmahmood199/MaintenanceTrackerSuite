@@ -12,7 +12,7 @@ const getApiUrl = () => {
   if (__DEV__ && process.env.NODE_ENV === "development") {
     // For local Expo development, use local network IP
     // You may need to update this IP to match your local machine's IP
-    return "http://YOUR_LOCAL_IP:5000"; // Replace YOUR_LOCAL_IP with your actual IP
+    return "http://192.168.1.153:5000";
   }
   
   // For production or Replit deployment
