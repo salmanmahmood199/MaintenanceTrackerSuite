@@ -8,9 +8,15 @@ const getApiUrl = () => {
     return process.env.EXPO_PUBLIC_API_URL;
   }
   
-  // In development, use the Replit URL
+  // Check if running in Expo development mode
+  if (__DEV__ && process.env.NODE_ENV === "development") {
+    // For local Expo development, use local network IP
+    // You may need to update this IP to match your local machine's IP
+    return "http://YOUR_LOCAL_IP:5000"; // Replace YOUR_LOCAL_IP with your actual IP
+  }
+  
+  // For production or Replit deployment
   if (process.env.NODE_ENV === "development") {
-    // Use your Replit app URL
     return "https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev";
   }
   
