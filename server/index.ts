@@ -20,7 +20,8 @@ app.use(cors({
     'exp://192.168.1.153:8081',
     /^http:\/\/192\.168\.\d+\.\d+:(8081|5000)$/,  // Allow any local network IP with port 8081 or 5000
     /^exp:\/\/192\.168\.\d+\.\d+:8081$/,   // Allow Expo URLs
-    /^http:\/\/.*\.replit\.dev$/,           // Allow Replit domains
+    /^https:\/\/.*\.replit\.dev$/,          // Allow Replit domains (HTTPS)
+    'https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev', // Specific Replit URL
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

@@ -5,7 +5,7 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-import { apiRequest } from "../services/api";
+import { apiRequest, tokenStorage } from "../services/api";
 import { router } from "expo-router";
 
 interface User {
@@ -79,6 +79,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       // Handle different response formats
       const userData = responseData.user || responseData;
+      const token = responseData.token;
+
+      // Store JWT token for mobile authentication
+      if (token) {
+        tokenStorage.setToken(token);
+      }
 
       setUser(userData);
     } catch (error) {
@@ -95,6 +101,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
+      // Clear stored JWT token
+      tokenStorage.removeToken();
       setUser(null);
       router.replace("/");
     }

@@ -1,4 +1,11 @@
-// Removed AsyncStorage dependency for now to fix mobile app connectivity
+// Simple token storage for mobile authentication
+let authToken: string | null = null;
+
+export const tokenStorage = {
+  setToken: (token: string) => { authToken = token; },
+  getToken: () => authToken,
+  removeToken: () => { authToken = null; },
+};
 
 // API configuration and utilities
 // Get the API URL from environment or use defaults
@@ -40,13 +47,18 @@ export async function apiRequest(
     ? endpoint
     : `${API_BASE_URL}${endpoint}`;
 
+  // Get JWT token from token storage for mobile authentication
+  const token = tokenStorage.getToken();
+
   const config: RequestInit = {
     method,
     headers: {
       "Content-Type": "application/json",
+      // Add JWT token to Authorization header if available
+      ...(token && { "Authorization": `Bearer ${token}` }),
       ...options?.headers,
     },
-    // Use 'include' for cookie-based auth with Replit
+    // Use 'include' for cookie-based auth with Replit (fallback)
     credentials: "include",
     ...options,
   };
