@@ -5,7 +5,7 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-import { apiRequest, tokenStorage } from "../services/api";
+import { apiRequest } from "../services/api";
 import { router } from "expo-router";
 
 interface User {
@@ -40,8 +40,9 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>();
   const [isLoading, setIsLoading] = useState(true);
+  const [loaded, setLoaded] = useState(false);
 
   const checkAuthStatus = async () => {
     try {
@@ -59,6 +60,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(null);
     } finally {
       setIsLoading(false);
+      setLoaded(true);
     }
   };
 
@@ -79,12 +81,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       // Handle different response formats
       const userData = responseData.user || responseData;
-      const token = responseData.token;
-
-      // Store JWT token for mobile authentication
-      if (token) {
-        tokenStorage.setToken(token);
-      }
 
       setUser(userData);
     } catch (error) {
@@ -101,8 +97,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
-      // Clear stored JWT token
-      tokenStorage.removeToken();
       setUser(null);
       router.replace("/");
     }
@@ -118,6 +112,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     logout,
     checkAuthStatus,
     isLoading,
+    loaded,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

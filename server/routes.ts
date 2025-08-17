@@ -110,17 +110,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
-      // Set session for web clients
       req.session.userId = user.id;
-      
-      // Generate JWT token for mobile clients
-      const jwt = require('jsonwebtoken');
-      const token = jwt.sign(
-        { userId: user.id, email: user.email, role: user.role },
-        process.env.SESSION_SECRET || 'your-secret-key',
-        { expiresIn: '24h' }
-      );
-
       res.json({
         user: {
           id: user.id,
@@ -131,7 +121,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           organizationId: user.organizationId,
           maintenanceVendorId: user.maintenanceVendorId,
         },
-        token, // Include JWT token for mobile apps
       });
     } catch (error: any) {
       res.status(400).json({ message: "Invalid login data" });

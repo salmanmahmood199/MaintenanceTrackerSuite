@@ -30,28 +30,9 @@ export default function TicketsScreen() {
         // Handle different response formats from the API
         const ticketsData = data?.tickets ?? data ?? [];
         // Ensure we always return an array
-        const tickets = Array.isArray(ticketsData) ? ticketsData : [];
-        
-        // Normalize ticket data to ensure consistent location formatting
-        const normalizedTickets = tickets.map(ticket => ({
-          ...ticket,
-          // Ensure ticketNumber is always available
-          displayNumber: ticket.ticketNumber || `#${ticket.id}`,
-          // Normalize location data - API returns locationName, locationAddress etc as separate fields
-          location: ticket.location || (
-            ticket.locationName || ticket.locationId ? {
-              name: ticket.locationName || 'Unknown Location',
-              address: ticket.locationAddress,
-              city: ticket.locationCity,
-              state: ticket.locationState,
-              zip: ticket.locationZip
-            } : null
-          )
-        }));
-        
-        console.log('Final tickets being returned to UI:', normalizedTickets.length);
-        console.log('Sample ticket data:', normalizedTickets[0]);
-        return normalizedTickets;
+        const finalTickets = Array.isArray(ticketsData) ? ticketsData : [];
+        console.log('Final tickets being returned to UI:', finalTickets.length);
+        return finalTickets;
       } catch (err) {
         console.error('Error fetching tickets:', err);
         throw err;
@@ -135,7 +116,7 @@ export default function TicketsScreen() {
           >
             <View style={styles.ticketHeader}>
               <Text style={styles.ticketNumber}>
-                {item.displayNumber}
+                {item.ticketNumber ?? `#${item.id ?? item._id}`}
               </Text>
               <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
                 <Text style={styles.statusText}>{item.status ?? "open"}</Text>
@@ -166,9 +147,7 @@ export default function TicketsScreen() {
                 )}
               </View>
               {item.location?.name && (
-                <Text style={styles.locationText} numberOfLines={1}>
-                  📍 {item.location.name}
-                </Text>
+                <Text style={styles.locationText}>{item.location.name}</Text>
               )}
             </View>
           </TouchableOpacity>

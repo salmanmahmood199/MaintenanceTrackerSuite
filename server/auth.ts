@@ -5,18 +5,14 @@ import type { User } from '@shared/schema';
 
 // Session configuration
 export function getSessionConfig() {
-  const isProduction = process.env.NODE_ENV === 'production';
-  const isReplit = process.env.REPL_ID !== undefined;
-  
   return session({
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: isProduction || isReplit, // Use secure cookies for production and Replit (HTTPS)
-      httpOnly: false, // Allow mobile app access to cookies
+      secure: false, // Set to true in production with HTTPS
+      httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      sameSite: isProduction || isReplit ? 'none' : 'lax', // More permissive for cross-origin (mobile app)
     },
   });
 }
@@ -32,32 +28,12 @@ declare global {
 
 // Authentication middleware
 export async function authenticateUser(req: Request, res: Response, next: NextFunction) {
-  let userId: number | null = null;
-
-  // Check session-based auth first (for web clients)
-  if (req.session && req.session.userId) {
-    userId = req.session.userId;
-  } else {
-    // Check JWT token in Authorization header (for mobile clients)
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      try {
-        const jwt = require('jsonwebtoken');
-        const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-        const decoded = jwt.verify(token, process.env.SESSION_SECRET || 'your-secret-key');
-        userId = decoded.userId;
-      } catch (jwtError) {
-        // JWT verification failed, continue to return 401
-      }
-    }
-  }
-
-  if (!userId) {
+  if (!req.session || !req.session.userId) {
     return res.status(401).json({ message: 'Not authenticated' });
   }
 
   try {
-    const user = await storage.getUser(userId);
+    const user = await storage.getUser(req.session.userId);
     if (!user || !user.isActive) {
       return res.status(401).json({ message: 'User not found or inactive' });
     }

@@ -1,11 +1,4 @@
-// Simple token storage for mobile authentication
-let authToken: string | null = null;
-
-export const tokenStorage = {
-  setToken: (token: string) => { authToken = token; },
-  getToken: () => authToken,
-  removeToken: () => { authToken = null; },
-};
+// Removed AsyncStorage dependency for now to fix mobile app connectivity
 
 // API configuration and utilities
 // Get the API URL from environment or use defaults
@@ -15,15 +8,9 @@ const getApiUrl = () => {
     return process.env.EXPO_PUBLIC_API_URL;
   }
   
-  // Check if running in Expo development mode
-  if (__DEV__ && process.env.NODE_ENV === "development") {
-    // For local Expo development, use local network IP
-    // You may need to update this IP to match your local machine's IP
-    return "http://192.168.1.153:5000";
-  }
-  
-  // For production or Replit deployment
+  // In development, use the Replit URL
   if (process.env.NODE_ENV === "development") {
+    // Use your Replit app URL
     return "https://1527dda9-8c70-4330-bd5b-ff8271c57e0a-00-39f9hruuvsyju.picard.replit.dev";
   }
   
@@ -47,18 +34,13 @@ export async function apiRequest(
     ? endpoint
     : `${API_BASE_URL}${endpoint}`;
 
-  // Get JWT token from token storage for mobile authentication
-  const token = tokenStorage.getToken();
-
   const config: RequestInit = {
     method,
     headers: {
       "Content-Type": "application/json",
-      // Add JWT token to Authorization header if available
-      ...(token && { "Authorization": `Bearer ${token}` }),
       ...options?.headers,
     },
-    // Use 'include' for cookie-based auth with Replit (fallback)
+    // Use 'include' for cookie-based auth with Replit
     credentials: "include",
     ...options,
   };
