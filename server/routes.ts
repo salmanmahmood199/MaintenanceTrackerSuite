@@ -2219,10 +2219,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ticketId: parseInt(ticketId),
           vendorId: user.maintenanceVendorId,
           hourlyRate: hourlyRate.toString(),
-          estimatedHours: estimatedHours.toString(),
+          estimatedHours: estimatedHours ? estimatedHours.toString() : "0",
           responseTime,
           parts: parts || [],
-          totalAmount: totalAmount.toString(),
+          totalAmount: totalAmount ? totalAmount.toString() : "0",
           additionalNotes,
         });
 

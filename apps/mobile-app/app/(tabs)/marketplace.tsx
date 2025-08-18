@@ -10,7 +10,9 @@ import {
   Alert,
   Modal,
   TextInput,
+  Platform,
 } from "react-native";
+// Note: Using a simple manual date selection for now since date picker dependencies have conflicts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "../../src/services/api";
 import { Ionicons } from "@expo/vector-icons";
@@ -68,6 +70,8 @@ function BidModal({ visible, onClose, ticket, existingBid, onSubmit, isLoading }
   const [responseTimeValue, setResponseTimeValue] = useState("");
   const [responseTimeUnit, setResponseTimeUnit] = useState("hours");
   const [additionalNotes, setAdditionalNotes] = useState(existingBid?.additionalNotes || "");
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Parse existing response time if available
   React.useEffect(() => {
@@ -86,12 +90,25 @@ function BidModal({ visible, onClose, ticket, existingBid, onSubmit, isLoading }
   }, [existingBid]);
 
   const handleSubmit = () => {
-    if (!hourlyRate || !responseTimeValue) {
-      Alert.alert("Error", "Please fill in all required fields");
-      return;
+    let responseTime = "";
+    
+    if (responseTimeUnit === "hours") {
+      if (!responseTimeValue) {
+        Alert.alert("Error", "Please enter response time in hours");
+        return;
+      }
+      responseTime = `${responseTimeValue} ${responseTimeUnit}`;
+    } else {
+      // For days, format the selected date
+      const today = new Date();
+      const daysDiff = Math.ceil((selectedDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      responseTime = selectedDate.toLocaleDateString();
     }
 
-    const responseTime = `${responseTimeValue} ${responseTimeUnit}`;
+    if (!hourlyRate) {
+      Alert.alert("Error", "Please enter hourly rate");
+      return;
+    }
     
     const bidData = {
       ticketId: ticket?.id,
@@ -108,6 +125,22 @@ function BidModal({ visible, onClose, ticket, existingBid, onSubmit, isLoading }
     setResponseTimeValue("");
     setResponseTimeUnit("hours");
     setAdditionalNotes("");
+    setSelectedDate(new Date());
+  };
+
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    const currentDate = selectedDate || new Date();
+    setShowDatePicker(Platform.OS === 'ios');
+    setSelectedDate(currentDate);
+  };
+
+  const formatSelectedDate = () => {
+    return selectedDate.toLocaleDateString('en-US', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   };
 
   return (
@@ -154,45 +187,97 @@ function BidModal({ visible, onClose, ticket, existingBid, onSubmit, isLoading }
 
           <View style={styles.formGroup}>
             <Text style={styles.label}>Response Time *</Text>
-            <View style={styles.responseTimeContainer}>
+            <View style={styles.unitSelector}>
+              <TouchableOpacity
+                style={[
+                  styles.unitButton,
+                  responseTimeUnit === "hours" && styles.unitButtonActive
+                ]}
+                onPress={() => setResponseTimeUnit("hours")}
+              >
+                <Text style={[
+                  styles.unitButtonText,
+                  responseTimeUnit === "hours" && styles.unitButtonTextActive
+                ]}>
+                  Hours
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.unitButton,
+                  responseTimeUnit === "days" && styles.unitButtonActive
+                ]}
+                onPress={() => setResponseTimeUnit("days")}
+              >
+                <Text style={[
+                  styles.unitButtonText,
+                  responseTimeUnit === "days" && styles.unitButtonTextActive
+                ]}>
+                  Days
+                </Text>
+              </TouchableOpacity>
+            </View>
+            
+            {responseTimeUnit === "hours" ? (
               <TextInput
-                style={[styles.input, styles.responseTimeInput]}
+                style={styles.input}
                 value={responseTimeValue}
                 onChangeText={setResponseTimeValue}
-                placeholder="Enter time"
+                placeholder="Enter hours (e.g., 24)"
                 keyboardType="numeric"
               />
-              <View style={styles.unitSelector}>
-                <TouchableOpacity
-                  style={[
-                    styles.unitButton,
-                    responseTimeUnit === "hours" && styles.unitButtonActive
-                  ]}
-                  onPress={() => setResponseTimeUnit("hours")}
-                >
-                  <Text style={[
-                    styles.unitButtonText,
-                    responseTimeUnit === "hours" && styles.unitButtonTextActive
-                  ]}>
-                    Hours
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.unitButton,
-                    responseTimeUnit === "days" && styles.unitButtonActive
-                  ]}
-                  onPress={() => setResponseTimeUnit("days")}
-                >
-                  <Text style={[
-                    styles.unitButtonText,
-                    responseTimeUnit === "days" && styles.unitButtonTextActive
-                  ]}>
-                    Days
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.dateButton}
+                onPress={() => setShowDatePicker(true)}
+              >
+                <Text style={styles.dateButtonText}>
+                  {formatSelectedDate()}
+                </Text>
+                <Ionicons name="calendar-outline" size={20} color="#6b7280" />
+              </TouchableOpacity>
+            )}
+            
+            {showDatePicker && (
+              <Modal visible={showDatePicker} transparent={true} animationType="slide">
+                <View style={styles.datePickerModal}>
+                  <View style={styles.datePickerContainer}>
+                    <Text style={styles.datePickerTitle}>Select Response Date</Text>
+                    <ScrollView style={styles.dateOptions}>
+                      {Array.from({ length: 30 }, (_, i) => {
+                        const date = new Date();
+                        date.setDate(date.getDate() + i + 1);
+                        return (
+                          <TouchableOpacity
+                            key={i}
+                            style={styles.dateOption}
+                            onPress={() => {
+                              setSelectedDate(date);
+                              setShowDatePicker(false);
+                            }}
+                          >
+                            <Text style={styles.dateOptionText}>
+                              {date.toLocaleDateString('en-US', {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
+                    <TouchableOpacity
+                      style={styles.cancelDateButton}
+                      onPress={() => setShowDatePicker(false)}
+                    >
+                      <Text style={styles.cancelDateButtonText}>Cancel</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </Modal>
+            )}
           </View>
 
           <View style={styles.formGroup}>
@@ -851,6 +936,67 @@ const styles = StyleSheet.create({
   },
   unitButtonTextActive: {
     color: "#fff",
+  },
+  dateButton: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: "#fff",
+  },
+  dateButtonText: {
+    fontSize: 16,
+    color: "#374151",
+  },
+  datePickerModal: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  datePickerContainer: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 20,
+    margin: 20,
+    maxHeight: "70%",
+    width: "90%",
+  },
+  datePickerTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#111827",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  dateOptions: {
+    maxHeight: 300,
+  },
+  dateOption: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e5e7eb",
+  },
+  dateOptionText: {
+    fontSize: 16,
+    color: "#374151",
+  },
+  cancelDateButton: {
+    backgroundColor: "#6b7280",
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 16,
+  },
+  cancelDateButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
   },
   submitButton: {
     backgroundColor: "#3B82F6",
