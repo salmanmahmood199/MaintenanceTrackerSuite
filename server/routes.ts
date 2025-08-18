@@ -2371,7 +2371,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post(
     "/api/marketplace/bids/:id/accept-counter",
     authenticateUser,
-    requireRole(["maintenance_vendor"]),
+    requireRole(["maintenance_admin"]),
     async (req: AuthenticatedRequest, res) => {
       try {
         const bidId = parseInt(req.params.id);
@@ -2389,7 +2389,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post(
     "/api/marketplace/bids/:id/reject-counter",
     authenticateUser,
-    requireRole(["maintenance_vendor"]),
+    requireRole(["maintenance_admin"]),
     async (req: AuthenticatedRequest, res) => {
       try {
         const bidId = parseInt(req.params.id);
