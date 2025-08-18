@@ -2288,12 +2288,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const bid = await storage.updateMarketplaceBid(bidId, {
-          hourlyRate: hourlyRate.toString(),
-          estimatedHours: estimatedHours.toString(),
-          responseTime,
-          parts: parts || [],
-          totalAmount: totalAmount.toString(),
-          additionalNotes,
+          hourlyRate: hourlyRate?.toString() || existingBid.hourlyRate,
+          estimatedHours: estimatedHours?.toString() || existingBid.estimatedHours || "0",
+          responseTime: responseTime || existingBid.responseTime,
+          parts: parts || existingBid.parts || [],
+          totalAmount: totalAmount?.toString() || existingBid.totalAmount || "0",
+          additionalNotes: additionalNotes || existingBid.additionalNotes,
           updatedAt: new Date(),
         });
 
