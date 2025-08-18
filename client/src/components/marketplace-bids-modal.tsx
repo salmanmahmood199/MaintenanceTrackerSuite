@@ -467,12 +467,12 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="counterAmount" className="text-sm font-medium text-gray-700 dark:text-gray-200">Counter Hourly Rate ($/hr)</Label>
+                  <Label htmlFor="counterAmount" className="text-sm font-medium text-gray-700 dark:text-gray-200">Enter Your Counter Hourly Rate ($/hr)</Label>
                   <Input
                     id="counterAmount"
                     type="number"
                     step="0.01"
-                    placeholder="Enter your counter hourly rate"
+                    placeholder="e.g., 75.00"
                     value={counterAmount}
                     onChange={(e) => setCounterAmount(e.target.value)}
                     className="mt-1 bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-500 text-gray-900 dark:text-gray-100"
@@ -485,10 +485,10 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
                 </div>
               </div>
               <div>
-                <Label htmlFor="counterNotes" className="text-sm font-medium text-gray-700 dark:text-gray-200">Counter Offer Notes</Label>
+                <Label htmlFor="counterNotes" className="text-sm font-medium text-gray-700 dark:text-gray-200">Additional Comments (Required)</Label>
                 <Textarea
                   id="counterNotes"
-                  placeholder="Explain your counter offer and any conditions..."
+                  placeholder="Please explain why you're making this counter offer (e.g., material costs, complexity, urgency, etc.)"
                   value={counterNotes}
                   onChange={(e) => setCounterNotes(e.target.value)}
                   rows={4}
