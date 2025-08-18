@@ -139,14 +139,6 @@ export default function BidDetailsModal({
                 <Text style={styles.detailValue}>${bid.hourlyRate}/hr</Text>
               </View>
               <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Estimated Hours</Text>
-                <Text style={styles.detailValue}>{bid.estimatedHours} hrs</Text>
-              </View>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Total Amount</Text>
-                <Text style={styles.detailValue}>${bid.totalAmount}</Text>
-              </View>
-              <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>Response Time</Text>
                 <Text style={styles.detailValue}>{bid.responseTime}</Text>
               </View>

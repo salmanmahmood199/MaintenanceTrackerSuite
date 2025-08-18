@@ -65,24 +65,38 @@ interface BidModalProps {
 
 function BidModal({ visible, onClose, ticket, existingBid, onSubmit, isLoading }: BidModalProps) {
   const [hourlyRate, setHourlyRate] = useState(existingBid?.hourlyRate || "");
-  const [estimatedHours, setEstimatedHours] = useState(existingBid?.estimatedHours || "");
-  const [responseTime, setResponseTime] = useState(existingBid?.responseTime || "");
-  const [totalAmount, setTotalAmount] = useState(existingBid?.totalAmount || "");
+  const [responseTimeValue, setResponseTimeValue] = useState("");
+  const [responseTimeUnit, setResponseTimeUnit] = useState("hours");
   const [additionalNotes, setAdditionalNotes] = useState(existingBid?.additionalNotes || "");
 
+  // Parse existing response time if available
+  React.useEffect(() => {
+    if (existingBid?.responseTime) {
+      const responseTimeStr = existingBid.responseTime.toLowerCase();
+      if (responseTimeStr.includes("day")) {
+        setResponseTimeUnit("days");
+        const match = responseTimeStr.match(/(\d+)/);
+        setResponseTimeValue(match ? match[1] : "");
+      } else {
+        setResponseTimeUnit("hours");
+        const match = responseTimeStr.match(/(\d+)/);
+        setResponseTimeValue(match ? match[1] : "");
+      }
+    }
+  }, [existingBid]);
+
   const handleSubmit = () => {
-    if (!hourlyRate || !estimatedHours || !responseTime || !totalAmount) {
+    if (!hourlyRate || !responseTimeValue) {
       Alert.alert("Error", "Please fill in all required fields");
       return;
     }
 
+    const responseTime = `${responseTimeValue} ${responseTimeUnit}`;
+    
     const bidData = {
       ticketId: ticket?.id,
       hourlyRate,
-      estimatedHours,
       responseTime,
-      parts: [],
-      totalAmount,
       additionalNotes,
     };
 
@@ -91,9 +105,8 @@ function BidModal({ visible, onClose, ticket, existingBid, onSubmit, isLoading }
 
   const resetForm = () => {
     setHourlyRate("");
-    setEstimatedHours("");
-    setResponseTime("");
-    setTotalAmount("");
+    setResponseTimeValue("");
+    setResponseTimeUnit("hours");
     setAdditionalNotes("");
   };
 
@@ -140,35 +153,46 @@ function BidModal({ visible, onClose, ticket, existingBid, onSubmit, isLoading }
           </View>
 
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Estimated Hours *</Text>
-            <TextInput
-              style={styles.input}
-              value={estimatedHours}
-              onChangeText={setEstimatedHours}
-              placeholder="Enter estimated hours"
-              keyboardType="numeric"
-            />
-          </View>
-
-          <View style={styles.formGroup}>
             <Text style={styles.label}>Response Time *</Text>
-            <TextInput
-              style={styles.input}
-              value={responseTime}
-              onChangeText={setResponseTime}
-              placeholder="e.g., Within 24 hours"
-            />
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Total Amount ($) *</Text>
-            <TextInput
-              style={styles.input}
-              value={totalAmount}
-              onChangeText={setTotalAmount}
-              placeholder="Enter total bid amount"
-              keyboardType="numeric"
-            />
+            <View style={styles.responseTimeContainer}>
+              <TextInput
+                style={[styles.input, styles.responseTimeInput]}
+                value={responseTimeValue}
+                onChangeText={setResponseTimeValue}
+                placeholder="Enter time"
+                keyboardType="numeric"
+              />
+              <View style={styles.unitSelector}>
+                <TouchableOpacity
+                  style={[
+                    styles.unitButton,
+                    responseTimeUnit === "hours" && styles.unitButtonActive
+                  ]}
+                  onPress={() => setResponseTimeUnit("hours")}
+                >
+                  <Text style={[
+                    styles.unitButtonText,
+                    responseTimeUnit === "hours" && styles.unitButtonTextActive
+                  ]}>
+                    Hours
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.unitButton,
+                    responseTimeUnit === "days" && styles.unitButtonActive
+                  ]}
+                  onPress={() => setResponseTimeUnit("days")}
+                >
+                  <Text style={[
+                    styles.unitButtonText,
+                    responseTimeUnit === "days" && styles.unitButtonTextActive
+                  ]}>
+                    Days
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
 
           <View style={styles.formGroup}>
@@ -797,6 +821,36 @@ const styles = StyleSheet.create({
   textArea: {
     height: 80,
     textAlignVertical: "top",
+  },
+  responseTimeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  responseTimeInput: {
+    flex: 1,
+  },
+  unitSelector: {
+    flexDirection: "row",
+    backgroundColor: "#f3f4f6",
+    borderRadius: 8,
+    padding: 2,
+  },
+  unitButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  unitButtonActive: {
+    backgroundColor: "#3B82F6",
+  },
+  unitButtonText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#6b7280",
+  },
+  unitButtonTextActive: {
+    color: "#fff",
   },
   submitButton: {
     backgroundColor: "#3B82F6",

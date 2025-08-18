@@ -2884,7 +2884,7 @@ export default function TicketDetailsScreen() {
                           <Text style={styles.bidVendorName}>
                             {bid.vendor?.companyName || 'Unknown Vendor'}
                           </Text>
-                          <Text style={styles.bidAmount}>${bid.totalAmount}</Text>
+                          <Text style={styles.bidAmount}>${bid.hourlyRate}/hr</Text>
                         </View>
                         <View
                           style={[
@@ -2904,10 +2904,6 @@ export default function TicketDetailsScreen() {
                         <View style={styles.bidDetailRow}>
                           <Text style={styles.bidDetailLabel}>Hourly Rate:</Text>
                           <Text style={styles.bidDetailValue}>${bid.hourlyRate}/hr</Text>
-                        </View>
-                        <View style={styles.bidDetailRow}>
-                          <Text style={styles.bidDetailLabel}>Est. Hours:</Text>
-                          <Text style={styles.bidDetailValue}>{bid.estimatedHours} hrs</Text>
                         </View>
                         <View style={styles.bidDetailRow}>
                           <Text style={styles.bidDetailLabel}>Response Time:</Text>
