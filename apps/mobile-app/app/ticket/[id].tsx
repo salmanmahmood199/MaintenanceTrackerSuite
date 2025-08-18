@@ -2900,6 +2900,19 @@ export default function TicketDetailsScreen() {
                       onPress={() => handleViewBid(bid)}
                       activeOpacity={0.7}
                     >
+                      {/* Superseded Bid Warning */}
+                      {bid.isSuperseded && (
+                        <View style={styles.bidSupersededBanner}>
+                          <View style={styles.bidSupersededHeader}>
+                            <Ionicons name="warning" size={16} color="#dc2626" />
+                            <Text style={styles.bidSupersededTitle}>This bid has been updated</Text>
+                          </View>
+                          <Text style={styles.bidSupersededMessage}>
+                            Newer version (v{(bid.version || 1) + 1}) available. This version is outdated.
+                          </Text>
+                        </View>
+                      )}
+                      
                       <View style={styles.bidHeader}>
                         <View style={styles.bidVendorInfo}>
                           <Text style={styles.bidVendorName}>
@@ -4018,5 +4031,29 @@ const styles = StyleSheet.create({
     color: "#6b7280",
     textAlign: "center",
     marginTop: 4,
+  },
+  bidSupersededBanner: {
+    backgroundColor: "#fef2f2",
+    borderColor: "#fca5a5",
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+  },
+  bidSupersededHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  bidSupersededTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#dc2626",
+    marginLeft: 6,
+  },
+  bidSupersededMessage: {
+    fontSize: 12,
+    color: "#991b1b",
+    lineHeight: 16,
   },
 });

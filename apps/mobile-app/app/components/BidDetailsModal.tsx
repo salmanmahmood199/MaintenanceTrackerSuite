@@ -144,6 +144,19 @@ export default function BidDetailsModal({
         </View>
 
         <ScrollView style={styles.content}>
+          {/* Superseded Bid Warning */}
+          {bid.isSuperseded && (
+            <View style={styles.supersededBanner}>
+              <View style={styles.supersededHeader}>
+                <Ionicons name="warning" size={20} color="#dc2626" />
+                <Text style={styles.supersededTitle}>This bid has been updated</Text>
+              </View>
+              <Text style={styles.supersededMessage}>
+                This is an older version (v{bid.version || 1}) of the bid. A newer version has been submitted.
+              </Text>
+            </View>
+          )}
+
           {/* Ticket Info */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Ticket Information</Text>
@@ -225,7 +238,7 @@ export default function BidDetailsModal({
           )}
 
           {/* Organization Actions */}
-          {isOrganization && bid.status === "pending" && (
+          {isOrganization && bid.status === "pending" && !bid.isSuperseded && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Actions</Text>
               <View style={styles.actionsContainer}>
@@ -260,7 +273,7 @@ export default function BidDetailsModal({
           )}
 
           {/* Vendor Actions - Update Own Bid */}
-          {!isOrganization && bid.status === "pending" && (
+          {!isOrganization && bid.status === "pending" && !bid.isSuperseded && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Update Your Bid</Text>
               <View style={styles.actionsContainer}>
@@ -580,5 +593,29 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
+  },
+  supersededBanner: {
+    backgroundColor: "#fef2f2",
+    borderColor: "#fca5a5",
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 16,
+  },
+  supersededHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  supersededTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#dc2626",
+    marginLeft: 8,
+  },
+  supersededMessage: {
+    fontSize: 14,
+    color: "#991b1b",
+    lineHeight: 20,
   },
 });
