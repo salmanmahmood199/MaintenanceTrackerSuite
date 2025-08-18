@@ -2882,7 +2882,7 @@ export default function TicketDetailsScreen() {
                       <View style={styles.bidHeader}>
                         <View style={styles.bidVendorInfo}>
                           <Text style={styles.bidVendorName}>
-                            {bid.vendor?.companyName || 'Unknown Vendor'}
+                            {bid.vendor?.companyName || bid.vendor?.name || bid.vendorName || 'Unknown Vendor'}
                           </Text>
                           <Text style={styles.bidAmount}>${bid.hourlyRate}/hr</Text>
                         </View>
@@ -2918,12 +2918,12 @@ export default function TicketDetailsScreen() {
                       )}
 
                       <Text style={styles.bidDate}>
-                        Submitted: {new Date(bid.createdAt).toLocaleDateString("en-US", {
+                        Submitted: {bid.createdAt ? new Date(bid.createdAt).toLocaleDateString("en-US", {
                           month: "short",
                           day: "numeric",
                           hour: "2-digit",
                           minute: "2-digit",
-                        })}
+                        }) : 'Recently'}
                       </Text>
 
                       {/* View indicator */}

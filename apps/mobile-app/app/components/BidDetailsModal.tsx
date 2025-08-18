@@ -122,8 +122,8 @@ export default function BidDetailsModal({
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Ticket Information</Text>
             <View style={styles.ticketInfo}>
-              <Text style={styles.ticketTitle}>{bid.ticket.title}</Text>
-              <Text style={styles.ticketNumber}>#{bid.ticket.ticketNumber}</Text>
+              <Text style={styles.ticketTitle}>{bid.ticket?.title || 'Untitled Ticket'}</Text>
+              <Text style={styles.ticketNumber}>#{bid.ticket?.ticketNumber || bid.ticketNumber || 'N/A'}</Text>
               <View style={[styles.statusBadge, { backgroundColor: getStatusColor(bid.status) }]}>
                 <Text style={styles.statusText}>{getStatusText(bid.status)}</Text>
               </View>
@@ -134,6 +134,10 @@ export default function BidDetailsModal({
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Bid Details</Text>
             <View style={styles.bidDetails}>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Vendor</Text>
+                <Text style={styles.detailValue}>{bid.vendor?.companyName || bid.vendor?.name || bid.vendorName || 'Unknown Vendor'}</Text>
+              </View>
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>Hourly Rate</Text>
                 <Text style={styles.detailValue}>${bid.hourlyRate}/hr</Text>
