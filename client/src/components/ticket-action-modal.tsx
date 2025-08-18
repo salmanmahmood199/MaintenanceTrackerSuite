@@ -29,6 +29,7 @@ interface TicketActionModalProps {
   userRole?: string;
   userPermissions?: string[];
   userVendorTiers?: string[];
+  currentUser?: { id: number; firstName: string; lastName: string; email: string };
 }
 
 export function TicketActionModal({
@@ -43,7 +44,8 @@ export function TicketActionModal({
   isLoading,
   userRole,
   userPermissions,
-  userVendorTiers
+  userVendorTiers,
+  currentUser
 }: TicketActionModalProps) {
   const [selectedVendorId, setSelectedVendorId] = useState<string>("");
   const [rejectionReason, setRejectionReason] = useState("");
@@ -192,16 +194,27 @@ export function TicketActionModal({
                       </SelectItem>
                       
                       {userRole === "maintenance_admin" ? (
-                        // Show technicians for maintenance admin
-                        technicians.map((technician) => (
-                          <SelectItem key={technician.id} value={`tech_${technician.id}`}>
-                            <div className="flex items-center gap-2">
-                              <User className="h-4 w-4" />
-                              <span>{technician.firstName} {technician.lastName}</span>
-                              <span className="text-xs text-slate-500">({technician.email})</span>
-                            </div>
-                          </SelectItem>
-                        ))
+                        // Show self-assignment option and technicians for maintenance admin
+                        <>
+                          {currentUser && (
+                            <SelectItem value={`tech_${currentUser.id}`}>
+                              <div className="flex items-center gap-2">
+                                <User className="h-4 w-4 text-blue-600" />
+                                <span>Assign to Myself</span>
+                                <span className="text-xs text-slate-500">({currentUser.firstName} {currentUser.lastName})</span>
+                              </div>
+                            </SelectItem>
+                          )}
+                          {technicians.map((technician) => (
+                            <SelectItem key={technician.id} value={`tech_${technician.id}`}>
+                              <div className="flex items-center gap-2">
+                                <User className="h-4 w-4" />
+                                <span>{technician.firstName} {technician.lastName}</span>
+                                <span className="text-xs text-slate-500">({technician.email})</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </>
                       ) : (
                         // Show vendors for org users
                         <>
@@ -231,9 +244,14 @@ export function TicketActionModal({
                       No active vendors available for assignment
                     </p>
                   )}
-                  {userRole === "maintenance_admin" && technicians.length === 0 && (
+                  {userRole === "maintenance_admin" && technicians.length === 0 && !currentUser && (
                     <p className="text-sm text-slate-500 mt-1">
                       No technicians available for assignment
+                    </p>
+                  )}
+                  {userRole === "maintenance_admin" && technicians.length === 0 && currentUser && (
+                    <p className="text-sm text-slate-500 mt-1">
+                      You can assign the ticket to yourself or add technicians to your team
                     </p>
                   )}
                 </div>

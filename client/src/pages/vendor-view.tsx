@@ -940,6 +940,7 @@ export function VendorView() {
           isLoading={
             acceptTicketMutation.isPending || rejectTicketMutation.isPending
           }
+          currentUser={user}
         />
 
         <CreateTechnicianModal

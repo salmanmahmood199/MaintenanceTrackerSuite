@@ -1760,12 +1760,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(403).json({ message: "You can only assign technicians to your own tickets" });
         }
 
-        // Verify the technician belongs to this vendor
-        const technicians = await storage.getTechnicians(user.maintenanceVendorId!);
-        const technician = technicians.find(t => t.id === assigneeId);
-        
-        if (!technician) {
-          return res.status(400).json({ message: "Technician not found or not part of your vendor organization" });
+        // Check if assigning to self (vendor admin becomes technician)
+        let technician = null;
+        if (assigneeId === user.id) {
+          // Vendor admin is assigning ticket to themselves
+          technician = {
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email
+          };
+        } else {
+          // Verify the technician belongs to this vendor
+          const technicians = await storage.getTechnicians(user.maintenanceVendorId!);
+          technician = technicians.find(t => t.id === assigneeId);
+          
+          if (!technician) {
+            return res.status(400).json({ message: "Technician not found or not part of your vendor organization" });
+          }
         }
 
         // Assign the technician using updateTicket

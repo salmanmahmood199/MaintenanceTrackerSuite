@@ -28,6 +28,7 @@ interface VendorTicketActionModalProps {
   }) => void;
   onReject: (ticketId: number, rejectionReason: string) => void;
   isLoading: boolean;
+  currentUser?: { id: number; firstName: string; lastName: string; email: string };
 }
 
 export function VendorTicketActionModal({
@@ -39,6 +40,7 @@ export function VendorTicketActionModal({
   onAccept,
   onReject,
   isLoading,
+  currentUser,
 }: VendorTicketActionModalProps) {
   const [selectedTechnician, setSelectedTechnician] = useState<string>("");
   const [rejectionReason, setRejectionReason] = useState("");
@@ -192,6 +194,15 @@ export function VendorTicketActionModal({
                     <SelectValue placeholder="Select a technician" />
                   </SelectTrigger>
                   <SelectContent>
+                    {currentUser && (
+                      <SelectItem value={currentUser.id.toString()}>
+                        <div className="flex items-center gap-2">
+                          <User2 className="h-4 w-4 text-blue-600" />
+                          <span>Assign to Myself</span>
+                          <span className="text-xs text-slate-500">({currentUser.firstName} {currentUser.lastName})</span>
+                        </div>
+                      </SelectItem>
+                    )}
                     {technicians.map((tech) => (
                       <SelectItem key={tech.id} value={tech.id.toString()}>
                         <div className="flex items-center gap-2">

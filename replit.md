@@ -12,6 +12,8 @@ This is a full-stack maintenance ticketing application for commercial businesses
 - **Work Order Completion**: Fixed field mapping issues, completion status validation, and implemented complete verification workflow
 - **Invoice Management**: Added comprehensive invoice management screen with create, view, and payment functionality
 - **Billing Actions**: Added billing actions to Actions tab for tickets with "ready_for_billing" status
+- **Vendor Self-Assignment**: Added ability for maintenance vendor admins to assign tickets to themselves as technicians, supporting one-man vendor teams in both web and mobile applications
+- **Counter Offer System**: Completed counter offer functionality with proper accept/reject workflows, hourly rate formatting, and mobile app support
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.

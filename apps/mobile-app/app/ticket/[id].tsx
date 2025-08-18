@@ -704,43 +704,120 @@ export default function TicketDetailsScreen() {
 
       const technicians = await response.json();
       if (!technicians || technicians.length === 0) {
-        Alert.alert(
-          "No Technicians",
-          "No technicians available for assignment",
-        );
-        return;
+        // For maintenance admins, still allow self-assignment even without other technicians
+        if (user?.role === "maintenance_admin") {
+          Alert.alert(
+            "Assign Ticket",
+            "No other technicians available. You can assign this ticket to yourself:",
+            [
+              { text: "Cancel", style: "cancel" },
+              {
+                text: `Assign to Myself (${user.firstName} ${user.lastName})`,
+                onPress: async () => {
+                  try {
+                    const assignResponse = await apiRequest(
+                      "POST",
+                      `/api/tickets/${id}/assign-technician`,
+                      {
+                        assigneeId: user.id,
+                      },
+                    );
+                    if (assignResponse.ok) {
+                      queryClient.invalidateQueries({ queryKey: ["ticket", id] });
+                      queryClient.invalidateQueries({ queryKey: ["tickets"] });
+                      Alert.alert("Success", "Ticket assigned to yourself");
+                    }
+                  } catch (error: any) {
+                    Alert.alert(
+                      "Error",
+                      error.response?.data?.message || "Failed to assign technician",
+                    );
+                  }
+                },
+              },
+            ],
+          );
+          return;
+        } else {
+          Alert.alert(
+            "No Technicians",
+            "No technicians available for assignment",
+          );
+          return;
+        }
       }
 
-      // Create technician selection options
-      const technicianOptions = technicians.map((tech: any) => ({
-        text: `${tech.firstName} ${tech.lastName} (${tech.email})`,
-        onPress: async () => {
-          try {
-            const assignResponse = await apiRequest(
-              "POST",
-              `/api/tickets/${id}/assign-technician`,
-              {
-                assigneeId: tech.id,
-              },
-            );
-            if (assignResponse.ok) {
-              queryClient.invalidateQueries({ queryKey: ["ticket", id] });
-              queryClient.invalidateQueries({ queryKey: ["tickets"] });
+      // Create technician selection options, starting with self-assignment
+      const technicianOptions = [];
+      
+      // Add "Assign to Myself" option for maintenance admins
+      if (user?.role === "maintenance_admin") {
+        technicianOptions.push({
+          text: `Assign to Myself (${user.firstName} ${user.lastName})`,
+          onPress: async () => {
+            try {
+              const assignResponse = await apiRequest(
+                "POST",
+                `/api/tickets/${id}/assign-technician`,
+                {
+                  assigneeId: user.id,
+                },
+              );
+              if (assignResponse.ok) {
+                queryClient.invalidateQueries({ queryKey: ["ticket", id] });
+                queryClient.invalidateQueries({ queryKey: ["tickets"] });
+                Alert.alert(
+                  "Success",
+                  `Ticket assigned to yourself`,
+                );
+              }
+            } catch (error: any) {
               Alert.alert(
-                "Success",
-                `Ticket assigned to ${tech.firstName} ${tech.lastName}`,
+                "Error",
+                error.response?.data?.message || "Failed to assign technician",
               );
             }
-          } catch (error: any) {
-            Alert.alert(
-              "Error",
-              error.response?.data?.message || "Failed to assign technician",
-            );
-          }
-        },
-      }));
+          },
+        });
+      }
+      
+      // Add other technicians
+      technicians.forEach((tech: any) => {
+        technicianOptions.push({
+          text: `${tech.firstName} ${tech.lastName} (${tech.email})`,
+          onPress: async () => {
+            try {
+              const assignResponse = await apiRequest(
+                "POST",
+                `/api/tickets/${id}/assign-technician`,
+                {
+                  assigneeId: tech.id,
+                },
+              );
+              if (assignResponse.ok) {
+                queryClient.invalidateQueries({ queryKey: ["ticket", id] });
+                queryClient.invalidateQueries({ queryKey: ["tickets"] });
+                Alert.alert(
+                  "Success",
+                  `Ticket assigned to ${tech.firstName} ${tech.lastName}`,
+                );
+              }
+            } catch (error: any) {
+              Alert.alert(
+                "Error",
+                error.response?.data?.message || "Failed to assign technician",
+              );
+            }
+          },
+        });
+      });
 
-      Alert.alert("Assign Technician", "Select a technician for this ticket:", [
+      // Show different message based on whether self-assignment is available
+      const alertMessage = user?.role === "maintenance_admin" 
+        ? "You can assign this ticket to yourself or select a technician:"
+        : "Select a technician for this ticket:";
+      
+      Alert.alert("Assign Technician", alertMessage, [
         { text: "Cancel", style: "cancel" },
         ...technicianOptions,
       ]);

@@ -1066,6 +1066,7 @@ export default function OrganizationView() {
         userRole={user?.role}
         userPermissions={user?.permissions || undefined}
         userVendorTiers={(user as any)?.vendorTiers || []}
+        currentUser={user}
       />
 
       <ConfirmCompletionModal
