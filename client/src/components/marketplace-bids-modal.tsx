@@ -467,12 +467,12 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="counterAmount" className="text-sm font-medium text-gray-700 dark:text-gray-200">Counter Amount ($)</Label>
+                  <Label htmlFor="counterAmount" className="text-sm font-medium text-gray-700 dark:text-gray-200">Counter Hourly Rate ($/hr)</Label>
                   <Input
                     id="counterAmount"
                     type="number"
                     step="0.01"
-                    placeholder="Enter your counter amount"
+                    placeholder="Enter your counter hourly rate"
                     value={counterAmount}
                     onChange={(e) => setCounterAmount(e.target.value)}
                     className="mt-1 bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-500 text-gray-900 dark:text-gray-100"
@@ -480,7 +480,7 @@ export function MarketplaceBidsModal({ ticket, isOpen, onClose }: MarketplaceBid
                 </div>
                 <div className="flex items-end">
                   <div className="text-sm text-gray-600 dark:text-gray-300">
-                    Original: ${bids.find(b => b.id === selectedBidId)?.totalAmount || '0'}
+                    Original: ${bids.find(b => b.id === selectedBidId)?.hourlyRate || '0'}/hr
                   </div>
                 </div>
               </div>

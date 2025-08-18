@@ -129,6 +129,48 @@ export function MarketplaceTicketsView() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  // Counter offer accept mutation
+  const acceptCounterOfferMutation = useMutation({
+    mutationFn: async (bidId: number) => {
+      await apiRequest("POST", `/api/marketplace/bids/${bidId}/accept-counter`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Counter Offer Accepted",
+        description: "You have accepted the counter offer. The bid will be updated.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/marketplace/vendor-bids"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to accept counter offer. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Counter offer reject mutation
+  const rejectCounterOfferMutation = useMutation({
+    mutationFn: async (bidId: number) => {
+      await apiRequest("POST", `/api/marketplace/bids/${bidId}/reject-counter`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Counter Offer Rejected",
+        description: "You have rejected the counter offer. You can place a new bid if needed.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/marketplace/vendor-bids"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to reject counter offer. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Fetch marketplace tickets
   const { data: marketplaceTickets = [], isLoading } = useQuery<MarketplaceTicket[]>({
     queryKey: ["/api/marketplace/tickets"],
@@ -161,6 +203,14 @@ export function MarketplaceTicketsView() {
   const handleViewBidDetails = (bid: VendorBid) => {
     setSelectedBid(bid);
     setIsBidDetailsOpen(true);
+  };
+
+  const handleAcceptCounterOffer = (bidId: number) => {
+    acceptCounterOfferMutation.mutate(bidId);
+  };
+
+  const handleRejectCounterOffer = (bidId: number) => {
+    rejectCounterOfferMutation.mutate(bidId);
   };
 
   if (isLoading || bidsLoading) {
@@ -379,6 +429,16 @@ export function MarketplaceTicketsView() {
                             <Edit className="h-4 w-4 mr-1" />
                             Edit Bid
                           </Button>
+                        )}
+                        {bid.status === 'counter' && (
+                          <>
+                            <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleAcceptCounterOffer(bid.id)}>
+                              Accept Counter
+                            </Button>
+                            <Button variant="destructive" size="sm" onClick={() => handleRejectCounterOffer(bid.id)}>
+                              Reject Counter
+                            </Button>
+                          </>
                         )}
                       </div>
                     </div>

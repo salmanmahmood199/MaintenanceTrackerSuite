@@ -2367,6 +2367,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Accept counter offer (vendor accepts organization's counter offer)
+  app.post(
+    "/api/marketplace/bids/:id/accept-counter",
+    authenticateUser,
+    requireRole(["maintenance_vendor"]),
+    async (req: AuthenticatedRequest, res) => {
+      try {
+        const bidId = parseInt(req.params.id);
+        
+        const bid = await storage.acceptCounterOffer(bidId);
+        res.json(bid);
+      } catch (error) {
+        console.error("Accept counter offer error:", error);
+        res.status(500).json({ message: "Failed to accept counter offer" });
+      }
+    },
+  );
+
+  // Reject counter offer (vendor rejects organization's counter offer)
+  app.post(
+    "/api/marketplace/bids/:id/reject-counter",
+    authenticateUser,
+    requireRole(["maintenance_vendor"]),
+    async (req: AuthenticatedRequest, res) => {
+      try {
+        const bidId = parseInt(req.params.id);
+        
+        const bid = await storage.rejectCounterOffer(bidId);
+        res.json(bid);
+      } catch (error) {
+        console.error("Reject counter offer error:", error);
+        res.status(500).json({ message: "Failed to reject counter offer" });
+      }
+    },
+  );
+
   // Approve a marketplace bid
   app.post(
     "/api/marketplace/bids/:bidId/approve",

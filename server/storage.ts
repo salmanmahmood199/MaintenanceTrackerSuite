@@ -192,6 +192,8 @@ export interface IStorage {
   
   // Enhanced marketplace operations
   respondToCounterOffer(bidId: number, vendorUserId: number, action: 'accept' | 'reject' | 'recounter', amount?: number, notes?: string): Promise<void>;
+  acceptCounterOffer(bidId: number): Promise<MarketplaceBid>;
+  rejectCounterOffer(bidId: number): Promise<MarketplaceBid>;
   
   // Parts management
   getPartsByVendorId(vendorId: number): Promise<Part[]>;
@@ -1744,6 +1746,74 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(marketplaceBids.id, bidId));
     }
+  }
+
+  async acceptCounterOffer(bidId: number): Promise<MarketplaceBid> {
+    const [bid] = await db
+      .select()
+      .from(marketplaceBids)
+      .where(eq(marketplaceBids.id, bidId));
+
+    if (!bid) {
+      throw new Error('Bid not found');
+    }
+
+    if (bid.status !== 'counter') {
+      throw new Error('Bid is not in counter offer status');
+    }
+
+    if (!bid.counterOffer) {
+      throw new Error('No counter offer to accept');
+    }
+
+    // Update bid to accept counter offer - use counter offer as new hourly rate
+    const [updatedBid] = await db
+      .update(marketplaceBids)
+      .set({
+        hourlyRate: bid.counterOffer, // Use counter offer as new hourly rate
+        totalAmount: (parseFloat(bid.counterOffer) * parseFloat(bid.estimatedHours)).toFixed(2),
+        status: 'accepted',
+        counterOffer: null,
+        counterNotes: null,
+        updatedAt: new Date()
+      })
+      .where(eq(marketplaceBids.id, bidId))
+      .returning();
+
+    // Accept the bid and assign the ticket
+    await this.approveBid(bidId);
+
+    return updatedBid;
+  }
+
+  async rejectCounterOffer(bidId: number): Promise<MarketplaceBid> {
+    const [bid] = await db
+      .select()
+      .from(marketplaceBids)
+      .where(eq(marketplaceBids.id, bidId));
+
+    if (!bid) {
+      throw new Error('Bid not found');
+    }
+
+    if (bid.status !== 'counter') {
+      throw new Error('Bid is not in counter offer status');
+    }
+
+    // Update bid to reject counter offer
+    const [updatedBid] = await db
+      .update(marketplaceBids)
+      .set({
+        status: 'rejected',
+        rejectionReason: 'Vendor rejected counter offer',
+        counterOffer: null,
+        counterNotes: null,
+        updatedAt: new Date()
+      })
+      .where(eq(marketplaceBids.id, bidId))
+      .returning();
+
+    return updatedBid;
   }
 
   // Parts management implementation
