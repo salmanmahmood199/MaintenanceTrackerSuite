@@ -17,6 +17,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "../../src/services/api";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../src/contexts/AuthContext";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type MarketplaceTicket = {
   id: number;
@@ -313,6 +314,7 @@ function BidModal({ visible, onClose, ticket, existingBid, onSubmit, isLoading }
 
 export default function MarketplaceScreen() {
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
   const [selectedTab, setSelectedTab] = useState<"available" | "my-bids">("available");
@@ -454,7 +456,7 @@ export default function MarketplaceScreen() {
   return (
     <View style={styles.container}>
       {/* Tab Navigation */}
-      <View style={styles.tabContainer}>
+      <View style={[styles.tabContainer, { marginTop: insets.top + 20 }]}>
         <TouchableOpacity
           style={[styles.tab, selectedTab === "available" && styles.activeTab]}
           onPress={() => setSelectedTab("available")}
@@ -475,6 +477,7 @@ export default function MarketplaceScreen() {
 
       <ScrollView
         style={styles.content}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
@@ -641,7 +644,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     paddingVertical: 4,
     marginHorizontal: 16,
-    marginTop: 20,
     marginBottom: 16,
     borderRadius: 12,
   },
