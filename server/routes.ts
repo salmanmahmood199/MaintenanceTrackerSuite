@@ -2006,6 +2006,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Send ticket to marketplace (alias for mobile app compatibility)
+  app.post(
+    "/api/tickets/:id/send-to-marketplace",
+    authenticateUser,
+    requireRole(["org_admin", "org_subadmin"]),
+    async (req: AuthenticatedRequest, res) => {
+      try {
+        const ticketId = parseInt(req.params.id);
+        const ticket = await storage.assignTicketToMarketplace(ticketId);
+        if (!ticket) {
+          return res.status(404).json({ message: "Ticket not found" });
+        }
+        res.json(ticket);
+      } catch (error) {
+        res
+          .status(500)
+          .json({ message: "Failed to send ticket to marketplace" });
+      }
+    },
+  );
+
   // Get marketplace tickets (for vendors to view)
   app.get(
     "/api/marketplace/tickets",

@@ -23,6 +23,7 @@ import { useAuth } from "../../src/contexts/AuthContext";
 import WorkOrderModal from "../components/WorkOrderModal";
 import WorkOrderDetailsModal from "../components/WorkOrderDetailsModal";
 import InvoiceModal from "../components/InvoiceModal";
+import BidDetailsModal from "../components/BidDetailsModal";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -139,7 +140,7 @@ export default function TicketDetailsScreen() {
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    "details" | "comments" | "progress" | "workorders" | "actions"
+    "details" | "comments" | "progress" | "workorders" | "bids" | "actions"
   >("details");
   const [newComment, setNewComment] = useState("");
   const [imageModalVisible, setImageModalVisible] = useState(false);
@@ -155,6 +156,8 @@ export default function TicketDetailsScreen() {
   const [selectedWorkOrder, setSelectedWorkOrder] = useState<any>(null);
   const [showWorkOrderDetailsModal, setShowWorkOrderDetailsModal] =
     useState(false);
+  const [bidDetailsModalVisible, setBidDetailsModalVisible] = useState(false);
+  const [selectedBid, setSelectedBid] = useState(null);
 
   // Fetch ticket details
   const {
@@ -214,6 +217,23 @@ export default function TicketDetailsScreen() {
       );
       const data = await response.json();
       console.log("Work Orders API response:", data);
+      return data ?? [];
+    },
+  });
+
+  // Fetch ticket bids for organization users
+  const {
+    data: ticketBids = [],
+    isLoading: bidsLoading,
+    refetch: refetchBids,
+  } = useQuery({
+    queryKey: ["ticket-bids", id],
+    enabled: !!id && ["org_admin", "org_subadmin", "residential"].includes(user?.role || ""),
+    queryFn: async () => {
+      console.log("Fetching bids for ticket:", id);
+      const response = await apiRequest("GET", `/api/tickets/${id}/bids`);
+      const data = await response.json();
+      console.log("Ticket Bids API response:", data);
       return data ?? [];
     },
   });
@@ -297,12 +317,80 @@ export default function TicketDetailsScreen() {
     setSelectedImages(newImages);
   };
 
+  // Bid management mutations
+  const acceptBidMutation = useMutation({
+    mutationFn: async (bidId: number) => {
+      const response = await apiRequest("POST", `/api/marketplace/bids/${bidId}/accept`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to accept bid");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ticket", id] });
+      queryClient.invalidateQueries({ queryKey: ["ticket-bids", id] });
+      setBidDetailsModalVisible(false);
+      setSelectedBid(null);
+      Alert.alert("Success", "Bid accepted successfully! Ticket has been assigned to the vendor.");
+    },
+    onError: (error: any) => {
+      Alert.alert("Error", error.message || "Failed to accept bid");
+    },
+  });
+
+  const rejectBidMutation = useMutation({
+    mutationFn: async ({ bidId, reason }: { bidId: number; reason: string }) => {
+      const response = await apiRequest("POST", `/api/marketplace/bids/${bidId}/reject`, {
+        rejectionReason: reason,
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to reject bid");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ticket-bids", id] });
+      setBidDetailsModalVisible(false);
+      setSelectedBid(null);
+      Alert.alert("Success", "Bid rejected successfully");
+    },
+    onError: (error: any) => {
+      Alert.alert("Error", error.message || "Failed to reject bid");
+    },
+  });
+
+  const counterBidMutation = useMutation({
+    mutationFn: async ({ bidId, counterOffer, counterNotes }: { bidId: number; counterOffer: string; counterNotes?: string }) => {
+      const response = await apiRequest("POST", `/api/marketplace/bids/${bidId}/counter`, {
+        counterOffer,
+        counterNotes,
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to send counter offer");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ticket-bids", id] });
+      setBidDetailsModalVisible(false);
+      setSelectedBid(null);
+      Alert.alert("Success", "Counter offer sent successfully");
+    },
+    onError: (error: any) => {
+      Alert.alert("Error", error.message || "Failed to send counter offer");
+    },
+  });
+
   const onRefresh = async () => {
     setRefreshing(true);
     await Promise.all([
       refetchTicket(),
       refetchComments(),
       refetchWorkOrders(),
+      refetchBids(),
     ]);
     setRefreshing(false);
   };
@@ -545,6 +633,39 @@ export default function TicketDetailsScreen() {
         },
       ],
       "plain-text",
+    );
+  };
+
+  const sendToMarketplace = async () => {
+    Alert.alert(
+      "Send to Marketplace",
+      "This will make the ticket available for vendor bidding. Do you want to continue?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Send to Marketplace",
+          onPress: async () => {
+            try {
+              const response = await apiRequest(
+                "POST",
+                `/api/tickets/${id}/send-to-marketplace`,
+                {},
+              );
+              if (response.ok) {
+                const data = await response.json();
+                queryClient.invalidateQueries({ queryKey: ["ticket", id] });
+                queryClient.invalidateQueries({ queryKey: ["tickets"] });
+                Alert.alert("Success", "Ticket sent to marketplace successfully");
+              }
+            } catch (error: any) {
+              Alert.alert(
+                "Error",
+                error.response?.data?.message || "Failed to send ticket to marketplace",
+              );
+            }
+          },
+        },
+      ],
     );
   };
 
@@ -841,6 +962,23 @@ export default function TicketDetailsScreen() {
     setShowWorkOrderDetailsModal(true);
   };
 
+  const handleViewBid = (bid: any) => {
+    setSelectedBid(bid);
+    setBidDetailsModalVisible(true);
+  };
+
+  const handleAcceptBid = (bidId: number) => {
+    acceptBidMutation.mutate(bidId);
+  };
+
+  const handleRejectBid = (bidId: number, reason: string) => {
+    rejectBidMutation.mutate({ bidId, reason });
+  };
+
+  const handleCounterBid = (bidId: number, counterOffer: string, counterNotes?: string) => {
+    counterBidMutation.mutate({ bidId, counterOffer, counterNotes });
+  };
+
   const getAvailableActions = (user: any, ticket: any) => {
     const actions: any[] = [];
 
@@ -868,6 +1006,21 @@ export default function TicketDetailsScreen() {
         icon: "close-circle",
         style: { backgroundColor: "#ef4444" },
         action: () => rejectTicket(),
+      });
+    }
+
+    // Send to marketplace (organization users only for pending tickets)
+    if (
+      ticket.status === "pending" &&
+      ["org_admin", "org_subadmin"].includes(user.role) &&
+      ticket.organizationId === user.organizationId
+    ) {
+      actions.push({
+        id: "send_to_marketplace",
+        label: "Send to Marketplace",
+        icon: "business",
+        style: { backgroundColor: "#7c3aed" },
+        action: () => sendToMarketplace(),
       });
     }
 
@@ -1108,6 +1261,21 @@ export default function TicketDetailsScreen() {
         return "#ef4444";
       case "urgent":
         return "#dc2626";
+      default:
+        return "#6b7280";
+    }
+  };
+
+  const getBidStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "pending":
+        return "#f59e0b";
+      case "accepted":
+        return "#10b981";
+      case "rejected":
+        return "#ef4444";
+      case "counter":
+        return "#8b5cf6";
       default:
         return "#6b7280";
     }
@@ -2675,6 +2843,110 @@ export default function TicketDetailsScreen() {
           </View>
         );
 
+      case "bids":
+        return (
+          <View style={styles.tabContent}>
+            <View style={styles.bidsCard}>
+              <Text style={styles.sectionTitle}>
+                Marketplace Bids {ticketBids.length > 0 && `(${ticketBids.length})`}
+              </Text>
+              {bidsLoading ? (
+                <ActivityIndicator
+                  size="small"
+                  color="#3b82f6"
+                  style={styles.loader}
+                />
+              ) : ticketBids.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Ionicons
+                    name="business-outline"
+                    size={48}
+                    color="#94a3b8"
+                  />
+                  <Text style={styles.emptyText}>No bids yet</Text>
+                  <Text style={styles.emptySubtext}>
+                    {ticket.status === "pending" 
+                      ? "Send this ticket to marketplace to receive vendor bids"
+                      : "Vendor bids will appear here"}
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.bidsList}>
+                  {ticketBids.map((bid: any, index: number) => (
+                    <TouchableOpacity
+                      key={bid.id || index}
+                      style={styles.bidItem}
+                      onPress={() => handleViewBid(bid)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.bidHeader}>
+                        <View style={styles.bidVendorInfo}>
+                          <Text style={styles.bidVendorName}>
+                            {bid.vendor?.companyName || 'Unknown Vendor'}
+                          </Text>
+                          <Text style={styles.bidAmount}>${bid.totalAmount}</Text>
+                        </View>
+                        <View
+                          style={[
+                            styles.bidStatus,
+                            {
+                              backgroundColor: getBidStatusColor(bid.status),
+                            },
+                          ]}
+                        >
+                          <Text style={styles.bidStatusText}>
+                            {bid.status === 'counter' ? 'Counter Offer' : bid.status.charAt(0).toUpperCase() + bid.status.slice(1)}
+                          </Text>
+                        </View>
+                      </View>
+                      
+                      <View style={styles.bidDetails}>
+                        <View style={styles.bidDetailRow}>
+                          <Text style={styles.bidDetailLabel}>Hourly Rate:</Text>
+                          <Text style={styles.bidDetailValue}>${bid.hourlyRate}/hr</Text>
+                        </View>
+                        <View style={styles.bidDetailRow}>
+                          <Text style={styles.bidDetailLabel}>Est. Hours:</Text>
+                          <Text style={styles.bidDetailValue}>{bid.estimatedHours} hrs</Text>
+                        </View>
+                        <View style={styles.bidDetailRow}>
+                          <Text style={styles.bidDetailLabel}>Response Time:</Text>
+                          <Text style={styles.bidDetailValue}>{bid.responseTime}</Text>
+                        </View>
+                      </View>
+
+                      {bid.additionalNotes && (
+                        <Text style={styles.bidNotes} numberOfLines={2}>
+                          {bid.additionalNotes}
+                        </Text>
+                      )}
+
+                      <Text style={styles.bidDate}>
+                        Submitted: {new Date(bid.createdAt).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </Text>
+
+                      {/* View indicator */}
+                      <View style={styles.viewIndicator}>
+                        <Ionicons
+                          name="chevron-forward"
+                          size={16}
+                          color="#94a3b8"
+                        />
+                        <Text style={styles.viewText}>Tap to view details</Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+          </View>
+        );
+
       case "actions":
         return (
           <View style={styles.tabContent}>
@@ -2789,6 +3061,23 @@ export default function TicketDetailsScreen() {
             Work Orders {workOrders.length > 0 && `(${workOrders.length})`}
           </Text>
         </TouchableOpacity>
+        
+        {/* Bids Tab - Only show for organization users */}
+        {user && ["org_admin", "org_subadmin", "residential"].includes(user?.role || "") && (
+          <TouchableOpacity
+            style={[styles.tab, activeTab === "bids" && styles.activeTab]}
+            onPress={() => setActiveTab("bids")}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "bids" && styles.activeTabText,
+              ]}
+            >
+              Bids {ticketBids.length > 0 && `(${ticketBids.length})`}
+            </Text>
+          </TouchableOpacity>
+        )}
 
         {/* Actions Tab - Only show for users with permissions */}
         {user && hasActionsPermission(user, ticket) && (
@@ -2841,6 +3130,18 @@ export default function TicketDetailsScreen() {
         ticket={ticket}
         workOrders={workOrders}
         user={user}
+      />
+
+      {/* Bid Details Modal */}
+      <BidDetailsModal
+        visible={bidDetailsModalVisible}
+        onClose={() => setBidDetailsModalVisible(false)}
+        bid={selectedBid}
+        isOrganization={["org_admin", "org_subadmin"].includes(user?.role || "")}
+        onAcceptBid={handleAcceptBid}
+        onRejectBid={handleRejectBid}
+        onCounterBid={handleCounterBid}
+        isLoading={acceptBidMutation.isPending || rejectBidMutation.isPending || counterBidMutation.isPending}
       />
 
       {/* Image Modal */}
@@ -3587,5 +3888,98 @@ const styles = StyleSheet.create({
     color: "#6b7280",
     textAlign: "center",
     lineHeight: 20,
+  },
+
+  // Bids Tab Styles
+  bidsCard: {
+    backgroundColor: "#1f2937",
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#374151",
+  },
+  
+  bidsList: {
+    marginTop: 16,
+  },
+
+  bidItem: {
+    backgroundColor: "#374151",
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#4b5563",
+  },
+
+  bidHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 12,
+  },
+
+  bidVendorInfo: {
+    flex: 1,
+  },
+
+  bidVendorName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#f3f4f6",
+    marginBottom: 4,
+  },
+
+  bidAmount: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#10b981",
+  },
+
+  bidStatus: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginLeft: 12,
+  },
+
+  bidStatusText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#ffffff",
+  },
+
+  bidDetails: {
+    marginBottom: 12,
+  },
+
+  bidDetailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 4,
+  },
+
+  bidDetailLabel: {
+    fontSize: 14,
+    color: "#9ca3af",
+  },
+
+  bidDetailValue: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#e5e7eb",
+  },
+
+  bidNotes: {
+    fontSize: 14,
+    color: "#d1d5db",
+    fontStyle: "italic",
+    marginBottom: 8,
+  },
+
+  bidDate: {
+    fontSize: 12,
+    color: "#9ca3af",
+    marginBottom: 8,
   },
 });
