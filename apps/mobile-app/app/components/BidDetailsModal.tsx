@@ -20,6 +20,7 @@ interface BidDetailsModalProps {
   onAcceptBid?: (bidId: number) => void;
   onRejectBid?: (bidId: number, reason: string) => void;
   onCounterBid?: (bidId: number, counterOffer: string, counterNotes?: string) => void;
+  onUpdateBid?: (bidId: number, bidData: any) => void;
   isLoading?: boolean;
 }
 
@@ -31,20 +32,29 @@ export default function BidDetailsModal({
   onAcceptBid,
   onRejectBid,
   onCounterBid,
+  onUpdateBid,
   isLoading,
 }: BidDetailsModalProps) {
   const [showRejectInput, setShowRejectInput] = useState(false);
   const [showCounterInput, setShowCounterInput] = useState(false);
+  const [showUpdateInput, setShowUpdateInput] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [counterOffer, setCounterOffer] = useState("");
   const [counterNotes, setCounterNotes] = useState("");
+  const [updateHourlyRate, setUpdateHourlyRate] = useState("");
+  const [updateResponseTime, setUpdateResponseTime] = useState("");
+  const [updateNotes, setUpdateNotes] = useState("");
 
   const resetInputs = () => {
     setShowRejectInput(false);
     setShowCounterInput(false);
+    setShowUpdateInput(false);
     setRejectionReason("");
     setCounterOffer("");
     setCounterNotes("");
+    setUpdateHourlyRate("");
+    setUpdateResponseTime("");
+    setUpdateNotes("");
   };
 
   const handleAccept = () => {
@@ -76,6 +86,22 @@ export default function BidDetailsModal({
       return;
     }
     onCounterBid?.(bid.id, counterOffer.trim(), counterNotes.trim() || undefined);
+    resetInputs();
+  };
+
+  const handleUpdate = () => {
+    if (!updateHourlyRate.trim() || !updateResponseTime.trim()) {
+      Alert.alert("Error", "Please fill in all required fields");
+      return;
+    }
+    
+    const bidData = {
+      hourlyRate: updateHourlyRate.trim(),
+      responseTime: updateResponseTime.trim(),
+      additionalNotes: updateNotes.trim()
+    };
+    
+    onUpdateBid?.(bid.id, bidData);
     resetInputs();
   };
 
@@ -146,6 +172,34 @@ export default function BidDetailsModal({
                 <Text style={styles.detailLabel}>Response Time</Text>
                 <Text style={styles.detailValue}>{bid.responseTime}</Text>
               </View>
+              {bid.createdAt && (
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Submitted</Text>
+                  <Text style={styles.detailValue}>
+                    {new Date(bid.createdAt).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </Text>
+                </View>
+              )}
+              {bid.updatedAt && bid.updatedAt !== bid.createdAt && (
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Last Updated</Text>
+                  <Text style={styles.detailValue}>
+                    {new Date(bid.updatedAt).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
 
@@ -200,6 +254,28 @@ export default function BidDetailsModal({
                 >
                   <Ionicons name="swap-horizontal" size={20} color="#fff" />
                   <Text style={styles.actionButtonText}>Counter Offer</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* Vendor Actions - Update Own Bid */}
+          {!isOrganization && bid.status === "pending" && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Update Your Bid</Text>
+              <View style={styles.actionsContainer}>
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.updateButton]}
+                  onPress={() => {
+                    setUpdateHourlyRate(bid.hourlyRate || "");
+                    setUpdateResponseTime(bid.responseTime || "");
+                    setUpdateNotes(bid.additionalNotes || "");
+                    setShowUpdateInput(true);
+                  }}
+                  disabled={isLoading}
+                >
+                  <Ionicons name="create-outline" size={20} color="#fff" />
+                  <Text style={styles.actionButtonText}>Update Bid</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -279,6 +355,53 @@ export default function BidDetailsModal({
               </View>
             </View>
           )}
+
+          {/* Update Bid Input */}
+          {showUpdateInput && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Update Your Bid</Text>
+              <TextInput
+                style={styles.textInput}
+                value={updateHourlyRate}
+                onChangeText={setUpdateHourlyRate}
+                placeholder={`Current: $${bid.hourlyRate}/hr`}
+                keyboardType="numeric"
+              />
+              <TextInput
+                style={styles.textInput}
+                value={updateResponseTime}
+                onChangeText={setUpdateResponseTime}
+                placeholder={`Current: ${bid.responseTime}`}
+              />
+              <TextInput
+                style={[styles.textInput, styles.textArea]}
+                value={updateNotes}
+                onChangeText={setUpdateNotes}
+                placeholder="Updated additional notes (optional)"
+                multiline
+                numberOfLines={3}
+              />
+              <View style={styles.inputActions}>
+                <TouchableOpacity
+                  style={[styles.inputActionButton, styles.cancelButton]}
+                  onPress={() => setShowUpdateInput(false)}
+                >
+                  <Text style={styles.inputActionButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.inputActionButton, styles.submitButton]}
+                  onPress={handleUpdate}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <Text style={styles.inputActionButtonText}>Update Bid</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
         </ScrollView>
       </View>
     </Modal>
@@ -288,7 +411,7 @@ export default function BidDetailsModal({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#111827",
   },
   header: {
     flexDirection: "row",
@@ -296,7 +419,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: "#374151",
   },
   closeButton: {
     padding: 4,
@@ -304,7 +427,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#111827",
+    color: "#ffffff",
   },
   content: {
     flex: 1,
@@ -316,23 +439,25 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#374151",
+    color: "#ffffff",
     marginBottom: 12,
   },
   ticketInfo: {
-    backgroundColor: "#f9fafb",
+    backgroundColor: "#1f2937",
     padding: 16,
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#374151",
   },
   ticketTitle: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#111827",
+    color: "#ffffff",
     marginBottom: 4,
   },
   ticketNumber: {
     fontSize: 14,
-    color: "#6b7280",
+    color: "#9ca3af",
     marginBottom: 8,
   },
   statusBadge: {
@@ -411,6 +536,9 @@ const styles = StyleSheet.create({
   counterButton: {
     backgroundColor: "#8b5cf6",
   },
+  updateButton: {
+    backgroundColor: "#f59e0b",
+  },
   actionButtonText: {
     color: "#fff",
     fontSize: 16,
@@ -418,12 +546,13 @@ const styles = StyleSheet.create({
   },
   textInput: {
     borderWidth: 1,
-    borderColor: "#d1d5db",
+    borderColor: "#4b5563",
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 16,
-    backgroundColor: "#fff",
+    backgroundColor: "#374151",
+    color: "#ffffff",
     marginBottom: 12,
   },
   textArea: {

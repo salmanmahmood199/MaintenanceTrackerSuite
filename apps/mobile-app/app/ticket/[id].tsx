@@ -384,6 +384,27 @@ export default function TicketDetailsScreen() {
     },
   });
 
+  const updateBidMutation = useMutation({
+    mutationFn: async ({ bidId, bidData }: { bidId: number; bidData: any }) => {
+      const response = await apiRequest("PUT", `/api/marketplace/bids/${bidId}`, bidData);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update bid");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ticket-bids", id] });
+      queryClient.invalidateQueries({ queryKey: ["marketplace-vendor-bids"] });
+      setBidDetailsModalVisible(false);
+      setSelectedBid(null);
+      Alert.alert("Success", "Bid updated successfully");
+    },
+    onError: (error: any) => {
+      Alert.alert("Error", error.message || "Failed to update bid");
+    },
+  });
+
   const onRefresh = async () => {
     setRefreshing(true);
     await Promise.all([
@@ -2847,7 +2868,7 @@ export default function TicketDetailsScreen() {
         return (
           <View style={styles.tabContent}>
             <View style={styles.bidsCard}>
-              <Text style={styles.sectionTitle}>
+              <Text style={styles.bidsSectionTitle}>
                 Marketplace Bids {ticketBids.length > 0 && `(${ticketBids.length})`}
               </Text>
               {bidsLoading ? (
@@ -2863,8 +2884,8 @@ export default function TicketDetailsScreen() {
                     size={48}
                     color="#94a3b8"
                   />
-                  <Text style={styles.emptyText}>No bids yet</Text>
-                  <Text style={styles.emptySubtext}>
+                  <Text style={styles.bidsEmptyText}>No bids yet</Text>
+                  <Text style={styles.bidsEmptySubtext}>
                     {ticket.status === "pending" 
                       ? "Send this ticket to marketplace to receive vendor bids"
                       : "Vendor bids will appear here"}
@@ -3137,7 +3158,8 @@ export default function TicketDetailsScreen() {
         onAcceptBid={handleAcceptBid}
         onRejectBid={handleRejectBid}
         onCounterBid={handleCounterBid}
-        isLoading={acceptBidMutation.isPending || rejectBidMutation.isPending || counterBidMutation.isPending}
+        onUpdateBid={(bidId, bidData) => updateBidMutation.mutate({ bidId, bidData })}
+        isLoading={acceptBidMutation.isPending || rejectBidMutation.isPending || counterBidMutation.isPending || updateBidMutation.isPending}
       />
 
       {/* Image Modal */}
@@ -3977,5 +3999,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#9ca3af",
     marginBottom: 8,
+  },
+  bidsSectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#ffffff",
+    marginBottom: 16,
+  },
+  bidsEmptyText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#9ca3af",
+    textAlign: "center",
+    marginTop: 8,
+  },
+  bidsEmptySubtext: {
+    fontSize: 14,
+    color: "#6b7280",
+    textAlign: "center",
+    marginTop: 4,
   },
 });
