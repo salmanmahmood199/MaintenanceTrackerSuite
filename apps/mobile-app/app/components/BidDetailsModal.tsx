@@ -21,6 +21,8 @@ interface BidDetailsModalProps {
   onRejectBid?: (bidId: number, reason: string) => void;
   onCounterBid?: (bidId: number, counterOffer: string, counterNotes?: string) => void;
   onUpdateBid?: (bidId: number, bidData: any) => void;
+  onAcceptCounterOffer?: (bidId: number) => void;
+  onRejectCounterOffer?: (bidId: number) => void;
   isLoading?: boolean;
 }
 
@@ -33,6 +35,8 @@ export default function BidDetailsModal({
   onRejectBid,
   onCounterBid,
   onUpdateBid,
+  onAcceptCounterOffer,
+  onRejectCounterOffer,
   isLoading,
 }: BidDetailsModalProps) {
   const [showRejectInput, setShowRejectInput] = useState(false);
@@ -66,6 +70,35 @@ export default function BidDetailsModal({
         {
           text: "Accept",
           onPress: () => onAcceptBid?.(bid.id),
+        },
+      ]
+    );
+  };
+
+  const handleAcceptCounterOffer = () => {
+    Alert.alert(
+      "Accept Counter Offer",
+      `Are you sure you want to accept the counter offer of $${bid.counterOffer}/hr? This will update your bid and assign the ticket.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Accept",
+          onPress: () => onAcceptCounterOffer?.(bid.id),
+        },
+      ]
+    );
+  };
+
+  const handleRejectCounterOffer = () => {
+    Alert.alert(
+      "Reject Counter Offer",
+      "Are you sure you want to reject the counter offer? This will mark your bid as rejected.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Reject",
+          style: "destructive",
+          onPress: () => onRejectCounterOffer?.(bid.id),
         },
       ]
     );
@@ -289,6 +322,38 @@ export default function BidDetailsModal({
                 >
                   <Ionicons name="create-outline" size={20} color="#fff" />
                   <Text style={styles.actionButtonText}>Update Bid</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* Vendor Actions - Counter Offer Response */}
+          {!isOrganization && bid.status === "counter" && bid.counterOffer && !bid.isSuperseded && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Counter Offer Response</Text>
+              <Text style={styles.counterOfferText}>
+                Organization has countered with <Text style={styles.counterOfferAmount}>${bid.counterOffer}/hr</Text>
+                {bid.counterNotes && (
+                  <Text style={styles.counterOfferNotes}> - {bid.counterNotes}</Text>
+                )}
+              </Text>
+              <View style={styles.actionsContainer}>
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.acceptButton]}
+                  onPress={handleAcceptCounterOffer}
+                  disabled={isLoading}
+                >
+                  <Ionicons name="checkmark-circle" size={20} color="#fff" />
+                  <Text style={styles.actionButtonText}>Accept Counter</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.rejectButton]}
+                  onPress={handleRejectCounterOffer}
+                  disabled={isLoading}
+                >
+                  <Ionicons name="close-circle" size={20} color="#fff" />
+                  <Text style={styles.actionButtonText}>Reject Counter</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -617,5 +682,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#991b1b",
     lineHeight: 20,
+  },
+  counterOfferText: {
+    fontSize: 16,
+    color: "#e5e7eb",
+    marginBottom: 16,
+    lineHeight: 22,
+  },
+  counterOfferAmount: {
+    fontWeight: "600",
+    color: "#8b5cf6",
+  },
+  counterOfferNotes: {
+    fontStyle: "italic",
+    color: "#9ca3af",
   },
 });

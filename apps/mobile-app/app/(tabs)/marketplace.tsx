@@ -394,6 +394,45 @@ export default function MarketplaceScreen() {
     },
   });
 
+  const acceptCounterOfferMutation = useMutation({
+    mutationFn: async (bidId: number) => {
+      const response = await apiRequest("POST", `/api/marketplace/bids/${bidId}/accept-counter`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to accept counter offer");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      Alert.alert("Success", "Counter offer accepted! The ticket has been assigned to you.");
+      queryClient.invalidateQueries({ queryKey: ["/api/marketplace/vendor-bids"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/marketplace/tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+    },
+    onError: (error: any) => {
+      Alert.alert("Error", error.message || "Failed to accept counter offer");
+    },
+  });
+
+  const rejectCounterOfferMutation = useMutation({
+    mutationFn: async (bidId: number) => {
+      const response = await apiRequest("POST", `/api/marketplace/bids/${bidId}/reject-counter`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to reject counter offer");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      Alert.alert("Success", "Counter offer rejected.");
+      queryClient.invalidateQueries({ queryKey: ["/api/marketplace/vendor-bids"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/marketplace/tickets"] });
+    },
+    onError: (error: any) => {
+      Alert.alert("Error", error.message || "Failed to reject counter offer");
+    },
+  });
+
   const handleRefresh = async () => {
     setRefreshing(true);
     await Promise.all([refetchTickets(), refetchBids()]);
@@ -601,10 +640,40 @@ export default function MarketplaceScreen() {
                   </View>
                   {bid.status === "counter" && bid.counterOffer && (
                     <View style={styles.counterOfferSection}>
-                      <Text style={styles.counterOfferTitle}>Counter Offer: ${bid.counterOffer}</Text>
+                      <Text style={styles.counterOfferTitle}>Counter Offer: ${bid.counterOffer}/hr</Text>
                       {bid.counterNotes && (
                         <Text style={styles.counterOfferNotes}>{bid.counterNotes}</Text>
                       )}
+                      <View style={styles.counterOfferActions}>
+                        <TouchableOpacity
+                          style={[styles.counterOfferButton, styles.acceptCounterButton]}
+                          onPress={() => acceptCounterOfferMutation.mutate(bid.id)}
+                          disabled={acceptCounterOfferMutation.isPending || rejectCounterOfferMutation.isPending}
+                        >
+                          {acceptCounterOfferMutation.isPending ? (
+                            <ActivityIndicator color="#fff" size="small" />
+                          ) : (
+                            <>
+                              <Ionicons name="checkmark-circle" size={16} color="#fff" />
+                              <Text style={styles.counterOfferButtonText}>Accept</Text>
+                            </>
+                          )}
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[styles.counterOfferButton, styles.rejectCounterButton]}
+                          onPress={() => rejectCounterOfferMutation.mutate(bid.id)}
+                          disabled={acceptCounterOfferMutation.isPending || rejectCounterOfferMutation.isPending}
+                        >
+                          {rejectCounterOfferMutation.isPending ? (
+                            <ActivityIndicator color="#fff" size="small" />
+                          ) : (
+                            <>
+                              <Ionicons name="close-circle" size={16} color="#fff" />
+                              <Text style={styles.counterOfferButtonText}>Reject</Text>
+                            </>
+                          )}
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   )}
                   {bid.additionalNotes && (
@@ -872,6 +941,32 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#92400e",
     marginTop: 4,
+  },
+  counterOfferActions: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 12,
+  },
+  counterOfferButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    gap: 4,
+  },
+  acceptCounterButton: {
+    backgroundColor: "#10b981",
+  },
+  rejectCounterButton: {
+    backgroundColor: "#ef4444",
+  },
+  counterOfferButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
   },
   bidNotes: {
     fontSize: 12,
