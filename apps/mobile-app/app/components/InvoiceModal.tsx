@@ -8,10 +8,12 @@ import {
   ScrollView,
   Alert,
   StyleSheet,
+  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../../src/services/api';
+import PDFPreviewModal from './PDFPreviewModal';
 
 interface InvoiceModalProps {
   visible: boolean;
@@ -67,6 +69,8 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
   const [subtotal, setSubtotal] = useState(0);
   const [total, setTotal] = useState(0);
   const [activeTab, setActiveTab] = useState<'create' | 'preview'>('create');
+  const [showPDFPreview, setShowPDFPreview] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const queryClient = useQueryClient();
 
   // Reset form when modal opens and initialize work orders
@@ -292,6 +296,22 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
       }
       return wo;
     }));
+  };
+
+  const handlePreviewPDF = () => {
+    const invoiceData = {
+      ticket,
+      workOrders: editableWorkOrders,
+      additionalItems,
+      subtotal,
+      taxPercentage,
+      taxAmount,
+      taxAppliedTo,
+      total,
+      notes,
+      invoiceNumber: `INV-${Date.now()}`,
+    };
+    setShowPDFPreview(true);
   };
 
   const formatCurrency = (amount: number) => {
@@ -624,7 +644,53 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
 
 
         </ScrollView>
+
+        {/* Action Buttons */}
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={styles.cancelButton}
+            onPress={onClose}
+          >
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.previewButton}
+            onPress={handlePreviewPDF}
+          >
+            <Ionicons name="eye-outline" size={16} color="#3b82f6" />
+            <Text style={styles.previewButtonText}>Preview</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.submitButton, createInvoiceMutation.isPending && styles.submitButtonDisabled]}
+            onPress={handleSubmit}
+            disabled={createInvoiceMutation.isPending}
+          >
+            <Text style={styles.submitButtonText}>
+              {createInvoiceMutation.isPending ? 'Creating...' : 'Create Invoice'}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
+
+      {/* PDF Preview Modal */}
+      <PDFPreviewModal
+        visible={showPDFPreview}
+        onClose={() => setShowPDFPreview(false)}
+        invoiceData={{
+          ticket,
+          workOrders: editableWorkOrders,
+          additionalItems,
+          subtotal,
+          taxPercentage,
+          taxAmount,
+          taxAppliedTo,
+          total,
+          notes,
+          invoiceNumber: `INV-${Date.now()}`,
+        }}
+      />
     </Modal>
   );
 };
@@ -1093,6 +1159,60 @@ const styles = StyleSheet.create({
     color: '#9ca3af',
     fontStyle: 'italic',
     textAlign: 'center',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#374151',
+    backgroundColor: '#1f2937',
+    gap: 12,
+  },
+  cancelButton: {
+    flex: 1,
+    backgroundColor: '#4b5563',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#6b7280',
+  },
+  cancelButtonText: {
+    color: '#d1d5db',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  previewButton: {
+    flex: 1,
+    backgroundColor: '#1e40af',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  previewButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  submitButton: {
+    flex: 1,
+    backgroundColor: '#10b981',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  submitButtonDisabled: {
+    backgroundColor: '#6b7280',
+  },
+  submitButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 
