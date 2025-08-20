@@ -380,7 +380,7 @@ export function VendorView() {
   // Start work mutation
   const startWorkMutation = useMutation({
     mutationFn: async (ticketId: number) => {
-      const response = await apiRequest("POST", `/api/tickets/${ticketId}/start-work`);
+      const response = await apiRequest("POST", `/api/tickets/${ticketId}/start`);
       return response.json();
     },
     onSuccess: () => {
@@ -402,7 +402,7 @@ export function VendorView() {
   // Complete work mutation
   const completeWorkMutation = useMutation({
     mutationFn: async (ticketId: number) => {
-      const response = await apiRequest("POST", `/api/tickets/${ticketId}/complete-work`);
+      const response = await apiRequest("POST", `/api/tickets/${ticketId}/complete`);
       return response.json();
     },
     onSuccess: () => {
