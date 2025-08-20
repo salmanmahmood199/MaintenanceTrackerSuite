@@ -362,21 +362,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
             />
           </View>
 
-          {/* Totals */}
-          <View style={styles.totalSection}>
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Subtotal:</Text>
-              <Text style={styles.totalValue}>{formatCurrency(subtotal)}</Text>
-            </View>
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Tax:</Text>
-              <Text style={styles.totalValue}>{formatCurrency(parseFloat(tax) || 0)}</Text>
-            </View>
-            <View style={[styles.totalRow, styles.grandTotalRow]}>
-              <Text style={styles.grandTotalLabel}>Total:</Text>
-              <Text style={styles.grandTotalValue}>{formatCurrency(total)}</Text>
-            </View>
-          </View>
+
         </ScrollView>
       </View>
     </Modal>
