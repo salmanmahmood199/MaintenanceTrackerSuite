@@ -12,6 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "../../src/services/api";
+import { MaintenanceVendor } from "../../src/types";
 
 interface InvoicePDFModalProps {
   visible: boolean;
@@ -60,6 +61,18 @@ const InvoicePDFModal: React.FC<InvoicePDFModalProps> = ({
       return orgs.find((org: any) => org.id === invoice.organizationId);
     },
     enabled: visible && !!invoice.organizationId,
+  });
+
+  const { data: vendor } = useQuery<MaintenanceVendor>({
+    queryKey: ["/api/maintenance-vendors", invoice.maintenanceVendorId],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/maintenance-vendors`);
+      const vendors = await response.json();
+      return vendors.find(
+        (v: MaintenanceVendor) => v.id === invoice.maintenanceVendorId,
+      );
+    },
+    enabled: visible && !!invoice.maintenanceVendorId,
   });
 
   const formatDate = (dateString: string) => {
@@ -121,11 +134,18 @@ const InvoicePDFModal: React.FC<InvoicePDFModalProps> = ({
               <View style={styles.fromSection}>
                 <Text style={styles.sectionTitle}>From:</Text>
                 <View style={styles.addressBox}>
-                  <Text style={styles.companyName}>TaskScout Maintenance</Text>
-                  <Text style={styles.addressText}>123 Service Street</Text>
-                  <Text style={styles.addressText}>City, State 12345</Text>
-                  <Text style={styles.addressText}>service@taskscout.com</Text>
-                  <Text style={styles.addressText}>(555) 123-4567</Text>
+                  <Text style={styles.companyName}>
+                    {vendor?.name || "Maintenance Vendor"}
+                  </Text>
+                  <Text style={styles.addressText}>
+                    {vendor?.address || "Vendor Address"}
+                  </Text>
+                  <Text style={styles.addressText}>
+                    {vendor?.email || "vendor@email.com"}
+                  </Text>
+                  <Text style={styles.addressText}>
+                    {vendor?.phone || "Phone Number"}
+                  </Text>
                 </View>
               </View>
               <View style={styles.toSection}>
