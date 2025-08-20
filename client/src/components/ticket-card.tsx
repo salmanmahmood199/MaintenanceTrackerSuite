@@ -22,9 +22,10 @@ interface TicketCardProps {
   showTechnicianActions?: boolean;
   userRole?: string;
   userPermissions?: string[];
+  userId?: number;
 }
 
-export function TicketCard({ ticket, onAccept, onReject, onComplete, onStart, onConfirm, onViewWorkOrders, onCreateInvoice, showActions = true, showTechnicianActions = false, userRole, userPermissions, onClick, onView }: TicketCardProps) {
+export function TicketCard({ ticket, onAccept, onReject, onComplete, onStart, onConfirm, onViewWorkOrders, onCreateInvoice, showActions = true, showTechnicianActions = false, userRole, userPermissions, userId, onClick, onView }: TicketCardProps) {
   const priorityColor = getPriorityColor(ticket.priority);
   const statusColor = getStatusColor(ticket.status);
   
@@ -33,6 +34,12 @@ export function TicketCard({ ticket, onAccept, onReject, onComplete, onStart, on
     ["org_admin", "maintenance_admin"].includes(userRole) || 
     (userRole === "org_subadmin" && userPermissions?.includes("accept_ticket"))
   );
+
+  // Check if maintenance admin is assigned to this ticket themselves
+  const isMaintenanceAdminAssignedToSelf = userRole === "maintenance_admin" && ticket.assigneeId === userId;
+
+  // Show technician actions if explicitly requested OR if maintenance admin assigned to themselves
+  const shouldShowTechnicianActions = showTechnicianActions || isMaintenanceAdminAssignedToSelf;
 
   return (
     <Card 
@@ -83,7 +90,7 @@ export function TicketCard({ ticket, onAccept, onReject, onComplete, onStart, on
         </div>
         
         <div className="ml-6 flex flex-col gap-2">
-          {showTechnicianActions && (
+          {shouldShowTechnicianActions && (
             <>
               {/* Always show View button for technicians */}
               {onView && (
@@ -128,7 +135,7 @@ export function TicketCard({ ticket, onAccept, onReject, onComplete, onStart, on
             </>
           )}
           
-          {showActions && !showTechnicianActions && canAcceptTickets && (
+          {showActions && !shouldShowTechnicianActions && canAcceptTickets && (
             <>
               {/* Organization admin can accept pending/open tickets */}
               {(userRole === "org_admin" || userRole === "org_subadmin") && (ticket.status === 'pending' || ticket.status === 'open') && onAccept && (
@@ -158,8 +165,8 @@ export function TicketCard({ ticket, onAccept, onReject, onComplete, onStart, on
                 </Button>
               )}
               
-              {/* Vendor admin can accept tickets in accepted status */}
-              {userRole === "maintenance_admin" && ticket.status === 'accepted' && onAccept && (
+              {/* Vendor admin can accept/assign tickets in accepted status OR reassign when already assigned to themselves */}
+              {userRole === "maintenance_admin" && (ticket.status === 'accepted' || isMaintenanceAdminAssignedToSelf) && onAccept && (
                 <Button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -169,7 +176,7 @@ export function TicketCard({ ticket, onAccept, onReject, onComplete, onStart, on
                   size="sm"
                 >
                   <CheckCircle className="h-4 w-4 mr-2" />
-                  Accept & Assign
+                  {isMaintenanceAdminAssignedToSelf ? "Reassign Technician" : "Accept & Assign"}
                 </Button>
               )}
               {userRole === "maintenance_admin" && ticket.status === 'accepted' && onReject && (

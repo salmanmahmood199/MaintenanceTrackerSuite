@@ -1159,8 +1159,8 @@ export default function TicketDetailsScreen() {
       console.log("Vendor assignment condition NOT met");
     }
 
-    // Technician actions
-    if (user.role === "technician" && ticket.assigneeId === user.id) {
+    // Technician actions (includes self-assigned maintenance admins)
+    if ((user.role === "technician" || user.role === "maintenance_admin") && ticket.assigneeId === user.id) {
       if (ticket.status === "accepted") {
         actions.push({
           id: "start_work",

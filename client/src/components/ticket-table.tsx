@@ -474,8 +474,8 @@ export function TicketTable({
                                 </DropdownMenuItem>
                               )}
 
-                              {/* Technician actions */}
-                              {userRole === "technician" && (
+                              {/* Technician actions (includes self-assigned maintenance admins) */}
+                              {(userRole === "technician" || (userRole === "maintenance_admin" && ticket.assigneeId === userId)) && (
                                 <>
                                   {ticket.status === "accepted" && onStart && (
                                     <DropdownMenuItem 
