@@ -40,7 +40,11 @@ interface EditableWorkOrder {
   description: string;
   originalCost: number;
   adjustedCost: number;
+  laborHours: number;
+  laborRate: number;
   laborCost: number;
+  billableLaborHours: number;
+  billableLaborRate: number;
   billableLaborCost: number;
   parts: EditableWorkOrderPart[];
   editable: boolean;
@@ -95,13 +99,21 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
           const partsTotal = parts.reduce((sum, part) => sum + (part.cost * part.quantity), 0);
           const totalCost = parseFloat(wo.totalCost || 0);
           const laborCost = Math.max(0, totalCost - partsTotal);
+          
+          // Calculate labor hours and rate
+          const laborHours = parseFloat(wo.totalHours || 0);
+          const laborRate = laborHours > 0 ? laborCost / laborHours : 0;
 
           return {
             id: wo.id,
             description: wo.workDescription || `Work Order #${wo.workOrderNumber || wo.id}`,
             originalCost: totalCost,
             adjustedCost: totalCost,
+            laborHours: laborHours,
+            laborRate: laborRate,
             laborCost: laborCost,
+            billableLaborHours: laborHours,
+            billableLaborRate: laborRate,
             billableLaborCost: laborCost,
             parts: parts,
             editable: true
@@ -118,7 +130,8 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
   useEffect(() => {
     const workOrderTotal = editableWorkOrders.reduce((sum, wo) => {
       const partsTotal = wo.parts.reduce((partSum, part) => partSum + part.billableCost * part.quantity, 0);
-      return sum + wo.billableLaborCost + partsTotal;
+      const laborTotal = wo.billableLaborHours * wo.billableLaborRate;
+      return sum + laborTotal + partsTotal;
     }, 0);
     const additionalTotal = additionalItems.reduce((sum, item) => sum + item.amount, 0);
     const calculatedSubtotal = workOrderTotal + additionalTotal;
@@ -210,9 +223,15 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
     }));
   };
 
-  const updateWorkOrderLaborCost = (id: number, newLaborCost: number) => {
+  const updateWorkOrderLaborHours = (id: number, newHours: number) => {
     setEditableWorkOrders(prev => prev.map(wo => 
-      wo.id === id ? { ...wo, billableLaborCost: newLaborCost } : wo
+      wo.id === id ? { ...wo, billableLaborHours: newHours } : wo
+    ));
+  };
+
+  const updateWorkOrderLaborRate = (id: number, newRate: number) => {
+    setEditableWorkOrders(prev => prev.map(wo => 
+      wo.id === id ? { ...wo, billableLaborRate: newRate } : wo
     ));
   };
 
@@ -295,22 +314,49 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
                 {/* Labor Section */}
                 <View style={styles.breakdownSection}>
                   <Text style={styles.breakdownTitle}>Labor</Text>
-                  <View style={styles.laborRow}>
-                    <Text style={styles.itemLabel}>
-                      Original: {formatCurrency(workOrder.laborCost)}
+                  <View style={styles.laborDetailsRow}>
+                    <Text style={styles.laborSummary}>
+                      Original: {workOrder.laborHours.toFixed(2)} hrs × {formatCurrency(workOrder.laborRate)}/hr = {formatCurrency(workOrder.laborCost)}
                     </Text>
-                    <View style={styles.costInputContainer}>
-                      <Text style={styles.costLabel}>Billable:</Text>
+                  </View>
+                  
+                  <View style={styles.laborInputRow}>
+                    <View style={styles.laborInputGroup}>
+                      <Text style={styles.inputLabel}>Hours:</Text>
                       <TextInput
-                        style={styles.costInput}
-                        value={workOrder.billableLaborCost.toString()}
+                        style={styles.laborInput}
+                        value={workOrder.billableLaborHours.toString()}
                         onChangeText={(text) => {
-                          const newCost = parseFloat(text) || 0;
-                          updateWorkOrderLaborCost(workOrder.id, newCost);
+                          const newHours = parseFloat(text) || 0;
+                          updateWorkOrderLaborHours(workOrder.id, newHours);
                         }}
                         keyboardType="decimal-pad"
                         placeholderTextColor="#6b7280"
                       />
+                    </View>
+                    
+                    <Text style={styles.multiplySymbol}>×</Text>
+                    
+                    <View style={styles.laborInputGroup}>
+                      <Text style={styles.inputLabel}>Rate:</Text>
+                      <TextInput
+                        style={styles.laborInput}
+                        value={workOrder.billableLaborRate.toString()}
+                        onChangeText={(text) => {
+                          const newRate = parseFloat(text) || 0;
+                          updateWorkOrderLaborRate(workOrder.id, newRate);
+                        }}
+                        keyboardType="decimal-pad"
+                        placeholderTextColor="#6b7280"
+                      />
+                    </View>
+                    
+                    <Text style={styles.equalsSymbol}>=</Text>
+                    
+                    <View style={styles.laborTotalGroup}>
+                      <Text style={styles.laborTotal}>
+                        {formatCurrency(workOrder.billableLaborHours * workOrder.billableLaborRate)}
+                      </Text>
                     </View>
                   </View>
                 </View>
@@ -350,7 +396,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
                   <Text style={styles.workOrderTotalLabel}>Work Order Total:</Text>
                   <Text style={styles.workOrderTotalValue}>
                     {formatCurrency(
-                      workOrder.billableLaborCost + 
+                      (workOrder.billableLaborHours * workOrder.billableLaborRate) + 
                       workOrder.parts.reduce((sum, part) => sum + (part.billableCost * part.quantity), 0)
                     )}
                   </Text>
@@ -588,6 +634,62 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  laborDetailsRow: {
+    marginBottom: 12,
+  },
+  laborSummary: {
+    fontSize: 11,
+    color: '#9ca3af',
+    lineHeight: 16,
+  },
+  laborInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  laborInputGroup: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  inputLabel: {
+    fontSize: 10,
+    color: '#9ca3af',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  laborInput: {
+    backgroundColor: '#6b7280',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    fontSize: 12,
+    color: '#f3f4f6',
+    textAlign: 'center',
+    minWidth: 50,
+  },
+  multiplySymbol: {
+    fontSize: 12,
+    color: '#9ca3af',
+    fontWeight: '600',
+    marginHorizontal: 4,
+  },
+  equalsSymbol: {
+    fontSize: 12,
+    color: '#9ca3af',
+    fontWeight: '600',
+    marginHorizontal: 4,
+  },
+  laborTotalGroup: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  laborTotal: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#10b981',
+    textAlign: 'center',
   },
   partRow: {
     flexDirection: 'row',
