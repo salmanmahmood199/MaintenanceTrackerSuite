@@ -53,19 +53,30 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
   const [activeTab, setActiveTab] = useState<'create' | 'preview'>('create');
   const queryClient = useQueryClient();
 
-  // Initialize editable work orders
+  // Reset form when modal opens and initialize work orders
   useEffect(() => {
-    if (workOrders.length > 0 && editableWorkOrders.length === 0) {
-      const initWorkOrders = workOrders.map(wo => ({
-        id: wo.id,
-        description: wo.workDescription || `Work Order #${wo.workOrderNumber || wo.id}`,
-        originalCost: parseFloat(wo.totalCost || 0),
-        adjustedCost: parseFloat(wo.totalCost || 0),
-        editable: true
-      }));
-      setEditableWorkOrders(initWorkOrders);
+    if (visible) {
+      setAdditionalItems([]);
+      setTaxPercentage('0');
+      setTaxAmount(0);
+      setNotes('');
+      setActiveTab('create');
+      
+      // Initialize work orders
+      if (workOrders && workOrders.length > 0) {
+        const initWorkOrders = workOrders.map(wo => ({
+          id: wo.id,
+          description: wo.workDescription || `Work Order #${wo.workOrderNumber || wo.id}`,
+          originalCost: parseFloat(wo.totalCost || 0),
+          adjustedCost: parseFloat(wo.totalCost || 0),
+          editable: true
+        }));
+        setEditableWorkOrders(initWorkOrders);
+      } else {
+        setEditableWorkOrders([]);
+      }
     }
-  }, [workOrders]);
+  }, [visible, workOrders]);
 
   // Calculate totals from work orders and additional items
   useEffect(() => {
@@ -79,18 +90,6 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
     setTaxAmount(calculatedTaxAmount);
     setTotal(calculatedSubtotal + calculatedTaxAmount);
   }, [editableWorkOrders, additionalItems, taxPercentage]);
-
-  // Reset form when modal opens
-  useEffect(() => {
-    if (visible) {
-      setAdditionalItems([]);
-      setEditableWorkOrders([]);
-      setTaxPercentage('0');
-      setTaxAmount(0);
-      setNotes('');
-      setActiveTab('create');
-    }
-  }, [visible]);
 
   const createInvoiceMutation = useMutation({
     mutationFn: async (invoiceData: any) => {
