@@ -16,6 +16,8 @@ This is a full-stack maintenance ticketing application for commercial businesses
 - **Counter Offer System**: Completed counter offer functionality with proper accept/reject workflows, hourly rate formatting, and mobile app support
 - **Streamlined Mobile Workflow**: Eliminated workflow friction by removing intermediate confirmation popups and native iOS picker, replaced with custom in-app technician selector that auto-navigates to work order creation upon assignment
 - **PDF Invoice Preview**: Added professional PDF preview functionality for mobile invoice creation with real-time updates and complete line item display
+- **Web Progress Bar Fix**: Fixed progress tracker visibility issue by increasing container height from 60vh to 80vh
+- **Mobile Dashboard Redesign**: Removed blue stats boxes and redesigned mobile dashboard with intuitive search functionality, priority overview, and enhanced filtering system with clear visual indicators for ticket status and counts
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
