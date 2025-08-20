@@ -907,40 +907,8 @@ export default function TicketDetailsScreen() {
   };
 
   const completeWork = async () => {
-    Alert.alert(
-      "Complete Work",
-      "Are you sure you want to mark this work as completed?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Complete",
-          onPress: async () => {
-            try {
-              const response = await apiRequest(
-                "POST",
-                `/api/tickets/${id}/complete`,
-                {
-                  workOrder: {
-                    workDescription: "Mobile app completion",
-                    completionStatus: "complete",
-                    completionNotes: "Work completed via mobile app",
-                  },
-                },
-              );
-              if (response.status === 200) {
-                queryClient.invalidateQueries({ queryKey: ["ticket", id] });
-                Alert.alert("Success", "Work completed successfully");
-              }
-            } catch (error: any) {
-              Alert.alert(
-                "Error",
-                error.response?.data?.message || "Failed to complete work",
-              );
-            }
-          },
-        },
-      ],
-    );
+    // Open the full work order modal instead of simple completion
+    setWorkOrderModalVisible(true);
   };
 
   const confirmCompletion = async () => {
