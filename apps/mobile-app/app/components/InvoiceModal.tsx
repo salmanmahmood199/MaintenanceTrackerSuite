@@ -81,6 +81,8 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
         const initWorkOrders = workOrders.map(wo => {
           // Parse parts from work order
           let parts: EditableWorkOrderPart[] = [];
+          let partsTotal = 0;
+          
           try {
             if (wo.parts && wo.parts !== '[]' && wo.parts !== '') {
               const parsedParts = JSON.parse(wo.parts);
@@ -90,30 +92,39 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
                 quantity: parseInt(part.quantity || 1),
                 billableCost: parseFloat(part.cost || 0)
               }));
+              partsTotal = parts.reduce((sum, part) => sum + (part.cost * part.quantity), 0);
             }
           } catch (error) {
             console.log('Error parsing parts for work order:', wo.id, error);
           }
 
-          // Calculate labor cost (total - parts)
-          const partsTotal = parts.reduce((sum, part) => sum + (part.cost * part.quantity), 0);
-          const totalCost = parseFloat(wo.totalCost || 0);
-          const laborCost = Math.max(0, totalCost - partsTotal);
-          
-          // Calculate labor hours and rate
+          // If no parts found but totalCost exists, treat totalCost as a single parts entry
+          if (parts.length === 0 && wo.totalCost && parseFloat(wo.totalCost) > 0) {
+            const totalCostValue = parseFloat(wo.totalCost);
+            parts = [{
+              name: 'Parts/Materials',
+              cost: totalCostValue,
+              quantity: 1,
+              billableCost: totalCostValue
+            }];
+            partsTotal = totalCostValue;
+          }
+
+          // Labor calculation - separate from parts
           const laborHours = parseFloat(wo.totalHours || 0);
-          const laborRate = laborHours > 0 ? laborCost / laborHours : 0;
+          const defaultLaborRate = 75; // Default hourly rate
+          const laborCost = laborHours * defaultLaborRate;
 
           return {
             id: wo.id,
             description: wo.workDescription || `Work Order #${wo.workOrderNumber || wo.id}`,
-            originalCost: totalCost,
-            adjustedCost: totalCost,
+            originalCost: partsTotal + laborCost,
+            adjustedCost: partsTotal + laborCost,
             laborHours: laborHours,
-            laborRate: laborRate,
+            laborRate: defaultLaborRate,
             laborCost: laborCost,
             billableLaborHours: laborHours,
-            billableLaborRate: laborRate,
+            billableLaborRate: defaultLaborRate,
             billableLaborCost: laborCost,
             parts: parts,
             editable: true
@@ -320,7 +331,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
                     <View style={styles.lineItemHeader}>
                       <Text style={styles.lineItemTitle}>Labor</Text>
                       <Text style={styles.originalInfo}>
-                        Original: {workOrder.laborHours.toFixed(1)} hrs × {formatCurrency(workOrder.laborRate)}/hr
+                        Time worked: {workOrder.laborHours.toFixed(1)} hours
                       </Text>
                     </View>
                     
