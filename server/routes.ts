@@ -1891,17 +1891,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  // Complete ticket with work order (technician)
+  // Complete ticket with work order (technician and self-assigned maintenance admins)
   app.post(
     "/api/tickets/:id/complete",
     authenticateUser,
-    requireRole(["technician"]),
     upload.array("images"),
     async (req: AuthenticatedRequest, res) => {
       try {
         const id = parseInt(req.params.id);
         let workOrder;
         const user = req.user!;
+
+        // Get the ticket first to check permissions
+        const existingTicket = await storage.getTicket(id);
+        if (!existingTicket) {
+          return res.status(404).json({ message: "Ticket not found" });
+        }
+
+        // Check if user has permission to complete work
+        const canCompleteWork = 
+          user.role === "technician" || 
+          (user.role === "maintenance_admin" && existingTicket.assigneeId === user.id);
+
+        if (!canCompleteWork) {
+          return res.status(403).json({ message: "Insufficient permissions" });
+        }
 
         // Parse workOrder from FormData
         try {
