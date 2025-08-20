@@ -231,6 +231,35 @@ const WorkOrderDetailsModal: React.FC<WorkOrderDetailsModalProps> = ({
             </View>
           )}
 
+          {/* Manager Signature */}
+          {(workOrder.managerName || workOrder.managerSignature) && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Manager Approval</Text>
+              {workOrder.managerName && (
+                <View style={styles.signatureInfo}>
+                  <Text style={styles.signatureLabel}>Manager Name:</Text>
+                  <Text style={styles.signatureValue}>{workOrder.managerName}</Text>
+                </View>
+              )}
+              {workOrder.managerSignature && (
+                <View style={styles.signatureContainer}>
+                  <Text style={styles.signatureLabel}>Manager Signature:</Text>
+                  <TouchableOpacity
+                    style={styles.signatureImageContainer}
+                    onPress={() => setImageModal({ visible: true, imageUri: workOrder.managerSignature })}
+                    activeOpacity={0.7}
+                  >
+                    <Image
+                      source={{ uri: workOrder.managerSignature }}
+                      style={styles.signatureImage}
+                      resizeMode="contain"
+                    />
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          )}
+
           {/* Photos */}
           {workOrder.images && workOrder.images.length > 0 && (
             <View style={styles.section}>
@@ -492,6 +521,39 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: '#f3f4f6',
+  },
+  // Signature styles
+  signatureInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4,
+    marginBottom: 8,
+  },
+  signatureLabel: {
+    fontSize: 14,
+    color: '#9ca3af',
+    fontWeight: '500',
+  },
+  signatureValue: {
+    fontSize: 14,
+    color: '#f3f4f6',
+    fontWeight: '500',
+  },
+  signatureContainer: {
+    marginTop: 8,
+  },
+  signatureImageContainer: {
+    marginTop: 8,
+    backgroundColor: '#374151',
+    borderRadius: 8,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: '#4b5563',
+  },
+  signatureImage: {
+    width: '100%',
+    height: 120,
   },
 });
 
