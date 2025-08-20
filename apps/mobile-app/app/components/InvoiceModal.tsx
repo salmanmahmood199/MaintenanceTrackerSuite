@@ -28,6 +28,14 @@ interface InvoiceItem {
   amount: number;
 }
 
+interface EditableWorkOrder {
+  id: number;
+  description: string;
+  originalCost: number;
+  adjustedCost: number;
+  editable: boolean;
+}
+
 const InvoiceModal: React.FC<InvoiceModalProps> = ({
   visible,
   onClose,
@@ -36,29 +44,49 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
   user
 }) => {
   const [additionalItems, setAdditionalItems] = useState<InvoiceItem[]>([]);
-  const [tax, setTax] = useState('0');
+  const [editableWorkOrders, setEditableWorkOrders] = useState<EditableWorkOrder[]>([]);
+  const [taxPercentage, setTaxPercentage] = useState('0');
+  const [taxAmount, setTaxAmount] = useState(0);
   const [notes, setNotes] = useState('');
   const [subtotal, setSubtotal] = useState(0);
   const [total, setTotal] = useState(0);
   const [activeTab, setActiveTab] = useState<'create' | 'preview'>('create');
   const queryClient = useQueryClient();
 
+  // Initialize editable work orders
+  useEffect(() => {
+    if (workOrders.length > 0 && editableWorkOrders.length === 0) {
+      const initWorkOrders = workOrders.map(wo => ({
+        id: wo.id,
+        description: wo.workDescription || `Work Order #${wo.workOrderNumber || wo.id}`,
+        originalCost: parseFloat(wo.totalCost || 0),
+        adjustedCost: parseFloat(wo.totalCost || 0),
+        editable: true
+      }));
+      setEditableWorkOrders(initWorkOrders);
+    }
+  }, [workOrders]);
+
   // Calculate totals from work orders and additional items
   useEffect(() => {
-    const workOrderTotal = workOrders.reduce((sum, wo) => sum + parseFloat(wo.totalCost || 0), 0);
+    const workOrderTotal = editableWorkOrders.reduce((sum, wo) => sum + wo.adjustedCost, 0);
     const additionalTotal = additionalItems.reduce((sum, item) => sum + item.amount, 0);
     const calculatedSubtotal = workOrderTotal + additionalTotal;
-    const taxAmount = parseFloat(tax) || 0;
+    const taxPercent = parseFloat(taxPercentage) || 0;
+    const calculatedTaxAmount = (calculatedSubtotal * taxPercent) / 100;
     
     setSubtotal(calculatedSubtotal);
-    setTotal(calculatedSubtotal + taxAmount);
-  }, [workOrders, additionalItems, tax]);
+    setTaxAmount(calculatedTaxAmount);
+    setTotal(calculatedSubtotal + calculatedTaxAmount);
+  }, [editableWorkOrders, additionalItems, taxPercentage]);
 
   // Reset form when modal opens
   useEffect(() => {
     if (visible) {
       setAdditionalItems([]);
-      setTax('0');
+      setEditableWorkOrders([]);
+      setTaxPercentage('0');
+      setTaxAmount(0);
       setNotes('');
       setActiveTab('create');
     }
@@ -106,12 +134,17 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
 
     const invoiceData = {
       ticketId: ticket.id,
-      workOrderIds: workOrders.map(wo => wo.id),
+      workOrderIds: editableWorkOrders.map(wo => wo.id),
       subtotal: subtotal.toFixed(2),
-      tax: tax || '0',
+      tax: taxAmount.toFixed(2),
+      taxPercentage: taxPercentage,
       total: total.toFixed(2),
       additionalItems: JSON.stringify(additionalItems),
-      notes: notes.trim() || null
+      notes: notes.trim() || null,
+      adjustedWorkOrderCosts: editableWorkOrders.reduce((acc, wo) => {
+        acc[wo.id] = wo.adjustedCost;
+        return acc;
+      }, {} as Record<number, number>)
     };
 
     createInvoiceMutation.mutate(invoiceData);
@@ -137,6 +170,12 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
       }
       return item;
     }));
+  };
+
+  const updateWorkOrderCost = (id: number, newCost: number) => {
+    setEditableWorkOrders(prev => prev.map(wo => 
+      wo.id === id ? { ...wo, adjustedCost: newCost } : wo
+    ));
   };
 
   const formatCurrency = (amount: number) => {
@@ -190,12 +229,31 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
 
           {/* Work Orders */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Work Orders ({workOrders.length})</Text>
-            {workOrders.map((workOrder, index) => (
+            <Text style={styles.sectionTitle}>Work Orders ({editableWorkOrders.length})</Text>
+            {editableWorkOrders.map((workOrder) => (
               <View key={workOrder.id} style={styles.workOrderItem}>
-                <Text style={styles.workOrderTitle}>Work Order #{workOrder.workOrderNumber}</Text>
-                <Text style={styles.workOrderDescription}>{workOrder.workDescription}</Text>
-                <Text style={styles.workOrderCost}>{formatCurrency(parseFloat(workOrder.totalCost || 0))}</Text>
+                <View style={styles.workOrderHeader}>
+                  <View style={styles.workOrderInfo}>
+                    <Text style={styles.workOrderTitle}>Work Order #{workOrder.id}</Text>
+                    <Text style={styles.workOrderDescription}>{workOrder.description}</Text>
+                    <Text style={styles.originalCostText}>
+                      Original: {formatCurrency(workOrder.originalCost)}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.workOrderCostRow}>
+                  <Text style={styles.costLabel}>Billable Amount:</Text>
+                  <TextInput
+                    style={styles.costInput}
+                    value={workOrder.adjustedCost.toString()}
+                    onChangeText={(text) => {
+                      const newCost = parseFloat(text) || 0;
+                      updateWorkOrderCost(workOrder.id, newCost);
+                    }}
+                    keyboardType="decimal-pad"
+                    placeholderTextColor="#6b7280"
+                  />
+                </View>
               </View>
             ))}
           </View>
@@ -250,19 +308,47 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
             ))}
           </View>
 
-          {/* Tax and Notes */}
+          {/* Tax */}
           <View style={styles.section}>
-            <Text style={styles.label}>Tax Amount</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="0.00"
-              placeholderTextColor="#6b7280"
-              value={tax}
-              keyboardType="numeric"
-              onChangeText={setTax}
-            />
+            <Text style={styles.sectionTitle}>Tax Information</Text>
+            <View style={styles.taxRow}>
+              <Text style={styles.label}>Tax Percentage:</Text>
+              <View style={styles.taxInputContainer}>
+                <TextInput
+                  style={styles.taxInput}
+                  placeholder="0"
+                  placeholderTextColor="#6b7280"
+                  value={taxPercentage}
+                  keyboardType="decimal-pad"
+                  onChangeText={setTaxPercentage}
+                />
+                <Text style={styles.percentSymbol}>%</Text>
+              </View>
+            </View>
+            <View style={styles.taxRow}>
+              <Text style={styles.label}>Tax Amount:</Text>
+              <Text style={styles.taxAmountText}>{formatCurrency(taxAmount)}</Text>
+            </View>
           </View>
 
+          {/* Invoice Totals */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Invoice Summary</Text>
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Subtotal:</Text>
+              <Text style={styles.totalValue}>{formatCurrency(subtotal)}</Text>
+            </View>
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Tax ({taxPercentage}%):</Text>
+              <Text style={styles.totalValue}>{formatCurrency(taxAmount)}</Text>
+            </View>
+            <View style={[styles.totalRow, styles.grandTotalRow]}>
+              <Text style={styles.grandTotalLabel}>Total:</Text>
+              <Text style={styles.grandTotalValue}>{formatCurrency(total)}</Text>
+            </View>
+          </View>
+
+          {/* Notes */}
           <View style={styles.section}>
             <Text style={styles.label}>Notes (Optional)</Text>
             <TextInput
@@ -485,6 +571,77 @@ const styles = StyleSheet.create({
   grandTotalValue: {
     fontSize: 16,
     fontWeight: '700',
+    color: '#10b981',
+  },
+  // Enhanced work order styles
+  workOrderHeader: {
+    marginBottom: 8,
+  },
+  workOrderInfo: {
+    flex: 1,
+  },
+  workOrderCostRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#4b5563',
+  },
+  costLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#9ca3af',
+  },
+  costInput: {
+    backgroundColor: '#4b5563',
+    borderRadius: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 14,
+    color: '#f3f4f6',
+    borderWidth: 1,
+    borderColor: '#6b7280',
+    minWidth: 100,
+    textAlign: 'right',
+  },
+  originalCostText: {
+    fontSize: 12,
+    color: '#6b7280',
+    fontStyle: 'italic',
+  },
+  // Tax styles
+  taxRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  taxInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#4b5563',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    borderWidth: 1,
+    borderColor: '#6b7280',
+  },
+  taxInput: {
+    fontSize: 14,
+    color: '#f3f4f6',
+    paddingVertical: 8,
+    minWidth: 60,
+    textAlign: 'right',
+  },
+  percentSymbol: {
+    fontSize: 14,
+    color: '#9ca3af',
+    marginLeft: 4,
+  },
+  taxAmountText: {
+    fontSize: 14,
+    fontWeight: '600',
     color: '#10b981',
   },
 });
