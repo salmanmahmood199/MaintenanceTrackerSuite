@@ -1802,15 +1802,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
-  // Start work on ticket (for technicians)
+  // Start work on ticket (for technicians and self-assigned maintenance admins)
   app.post(
     "/api/tickets/:id/start",
     authenticateUser,
-    requireRole(["technician"]),
     async (req, res) => {
       try {
         const id = parseInt(req.params.id);
         const user = req.user!;
+
+        // Get the ticket first to check permissions
+        const existingTicket = await storage.getTicket(id);
+        if (!existingTicket) {
+          return res.status(404).json({ message: "Ticket not found" });
+        }
+
+        // Check if user has permission to start work
+        const canStartWork = 
+          user.role === "technician" || 
+          (user.role === "maintenance_admin" && existingTicket.assigneeId === user.id);
+
+        if (!canStartWork) {
+          return res.status(403).json({ message: "Insufficient permissions" });
+        }
 
         const ticket = await storage.updateTicket(id, {
           status: "in-progress",
