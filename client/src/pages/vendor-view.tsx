@@ -19,6 +19,7 @@ import { VendorTicketActionModal } from "@/components/vendor-ticket-action-modal
 import { MarketplaceTicketsView } from "@/components/marketplace-tickets-view";
 import { CreateTechnicianModal } from "@/components/create-technician-modal";
 import { EditTechnicianModal } from "@/components/edit-technician-modal";
+import { TechnicianWorkOrderModal } from "@/components/technician-work-order-modal";
 
 import PartsManagement from "./parts-management";
 import { apiRequest } from "@/lib/queryClient";
@@ -425,8 +426,51 @@ export function VendorView() {
     startWorkMutation.mutate(ticketId);
   };
 
+  // State for work order modal
+  const [isWorkOrderModalOpen, setIsWorkOrderModalOpen] = useState(false);
+  const [selectedTicketForWorkOrder, setSelectedTicketForWorkOrder] = useState<Ticket | null>(null);
+
   const handleCompleteWork = (ticketId: number) => {
-    completeWorkMutation.mutate(ticketId);
+    const ticket = tickets.find(t => t.id === ticketId);
+    if (ticket) {
+      setSelectedTicketForWorkOrder(ticket);
+      setIsWorkOrderModalOpen(true);
+    }
+  };
+
+  // Submit work order mutation
+  const submitWorkOrderMutation = useMutation({
+    mutationFn: async ({ ticketId, workOrder, images }: { ticketId: number; workOrder: any; images: File[] }) => {
+      const formData = new FormData();
+      formData.append('workOrder', JSON.stringify(workOrder));
+      
+      images.forEach((image, index) => {
+        formData.append('images', image);
+      });
+
+      const response = await apiRequest("POST", `/api/tickets/${ticketId}/complete`, formData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+      setIsWorkOrderModalOpen(false);
+      setSelectedTicketForWorkOrder(null);
+      toast({
+        title: "Success",
+        description: "Work order submitted successfully!",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error", 
+        description: "Failed to submit work order",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleWorkOrderSubmit = (ticketId: number, workOrder: any, images: File[]) => {
+    submitWorkOrderMutation.mutate({ ticketId, workOrder, images });
   };
 
   // Create technician mutation
@@ -1015,6 +1059,14 @@ export function VendorView() {
             })
           }
           isLoading={updateTechnicianMutation.isPending}
+        />
+
+        <TechnicianWorkOrderModal
+          open={isWorkOrderModalOpen}
+          onOpenChange={setIsWorkOrderModalOpen}
+          ticket={selectedTicketForWorkOrder}
+          onSubmit={handleWorkOrderSubmit}
+          isLoading={submitWorkOrderMutation.isPending}
         />
       </div>
     </div>
