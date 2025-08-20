@@ -377,6 +377,58 @@ export function VendorView() {
     forceCloseMutation.mutate({ id, reason });
   };
 
+  // Start work mutation
+  const startWorkMutation = useMutation({
+    mutationFn: async (ticketId: number) => {
+      const response = await apiRequest("POST", `/api/tickets/${ticketId}/start-work`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+      toast({
+        title: "Success",
+        description: "Work started successfully!",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: "Failed to start work",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Complete work mutation
+  const completeWorkMutation = useMutation({
+    mutationFn: async (ticketId: number) => {
+      const response = await apiRequest("POST", `/api/tickets/${ticketId}/complete-work`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+      toast({
+        title: "Success",
+        description: "Work completed successfully!",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: "Failed to complete work",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleStartWork = (ticketId: number) => {
+    startWorkMutation.mutate(ticketId);
+  };
+
+  const handleCompleteWork = (ticketId: number) => {
+    completeWorkMutation.mutate(ticketId);
+  };
+
   // Create technician mutation
   const createTechnicianMutation = useMutation({
     mutationFn: async (technicianData: any) => {
@@ -772,6 +824,8 @@ export function VendorView() {
                       ? openRejectModal
                       : undefined
                   }
+                  onStart={handleStartWork}
+                  onComplete={handleCompleteWork}
                   onCreateInvoice={handleCreateInvoice}
                   onForceClose={
                     user?.role === "maintenance_admin"
