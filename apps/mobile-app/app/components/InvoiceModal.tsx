@@ -28,11 +28,21 @@ interface InvoiceItem {
   amount: number;
 }
 
+interface EditableWorkOrderPart {
+  name: string;
+  cost: number;
+  quantity: number;
+  billableCost: number;
+}
+
 interface EditableWorkOrder {
   id: number;
   description: string;
   originalCost: number;
   adjustedCost: number;
+  laborCost: number;
+  billableLaborCost: number;
+  parts: EditableWorkOrderPart[];
   editable: boolean;
 }
 
@@ -62,15 +72,41 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
       setNotes('');
       setActiveTab('create');
       
-      // Initialize work orders
+      // Initialize work orders with parts and labor breakdown
       if (workOrders && workOrders.length > 0) {
-        const initWorkOrders = workOrders.map(wo => ({
-          id: wo.id,
-          description: wo.workDescription || `Work Order #${wo.workOrderNumber || wo.id}`,
-          originalCost: parseFloat(wo.totalCost || 0),
-          adjustedCost: parseFloat(wo.totalCost || 0),
-          editable: true
-        }));
+        const initWorkOrders = workOrders.map(wo => {
+          // Parse parts from work order
+          let parts: EditableWorkOrderPart[] = [];
+          try {
+            if (wo.parts && wo.parts !== '[]' && wo.parts !== '') {
+              const parsedParts = JSON.parse(wo.parts);
+              parts = parsedParts.map((part: any) => ({
+                name: part.name || 'Unnamed Part',
+                cost: parseFloat(part.cost || 0),
+                quantity: parseInt(part.quantity || 1),
+                billableCost: parseFloat(part.cost || 0)
+              }));
+            }
+          } catch (error) {
+            console.log('Error parsing parts for work order:', wo.id, error);
+          }
+
+          // Calculate labor cost (total - parts)
+          const partsTotal = parts.reduce((sum, part) => sum + (part.cost * part.quantity), 0);
+          const totalCost = parseFloat(wo.totalCost || 0);
+          const laborCost = Math.max(0, totalCost - partsTotal);
+
+          return {
+            id: wo.id,
+            description: wo.workDescription || `Work Order #${wo.workOrderNumber || wo.id}`,
+            originalCost: totalCost,
+            adjustedCost: totalCost,
+            laborCost: laborCost,
+            billableLaborCost: laborCost,
+            parts: parts,
+            editable: true
+          };
+        });
         setEditableWorkOrders(initWorkOrders);
       } else {
         setEditableWorkOrders([]);
@@ -80,7 +116,10 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
 
   // Calculate totals from work orders and additional items
   useEffect(() => {
-    const workOrderTotal = editableWorkOrders.reduce((sum, wo) => sum + wo.adjustedCost, 0);
+    const workOrderTotal = editableWorkOrders.reduce((sum, wo) => {
+      const partsTotal = wo.parts.reduce((partSum, part) => partSum + part.billableCost * part.quantity, 0);
+      return sum + wo.billableLaborCost + partsTotal;
+    }, 0);
     const additionalTotal = additionalItems.reduce((sum, item) => sum + item.amount, 0);
     const calculatedSubtotal = workOrderTotal + additionalTotal;
     const taxPercent = parseFloat(taxPercentage) || 0;
@@ -171,10 +210,22 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
     }));
   };
 
-  const updateWorkOrderCost = (id: number, newCost: number) => {
+  const updateWorkOrderLaborCost = (id: number, newLaborCost: number) => {
     setEditableWorkOrders(prev => prev.map(wo => 
-      wo.id === id ? { ...wo, adjustedCost: newCost } : wo
+      wo.id === id ? { ...wo, billableLaborCost: newLaborCost } : wo
     ));
+  };
+
+  const updateWorkOrderPartCost = (workOrderId: number, partIndex: number, newCost: number) => {
+    setEditableWorkOrders(prev => prev.map(wo => {
+      if (wo.id === workOrderId) {
+        const updatedParts = wo.parts.map((part, index) => 
+          index === partIndex ? { ...part, billableCost: newCost } : part
+        );
+        return { ...wo, parts: updatedParts };
+      }
+      return wo;
+    }));
   };
 
   const formatCurrency = (amount: number) => {
@@ -236,22 +287,73 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
                     <Text style={styles.workOrderTitle}>Work Order #{workOrder.id}</Text>
                     <Text style={styles.workOrderDescription}>{workOrder.description}</Text>
                     <Text style={styles.originalCostText}>
-                      Original: {formatCurrency(workOrder.originalCost)}
+                      Original Total: {formatCurrency(workOrder.originalCost)}
                     </Text>
                   </View>
                 </View>
-                <View style={styles.workOrderCostRow}>
-                  <Text style={styles.costLabel}>Billable Amount:</Text>
-                  <TextInput
-                    style={styles.costInput}
-                    value={workOrder.adjustedCost.toString()}
-                    onChangeText={(text) => {
-                      const newCost = parseFloat(text) || 0;
-                      updateWorkOrderCost(workOrder.id, newCost);
-                    }}
-                    keyboardType="decimal-pad"
-                    placeholderTextColor="#6b7280"
-                  />
+                
+                {/* Labor Section */}
+                <View style={styles.breakdownSection}>
+                  <Text style={styles.breakdownTitle}>Labor</Text>
+                  <View style={styles.laborRow}>
+                    <Text style={styles.itemLabel}>
+                      Original: {formatCurrency(workOrder.laborCost)}
+                    </Text>
+                    <View style={styles.costInputContainer}>
+                      <Text style={styles.costLabel}>Billable:</Text>
+                      <TextInput
+                        style={styles.costInput}
+                        value={workOrder.billableLaborCost.toString()}
+                        onChangeText={(text) => {
+                          const newCost = parseFloat(text) || 0;
+                          updateWorkOrderLaborCost(workOrder.id, newCost);
+                        }}
+                        keyboardType="decimal-pad"
+                        placeholderTextColor="#6b7280"
+                      />
+                    </View>
+                  </View>
+                </View>
+
+                {/* Parts Section */}
+                {workOrder.parts.length > 0 && (
+                  <View style={styles.breakdownSection}>
+                    <Text style={styles.breakdownTitle}>Parts ({workOrder.parts.length})</Text>
+                    {workOrder.parts.map((part, partIndex) => (
+                      <View key={partIndex} style={styles.partRow}>
+                        <View style={styles.partInfo}>
+                          <Text style={styles.partName}>{part.name}</Text>
+                          <Text style={styles.partDetails}>
+                            Qty: {part.quantity} × Original: {formatCurrency(part.cost)}
+                          </Text>
+                        </View>
+                        <View style={styles.costInputContainer}>
+                          <Text style={styles.costLabel}>Billable:</Text>
+                          <TextInput
+                            style={styles.costInput}
+                            value={part.billableCost.toString()}
+                            onChangeText={(text) => {
+                              const newCost = parseFloat(text) || 0;
+                              updateWorkOrderPartCost(workOrder.id, partIndex, newCost);
+                            }}
+                            keyboardType="decimal-pad"
+                            placeholderTextColor="#6b7280"
+                          />
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                {/* Work Order Total */}
+                <View style={styles.workOrderTotalRow}>
+                  <Text style={styles.workOrderTotalLabel}>Work Order Total:</Text>
+                  <Text style={styles.workOrderTotalValue}>
+                    {formatCurrency(
+                      workOrder.billableLaborCost + 
+                      workOrder.parts.reduce((sum, part) => sum + (part.billableCost * part.quantity), 0)
+                    )}
+                  </Text>
                 </View>
               </View>
             ))}
@@ -449,6 +551,12 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 8,
   },
+  workOrderHeader: {
+    marginBottom: 12,
+  },
+  workOrderInfo: {
+    flex: 1,
+  },
   workOrderTitle: {
     fontSize: 14,
     fontWeight: '600',
@@ -460,11 +568,89 @@ const styles = StyleSheet.create({
     color: '#9ca3af',
     marginBottom: 4,
   },
-  workOrderCost: {
+  originalCostText: {
+    fontSize: 12,
+    color: '#9ca3af',
+  },
+  breakdownSection: {
+    backgroundColor: '#4b5563',
+    borderRadius: 6,
+    padding: 10,
+    marginBottom: 8,
+  },
+  breakdownTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#e5e7eb',
+    marginBottom: 8,
+  },
+  laborRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  partRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  partInfo: {
+    flex: 1,
+    marginRight: 8,
+  },
+  partName: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#f3f4f6',
+  },
+  partDetails: {
+    fontSize: 11,
+    color: '#9ca3af',
+    marginTop: 2,
+  },
+  itemLabel: {
+    fontSize: 12,
+    color: '#9ca3af',
+    flex: 1,
+  },
+  costInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  costLabel: {
+    fontSize: 11,
+    color: '#9ca3af',
+  },
+  costInput: {
+    backgroundColor: '#6b7280',
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    fontSize: 12,
+    color: '#f3f4f6',
+    minWidth: 60,
+    textAlign: 'right',
+  },
+  workOrderTotalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 8,
+    marginTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#6b7280',
+  },
+  workOrderTotalLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#e5e7eb',
+  },
+  workOrderTotalValue: {
     fontSize: 14,
     fontWeight: '700',
     color: '#10b981',
-    textAlign: 'right',
   },
   addButton: {
     flexDirection: 'row',
