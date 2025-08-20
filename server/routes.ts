@@ -2980,7 +2980,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // If user is maintenance_admin, use the assigned technician
         if (user.role === "maintenance_admin" && ticket.assigneeId) {
-          const assignedTechnician = await storage.getUserById(ticket.assigneeId);
+          const assignedTechnician = await storage.getUser(ticket.assigneeId);
           if (assignedTechnician) {
             technicianId = assignedTechnician.id;
             technicianName = assignedTechnician.name || assignedTechnician.email || 'Unknown Technician';
