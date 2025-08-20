@@ -32,6 +32,7 @@ interface EditableWorkOrderPart {
   name: string;
   cost: number;
   quantity: number;
+  billableQuantity: number;
   billableCost: number;
 }
 
@@ -61,6 +62,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
   const [editableWorkOrders, setEditableWorkOrders] = useState<EditableWorkOrder[]>([]);
   const [taxPercentage, setTaxPercentage] = useState('0');
   const [taxAmount, setTaxAmount] = useState(0);
+  const [taxAppliedTo, setTaxAppliedTo] = useState<'parts' | 'labor' | 'total'>('total');
   const [notes, setNotes] = useState('');
   const [subtotal, setSubtotal] = useState(0);
   const [total, setTotal] = useState(0);
@@ -90,6 +92,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
                 name: part.name || 'Unnamed Part',
                 cost: parseFloat(part.cost || 0),
                 quantity: parseInt(part.quantity || 1),
+                billableQuantity: parseInt(part.quantity || 1),
                 billableCost: parseFloat(part.cost || 0)
               }));
               partsTotal = parts.reduce((sum, part) => sum + (part.cost * part.quantity), 0);
@@ -105,6 +108,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
               name: 'Parts/Materials',
               cost: totalCostValue,
               quantity: 1,
+              billableQuantity: 1,
               billableCost: totalCostValue
             }];
             partsTotal = totalCostValue;
@@ -139,20 +143,40 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
 
   // Calculate totals from work orders and additional items
   useEffect(() => {
-    const workOrderTotal = editableWorkOrders.reduce((sum, wo) => {
-      const partsTotal = wo.parts.reduce((partSum, part) => partSum + part.billableCost * part.quantity, 0);
-      const laborTotal = wo.billableLaborHours * wo.billableLaborRate;
-      return sum + laborTotal + partsTotal;
+    const laborTotal = editableWorkOrders.reduce((sum, wo) => {
+      return sum + (wo.billableLaborHours * wo.billableLaborRate);
     }, 0);
+    
+    const partsTotal = editableWorkOrders.reduce((sum, wo) => {
+      return sum + wo.parts.reduce((partSum, part) => partSum + part.billableCost * part.billableQuantity, 0);
+    }, 0);
+    
     const additionalTotal = additionalItems.reduce((sum, item) => sum + item.amount, 0);
-    const calculatedSubtotal = workOrderTotal + additionalTotal;
+    const calculatedSubtotal = laborTotal + partsTotal + additionalTotal;
+    
+    // Calculate tax based on selected option
     const taxPercent = parseFloat(taxPercentage) || 0;
-    const calculatedTaxAmount = (calculatedSubtotal * taxPercent) / 100;
+    let taxableAmount = 0;
+    
+    switch (taxAppliedTo) {
+      case 'parts':
+        taxableAmount = partsTotal + additionalTotal;
+        break;
+      case 'labor':
+        taxableAmount = laborTotal;
+        break;
+      case 'total':
+      default:
+        taxableAmount = calculatedSubtotal;
+        break;
+    }
+    
+    const calculatedTaxAmount = (taxableAmount * taxPercent) / 100;
     
     setSubtotal(calculatedSubtotal);
     setTaxAmount(calculatedTaxAmount);
     setTotal(calculatedSubtotal + calculatedTaxAmount);
-  }, [editableWorkOrders, additionalItems, taxPercentage]);
+  }, [editableWorkOrders, additionalItems, taxPercentage, taxAppliedTo]);
 
   const createInvoiceMutation = useMutation({
     mutationFn: async (invoiceData: any) => {
@@ -251,6 +275,18 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
       if (wo.id === workOrderId) {
         const updatedParts = wo.parts.map((part, index) => 
           index === partIndex ? { ...part, billableCost: newCost } : part
+        );
+        return { ...wo, parts: updatedParts };
+      }
+      return wo;
+    }));
+  };
+
+  const updateWorkOrderPartQuantity = (workOrderId: number, partIndex: number, newQuantity: number) => {
+    setEditableWorkOrders(prev => prev.map(wo => {
+      if (wo.id === workOrderId) {
+        const updatedParts = wo.parts.map((part, index) => 
+          index === partIndex ? { ...part, billableQuantity: newQuantity } : part
         );
         return { ...wo, parts: updatedParts };
       }
@@ -389,7 +425,16 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
                       <View style={styles.lineItemInputs}>
                         <View style={styles.inputGroup}>
                           <Text style={styles.inputLabel}>Qty</Text>
-                          <Text style={styles.readOnlyInput}>{part.quantity}</Text>
+                          <TextInput
+                            style={styles.lineItemInput}
+                            value={part.billableQuantity.toString()}
+                            onChangeText={(text) => {
+                              const newQuantity = parseInt(text) || 0;
+                              updateWorkOrderPartQuantity(workOrder.id, partIndex, newQuantity);
+                            }}
+                            keyboardType="number-pad"
+                            placeholderTextColor="#6b7280"
+                          />
                         </View>
                         
                         <Text style={styles.multiplier}>×</Text>
@@ -412,7 +457,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
                         
                         <View style={styles.totalGroup}>
                           <Text style={styles.lineItemTotal}>
-                            {formatCurrency(part.quantity * part.billableCost)}
+                            {formatCurrency(part.billableQuantity * part.billableCost)}
                           </Text>
                         </View>
                       </View>
@@ -426,7 +471,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
                   <Text style={styles.workOrderTotalValue}>
                     {formatCurrency(
                       (workOrder.billableLaborHours * workOrder.billableLaborRate) + 
-                      workOrder.parts.reduce((sum, part) => sum + (part.billableCost * part.quantity), 0)
+                      workOrder.parts.reduce((sum, part) => sum + (part.billableCost * part.billableQuantity), 0)
                     )}
                   </Text>
                 </View>
@@ -487,6 +532,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
           {/* Tax */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Tax Information</Text>
+            
             <View style={styles.taxRow}>
               <Text style={styles.label}>Tax Percentage:</Text>
               <View style={styles.taxInputContainer}>
@@ -501,6 +547,37 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
                 <Text style={styles.percentSymbol}>%</Text>
               </View>
             </View>
+            
+            <View style={styles.taxRow}>
+              <Text style={styles.label}>Apply Tax To:</Text>
+              <View style={styles.taxApplyContainer}>
+                <TouchableOpacity
+                  style={[styles.taxOption, taxAppliedTo === 'total' && styles.taxOptionActive]}
+                  onPress={() => setTaxAppliedTo('total')}
+                >
+                  <Text style={[styles.taxOptionText, taxAppliedTo === 'total' && styles.taxOptionTextActive]}>
+                    Total
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.taxOption, taxAppliedTo === 'parts' && styles.taxOptionActive]}
+                  onPress={() => setTaxAppliedTo('parts')}
+                >
+                  <Text style={[styles.taxOptionText, taxAppliedTo === 'parts' && styles.taxOptionTextActive]}>
+                    Parts
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.taxOption, taxAppliedTo === 'labor' && styles.taxOptionActive]}
+                  onPress={() => setTaxAppliedTo('labor')}
+                >
+                  <Text style={[styles.taxOptionText, taxAppliedTo === 'labor' && styles.taxOptionTextActive]}>
+                    Labor
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            
             <View style={styles.taxRow}>
               <Text style={styles.label}>Tax Amount:</Text>
               <Text style={styles.taxAmountText}>{formatCurrency(taxAmount)}</Text>
@@ -522,6 +599,13 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
               <Text style={styles.grandTotalLabel}>Total:</Text>
               <Text style={styles.grandTotalValue}>{formatCurrency(total)}</Text>
             </View>
+            {taxAppliedTo !== 'total' && (
+              <View style={styles.taxNoteRow}>
+                <Text style={styles.taxNote}>
+                  Tax applied to {taxAppliedTo} only
+                </Text>
+              </View>
+            )}
           </View>
 
           {/* Notes */}
@@ -968,6 +1052,47 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#10b981',
+  },
+  taxApplyContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  taxOption: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    backgroundColor: '#4b5563',
+    borderWidth: 1,
+    borderColor: '#6b7280',
+    minWidth: 60,
+  },
+  taxOptionActive: {
+    backgroundColor: '#3b82f6',
+    borderColor: '#2563eb',
+  },
+  taxOptionText: {
+    fontSize: 12,
+    color: '#d1d5db',
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  taxOptionTextActive: {
+    color: '#ffffff',
+    fontWeight: '600',
+  },
+  taxNoteRow: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#374151',
+  },
+  taxNote: {
+    fontSize: 12,
+    color: '#9ca3af',
+    fontStyle: 'italic',
+    textAlign: 'center',
   },
 });
 
