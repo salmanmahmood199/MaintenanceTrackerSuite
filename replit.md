@@ -14,6 +14,8 @@ This is a full-stack maintenance ticketing application for commercial businesses
 - **Billing Actions**: Added billing actions to Actions tab for tickets with "ready_for_billing" status
 - **Vendor Self-Assignment**: Added ability for maintenance vendor admins to assign tickets to themselves as technicians, supporting one-man vendor teams in both web and mobile applications
 - **Counter Offer System**: Completed counter offer functionality with proper accept/reject workflows, hourly rate formatting, and mobile app support
+- **Streamlined Mobile Workflow**: Eliminated workflow friction by removing intermediate confirmation popups and native iOS picker, replaced with custom in-app technician selector that auto-navigates to work order creation upon assignment
+- **PDF Invoice Preview**: Added professional PDF preview functionality for mobile invoice creation with real-time updates and complete line item display
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.

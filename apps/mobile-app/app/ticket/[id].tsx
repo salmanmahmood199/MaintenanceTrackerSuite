@@ -24,6 +24,7 @@ import WorkOrderModal from "../components/WorkOrderModal";
 import WorkOrderDetailsModal from "../components/WorkOrderDetailsModal";
 import InvoiceModal from "../components/InvoiceModal";
 import BidDetailsModal from "../components/BidDetailsModal";
+import TechnicianSelector from "../components/TechnicianSelector";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -153,6 +154,7 @@ export default function TicketDetailsScreen() {
   const [assignTechnicianModalVisible, setAssignTechnicianModalVisible] =
     useState(false);
   const [technicians, setTechnicians] = useState<any[]>([]);
+  const [techniciansLoading, setTechniciansLoading] = useState(false);
   const [selectedWorkOrder, setSelectedWorkOrder] = useState<any>(null);
   const [showWorkOrderDetailsModal, setShowWorkOrderDetailsModal] =
     useState(false);
@@ -692,6 +694,9 @@ export default function TicketDetailsScreen() {
 
   const assignTechnician = async () => {
     try {
+      setTechniciansLoading(true);
+      setAssignTechnicianModalVisible(true);
+      
       // Fetch available technicians for this vendor
       const response = await apiRequest(
         "GET",
@@ -699,166 +704,54 @@ export default function TicketDetailsScreen() {
       );
       if (!response.ok) {
         Alert.alert("Error", "Failed to fetch technicians");
+        setAssignTechnicianModalVisible(false);
         return;
       }
 
-      const technicians = await response.json();
-      if (!technicians || technicians.length === 0) {
-        // For maintenance admins, still allow self-assignment even without other technicians
-        if (user?.role === "maintenance_admin") {
-          Alert.alert(
-            "Assign Ticket",
-            "No other technicians available. You can assign this ticket to yourself:",
-            [
-              { text: "Cancel", style: "cancel" },
-              {
-                text: `Assign to Myself (${user.firstName} ${user.lastName})`,
-                onPress: async () => {
-                  try {
-                    const assignResponse = await apiRequest(
-                      "POST",
-                      `/api/tickets/${id}/assign-technician`,
-                      {
-                        assigneeId: user.id,
-                      },
-                    );
-                    if (assignResponse.ok) {
-                      queryClient.invalidateQueries({ queryKey: ["ticket", id] });
-                      queryClient.invalidateQueries({ queryKey: ["tickets"] });
-                      Alert.alert("Success", "Ticket assigned to yourself");
-                    }
-                  } catch (error: any) {
-                    Alert.alert(
-                      "Error",
-                      error.response?.data?.message || "Failed to assign technician",
-                    );
-                  }
-                },
-              },
-            ],
-          );
-          return;
-        } else {
-          Alert.alert(
-            "No Technicians",
-            "No technicians available for assignment",
-          );
-          return;
-        }
-      }
+      const fetchedTechnicians = await response.json();
+      setTechnicians(fetchedTechnicians || []);
 
-      // Create technician selection options, starting with self-assignment
-      const technicianOptions = [];
-      
-      // Add "Assign to Myself" option for maintenance admins
-      if (user?.role === "maintenance_admin") {
-        technicianOptions.push({
-          text: `Assign to Myself (${user.firstName} ${user.lastName})`,
-          onPress: async () => {
-            try {
-              const assignResponse = await apiRequest(
-                "POST",
-                `/api/tickets/${id}/assign-technician`,
-                {
-                  assigneeId: user.id,
-                },
-              );
-              if (assignResponse.ok) {
-                queryClient.invalidateQueries({ queryKey: ["ticket", id] });
-                queryClient.invalidateQueries({ queryKey: ["tickets"] });
-                Alert.alert(
-                  "Success",
-                  `Ticket assigned to yourself`,
-                );
-              }
-            } catch (error: any) {
-              Alert.alert(
-                "Error",
-                error.response?.data?.message || "Failed to assign technician",
-              );
-            }
-          },
-        });
-      }
-      
-      // Add other technicians
-      technicians.forEach((tech: any) => {
-        technicianOptions.push({
-          text: `${tech.firstName} ${tech.lastName} (${tech.email})`,
-          onPress: async () => {
-            try {
-              const assignResponse = await apiRequest(
-                "POST",
-                `/api/tickets/${id}/assign-technician`,
-                {
-                  assigneeId: tech.id,
-                },
-              );
-              if (assignResponse.ok) {
-                queryClient.invalidateQueries({ queryKey: ["ticket", id] });
-                queryClient.invalidateQueries({ queryKey: ["tickets"] });
-                Alert.alert(
-                  "Success",
-                  `Ticket assigned to ${tech.firstName} ${tech.lastName}`,
-                );
-              }
-            } catch (error: any) {
-              Alert.alert(
-                "Error",
-                error.response?.data?.message || "Failed to assign technician",
-              );
-            }
-          },
-        });
-      });
-
-      // Show different message based on whether self-assignment is available
-      const alertMessage = user?.role === "maintenance_admin" 
-        ? "You can assign this ticket to yourself or select a technician:"
-        : "Select a technician for this ticket:";
-      
-      Alert.alert("Assign Technician", alertMessage, [
-        { text: "Cancel", style: "cancel" },
-        ...technicianOptions,
-      ]);
     } catch (error: any) {
-      Alert.alert("Error", "Failed to load technicians");
+      Alert.alert(
+        "Error",
+        error.response?.data?.message || "Failed to fetch technicians",
+      );
+      setAssignTechnicianModalVisible(false);
+    } finally {
+      setTechniciansLoading(false);
+    }
+  };
+
+  const handleTechnicianSelect = async (technicianId: number, technicianName: string) => {
+    try {
+      const assignResponse = await apiRequest(
+        "POST",
+        `/api/tickets/${id}/assign-technician`,
+        {
+          assigneeId: technicianId,
+        },
+      );
+      
+      if (assignResponse.ok) {
+        queryClient.invalidateQueries({ queryKey: ["ticket", id] });
+        queryClient.invalidateQueries({ queryKey: ["tickets"] });
+        
+        // Auto-navigate to work order creation after successful assignment
+        setTimeout(() => {
+          setWorkOrderModalVisible(true);
+        }, 500);
+      }
+    } catch (error: any) {
+      Alert.alert(
+        "Error",
+        error.response?.data?.message || "Failed to assign technician",
+      );
     }
   };
 
   const startWork = async () => {
-    Alert.alert(
-      "Start Work",
-      "Would you like to create a work order with details or just start working?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Just Start",
-          onPress: async () => {
-            try {
-              const response = await apiRequest(
-                "POST",
-                `/api/tickets/${id}/start`,
-                {},
-              );
-              if (response.status === 200) {
-                queryClient.invalidateQueries({ queryKey: ["ticket", id] });
-                Alert.alert("Success", "Work started successfully");
-              }
-            } catch (error: any) {
-              Alert.alert(
-                "Error",
-                error.response?.data?.message || "Failed to start work",
-              );
-            }
-          },
-        },
-        {
-          text: "Create Work Order",
-          onPress: () => createWorkOrder(),
-        },
-      ],
-    );
+    // Skip intermediate confirmation, go directly to work order creation
+    setWorkOrderModalVisible(true);
   };
 
   const createWorkOrder = async () => {
@@ -3243,6 +3136,16 @@ export default function TicketDetailsScreen() {
           )}
         </View>
       </Modal>
+
+      {/* Technician Selector Modal */}
+      <TechnicianSelector
+        visible={assignTechnicianModalVisible}
+        onClose={() => setAssignTechnicianModalVisible(false)}
+        onSelect={handleTechnicianSelect}
+        technicians={technicians}
+        currentUser={user}
+        loading={techniciansLoading}
+      />
     </View>
   );
 }
