@@ -311,73 +311,83 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
                   </View>
                 </View>
                 
-                {/* Labor Section */}
+                {/* Line Items Section */}
                 <View style={styles.breakdownSection}>
-                  <Text style={styles.breakdownTitle}>Labor</Text>
-                  <View style={styles.laborDetailsRow}>
-                    <Text style={styles.laborSummary}>
-                      Original: {workOrder.laborHours.toFixed(2)} hrs × {formatCurrency(workOrder.laborRate)}/hr = {formatCurrency(workOrder.laborCost)}
-                    </Text>
-                  </View>
+                  <Text style={styles.breakdownTitle}>Line Items</Text>
                   
-                  <View style={styles.laborInputRow}>
-                    <View style={styles.laborInputGroup}>
-                      <Text style={styles.inputLabel}>Hours:</Text>
-                      <TextInput
-                        style={styles.laborInput}
-                        value={workOrder.billableLaborHours.toString()}
-                        onChangeText={(text) => {
-                          const newHours = parseFloat(text) || 0;
-                          updateWorkOrderLaborHours(workOrder.id, newHours);
-                        }}
-                        keyboardType="decimal-pad"
-                        placeholderTextColor="#6b7280"
-                      />
-                    </View>
-                    
-                    <Text style={styles.multiplySymbol}>×</Text>
-                    
-                    <View style={styles.laborInputGroup}>
-                      <Text style={styles.inputLabel}>Rate:</Text>
-                      <TextInput
-                        style={styles.laborInput}
-                        value={workOrder.billableLaborRate.toString()}
-                        onChangeText={(text) => {
-                          const newRate = parseFloat(text) || 0;
-                          updateWorkOrderLaborRate(workOrder.id, newRate);
-                        }}
-                        keyboardType="decimal-pad"
-                        placeholderTextColor="#6b7280"
-                      />
-                    </View>
-                    
-                    <Text style={styles.equalsSymbol}>=</Text>
-                    
-                    <View style={styles.laborTotalGroup}>
-                      <Text style={styles.laborTotal}>
-                        {formatCurrency(workOrder.billableLaborHours * workOrder.billableLaborRate)}
+                  {/* Labor Line Item */}
+                  <View style={styles.lineItem}>
+                    <View style={styles.lineItemHeader}>
+                      <Text style={styles.lineItemTitle}>Labor</Text>
+                      <Text style={styles.originalInfo}>
+                        Original: {workOrder.laborHours.toFixed(1)} hrs × {formatCurrency(workOrder.laborRate)}/hr
                       </Text>
                     </View>
+                    
+                    <View style={styles.lineItemInputs}>
+                      <View style={styles.inputGroup}>
+                        <Text style={styles.inputLabel}>Hours</Text>
+                        <TextInput
+                          style={styles.lineItemInput}
+                          value={workOrder.billableLaborHours.toString()}
+                          onChangeText={(text) => {
+                            const newHours = parseFloat(text) || 0;
+                            updateWorkOrderLaborHours(workOrder.id, newHours);
+                          }}
+                          keyboardType="decimal-pad"
+                          placeholderTextColor="#6b7280"
+                        />
+                      </View>
+                      
+                      <Text style={styles.multiplier}>×</Text>
+                      
+                      <View style={styles.inputGroup}>
+                        <Text style={styles.inputLabel}>Rate</Text>
+                        <TextInput
+                          style={styles.lineItemInput}
+                          value={workOrder.billableLaborRate.toFixed(2)}
+                          onChangeText={(text) => {
+                            const newRate = parseFloat(text) || 0;
+                            updateWorkOrderLaborRate(workOrder.id, newRate);
+                          }}
+                          keyboardType="decimal-pad"
+                          placeholderTextColor="#6b7280"
+                        />
+                      </View>
+                      
+                      <Text style={styles.equals}>=</Text>
+                      
+                      <View style={styles.totalGroup}>
+                        <Text style={styles.lineItemTotal}>
+                          {formatCurrency(workOrder.billableLaborHours * workOrder.billableLaborRate)}
+                        </Text>
+                      </View>
+                    </View>
                   </View>
-                </View>
 
-                {/* Parts Section */}
-                {workOrder.parts.length > 0 && (
-                  <View style={styles.breakdownSection}>
-                    <Text style={styles.breakdownTitle}>Parts ({workOrder.parts.length})</Text>
-                    {workOrder.parts.map((part, partIndex) => (
-                      <View key={partIndex} style={styles.partRow}>
-                        <View style={styles.partInfo}>
-                          <Text style={styles.partName}>{part.name}</Text>
-                          <Text style={styles.partDetails}>
-                            Qty: {part.quantity} × Original: {formatCurrency(part.cost)}
-                          </Text>
+                  {/* Parts Line Items */}
+                  {workOrder.parts.map((part, partIndex) => (
+                    <View key={partIndex} style={styles.lineItem}>
+                      <View style={styles.lineItemHeader}>
+                        <Text style={styles.lineItemTitle}>{part.name}</Text>
+                        <Text style={styles.originalInfo}>
+                          Original: {part.quantity} × {formatCurrency(part.cost)} each
+                        </Text>
+                      </View>
+                      
+                      <View style={styles.lineItemInputs}>
+                        <View style={styles.inputGroup}>
+                          <Text style={styles.inputLabel}>Qty</Text>
+                          <Text style={styles.readOnlyInput}>{part.quantity}</Text>
                         </View>
-                        <View style={styles.costInputContainer}>
-                          <Text style={styles.costLabel}>Billable:</Text>
+                        
+                        <Text style={styles.multiplier}>×</Text>
+                        
+                        <View style={styles.inputGroup}>
+                          <Text style={styles.inputLabel}>Rate</Text>
                           <TextInput
-                            style={styles.costInput}
-                            value={part.billableCost.toString()}
+                            style={styles.lineItemInput}
+                            value={part.billableCost.toFixed(2)}
                             onChangeText={(text) => {
                               const newCost = parseFloat(text) || 0;
                               updateWorkOrderPartCost(workOrder.id, partIndex, newCost);
@@ -386,10 +396,18 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({
                             placeholderTextColor="#6b7280"
                           />
                         </View>
+                        
+                        <Text style={styles.equals}>=</Text>
+                        
+                        <View style={styles.totalGroup}>
+                          <Text style={styles.lineItemTotal}>
+                            {formatCurrency(part.quantity * part.billableCost)}
+                          </Text>
+                        </View>
                       </View>
-                    ))}
-                  </View>
-                )}
+                    </View>
+                  ))}
+                </View>
 
                 {/* Work Order Total */}
                 <View style={styles.workOrderTotalRow}>
@@ -630,66 +648,89 @@ const styles = StyleSheet.create({
     color: '#e5e7eb',
     marginBottom: 8,
   },
-  laborRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  lineItem: {
+    backgroundColor: '#374151',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 10,
   },
-  laborDetailsRow: {
+  lineItemHeader: {
     marginBottom: 12,
   },
-  laborSummary: {
-    fontSize: 11,
-    color: '#9ca3af',
-    lineHeight: 16,
+  lineItemTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#f3f4f6',
+    marginBottom: 4,
   },
-  laborInputRow: {
+  originalInfo: {
+    fontSize: 12,
+    color: '#9ca3af',
+  },
+  lineItemInputs: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
   },
-  laborInputGroup: {
+  inputGroup: {
     alignItems: 'center',
     flex: 1,
+    minWidth: 70,
   },
   inputLabel: {
-    fontSize: 10,
-    color: '#9ca3af',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  laborInput: {
-    backgroundColor: '#6b7280',
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 4,
     fontSize: 12,
+    color: '#9ca3af',
+    marginBottom: 6,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  lineItemInput: {
+    backgroundColor: '#6b7280',
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 14,
     color: '#f3f4f6',
     textAlign: 'center',
-    minWidth: 50,
+    minHeight: 40,
+    borderWidth: 1,
+    borderColor: '#4b5563',
   },
-  multiplySymbol: {
-    fontSize: 12,
+  readOnlyInput: {
+    backgroundColor: '#4b5563',
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 14,
     color: '#9ca3af',
-    fontWeight: '600',
-    marginHorizontal: 4,
+    textAlign: 'center',
+    minHeight: 40,
+    textAlignVertical: 'center',
   },
-  equalsSymbol: {
-    fontSize: 12,
-    color: '#9ca3af',
-    fontWeight: '600',
-    marginHorizontal: 4,
+  multiplier: {
+    fontSize: 16,
+    color: '#e5e7eb',
+    fontWeight: '700',
+    marginHorizontal: 6,
   },
-  laborTotalGroup: {
+  equals: {
+    fontSize: 16,
+    color: '#e5e7eb',
+    fontWeight: '700',
+    marginHorizontal: 6,
+  },
+  totalGroup: {
     flex: 1,
     alignItems: 'center',
+    minWidth: 80,
   },
-  laborTotal: {
-    fontSize: 12,
-    fontWeight: '600',
+  lineItemTotal: {
+    fontSize: 15,
+    fontWeight: '700',
     color: '#10b981',
     textAlign: 'center',
+    paddingVertical: 8,
   },
   partRow: {
     flexDirection: 'row',
