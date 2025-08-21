@@ -646,6 +646,18 @@ export default function DashboardScreen() {
                 </View>
                 
                 <View style={styles.menuItems}>
+                  {/* Dashboard */}
+                  <TouchableOpacity
+                    style={styles.menuItem}
+                    onPress={() => {
+                      setShowMenu(false);
+                      router.push("/dashboard");
+                    }}
+                  >
+                    <Ionicons name="home-outline" size={24} color="#3b82f6" />
+                    <Text style={styles.menuItemText}>Dashboard</Text>
+                  </TouchableOpacity>
+
                   {/* Conditional menu items based on user role */}
                   {user?.role !== 'maintenance_admin' && (
                     <TouchableOpacity
@@ -704,6 +716,18 @@ export default function DashboardScreen() {
                   >
                     <Ionicons name="receipt-outline" size={24} color="#3b82f6" />
                     <Text style={styles.menuItemText}>Invoices</Text>
+                  </TouchableOpacity>
+
+                  {/* Profile */}
+                  <TouchableOpacity
+                    style={styles.menuItem}
+                    onPress={() => {
+                      setShowMenu(false);
+                      router.push("/profile");
+                    }}
+                  >
+                    <Ionicons name="person-outline" size={24} color="#3b82f6" />
+                    <Text style={styles.menuItemText}>Profile</Text>
                   </TouchableOpacity>
                 </View>
               </View>

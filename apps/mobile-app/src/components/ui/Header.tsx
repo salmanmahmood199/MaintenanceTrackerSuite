@@ -33,31 +33,33 @@ export function Header({
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
       <View style={styles.header}>
-        <View style={styles.leftSection}>
-          {leftAction && (
-            <TouchableOpacity 
-              style={styles.actionButton} 
-              onPress={leftAction.onPress}
-              activeOpacity={0.7}
-            >
-              <Ionicons name={leftAction.icon} size={24} color="#ffffff" />
-            </TouchableOpacity>
-          )}
-          {showBack && (
-            <TouchableOpacity 
-              style={styles.backButton} 
-              onPress={onBack}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="chevron-back" size={24} color="#ffffff" />
-            </TouchableOpacity>
-          )}
-          <View style={styles.titleSection}>
-            <Text style={styles.title}>{title}</Text>
-            {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
-          </View>
+        {/* Left Action */}
+        {leftAction && (
+          <TouchableOpacity 
+            style={styles.actionButton} 
+            onPress={leftAction.onPress}
+            activeOpacity={0.7}
+          >
+            <Ionicons name={leftAction.icon} size={24} color="#ffffff" />
+          </TouchableOpacity>
+        )}
+        {showBack && (
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={onBack}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-back" size={24} color="#ffffff" />
+          </TouchableOpacity>
+        )}
+        
+        {/* Centered Title Section */}
+        <View style={styles.centerSection}>
+          <Text style={styles.title}>{title}</Text>
+          {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
         </View>
         
+        {/* Right Action */}
         {rightAction && (
           <TouchableOpacity 
             style={styles.actionButton} 
@@ -109,18 +111,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: 16,
+    position: 'relative',
   },
   leftSection: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
+  centerSection: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: -1,
+  },
   backButton: {
     marginRight: 12,
     padding: 4,
-  },
-  titleSection: {
-    flex: 1,
   },
   title: {
     fontSize: 24,
