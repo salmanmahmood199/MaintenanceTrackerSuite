@@ -33,6 +33,12 @@ export default function DashboardScreen() {
   const [customStartDate, setCustomStartDate] = useState<Date | null>(null);
   const [customEndDate, setCustomEndDate] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState<'start' | 'end' | null>(null);
+  const [showMenu, setShowMenu] = useState(false);
+  
+  // For scrollable date picker
+  const [tempYear, setTempYear] = useState(new Date().getFullYear());
+  const [tempMonth, setTempMonth] = useState(new Date().getMonth());
+  const [tempDay, setTempDay] = useState(new Date().getDate());
 
   // Fetch tickets
   const {
@@ -205,6 +211,11 @@ export default function DashboardScreen() {
                       onPress={() => {
                         setDateFilter(option.key);
                         if (option.key === 'custom') {
+                          // Initialize temp values with current date
+                          const now = new Date();
+                          setTempYear(now.getFullYear());
+                          setTempMonth(now.getMonth());
+                          setTempDay(now.getDate());
                           setShowDatePicker('start');
                         }
                       }}
@@ -224,7 +235,14 @@ export default function DashboardScreen() {
                   <View style={styles.customDateRange}>
                     <TouchableOpacity
                       style={styles.datePickerButton}
-                      onPress={() => setShowDatePicker('start')}
+                      onPress={() => {
+                        // Initialize temp values with current start date or today
+                        const initDate = customStartDate || new Date();
+                        setTempYear(initDate.getFullYear());
+                        setTempMonth(initDate.getMonth());
+                        setTempDay(initDate.getDate());
+                        setShowDatePicker('start');
+                      }}
                     >
                       <Ionicons name="calendar-outline" size={16} color="#3b82f6" />
                       <Text style={styles.datePickerButtonText}>
@@ -234,7 +252,14 @@ export default function DashboardScreen() {
                     
                     <TouchableOpacity
                       style={styles.datePickerButton}
-                      onPress={() => setShowDatePicker('end')}
+                      onPress={() => {
+                        // Initialize temp values with current end date or today
+                        const initDate = customEndDate || new Date();
+                        setTempYear(initDate.getFullYear());
+                        setTempMonth(initDate.getMonth());
+                        setTempDay(initDate.getDate());
+                        setShowDatePicker('end');
+                      }}
                     >
                       <Ionicons name="calendar-outline" size={16} color="#3b82f6" />
                       <Text style={styles.datePickerButtonText}>
@@ -373,51 +398,14 @@ export default function DashboardScreen() {
           </View>
         </Card>
 
-        {/* Quick Actions - Hide ticket creation for vendor admins */}
-        {user?.role !== 'maintenance_admin' && (
-          <Card style={styles.quickActionsCard}>
-            <Text style={styles.sectionTitle}>Quick Actions</Text>
-            <View style={styles.quickActions}>
-              <Button
-                variant="primary"
-                size="sm"
-                title="New Ticket"
-                onPress={() => router.push("/create-ticket")}
-                style={styles.actionButton}
-              />
-              <Button
-                variant="secondary"
-                size="sm"
-                title="Calendar"
-                onPress={() => router.push("/calendar")}
-                style={styles.actionButton}
-              />
-            </View>
-          </Card>
-        )}
-
-        {/* Alternative Actions for Vendor Admins */}
-        {user?.role === 'maintenance_admin' && (
-          <Card style={styles.quickActionsCard}>
-            <Text style={styles.sectionTitle}>Quick Actions</Text>
-            <View style={styles.quickActions}>
-              <Button
-                variant="primary"
-                size="sm"
-                title="My Tickets"
-                onPress={() => setFilterStatus('all')}
-                style={styles.actionButton}
-              />
-              <Button
-                variant="secondary"
-                size="sm"
-                title="Calendar"
-                onPress={() => router.push("/calendar")}
-                style={styles.actionButton}
-              />
-            </View>
-          </Card>
-        )}
+        {/* Hamburger Menu Button */}
+        <TouchableOpacity
+          style={styles.menuButton}
+          onPress={() => setShowMenu(true)}
+        >
+          <Ionicons name="menu" size={24} color="#ffffff" />
+          <Text style={styles.menuButtonText}>Menu</Text>
+        </TouchableOpacity>
 
         {/* Status Filter Tabs - More Visible */}
         <Card style={styles.filterCard}>
@@ -524,7 +512,7 @@ export default function DashboardScreen() {
           </>
         )}
 
-        {/* Simple Date Input Modal */}
+        {/* Scrollable Date Picker Modal */}
         {showDatePicker && (
           <Modal transparent animationType="fade" visible={true}>
             <View style={styles.datePickerOverlay}>
@@ -541,52 +529,185 @@ export default function DashboardScreen() {
                   </TouchableOpacity>
                 </View>
                 
-                <View style={styles.dateInputContainer}>
-                  <Text style={styles.dateInputLabel}>Enter date (YYYY-MM-DD):</Text>
-                  <TextInput
-                    style={styles.dateInput}
-                    placeholder="2024-01-01"
-                    placeholderTextColor="#64748b"
-                    autoFocus={true}
-                    onSubmitEditing={(event) => {
-                      const inputDate = new Date(event.nativeEvent.text);
-                      if (!isNaN(inputDate.getTime())) {
-                        if (showDatePicker === 'start') {
-                          setCustomStartDate(inputDate);
-                        } else {
-                          setCustomEndDate(inputDate);
-                        }
+                <View style={styles.scrollablePicker}>
+                  {/* Month Picker */}
+                  <View style={styles.pickerColumn}>
+                    <Text style={styles.pickerLabel}>Month</Text>
+                    <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
+                      {Array.from({ length: 12 }, (_, i) => (
+                        <TouchableOpacity
+                          key={i}
+                          style={[
+                            styles.pickerItem,
+                            tempMonth === i && styles.pickerItemActive
+                          ]}
+                          onPress={() => setTempMonth(i)}
+                        >
+                          <Text style={[
+                            styles.pickerText,
+                            tempMonth === i && styles.pickerTextActive
+                          ]}>
+                            {new Date(0, i).toLocaleDateString('en', { month: 'short' })}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+                  
+                  {/* Day Picker */}
+                  <View style={styles.pickerColumn}>
+                    <Text style={styles.pickerLabel}>Day</Text>
+                    <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
+                      {Array.from({ length: new Date(tempYear, tempMonth + 1, 0).getDate() }, (_, i) => (
+                        <TouchableOpacity
+                          key={i + 1}
+                          style={[
+                            styles.pickerItem,
+                            tempDay === i + 1 && styles.pickerItemActive
+                          ]}
+                          onPress={() => setTempDay(i + 1)}
+                        >
+                          <Text style={[
+                            styles.pickerText,
+                            tempDay === i + 1 && styles.pickerTextActive
+                          ]}>
+                            {i + 1}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+                  
+                  {/* Year Picker */}
+                  <View style={styles.pickerColumn}>
+                    <Text style={styles.pickerLabel}>Year</Text>
+                    <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
+                      {Array.from({ length: 10 }, (_, i) => {
+                        const year = new Date().getFullYear() - 5 + i;
+                        return (
+                          <TouchableOpacity
+                            key={year}
+                            style={[
+                              styles.pickerItem,
+                              tempYear === year && styles.pickerItemActive
+                            ]}
+                            onPress={() => setTempYear(year)}
+                          >
+                            <Text style={[
+                              styles.pickerText,
+                              tempYear === year && styles.pickerTextActive
+                            ]}>
+                              {year}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
+                  </View>
+                </View>
+                
+                <View style={styles.datePickerActions}>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    title="Cancel"
+                    onPress={() => setShowDatePicker(null)}
+                  />
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    title="Select"
+                    onPress={() => {
+                      const selectedDate = new Date(tempYear, tempMonth, tempDay);
+                      if (showDatePicker === 'start') {
+                        setCustomStartDate(selectedDate);
+                      } else {
+                        setCustomEndDate(selectedDate);
                       }
                       setShowDatePicker(null);
                     }}
                   />
-                  <View style={styles.dateQuickPicks}>
-                    <Text style={styles.quickPickLabel}>Quick picks:</Text>
-                    <View style={styles.quickPickButtons}>
-                      {[
-                        { label: 'Today', days: 0 },
-                        { label: '7 days ago', days: 7 },
-                        { label: '30 days ago', days: 30 },
-                      ].map((option) => (
-                        <TouchableOpacity
-                          key={option.label}
-                          style={styles.quickPickButton}
-                          onPress={() => {
-                            const date = new Date();
-                            date.setDate(date.getDate() - option.days);
-                            if (showDatePicker === 'start') {
-                              setCustomStartDate(date);
-                            } else {
-                              setCustomEndDate(date);
-                            }
-                            setShowDatePicker(null);
-                          }}
-                        >
-                          <Text style={styles.quickPickText}>{option.label}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </View>
+                </View>
+              </View>
+            </View>
+          </Modal>
+        )}
+
+        {/* Hamburger Menu Modal */}
+        {showMenu && (
+          <Modal transparent animationType="slide" visible={true}>
+            <View style={styles.menuOverlay}>
+              <View style={styles.menuContainer}>
+                <View style={styles.menuHeader}>
+                  <Text style={styles.menuTitle}>Menu</Text>
+                  <TouchableOpacity
+                    onPress={() => setShowMenu(false)}
+                    style={styles.menuClose}
+                  >
+                    <Ionicons name="close" size={24} color="#ffffff" />
+                  </TouchableOpacity>
+                </View>
+                
+                <View style={styles.menuItems}>
+                  {/* Conditional menu items based on user role */}
+                  {user?.role !== 'maintenance_admin' && (
+                    <TouchableOpacity
+                      style={styles.menuItem}
+                      onPress={() => {
+                        setShowMenu(false);
+                        router.push("/create-ticket");
+                      }}
+                    >
+                      <Ionicons name="add-circle-outline" size={24} color="#3b82f6" />
+                      <Text style={styles.menuItemText}>New Ticket</Text>
+                    </TouchableOpacity>
+                  )}
+                  
+                  <TouchableOpacity
+                    style={styles.menuItem}
+                    onPress={() => {
+                      setShowMenu(false);
+                      router.push("/tickets");
+                    }}
+                  >
+                    <Ionicons name="list-outline" size={24} color="#3b82f6" />
+                    <Text style={styles.menuItemText}>All Tickets</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={styles.menuItem}
+                    onPress={() => {
+                      setShowMenu(false);
+                      router.push("/calendar");
+                    }}
+                  >
+                    <Ionicons name="calendar-outline" size={24} color="#3b82f6" />
+                    <Text style={styles.menuItemText}>Calendar</Text>
+                  </TouchableOpacity>
+                  
+                  {user?.role !== 'maintenance_admin' && (
+                    <TouchableOpacity
+                      style={styles.menuItem}
+                      onPress={() => {
+                        setShowMenu(false);
+                        router.push("/marketplace");
+                      }}
+                    >
+                      <Ionicons name="storefront-outline" size={24} color="#3b82f6" />
+                      <Text style={styles.menuItemText}>Marketplace</Text>
+                    </TouchableOpacity>
+                  )}
+                  
+                  <TouchableOpacity
+                    style={styles.menuItem}
+                    onPress={() => {
+                      setShowMenu(false);
+                      router.push("/invoices");
+                    }}
+                  >
+                    <Ionicons name="receipt-outline" size={24} color="#3b82f6" />
+                    <Text style={styles.menuItemText}>Invoices</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
             </View>
@@ -912,6 +1033,112 @@ const styles = StyleSheet.create({
   },
   footerSpacing: {
     height: 40,
+  },
+  menuButton: {
+    backgroundColor: '#1e293b',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    marginVertical: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#334155',
+    gap: 8,
+  },
+  menuButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  scrollablePicker: {
+    flexDirection: 'row',
+    height: 200,
+    gap: 12,
+  },
+  pickerColumn: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  pickerLabel: {
+    color: '#e2e8f0',
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  pickerScroll: {
+    flex: 1,
+    width: '100%',
+  },
+  pickerItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    borderRadius: 8,
+    marginVertical: 2,
+  },
+  pickerItemActive: {
+    backgroundColor: '#3b82f6',
+  },
+  pickerText: {
+    color: '#94a3b8',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  pickerTextActive: {
+    color: '#ffffff',
+    fontWeight: '600',
+  },
+  datePickerActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+    gap: 12,
+  },
+  menuOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    justifyContent: 'flex-end',
+  },
+  menuContainer: {
+    backgroundColor: '#1e293b',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    minHeight: 300,
+  },
+  menuHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#334155',
+  },
+  menuTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  menuClose: {
+    padding: 4,
+  },
+  menuItems: {
+    gap: 16,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#334155',
+    borderRadius: 12,
+    gap: 12,
+  },
+  menuItemText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '500',
   },
   ticketCard: {
     marginBottom: 0,
