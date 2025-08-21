@@ -7,7 +7,9 @@ import {
   RefreshControl,
   TextInput,
   TouchableOpacity,
+  Modal,
 } from "react-native";
+
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
@@ -28,6 +30,9 @@ export default function DashboardScreen() {
   const [organizationFilter, setOrganizationFilter] = useState<string>('all');
   const [vendorFilter, setVendorFilter] = useState<string>('all');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [customStartDate, setCustomStartDate] = useState<Date | null>(null);
+  const [customEndDate, setCustomEndDate] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState<'start' | 'end' | null>(null);
 
   // Fetch tickets
   const {
@@ -94,6 +99,13 @@ export default function DashboardScreen() {
         case 'month':
           const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
           return ticketDate >= monthAgo;
+        case 'custom':
+          if (!customStartDate) return true;
+          const start = new Date(customStartDate);
+          start.setHours(0, 0, 0, 0);
+          const end = customEndDate ? new Date(customEndDate) : new Date();
+          end.setHours(23, 59, 59, 999);
+          return ticketDate >= start && ticketDate <= end;
         default:
           return true;
       }
@@ -182,6 +194,7 @@ export default function DashboardScreen() {
                     { key: 'today', label: 'Today' },
                     { key: 'week', label: 'This Week' },
                     { key: 'month', label: 'This Month' },
+                    { key: 'custom', label: 'Custom' },
                   ].map((option) => (
                     <TouchableOpacity
                       key={option.key}
@@ -189,7 +202,12 @@ export default function DashboardScreen() {
                         styles.filterOption,
                         dateFilter === option.key && styles.filterOptionActive
                       ]}
-                      onPress={() => setDateFilter(option.key)}
+                      onPress={() => {
+                        setDateFilter(option.key);
+                        if (option.key === 'custom') {
+                          setShowDatePicker('start');
+                        }
+                      }}
                     >
                       <Text style={[
                         styles.filterOptionText,
@@ -200,6 +218,43 @@ export default function DashboardScreen() {
                     </TouchableOpacity>
                   ))}
                 </View>
+                
+                {/* Custom Date Range Selection */}
+                {dateFilter === 'custom' && (
+                  <View style={styles.customDateRange}>
+                    <TouchableOpacity
+                      style={styles.datePickerButton}
+                      onPress={() => setShowDatePicker('start')}
+                    >
+                      <Ionicons name="calendar-outline" size={16} color="#3b82f6" />
+                      <Text style={styles.datePickerButtonText}>
+                        Start: {customStartDate ? customStartDate.toLocaleDateString() : 'Select Date'}
+                      </Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity
+                      style={styles.datePickerButton}
+                      onPress={() => setShowDatePicker('end')}
+                    >
+                      <Ionicons name="calendar-outline" size={16} color="#3b82f6" />
+                      <Text style={styles.datePickerButtonText}>
+                        End: {customEndDate ? customEndDate.toLocaleDateString() : 'Select Date'}
+                      </Text>
+                    </TouchableOpacity>
+                    
+                    {(customStartDate || customEndDate) && (
+                      <TouchableOpacity
+                        style={styles.clearDateButton}
+                        onPress={() => {
+                          setCustomStartDate(null);
+                          setCustomEndDate(null);
+                        }}
+                      >
+                        <Text style={styles.clearDateButtonText}>Clear</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                )}
               </View>
 
               {/* Organization Filter (for vendor users) */}
@@ -410,49 +465,132 @@ export default function DashboardScreen() {
           </View>
         </Card>
 
-        {/* Tickets List */}
-        <View style={styles.ticketsContainer}>
-          {ticketsLoading ? (
-            <Card>
+        {/* Tickets List - Cleaner Layout */}
+        {ticketsLoading ? (
+          <Card style={styles.loadingCard}>
+            <View style={styles.loadingContent}>
               <Text style={styles.loadingText}>Loading tickets...</Text>
-            </Card>
-          ) : filteredTickets.length > 0 ? (
-            filteredTickets.slice(0, 5).map((ticket) => (
-              <TicketCard
-                key={ticket.id}
-                ticket={ticket}
-                onPress={() => router.push(`/ticket/${ticket.id}`)}
-              />
-            ))
-          ) : (
-            <Card style={styles.emptyCard}>
-              <Text style={styles.emptyTitle}>No tickets found</Text>
-              <Text style={styles.emptyDescription}>
-                {filterStatus === 'all' 
-                  ? "Create your first ticket to get started"
-                  : `No ${filterStatus.replace('_', ' ')} tickets at the moment`
-                }
-              </Text>
-              {filterStatus === 'all' && (
-                <Button
-                  variant="primary"
-                  title="Create Ticket"
-                  onPress={() => router.push("/create-ticket")}
-                  style={styles.emptyButton}
-                />
-              )}
-            </Card>
-          )}
-        </View>
-
-        {filteredTickets.length > 5 && (
-          <Card style={styles.viewAllCard}>
-            <Button
-              variant="secondary"
-              title="View All Tickets"
-              onPress={() => router.push("/tickets")}
-            />
+            </View>
           </Card>
+        ) : filteredTickets.length === 0 ? (
+          <Card style={styles.emptyCard}>
+            <Ionicons name="ticket-outline" size={48} color="#64748b" />
+            <Text style={styles.emptyTitle}>No Tickets Found</Text>
+            <Text style={styles.emptyDescription}>
+              {searchQuery || filterStatus !== 'all' || dateFilter !== 'all' || organizationFilter !== 'all' || vendorFilter !== 'all'
+                ? 'No tickets match your current filters. Try adjusting your search criteria.'
+                : user?.role === 'maintenance_admin'
+                ? 'No tickets assigned to your vendor yet. Check back later for new work assignments.'
+                : 'You haven\'t created any tickets yet. Tap "New Ticket" to get started.'}
+            </Text>
+            {user?.role !== 'maintenance_admin' && (
+              <Button
+                variant="primary"
+                size="sm"
+                title="Create First Ticket"
+                onPress={() => router.push("/create-ticket")}
+                style={styles.emptyButton}
+              />
+            )}
+          </Card>
+        ) : (
+          <>
+            {/* Tickets List Header */}
+            <View style={styles.ticketsHeader}>
+              <Text style={styles.ticketsHeaderText}>
+                Recent Tickets ({Math.min(filteredTickets.length, 8)})
+              </Text>
+              {filteredTickets.length > 8 && (
+                <TouchableOpacity onPress={() => router.push("/tickets")}>
+                  <Text style={styles.viewAllText}>View All</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            
+            {/* Clean Tickets List */}
+            <View style={styles.ticketsList}>
+              {filteredTickets.slice(0, 8).map((ticket) => (
+                <TicketCard
+                  key={ticket.id}
+                  ticket={ticket}
+                  onPress={() => router.push(`/ticket/${ticket.id}`)}
+                  style={styles.ticketCard}
+                />
+              ))}
+            </View>
+            
+            {/* Footer Spacing */}
+            <View style={styles.footerSpacing} />
+          </>
+        )}
+
+        {/* Simple Date Input Modal */}
+        {showDatePicker && (
+          <Modal transparent animationType="fade" visible={true}>
+            <View style={styles.datePickerOverlay}>
+              <View style={styles.datePickerContainer}>
+                <View style={styles.datePickerHeader}>
+                  <Text style={styles.datePickerTitle}>
+                    Select {showDatePicker === 'start' ? 'Start' : 'End'} Date
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => setShowDatePicker(null)}
+                    style={styles.datePickerClose}
+                  >
+                    <Ionicons name="close" size={24} color="#ffffff" />
+                  </TouchableOpacity>
+                </View>
+                
+                <View style={styles.dateInputContainer}>
+                  <Text style={styles.dateInputLabel}>Enter date (YYYY-MM-DD):</Text>
+                  <TextInput
+                    style={styles.dateInput}
+                    placeholder="2024-01-01"
+                    placeholderTextColor="#64748b"
+                    autoFocus={true}
+                    onSubmitEditing={(event) => {
+                      const inputDate = new Date(event.nativeEvent.text);
+                      if (!isNaN(inputDate.getTime())) {
+                        if (showDatePicker === 'start') {
+                          setCustomStartDate(inputDate);
+                        } else {
+                          setCustomEndDate(inputDate);
+                        }
+                      }
+                      setShowDatePicker(null);
+                    }}
+                  />
+                  <View style={styles.dateQuickPicks}>
+                    <Text style={styles.quickPickLabel}>Quick picks:</Text>
+                    <View style={styles.quickPickButtons}>
+                      {[
+                        { label: 'Today', days: 0 },
+                        { label: '7 days ago', days: 7 },
+                        { label: '30 days ago', days: 30 },
+                      ].map((option) => (
+                        <TouchableOpacity
+                          key={option.label}
+                          style={styles.quickPickButton}
+                          onPress={() => {
+                            const date = new Date();
+                            date.setDate(date.getDate() - option.days);
+                            if (showDatePicker === 'start') {
+                              setCustomStartDate(date);
+                            } else {
+                              setCustomEndDate(date);
+                            }
+                            setShowDatePicker(null);
+                          }}
+                        >
+                          <Text style={styles.quickPickText}>{option.label}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </View>
+          </Modal>
         )}
       </ScrollView>
     </View>
@@ -646,9 +784,134 @@ const styles = StyleSheet.create({
   statusTabLabelActive: {
     color: '#ffffff',
   },
-  ticketsContainer: {
+  customDateRange: {
+    marginTop: 16,
     gap: 12,
+  },
+  datePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#334155',
+    borderRadius: 8,
+    padding: 12,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#475569',
+  },
+  datePickerButtonText: {
+    color: '#e2e8f0',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  clearDateButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#ef4444',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  clearDateButtonText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  datePickerOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  datePickerContainer: {
+    backgroundColor: '#1e293b',
+    borderRadius: 16,
+    padding: 20,
+    margin: 20,
+    minWidth: 300,
+  },
+  datePickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 20,
+  },
+  datePickerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  datePickerClose: {
+    padding: 4,
+  },
+  dateInputContainer: {
+    gap: 16,
+  },
+  dateInputLabel: {
+    fontSize: 14,
+    color: '#e2e8f0',
+    fontWeight: '500',
+  },
+  dateInput: {
+    backgroundColor: '#334155',
+    borderRadius: 8,
+    padding: 12,
+    color: '#ffffff',
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#475569',
+  },
+  dateQuickPicks: {
+    gap: 8,
+  },
+  quickPickLabel: {
+    fontSize: 12,
+    color: '#94a3b8',
+    fontWeight: '500',
+  },
+  quickPickButtons: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  quickPickButton: {
+    backgroundColor: '#475569',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  quickPickText: {
+    color: '#e2e8f0',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  loadingCard: {
+    marginBottom: 20,
+  },
+  loadingContent: {
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  ticketsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingHorizontal: 4,
+  },
+  ticketsHeaderText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  viewAllText: {
+    fontSize: 14,
+    color: '#3b82f6',
+    fontWeight: '600',
+  },
+  ticketsList: {
+    gap: 12,
+  },
+  footerSpacing: {
+    height: 40,
   },
   ticketCard: {
     marginBottom: 0,
