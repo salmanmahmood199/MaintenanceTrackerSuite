@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { apiRequest } from "../../../src/services/api";
+import { Header } from "../../../src/components/ui/Header";
 
 export default function TicketsScreen() {
   const router = useRouter();
@@ -93,10 +94,13 @@ export default function TicketsScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Tickets</Text>
-        <Text style={styles.headerSubtitle}>{tickets.length} total tickets</Text>
-      </View>
+      <Header 
+        title="All Tickets" 
+        subtitle={`${tickets.length} total tickets`}
+        variant="gradient"
+        showBack={true}
+        onBack={() => router.back()}
+      />
 
       <FlatList
         data={tickets}

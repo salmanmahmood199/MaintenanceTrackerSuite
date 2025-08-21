@@ -18,6 +18,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../src/contexts/AuthContext";
 import { apiRequest } from "../../src/services/api";
 import type { CalendarEvent } from "../../src/types";
+import { Header } from "../../src/components/ui/Header";
+import { useRouter } from "expo-router";
 
 interface TimeSlot {
   start: string;
@@ -27,6 +29,7 @@ interface TimeSlot {
 
 export default function CalendarScreen() {
   const { user } = useAuth();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -281,21 +284,12 @@ export default function CalendarScreen() {
         colors={["#1e293b", "#7c3aed", "#1e293b"]}
         style={styles.gradient}
       >
-        {/* Header */}
+        {/* Header with Back Navigation */}
         <View style={styles.header}>
           <View style={styles.headerContent}>
             <TouchableOpacity
               style={styles.backButton}
-              onPress={() => {
-                if (calendarView === "day") {
-                  setCalendarView("month");
-                  setSelectedDate(null);
-                } else {
-                  const prevMonth = new Date(currentDate);
-                  prevMonth.setMonth(currentDate.getMonth() - 1);
-                  setCurrentDate(prevMonth);
-                }
-              }}
+              onPress={() => router.back()}
             >
               <Ionicons name="chevron-back" size={20} color="#ffffff" />
             </TouchableOpacity>

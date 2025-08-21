@@ -18,6 +18,8 @@ import { apiRequest } from "../../src/services/api";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../src/contexts/AuthContext";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Header } from "../../src/components/ui/Header";
+import { useRouter } from "expo-router";
 
 type MarketplaceTicket = {
   id: number;
@@ -314,6 +316,7 @@ function BidModal({ visible, onClose, ticket, existingBid, onSubmit, isLoading }
 
 export default function MarketplaceScreen() {
   const { user } = useAuth();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
@@ -494,8 +497,16 @@ export default function MarketplaceScreen() {
 
   return (
     <View style={styles.container}>
+      <Header 
+        title="Marketplace" 
+        subtitle="Available tickets for bidding"
+        variant="gradient"
+        showBack={true}
+        onBack={() => router.back()}
+      />
+      
       {/* Tab Navigation */}
-      <View style={[styles.tabContainer, { marginTop: insets.top + 20 }]}>
+      <View style={[styles.tabContainer, { marginTop: 20 }]}>
         <TouchableOpacity
           style={[styles.tab, selectedTab === "available" && styles.activeTab]}
           onPress={() => setSelectedTab("available")}

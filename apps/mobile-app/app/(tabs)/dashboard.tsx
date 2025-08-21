@@ -698,6 +698,7 @@ export default function DashboardScreen() {
                     <TouchableOpacity
                       style={styles.menuItem}
                       onPress={() => {
+                        console.log('User role:', user?.role, 'Should show marketplace:', user?.role !== 'maintenance_admin');
                         setShowMenu(false);
                         router.push("/marketplace");
                       }}
