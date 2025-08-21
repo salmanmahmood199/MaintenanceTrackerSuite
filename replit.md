@@ -18,6 +18,8 @@ This is a full-stack maintenance ticketing application for commercial businesses
 - **PDF Invoice Preview**: Added professional PDF preview functionality for mobile invoice creation with real-time updates and complete line item display
 - **Web Progress Bar Fix**: Fixed progress tracker visibility issue by increasing container height from 60vh to 80vh
 - **Mobile Dashboard Redesign**: Removed blue stats boxes and redesigned mobile dashboard with intuitive search functionality, priority overview, and enhanced filtering system with clear visual indicators for ticket status and counts
+- **Critical Security Fix**: Prevented vendor admins (maintenance_admin role) from creating tickets by adding requireRole middleware to POST /api/tickets endpoint and hiding "New Ticket" button in mobile app for vendor users
+- **Enhanced Mobile Filtering**: Added advanced filtering system with date range filters (Today, This Week, This Month), role-based organization/vendor filtering, and improved visual contrast for better usability
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.

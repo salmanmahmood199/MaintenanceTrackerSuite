@@ -318,26 +318,51 @@ export default function DashboardScreen() {
           </View>
         </Card>
 
-        {/* Quick Actions */}
-        <Card style={styles.quickActionsCard}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.quickActions}>
-            <Button
-              variant="primary"
-              size="sm"
-              title="New Ticket"
-              onPress={() => router.push("/create-ticket")}
-              style={styles.actionButton}
-            />
-            <Button
-              variant="secondary"
-              size="sm"
-              title="Calendar"
-              onPress={() => router.push("/calendar")}
-              style={styles.actionButton}
-            />
-          </View>
-        </Card>
+        {/* Quick Actions - Hide ticket creation for vendor admins */}
+        {user?.role !== 'maintenance_admin' && (
+          <Card style={styles.quickActionsCard}>
+            <Text style={styles.sectionTitle}>Quick Actions</Text>
+            <View style={styles.quickActions}>
+              <Button
+                variant="primary"
+                size="sm"
+                title="New Ticket"
+                onPress={() => router.push("/create-ticket")}
+                style={styles.actionButton}
+              />
+              <Button
+                variant="secondary"
+                size="sm"
+                title="Calendar"
+                onPress={() => router.push("/calendar")}
+                style={styles.actionButton}
+              />
+            </View>
+          </Card>
+        )}
+
+        {/* Alternative Actions for Vendor Admins */}
+        {user?.role === 'maintenance_admin' && (
+          <Card style={styles.quickActionsCard}>
+            <Text style={styles.sectionTitle}>Quick Actions</Text>
+            <View style={styles.quickActions}>
+              <Button
+                variant="primary"
+                size="sm"
+                title="My Tickets"
+                onPress={() => setFilterStatus('all')}
+                style={styles.actionButton}
+              />
+              <Button
+                variant="secondary"
+                size="sm"
+                title="Calendar"
+                onPress={() => router.push("/calendar")}
+                style={styles.actionButton}
+              />
+            </View>
+          </Card>
+        )}
 
         {/* Status Filter Tabs - More Visible */}
         <Card style={styles.filterCard}>

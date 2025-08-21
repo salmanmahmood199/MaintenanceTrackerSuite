@@ -1243,6 +1243,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     "/api/tickets",
     upload.array("images", 5),
     authenticateUser,
+    requireRole(["root", "org_admin", "org_subadmin", "residential"]),
     async (req: AuthenticatedRequest, res) => {
       try {
         const user = req.user!;

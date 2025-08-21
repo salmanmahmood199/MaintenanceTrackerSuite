@@ -29,6 +29,27 @@ export default function CreateTicketScreen() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   
+  // Security check: Prevent vendor admins from creating tickets
+  if (user?.role === 'maintenance_admin') {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Ionicons name="warning-outline" size={64} color="#ef4444" />
+          <Text style={styles.errorTitle}>Access Denied</Text>
+          <Text style={styles.errorText}>
+            Vendor admins cannot create tickets. You can only work on tickets assigned to your vendor.
+          </Text>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.backButtonText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+  
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
@@ -360,6 +381,27 @@ const styles = StyleSheet.create({
   gradient: {
     flex: 1,
   },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  errorTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#ffffff',
+    marginTop: 24,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#94a3b8',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 32,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -371,6 +413,11 @@ const styles = StyleSheet.create({
     padding: 8,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 8,
+  },
+  backButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   headerTitle: {
     flex: 1,
