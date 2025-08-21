@@ -24,6 +24,10 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [dateFilter, setDateFilter] = useState<string>('all');
+  const [organizationFilter, setOrganizationFilter] = useState<string>('all');
+  const [vendorFilter, setVendorFilter] = useState<string>('all');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // Fetch tickets
   const {
@@ -41,20 +45,69 @@ export default function DashboardScreen() {
     },
   });
 
+  // Fetch organizations (for filtering)
+  const { data: organizations = [] } = useQuery({
+    queryKey: ["organizations"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/organizations");
+      if (!response.ok) return [];
+      return response.json();
+    },
+  });
+
+  // Fetch vendors (for filtering)
+  const { data: vendors = [] } = useQuery({
+    queryKey: ["vendors"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/maintenance-vendors");
+      if (!response.ok) return [];
+      return response.json();
+    },
+  });
+
   const onRefresh = async () => {
     setRefreshing(true);
     await refetchTickets();
     setRefreshing(false);
   };
 
-  // Enhanced filtering with search
+  // Enhanced filtering with search, date, org, and vendor
   const filteredTickets = tickets.filter(ticket => {
     const matchesStatus = filterStatus === 'all' || ticket.status === filterStatus;
     const matchesSearch = searchQuery === '' || 
       ticket.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       ticket.ticketNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       ticket.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesStatus && matchesSearch;
+    
+    // Date filtering
+    const matchesDate = (() => {
+      if (dateFilter === 'all') return true;
+      const ticketDate = new Date(ticket.createdAt);
+      const now = new Date();
+      
+      switch (dateFilter) {
+        case 'today':
+          return ticketDate.toDateString() === now.toDateString();
+        case 'week':
+          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          return ticketDate >= weekAgo;
+        case 'month':
+          const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          return ticketDate >= monthAgo;
+        default:
+          return true;
+      }
+    })();
+
+    // Organization filtering
+    const matchesOrganization = organizationFilter === 'all' || 
+      ticket.organizationId?.toString() === organizationFilter;
+
+    // Vendor filtering  
+    const matchesVendor = vendorFilter === 'all' || 
+      ticket.maintenanceVendorId?.toString() === vendorFilter;
+
+    return matchesStatus && matchesSearch && matchesDate && matchesOrganization && matchesVendor;
   });
 
   // Get priority counts and recent activity
@@ -89,59 +142,177 @@ export default function DashboardScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Search and Priority Overview */}
+        {/* Search and Filtering */}
         <Card style={styles.searchCard}>
           <View style={styles.searchContainer}>
-            <Ionicons name="search-outline" size={20} color="#64748b" style={styles.searchIcon} />
+            <Ionicons name="search-outline" size={22} color="#94a3b8" style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search tickets by title, number, or description..."
-              placeholderTextColor="#64748b"
+              placeholder="Search tickets..."
+              placeholderTextColor="#94a3b8"
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
             {searchQuery.length > 0 && (
               <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearButton}>
-                <Ionicons name="close-circle" size={20} color="#64748b" />
+                <Ionicons name="close-circle" size={22} color="#94a3b8" />
               </TouchableOpacity>
             )}
+            <TouchableOpacity 
+              onPress={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              style={styles.filterToggle}
+            >
+              <Ionicons 
+                name={showAdvancedFilters ? "options" : "filter-outline"} 
+                size={22} 
+                color="#3b82f6" 
+              />
+            </TouchableOpacity>
           </View>
 
-          {/* Priority and Status Summary */}
-          <View style={styles.summaryContainer}>
-            <View style={styles.summaryRow}>
-              <View style={styles.summaryItem}>
-                <View style={styles.priorityIndicator}>
-                  <Ionicons name="alert-circle" size={16} color="#ef4444" />
-                  <Text style={styles.summaryLabel}>High Priority</Text>
+          {/* Advanced Filters */}
+          {showAdvancedFilters && (
+            <View style={styles.advancedFilters}>
+              {/* Date Filter */}
+              <View style={styles.filterRow}>
+                <Text style={styles.filterLabel}>Date Range</Text>
+                <View style={styles.filterOptions}>
+                  {[
+                    { key: 'all', label: 'All Time' },
+                    { key: 'today', label: 'Today' },
+                    { key: 'week', label: 'This Week' },
+                    { key: 'month', label: 'This Month' },
+                  ].map((option) => (
+                    <TouchableOpacity
+                      key={option.key}
+                      style={[
+                        styles.filterOption,
+                        dateFilter === option.key && styles.filterOptionActive
+                      ]}
+                      onPress={() => setDateFilter(option.key)}
+                    >
+                      <Text style={[
+                        styles.filterOptionText,
+                        dateFilter === option.key && styles.filterOptionTextActive
+                      ]}>
+                        {option.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
-                <Text style={styles.summaryCount}>{getPriorityCount('high')}</Text>
               </View>
-              
-              <View style={styles.summaryItem}>
-                <View style={styles.priorityIndicator}>
-                  <Ionicons name="time" size={16} color="#f59e0b" />
-                  <Text style={styles.summaryLabel}>New Today</Text>
+
+              {/* Organization Filter (for vendor users) */}
+              {user?.role === 'maintenance_admin' && organizations.length > 0 && (
+                <View style={styles.filterRow}>
+                  <Text style={styles.filterLabel}>Organization</Text>
+                  <View style={styles.filterOptions}>
+                    <TouchableOpacity
+                      style={[
+                        styles.filterOption,
+                        organizationFilter === 'all' && styles.filterOptionActive
+                      ]}
+                      onPress={() => setOrganizationFilter('all')}
+                    >
+                      <Text style={[
+                        styles.filterOptionText,
+                        organizationFilter === 'all' && styles.filterOptionTextActive
+                      ]}>
+                        All Orgs
+                      </Text>
+                    </TouchableOpacity>
+                    {organizations.slice(0, 3).map((org: any) => (
+                      <TouchableOpacity
+                        key={org.id}
+                        style={[
+                          styles.filterOption,
+                          organizationFilter === org.id.toString() && styles.filterOptionActive
+                        ]}
+                        onPress={() => setOrganizationFilter(org.id.toString())}
+                      >
+                        <Text style={[
+                          styles.filterOptionText,
+                          organizationFilter === org.id.toString() && styles.filterOptionTextActive
+                        ]}>
+                          {org.name.substring(0, 12)}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
                 </View>
-                <Text style={styles.summaryCount}>{getNewTicketsCount()}</Text>
+              )}
+
+              {/* Vendor Filter (for organization users) */}
+              {user?.role === 'org_admin' && vendors.length > 0 && (
+                <View style={styles.filterRow}>
+                  <Text style={styles.filterLabel}>Vendor</Text>
+                  <View style={styles.filterOptions}>
+                    <TouchableOpacity
+                      style={[
+                        styles.filterOption,
+                        vendorFilter === 'all' && styles.filterOptionActive
+                      ]}
+                      onPress={() => setVendorFilter('all')}
+                    >
+                      <Text style={[
+                        styles.filterOptionText,
+                        vendorFilter === 'all' && styles.filterOptionTextActive
+                      ]}>
+                        All Vendors
+                      </Text>
+                    </TouchableOpacity>
+                    {vendors.slice(0, 3).map((vendor: any) => (
+                      <TouchableOpacity
+                        key={vendor.id}
+                        style={[
+                          styles.filterOption,
+                          vendorFilter === vendor.id.toString() && styles.filterOptionActive
+                        ]}
+                        onPress={() => setVendorFilter(vendor.id.toString())}
+                      >
+                        <Text style={[
+                          styles.filterOptionText,
+                          vendorFilter === vendor.id.toString() && styles.filterOptionTextActive
+                        ]}>
+                          {vendor.name.substring(0, 12)}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* Quick Stats with Better Visibility */}
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <View style={styles.statIcon}>
+                <Ionicons name="alert-circle" size={18} color="#ffffff" />
+              </View>
+              <View style={styles.statContent}>
+                <Text style={styles.statNumber}>{getPriorityCount('high')}</Text>
+                <Text style={styles.statLabel}>High Priority</Text>
               </View>
             </View>
-
-            <View style={styles.summaryRow}>
-              <View style={styles.summaryItem}>
-                <View style={styles.priorityIndicator}>
-                  <Ionicons name="construct" size={16} color="#3b82f6" />
-                  <Text style={styles.summaryLabel}>In Progress</Text>
-                </View>
-                <Text style={styles.summaryCount}>{getStatusCount('in_progress')}</Text>
+            
+            <View style={styles.statItem}>
+              <View style={styles.statIcon}>
+                <Ionicons name="time" size={18} color="#ffffff" />
               </View>
-              
-              <View style={styles.summaryItem}>
-                <View style={styles.priorityIndicator}>
-                  <Ionicons name="checkmark-circle" size={16} color="#10b981" />
-                  <Text style={styles.summaryLabel}>Completed</Text>
-                </View>
-                <Text style={styles.summaryCount}>{getStatusCount('completed')}</Text>
+              <View style={styles.statContent}>
+                <Text style={styles.statNumber}>{getNewTicketsCount()}</Text>
+                <Text style={styles.statLabel}>New Today</Text>
+              </View>
+            </View>
+            
+            <View style={styles.statItem}>
+              <View style={styles.statIcon}>
+                <Ionicons name="construct" size={18} color="#ffffff" />
+              </View>
+              <View style={styles.statContent}>
+                <Text style={styles.statNumber}>{getStatusCount('in_progress')}</Text>
+                <Text style={styles.statLabel}>Active</Text>
               </View>
             </View>
           </View>
@@ -168,43 +339,47 @@ export default function DashboardScreen() {
           </View>
         </Card>
 
-        {/* Enhanced Filter Tabs */}
+        {/* Status Filter Tabs - More Visible */}
         <Card style={styles.filterCard}>
           <Text style={styles.sectionTitle}>
-            {searchQuery ? `Search Results (${filteredTickets.length})` : 'Filter Tickets'}
+            {filteredTickets.length < tickets.length ? 
+              `Filtered Results (${filteredTickets.length} of ${tickets.length})` : 
+              'Ticket Status'}
           </Text>
-          <View style={styles.filterTabs}>
+          <View style={styles.statusTabs}>
             {[
-              { key: 'all', label: 'All', count: tickets.length, icon: 'list-outline' },
-              { key: 'pending', label: 'Pending', count: getStatusCount('pending'), icon: 'time-outline' },
-              { key: 'in_progress', label: 'Active', count: getStatusCount('in_progress'), icon: 'construct-outline' },
-              { key: 'completed', label: 'Done', count: getStatusCount('completed'), icon: 'checkmark-circle-outline' },
+              { key: 'all', label: 'All', count: filteredTickets.length, icon: 'list-outline', color: '#64748b' },
+              { key: 'pending', label: 'Pending', count: filteredTickets.filter(t => t.status === 'pending').length, icon: 'hourglass-outline', color: '#f59e0b' },
+              { key: 'in_progress', label: 'Active', count: filteredTickets.filter(t => t.status === 'in_progress').length, icon: 'hammer-outline', color: '#3b82f6' },
+              { key: 'completed', label: 'Done', count: filteredTickets.filter(t => t.status === 'completed').length, icon: 'checkmark-circle-outline', color: '#10b981' },
             ].map((filter) => (
               <TouchableOpacity
                 key={filter.key}
                 style={[
-                  styles.filterTab,
-                  filterStatus === filter.key && styles.filterTabActive
+                  styles.statusTab,
+                  filterStatus === filter.key && styles.statusTabActive
                 ]}
                 onPress={() => setFilterStatus(filter.key)}
               >
-                <Ionicons 
-                  name={filter.icon as any} 
-                  size={18} 
-                  color={filterStatus === filter.key ? '#ffffff' : '#64748b'} 
-                />
-                <Text style={[
-                  styles.filterTabLabel,
-                  filterStatus === filter.key && styles.filterTabLabelActive
-                ]}>
-                  {filter.label}
-                </Text>
-                <Text style={[
-                  styles.filterTabCount,
-                  filterStatus === filter.key && styles.filterTabCountActive
-                ]}>
-                  {filter.count}
-                </Text>
+                <View style={styles.statusTabContent}>
+                  <Ionicons 
+                    name={filter.icon as any} 
+                    size={24} 
+                    color={filterStatus === filter.key ? '#ffffff' : filter.color} 
+                  />
+                  <Text style={[
+                    styles.statusTabCount,
+                    filterStatus === filter.key && styles.statusTabCountActive
+                  ]}>
+                    {filter.count}
+                  </Text>
+                  <Text style={[
+                    styles.statusTabLabel,
+                    filterStatus === filter.key && styles.statusTabLabelActive
+                  ]}>
+                    {filter.label}
+                  </Text>
+                </View>
               </TouchableOpacity>
             ))}
           </View>
@@ -274,11 +449,13 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1e293b',
+    backgroundColor: '#334155',
     borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#475569',
   },
   searchIcon: {
     marginRight: 12,
@@ -287,40 +464,96 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: '#ffffff',
+    fontWeight: '500',
   },
   clearButton: {
     marginLeft: 8,
+    padding: 4,
   },
-  summaryContainer: {
+  filterToggle: {
+    marginLeft: 8,
+    padding: 4,
+    borderRadius: 6,
+    backgroundColor: '#1e293b',
+  },
+  advancedFilters: {
+    backgroundColor: '#1e293b',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    gap: 16,
+  },
+  filterRow: {
     gap: 12,
   },
-  summaryRow: {
+  filterLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#e2e8f0',
+    marginBottom: 8,
+  },
+  filterOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  filterOption: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#475569',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#64748b',
+  },
+  filterOptionActive: {
+    backgroundColor: '#3b82f6',
+    borderColor: '#2563eb',
+  },
+  filterOptionText: {
+    fontSize: 14,
+    color: '#e2e8f0',
+    fontWeight: '500',
+  },
+  filterOptionTextActive: {
+    color: '#ffffff',
+    fontWeight: '600',
+  },
+  statsContainer: {
     flexDirection: 'row',
     gap: 12,
+    marginTop: 4,
   },
-  summaryItem: {
+  statItem: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#1e293b',
-    borderRadius: 8,
+    backgroundColor: '#475569',
+    borderRadius: 10,
     padding: 12,
+    gap: 10,
   },
-  priorityIndicator: {
-    flexDirection: 'row',
+  statIcon: {
+    width: 36,
+    height: 36,
+    backgroundColor: '#3b82f6',
+    borderRadius: 8,
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
   },
-  summaryLabel: {
-    fontSize: 13,
-    color: '#94a3b8',
-    fontWeight: '500',
+  statContent: {
+    flex: 1,
   },
-  summaryCount: {
-    fontSize: 16,
+  statNumber: {
+    fontSize: 18,
+    fontWeight: '700',
     color: '#ffffff',
-    fontWeight: '600',
+    lineHeight: 20,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#cbd5e1',
+    fontWeight: '500',
+    marginTop: 2,
   },
   quickActionsCard: {
     marginBottom: 20,
@@ -341,48 +574,52 @@ const styles = StyleSheet.create({
   filterCard: {
     marginBottom: 20,
   },
-  filterTabs: {
+  statusTabs: {
     flexDirection: 'row',
-    gap: 8,
-    flexWrap: 'wrap',
+    gap: 10,
   },
-  filterTab: {
+  statusTab: {
     flex: 1,
-    flexDirection: 'row',
+    backgroundColor: '#334155',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#1e293b',
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    gap: 6,
-    minHeight: 50,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    minHeight: 85,
   },
-  filterTabActive: {
+  statusTabActive: {
     backgroundColor: '#3b82f6',
+    borderColor: '#2563eb',
+    transform: [{ scale: 1.02 }],
+    elevation: 4,
+    shadowColor: '#3b82f6',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
   },
-  filterTabLabel: {
-    fontSize: 14,
-    color: '#64748b',
-    fontWeight: '600',
+  statusTabContent: {
+    alignItems: 'center',
+    gap: 6,
   },
-  filterTabLabelActive: {
+  statusTabCount: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#e2e8f0',
+    lineHeight: 22,
+  },
+  statusTabCountActive: {
     color: '#ffffff',
   },
-  filterTabCount: {
+  statusTabLabel: {
     fontSize: 12,
-    color: '#64748b',
+    color: '#94a3b8',
     fontWeight: '600',
-    backgroundColor: '#0f172a',
-    borderRadius: 12,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    minWidth: 20,
     textAlign: 'center',
   },
-  filterTabCountActive: {
-    color: '#3b82f6',
-    backgroundColor: '#ffffff',
+  statusTabLabelActive: {
+    color: '#ffffff',
   },
   ticketsContainer: {
     gap: 12,
