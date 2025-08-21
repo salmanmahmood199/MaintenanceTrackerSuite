@@ -324,6 +324,8 @@ export default function MarketplaceScreen() {
   const [bidModalVisible, setBidModalVisible] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<MarketplaceTicket | null>(null);
   const [selectedBid, setSelectedBid] = useState<VendorBid | null>(null);
+  const [ticketDetailsVisible, setTicketDetailsVisible] = useState(false);
+  const [viewingTicket, setViewingTicket] = useState<MarketplaceTicket | null>(null);
 
   // Fetch marketplace tickets
   const { data: marketplaceTickets = [], isLoading: ticketsLoading, refetch: refetchTickets } = useQuery({
@@ -555,8 +557,9 @@ export default function MarketplaceScreen() {
                     key={ticket.id} 
                     style={styles.ticketCard}
                     onPress={() => {
-                      console.log('Navigating to ticket:', ticket.id);
-                      router.push(`/ticket/${ticket.id}`);
+                      console.log('Opening ticket details modal for:', ticket.id);
+                      setViewingTicket(ticket);
+                      setTicketDetailsVisible(true);
                     }}
                   >
                     <View style={styles.ticketHeader}>
@@ -716,6 +719,95 @@ export default function MarketplaceScreen() {
         onSubmit={handleSubmitBid}
         isLoading={createBidMutation.isPending || updateBidMutation.isPending}
       />
+
+      {/* Ticket Details Modal */}
+      <Modal visible={ticketDetailsVisible} animationType="slide">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Ticket Details</Text>
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={() => {
+                setTicketDetailsVisible(false);
+                setViewingTicket(null);
+              }}
+            >
+              <Ionicons name="close" size={24} color="#6b7280" />
+            </TouchableOpacity>
+          </View>
+          
+          {viewingTicket && (
+            <ScrollView style={styles.modalContent}>
+              <View style={styles.ticketDetailSection}>
+                <Text style={styles.ticketDetailTitle}>{viewingTicket.title}</Text>
+                <Text style={styles.ticketDetailNumber}>#{viewingTicket.ticketNumber}</Text>
+                
+                <View style={styles.ticketDetailMeta}>
+                  <View style={[styles.priorityBadge, viewingTicket.priority === "high" ? styles.highPriority : styles.normalPriority]}>
+                    <Text style={[styles.priorityText, viewingTicket.priority === "high" ? styles.highPriorityText : styles.normalPriorityText]}>
+                      {viewingTicket.priority} priority
+                    </Text>
+                  </View>
+                  <View style={[styles.statusBadge, { backgroundColor: '#3B82F6' }]}>
+                    <Text style={styles.statusText}>{viewingTicket.status}</Text>
+                  </View>
+                </View>
+                
+                <Text style={styles.sectionLabel}>Description</Text>
+                <Text style={styles.ticketDetailDescription}>{viewingTicket.description}</Text>
+                
+                {(viewingTicket.residentialCity || viewingTicket.residentialState) && (
+                  <>
+                    <Text style={styles.sectionLabel}>Location</Text>
+                    <Text style={styles.locationDetail}>
+                      {viewingTicket.residentialCity}, {viewingTicket.residentialState} {viewingTicket.residentialZip}
+                    </Text>
+                  </>
+                )}
+                
+                {viewingTicket.images && viewingTicket.images.length > 0 && (
+                  <>
+                    <Text style={styles.sectionLabel}>Images</Text>
+                    <ScrollView horizontal style={styles.imagesContainer}>
+                      {viewingTicket.images.map((image: string, index: number) => (
+                        <Image
+                          key={index}
+                          source={{ uri: image }}
+                          style={styles.ticketImage}
+                          resizeMode="cover"
+                        />
+                      ))}
+                    </ScrollView>
+                  </>
+                )}
+                
+                <Text style={styles.sectionLabel}>Created</Text>
+                <Text style={styles.dateDetail}>
+                  {new Date(viewingTicket.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </Text>
+                
+                <TouchableOpacity
+                  style={styles.placesBidButton}
+                  onPress={() => {
+                    setTicketDetailsVisible(false);
+                    setViewingTicket(null);
+                    handlePlaceBid(viewingTicket);
+                  }}
+                >
+                  <Ionicons name="pricetag" size={18} color="#fff" />
+                  <Text style={styles.bidButtonText}>Place Bid</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          )}
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -1010,6 +1102,73 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     color: "#111827",
+  },
+  modalContent: {
+    flex: 1,
+  },
+  ticketDetailSection: {
+    padding: 20,
+  },
+  ticketDetailTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#111827",
+    marginBottom: 8,
+  },
+  ticketDetailNumber: {
+    fontSize: 14,
+    color: "#6b7280",
+    marginBottom: 16,
+  },
+  ticketDetailMeta: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 20,
+  },
+  ticketDetailDescription: {
+    fontSize: 16,
+    color: "#374151",
+    lineHeight: 24,
+    marginBottom: 20,
+  },
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#4b5563",
+    marginBottom: 8,
+    marginTop: 16,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  locationDetail: {
+    fontSize: 16,
+    color: "#374151",
+    marginBottom: 16,
+  },
+  dateDetail: {
+    fontSize: 16,
+    color: "#374151",
+    marginBottom: 20,
+  },
+  imagesContainer: {
+    marginBottom: 20,
+  },
+  ticketImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 8,
+    marginRight: 12,
+  },
+  placesBidButton: {
+    backgroundColor: "#10b981",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    gap: 8,
+    marginTop: 20,
   },
   ticketInfo: {
     padding: 16,
