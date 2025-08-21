@@ -11,6 +11,7 @@ import {
   Modal,
   TextInput,
   Platform,
+  Image,
 } from "react-native";
 // Note: Using a simple manual date selection for now since date picker dependencies have conflicts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -557,9 +558,15 @@ export default function MarketplaceScreen() {
                     key={ticket.id} 
                     style={styles.ticketCard}
                     onPress={() => {
-                      console.log('Opening ticket details modal for:', ticket.id);
-                      setViewingTicket(ticket);
-                      setTicketDetailsVisible(true);
+                      try {
+                        console.log('Opening ticket details modal for:', ticket.id, ticket.title);
+                        console.log('Ticket data:', JSON.stringify(ticket, null, 2));
+                        setViewingTicket(ticket);
+                        setTicketDetailsVisible(true);
+                      } catch (error) {
+                        console.error('Error opening ticket details:', error);
+                        Alert.alert('Error', 'Unable to show ticket details');
+                      }
                     }}
                   >
                     <View style={styles.ticketHeader}>
@@ -721,13 +728,21 @@ export default function MarketplaceScreen() {
       />
 
       {/* Ticket Details Modal */}
-      <Modal visible={ticketDetailsVisible} animationType="slide">
+      <Modal 
+        visible={ticketDetailsVisible} 
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onShow={() => console.log('Modal opened successfully')}
+      >
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Ticket Details</Text>
+            <Text style={styles.modalTitle}>
+              {viewingTicket ? viewingTicket.title : 'Ticket Details'}
+            </Text>
             <TouchableOpacity
               style={styles.modalCloseButton}
               onPress={() => {
+                console.log('Closing modal');
                 setTicketDetailsVisible(false);
                 setViewingTicket(null);
               }}
@@ -736,65 +751,51 @@ export default function MarketplaceScreen() {
             </TouchableOpacity>
           </View>
           
-          {viewingTicket && (
-            <ScrollView style={styles.modalContent}>
+          {viewingTicket ? (
+            <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
               <View style={styles.ticketDetailSection}>
-                <Text style={styles.ticketDetailTitle}>{viewingTicket.title}</Text>
-                <Text style={styles.ticketDetailNumber}>#{viewingTicket.ticketNumber}</Text>
+                <Text style={styles.ticketDetailTitle}>{viewingTicket.title || 'No Title'}</Text>
+                <Text style={styles.ticketDetailNumber}>#{viewingTicket.ticketNumber || 'N/A'}</Text>
                 
                 <View style={styles.ticketDetailMeta}>
                   <View style={[styles.priorityBadge, viewingTicket.priority === "high" ? styles.highPriority : styles.normalPriority]}>
                     <Text style={[styles.priorityText, viewingTicket.priority === "high" ? styles.highPriorityText : styles.normalPriorityText]}>
-                      {viewingTicket.priority} priority
+                      {viewingTicket.priority || 'normal'} priority
                     </Text>
                   </View>
                   <View style={[styles.statusBadge, { backgroundColor: '#3B82F6' }]}>
-                    <Text style={styles.statusText}>{viewingTicket.status}</Text>
+                    <Text style={styles.statusText}>{viewingTicket.status || 'open'}</Text>
                   </View>
                 </View>
                 
                 <Text style={styles.sectionLabel}>Description</Text>
-                <Text style={styles.ticketDetailDescription}>{viewingTicket.description}</Text>
+                <Text style={styles.ticketDetailDescription}>{viewingTicket.description || 'No description available'}</Text>
                 
                 {(viewingTicket.residentialCity || viewingTicket.residentialState) && (
                   <>
                     <Text style={styles.sectionLabel}>Location</Text>
                     <Text style={styles.locationDetail}>
-                      {viewingTicket.residentialCity}, {viewingTicket.residentialState} {viewingTicket.residentialZip}
+                      {viewingTicket.residentialCity ? `${viewingTicket.residentialCity}, ` : ''}
+                      {viewingTicket.residentialState || ''} {viewingTicket.residentialZip || ''}
                     </Text>
-                  </>
-                )}
-                
-                {viewingTicket.images && viewingTicket.images.length > 0 && (
-                  <>
-                    <Text style={styles.sectionLabel}>Images</Text>
-                    <ScrollView horizontal style={styles.imagesContainer}>
-                      {viewingTicket.images.map((image: string, index: number) => (
-                        <Image
-                          key={index}
-                          source={{ uri: image }}
-                          style={styles.ticketImage}
-                          resizeMode="cover"
-                        />
-                      ))}
-                    </ScrollView>
                   </>
                 )}
                 
                 <Text style={styles.sectionLabel}>Created</Text>
                 <Text style={styles.dateDetail}>
-                  {new Date(viewingTicket.createdAt).toLocaleDateString('en-US', {
+                  {viewingTicket.createdAt ? new Date(viewingTicket.createdAt).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',
                     hour: '2-digit',
                     minute: '2-digit'
-                  })}
+                  }) : 'Date not available'}
                 </Text>
                 
                 <TouchableOpacity
                   style={styles.placesBidButton}
                   onPress={() => {
+                    console.log('Place bid button pressed');
                     setTicketDetailsVisible(false);
                     setViewingTicket(null);
                     handlePlaceBid(viewingTicket);
@@ -805,6 +806,11 @@ export default function MarketplaceScreen() {
                 </TouchableOpacity>
               </View>
             </ScrollView>
+          ) : (
+            <View style={styles.modalLoadingContainer}>
+              <ActivityIndicator size="large" color="#3B82F6" />
+              <Text style={styles.loadingText}>Loading ticket details...</Text>
+            </View>
           )}
         </View>
       </Modal>
@@ -1169,6 +1175,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     gap: 8,
     marginTop: 20,
+  },
+  modalLoadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
   },
   ticketInfo: {
     padding: 16,
