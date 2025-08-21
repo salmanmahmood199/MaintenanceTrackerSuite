@@ -551,7 +551,14 @@ export default function MarketplaceScreen() {
               marketplaceTickets.map((ticket: MarketplaceTicket) => {
                 const existingBid = vendorBids.find((bid: VendorBid) => bid.ticketId === ticket.id);
                 return (
-                  <View key={ticket.id} style={styles.ticketCard}>
+                  <TouchableOpacity
+                    key={ticket.id} 
+                    style={styles.ticketCard}
+                    onPress={() => {
+                      console.log('Navigating to ticket:', ticket.id);
+                      router.push(`/ticket/${ticket.id}`);
+                    }}
+                  >
                     <View style={styles.ticketHeader}>
                       <Text style={styles.ticketTitle}>{ticket.title}</Text>
                       <Text style={styles.ticketNumber}>#{ticket.ticketNumber}</Text>
@@ -588,7 +595,7 @@ export default function MarketplaceScreen() {
                         </View>
                       )}
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 );
               })
             )}
@@ -912,11 +919,11 @@ const styles = StyleSheet.create({
   bidTitle: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#111827",
+    color: "#f9fafb",
   },
   bidTicketNumber: {
     fontSize: 12,
-    color: "#6b7280",
+    color: "#9ca3af",
     marginTop: 2,
   },
   bidDetails: {
@@ -929,13 +936,13 @@ const styles = StyleSheet.create({
   },
   bidDetailLabel: {
     fontSize: 12,
-    color: "#6b7280",
+    color: "#9ca3af",
     marginBottom: 2,
   },
   bidDetailValue: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#111827",
+    color: "#f9fafb",
   },
   counterOfferSection: {
     backgroundColor: "#fef3c7",
@@ -981,7 +988,7 @@ const styles = StyleSheet.create({
   },
   bidNotes: {
     fontSize: 12,
-    color: "#6b7280",
+    color: "#d1d5db",
     fontStyle: "italic",
   },
   modalContainer: {
