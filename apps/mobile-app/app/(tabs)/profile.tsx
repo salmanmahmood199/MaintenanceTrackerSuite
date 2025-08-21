@@ -14,9 +14,11 @@ import { useAuth } from "../../src/contexts/AuthContext";
 import { Header } from "../../src/components/ui/Header";
 import { Card } from "../../src/components/ui/Card";
 import { Button } from "../../src/components/ui/Button";
+import { useRouter } from "expo-router";
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
+  const router = useRouter();
 
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
@@ -77,6 +79,8 @@ export default function ProfileScreen() {
         title="Profile" 
         subtitle="Manage your account settings"
         variant="gradient"
+        showBack={true}
+        onBack={() => router.back()}
       />
       
       <ScrollView style={styles.content}>

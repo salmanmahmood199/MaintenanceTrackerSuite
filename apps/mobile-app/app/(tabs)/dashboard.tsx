@@ -694,19 +694,17 @@ export default function DashboardScreen() {
                     <Text style={styles.menuItemText}>Calendar</Text>
                   </TouchableOpacity>
                   
-                  {user?.role !== 'maintenance_admin' && (
-                    <TouchableOpacity
-                      style={styles.menuItem}
-                      onPress={() => {
-                        console.log('User role:', user?.role, 'Should show marketplace:', user?.role !== 'maintenance_admin');
-                        setShowMenu(false);
-                        router.push("/marketplace");
-                      }}
-                    >
-                      <Ionicons name="storefront-outline" size={24} color="#3b82f6" />
-                      <Text style={styles.menuItemText}>Marketplace</Text>
-                    </TouchableOpacity>
-                  )}
+                  <TouchableOpacity
+                    style={styles.menuItem}
+                    onPress={() => {
+                      console.log('User role:', user?.role, 'Showing marketplace for all roles now');
+                      setShowMenu(false);
+                      router.push("/marketplace");
+                    }}
+                  >
+                    <Ionicons name="storefront-outline" size={24} color="#3b82f6" />
+                    <Text style={styles.menuItemText}>Marketplace</Text>
+                  </TouchableOpacity>
                   
                   <TouchableOpacity
                     style={styles.menuItem}

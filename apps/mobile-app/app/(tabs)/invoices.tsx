@@ -16,6 +16,8 @@ import { apiRequest } from '../../src/services/api';
 import { useAuth } from '../../src/contexts/AuthContext';
 import PaymentModal from '../components/PaymentModal';
 import InvoicePDFModal from '../components/InvoicePDFModal';
+import { Header } from '../../src/components/ui/Header';
+import { useRouter } from 'expo-router';
 
 interface Invoice {
   id: number;
@@ -36,6 +38,7 @@ interface Invoice {
 
 const InvoicesScreen = () => {
   const { user } = useAuth();
+  const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<Invoice | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -317,21 +320,22 @@ const InvoicesScreen = () => {
 
   return (
     <View style={styles.container}>
+      <Header 
+        title="Invoices" 
+        subtitle={`${filteredInvoices.length} of ${invoices.length} invoice${invoices.length !== 1 ? 's' : ''}`}
+        variant="gradient"
+        showBack={true}
+        onBack={() => router.back()}
+      />
+      
       <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <View>
-            <Text style={styles.title}>Invoices</Text>
-            <Text style={styles.subtitle}>
-              {filteredInvoices.length} of {invoices.length} invoice{invoices.length !== 1 ? 's' : ''}
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={styles.filterButton}
-            onPress={() => setShowFilters(!showFilters)}
-          >
-            <Ionicons name="filter" size={20} color="#f3f4f6" />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={styles.filterButton}
+          onPress={() => setShowFilters(!showFilters)}
+        >
+          <Ionicons name="filter" size={20} color="#f3f4f6" />
+          <Text style={styles.filterButtonText}>Filters</Text>
+        </TouchableOpacity>
 
         {/* Filters Section */}
         {showFilters && (
