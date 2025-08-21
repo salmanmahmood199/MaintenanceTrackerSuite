@@ -9,9 +9,7 @@ export default function TabsLayout() {
         tabBarActiveTintColor: '#3b82f6',
         tabBarInactiveTintColor: '#94a3b8',
         tabBarStyle: {
-          backgroundColor: '#1e293b',
-          borderTopColor: 'rgba(255, 255, 255, 0.1)',
-          borderTopWidth: 1,
+          display: 'none', // Hide bottom tabs completely
         },
         tabBarLabelStyle: {
           fontSize: 12,

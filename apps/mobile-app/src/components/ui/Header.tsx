@@ -13,6 +13,10 @@ interface HeaderProps {
     icon: keyof typeof Ionicons.glyphMap;
     onPress: () => void;
   };
+  leftAction?: {
+    icon: keyof typeof Ionicons.glyphMap;
+    onPress: () => void;
+  };
   variant?: 'default' | 'gradient';
 }
 
@@ -22,6 +26,7 @@ export function Header({
   showBack = false, 
   onBack, 
   rightAction,
+  leftAction,
   variant = 'default'
 }: HeaderProps) {
   const content = (
@@ -29,6 +34,15 @@ export function Header({
       <StatusBar barStyle="light-content" />
       <View style={styles.header}>
         <View style={styles.leftSection}>
+          {leftAction && (
+            <TouchableOpacity 
+              style={styles.actionButton} 
+              onPress={leftAction.onPress}
+              activeOpacity={0.7}
+            >
+              <Ionicons name={leftAction.icon} size={24} color="#ffffff" />
+            </TouchableOpacity>
+          )}
           {showBack && (
             <TouchableOpacity 
               style={styles.backButton} 

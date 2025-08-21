@@ -20,6 +20,7 @@ This is a full-stack maintenance ticketing application for commercial businesses
 - **Mobile Dashboard Redesign**: Removed blue stats boxes and redesigned mobile dashboard with intuitive search functionality, priority overview, and enhanced filtering system with clear visual indicators for ticket status and counts
 - **Critical Security Fix**: Prevented vendor admins (maintenance_admin role) from creating tickets by adding requireRole middleware to POST /api/tickets endpoint and hiding "New Ticket" button in mobile app for vendor users
 - **Enhanced Mobile Filtering**: Added advanced filtering system with date range filters (Today, This Week, This Month), role-based organization/vendor filtering, and improved visual contrast for better usability
+- **Mobile Navigation Overhaul**: Replaced bottom tab navigation with hamburger menu in top-left header, providing cleaner interface with scrollable month/day/year date pickers for custom date ranges
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.

@@ -147,6 +147,10 @@ export default function DashboardScreen() {
         title="Dashboard" 
         subtitle={`Welcome back, ${user?.firstName || 'User'}`}
         variant="gradient"
+        leftAction={{
+          icon: "menu",
+          onPress: () => setShowMenu(true)
+        }}
         rightAction={{
           icon: "notifications-outline",
           onPress: () => router.push("/notifications")
@@ -398,14 +402,7 @@ export default function DashboardScreen() {
           </View>
         </Card>
 
-        {/* Hamburger Menu Button */}
-        <TouchableOpacity
-          style={styles.menuButton}
-          onPress={() => setShowMenu(true)}
-        >
-          <Ionicons name="menu" size={24} color="#ffffff" />
-          <Text style={styles.menuButtonText}>Menu</Text>
-        </TouchableOpacity>
+
 
         {/* Status Filter Tabs - More Visible */}
         <Card style={styles.filterCard}>
@@ -1034,23 +1031,7 @@ const styles = StyleSheet.create({
   footerSpacing: {
     height: 40,
   },
-  menuButton: {
-    backgroundColor: '#1e293b',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    marginVertical: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#334155',
-    gap: 8,
-  },
-  menuButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+
   scrollablePicker: {
     flexDirection: 'row',
     height: 200,
